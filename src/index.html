@@ -10,20 +10,51 @@
       type="image/x-icon"
     />
     <!-- Font Awesome Free CDN -->
-   <script src="https://kit.fontawesome.com/28702e0585.js" crossorigin="anonymous"></script>
+    <script
+      src="https://kit.fontawesome.com/28702e0585.js"
+      crossorigin="anonymous"
+    ></script>
     <title>DocMaster</title>
   </head>
   <body>
-    <h1 class="text-3xl font-bold text-yellow-300 underline">Hello world!</h1>
-    <button class="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-  <i class="fas fa-check"></i>
-  Valider
-</button>
-
-<button class="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
-  <i class="fas fa-times"></i>
-  Annuler
-</button>
-
+    <header>
+      <nav class="flex items-center justify-between p-4 bg-white shadow-md  w-full  bg-[radial-gradient(#EFA751_1px,transparent_1px)] [background-size:16px_16px]">
+        <div class="logo">
+          <a href="index.html">
+            <img
+              src="./assets/images/logo.png"
+              alt="DocMaster Logo"
+              class="h-12"
+            />
+          </a>
+        </div>
+        <div class="menu flex items-center justify-center">
+          <ul class="flex items-center justify-between space-x-5">
+            <li>
+              <i class="fa-solid fa-house"></i>
+              <a href="index.html">Home</a>
+            </li>
+            <li>
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <a href="features.html">Recherche</a>
+            </li>
+            <li>
+              <i class="fa-solid fa-box"></i>
+              <a href="features.html">object</a>
+            </li>
+            <li>
+              <i class="fa-solid fa-file"></i>
+              <a href="features.html">document</a>
+            </li>
+          </ul>
+        </div>
+        <a
+          href="login.html"
+          class="bg-orange-300 p-1 rounded-full shadow-md hover:bg-orange-400 transition duration-300 transform hover:-translate-y-2 hover:scale-110 inline-block"
+        >
+          <span class="text-white font-semibold">DM</span>
+        </a>
+      </nav>
+    </header>
   </body>
 </html>
