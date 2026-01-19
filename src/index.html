@@ -1,605 +1,229 @@
+
 <!DOCTYPE html>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="./output.css" rel="stylesheet" />
-    <link
-      rel="shortcut icon"
-      href="./assets//images/favicon.png"
-      type="image/x-icon"
-    />
-    <!-- Font Awesome Free CDN -->
-    <script
-      src="https://kit.fontawesome.com/28702e0585.js"
-      crossorigin="anonymous"
-    ></script>
-    <title>DocMaster</title>
-  </head>
-  <body>
-    <header>
-      <nav class="flex items-center justify-between p-4 bg-white shadow-md  w-full  bg-[radial-gradient(#EFA751_1px,transparent_1px)] [background-size:16px_16px]">
-        <div class="logo">
-          <a href="index.html">
-            <img
-              src="./assets/images/logo.png"
-              alt="DocMaster Logo"
-              class="h-12"
-            />
-          </a>
-        </div>
-        <div class="menu flex items-center justify-center">
-          <ul class="flex items-center justify-between space-x-5">
-            <li>
-              <i class="fa-solid fa-house"></i>
-              <a href="index.html">Home</a>
-            </li>
-            <li>
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <a href="features.html">Recherche</a>
-            </li>
-            <li>
-              <i class="fa-solid fa-box"></i>
-              <a href="features.html">object</a>
-            </li>
-            <li>
-              <i class="fa-solid fa-file"></i>
-              <a href="features.html">document</a>
-            </li>
-          </ul>
-        </div>
-        <a
-          href="login.html"
-          class="bg-orange-300 p-1 rounded-full shadow-md hover:bg-orange-400 transition duration-300 transform hover:-translate-y-2 hover:scale-110 inline-block"
-        >
-          <span class="text-white font-semibold">DM</span>
-        </a>
-      </nav>
-    </header>
-  </body>
-</html>
-=======
-=======
->>>>>>> Stashed changes
 <html lang="fr">
-<head> 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" sizes="32x32" href="admin/images/favicon.png">
-    <title>DocMaster</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Boogaloo&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;700&display=swap" rel="stylesheet">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DocMaster</title>
 
-    <link rel="stylesheet" href="client/css/styles.css">
-    <link rel="stylesheet" href="client/css/home.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">   
+  <!-- Styles -->
+  <link rel="stylesheet" href="./main.css" />
 
+  <!-- FontAwesome -->
+  <script src="https://kit.fontawesome.com/28702e0585.js" crossorigin="anonymous" defer></script>
 </head>
-<body>
+<body class="referral-section"  >
+<div class="absolute inset-0 pointer-events-none"
+        style="background-image: radial-gradient(#EFA751 1px, transparent 1px); background-size: 16px 16px; z-index: 1;">
+    </div>
 
-    <div class="main-background" style="background-image: url('client/images/bg2.jpeg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-">
-        <header>
+  <!-- HERO (main background) -->
+  <div class="main-background" style="background-image: url('./assets/images/bg2.jpeg');">
     <div class="containr">
-        <img src="client/images/logo.png" alt="Logo" class="logo">
-        <div class="h-logo">
-            <img src="admin/images/favicon.png" alt="DocMaster">
-            <h3>DocMaster</h3>
-        </div>
-        <nav>
-            <a href="/" class="active"><i class="fas fa-home"></i> <span>Accueil</span></a>
-            <a href="/rechercher"><i class="fas fa-search"></i> <span>Rechercher</span></a>
-            <a href="/objets"><i class="fas fa-box"></i> <span>Objets</span></a>
-            <a href="/declarer"><i class="fas fa-file-alt"></i> <span>Déclaration</span></a>
-        </nav>
-        <div class="header-right">
-            <a href="/account" class="account-btn" style="padding: 2%;">
-                <!-- Exemple si connecté -->
-                <div class="initials-circle">DM</div>
-
-                <!-- Exemple si non connecté -->
-                <!-- <i class="fas fa-user-circle"></i> -->
-            </a>
-            <div class="language-selector">
-                <select id="language">
-                    <option value="fr">🇫🇷 FR</option>
-                    <option value="en">🇬🇧 EN</option>
-                </select>
-            </div>
-        </div>
+      <p class="main-text">
+        <span class="line1"><strong>Bienvenue,</strong> DocMaster a permis</span>
+        <span class="line2">de retrouver plus de 2000 cartes</span>
+        <span class="line3">et autres documents à ce jour</span>
+      </p>
     </div>
-</header>
-        <p class="main-text">
-            <span class="line1"><strong>Bienvenue,</strong>DocMaster a permis</span>
-            <span class="line2">de retrouver plus de 2000 cartes</span>
-            <span class="line3">et autres documents à ce jour</span>
-        </p>
+  </div>
 
-        <!-- <div class="rewards-box">
-            <div class="tabs">
-                <button class="tab active">Récompenses</button>
-                <button class="tab">Retrait</button>
-            </div>
-            <div>
-                <p class="reward-amount">12 000<span class="currency">  Fcfa</span></p>
-                <p class="reward-text">Votre récompense journalière</p>
-            </div>
-        </div>  -->
-        
-    </div>
+ 
+  <!-- Documents récemment ajoutés -->
+  <div class="section-title">
+    <h2><i class="fas fa-clock"></i> Documents récemment ajoutés</h2>
+  </div>
 
-    <div class="section-title">
-        <h2><i class="fas fa-clock"></i> Documents récemment ajoutés</h2>
-    </div>
-
-<div class="contain" id="trouve">
-    <!-- Exemple de carte document -->
-    <div class="card recent">
-        <img src="client/images/Carte d'identité.png" alt="Document trouvé">
-        
+  <div class="contain" id="trouve">
+    <div class="cards-grid">
+      <article class="card recent">
+        <img src="./assets/images/Carte d'identité.png" alt="Carte d'identité">
         <div class="card-content">
-            <div>1</div>
-            <div class="date-time">13/08/2025</div>
-            <div class="title">Carte d'identité</div>
-            <div class="owner-info">
-                Propriétaire: <span class="owner">Jean Dupont</span>
+          <div class="title">Carte d'identité</div>
+          <div class="meta">13/08/2025 — Propriétaire: <span class="owner">Jean Dupont</span></div>
+          <div class="restitution-section">
+            <div class="restitution-progress">
+              <div class="progress-circle" style="--progress: 180deg;">
+                <div class="progress-text">50%</div>
+              </div>
+              <div class="progress-label">Restitution</div>
             </div>
+            <div class="restitution-action">
+              <button class="btn-recuperer" onclick="handleRecuperation('123')">Récupérer</button>
+            </div>
+          </div>
+        </div>
+      </article>
+      <!-- autres cards dynamiques -->
+    </div>
+  </div>
 
-            <div class="finder-info">
-                Retrouvé par: <span class="owner">@ Pierre Martin</span>
-            </div>
-            
-            <div class="restitution-section">
-                <div class="restitution-progress">
-                    <div class="progress-circle" style="--progress: 180deg;">
-                        <div class="progress-text">50%</div>
-                    </div>
-                    <div class="progress-label">Restitution</div>
-                </div>
-                <div class="restitution-action">
-                    <button class="btn-recuperer" onclick="handleRecuperation('123')">Récupérer</button>
-                </div>
-            </div>
-            <hr>
+ 
+
+  <!-- STATS : layout avec positions et décor animé -->
+  <section class="stats-section animate-on-scroll" aria-label="DocMaster en chiffres">
+    <div class="stats-container">
+      <div class="stats-grid" role="list">
+        <!-- Top -->
+        <div class="stat-item" style="--x:50%; --y:12%;">
+          <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+          <div class="stat-number" data-target="2847">0</div>
+          <div class="stat-label">DOCUMENTS<br>DÉCLARÉS</div>
         </div>
+
+        <!-- Left -->
+        <div class="stat-item" style="--x:18%; --y:45%;">
+          <div class="stat-icon"><i class="fas fa-star"></i></div>
+          <div class="stat-number" data-target="4.8">0</div>
+          <div class="stat-label">NOTE<br>MOYENNE</div>
+        </div>
+
+        <!-- Right -->
+        <div class="stat-item" style="--x:82%; --y:45%;">
+          <div class="stat-icon"><i class="fas fa-search"></i></div>
+          <div class="stat-number" data-target="2156">0</div>
+          <div class="stat-label">DOCUMENTS<br>RETROUVÉS</div>
+        </div>
+
+        <!-- Bottom -->
+        <div class="stat-item" style="--x:50%; --y:82%;">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-number" data-target="1523">0</div>
+          <div class="stat-label">UTILISATEURS<br>ACTIFS</div>
+        </div>
+
+        <!-- centre décoratif / orbite -->
+        <div class="stats-center-orbit" aria-hidden="true"></div>
+      </div>
     </div>
-</div>
-<section class="news-section">
-    <div class="news-container">
-        <div class="section-header animate-on-scroll">
-            <h2>Pourquoi Utiliser DocMaster ?</h2>
-            <p>Découvrez tous les avantages de notre plateforme innovante pour la gestion de vos documents</p>
-        </div>
-        <div class="news-grid">
-            <div class="main-news animate-on-scroll">
-                <div class="main-news-content">
-                    <span class="news-badge">PRINCIPAL</span>
-                    <h3>Retrouvez Vos Documents Facilement</h3>
-                    <p>Grâce à notre système intelligent et notre réseau communautaire, récupérez vos documents perdus en quelques clics. Notre assistance personnalisée vous accompagne à chaque étape du processus de récupération.</p>
-                    <div class="news-date">
-                        <i class="fas fa-search"></i>
-                        <span>Récupération assistée 24h/7j</span>
-                    </div>
-                </div>
-            </div>
-            <div class="side-news">
-                <div class="news-item animate-on-scroll">
-                    <h4>Enregistrez Vos Objets Précieux</h4>
-                    <p>Créez un profil sécurisé pour chaque objet important. Photos, descriptions détaillées, tout est crypté et protégé.</p>
-                </div>
-                <div class="news-item animate-on-scroll">
-                    <h4>Récompenses Pour Retrouvailles</h4>
-                    <p>Motivez la communauté avec notre système de récompenses. Plus vous aidez, plus vous gagnez !</p>
-                </div>
-                <div class="news-item animate-on-scroll">
-                    <h4>Réseau Communautaire Solidaire</h4>
-                    <p>Rejoignez une communauté bienveillante de plus de 1500 membres actifs prêts à vous aider.</p>
-                </div>
-            </div>
-        </div>
+  </section>
+
+   <!-- News / Why -->
+  <!-- ...existing code... -->
+<section class="referral-section animate-on-scroll" aria-labelledby="referral-title">
+  <div class="referral-container containr">
+    <div class="referral-left">
+      <h2 id="referral-title">Système de Parrainage</h2>
+      <p class="referral-lead">
+        Invitez vos amis et gagnez des récompenses ! Plus vous parrainez, plus vous gagnez.
+        Ensemble, construisons une communauté solidaire.
+      </p>
+
+      <ul class="referral-features" aria-hidden="false">
+        <li><i class="fas fa-gift"></i><span>500 FCFA par ami parrainé</span></li>
+        <li><i class="fas fa-coins"></i><span>Bonus de 10% sur leurs gains</span></li>
+        <li><i class="fas fa-crown"></i><span>Statut VIP à partir de 10 parrainages</span></li>
+        <li><i class="fas fa-trophy"></i><span>Récompenses mensuelles exclusives</span></li>
+      </ul>
     </div>
+
+    <aside class="referral-right" aria-label="Comment ça marche">
+      <div class="steps-card" role="list">
+        <div class="step" role="listitem">
+          <div class="step-num" aria-hidden="true">1</div>
+          <div class="step-body">
+            <h4>Partagez votre code</h4>
+            <p>Envoyez votre code unique à vos amis</p>
+          </div>
+        </div>
+
+        <div class="step" role="listitem">
+          <div class="step-num" aria-hidden="true">2</div>
+          <div class="step-body">
+            <h4>Ils s'inscrivent</h4>
+            <p>Vos amis créent leur compte avec votre code</p>
+          </div>
+        </div>
+
+        <div class="step" role="listitem">
+          <div class="step-num" aria-hidden="true">3</div>
+          <div class="step-body">
+            <h4>Vous gagnez</h4>
+            <p>Recevez vos récompenses automatiquement</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
 </section>
+<!-- ...existing code... -->
 
-
-    <!-- Section Statistiques Animées -->
-    <h2 class="stats-title animate-on-scroll">DocMaster en Chiffres</h2>
-
-    <section class="stats-section animate-on-scroll">
-        <div class="stats-container">
-            <div class="stats-grid">
-                <div class="rotating-circle"></div>
-                <div class="stat-item">
-                    <i class="fas fa-file-alt stat-icon"></i>
-                    <span class="stat-number" data-target="2847">2847</span>
-                    <span class="stat-label">Documents<br>Déclarés</span>
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-search stat-icon"></i>
-                    <span class="stat-number" data-target="2156">2156</span>
-                    <span class="stat-label">Documents<br>Retrouvés</span>
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-users stat-icon"></i>
-                    <span class="stat-number" data-target="1523">1523</span>
-                    <span class="stat-label">Utilisateurs<br>Actifs</span>
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-star stat-icon"></i>
-                    <span class="stat-number" data-target="4.8">4.8</span>
-                    <span class="stat-label">Note<br>Moyenne</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="referral-section">
-        <div class="referral-container">
-            <div class="referral-content animate-on-scroll">
-                <div class="referral-info">
-                    <h2>Système de Parrainage</h2>
-                    <p>Invitez vos amis et gagnez des récompenses ! Plus vous parrainez, plus vous gagnez. Ensemble, construisons une communauté solidaire.</p>
-                    <ul class="referral-benefits">
-                        <li>
-                            <i class="fas fa-gift"></i>
-                            <span>500 FCFA par ami parrainé</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-coins"></i>
-                            <span>Bonus de 10% sur leurs gains</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-crown"></i>
-                            <span>Statut VIP à partir de 10 parrainages</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-trophy"></i>
-                            <span>Récompenses mensuelles exclusives</span>
-                        </li>
-                    </ul>
-                </div>
-                <div class="referral-visual">
-                    <div class="referral-steps">
-                        <div class="step">
-                            <div class="step-number">1</div>
-                            <div>
-                                <h4>Partagez votre code</h4>
-                                <p>Envoyez votre code unique à vos amis</p>
-                            </div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number">2</div>
-                            <div>
-                                <h4>Ils s'inscrivent</h4>
-                                <p>Vos amis créent leur compte avec votre code</p>
-                            </div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number">3</div>
-                            <div>
-                                <h4>Vous gagnez</h4>
-                                <p>Recevez vos récompenses automatiquement</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Section Témoignages -->
-     <div class="testimonials-section">
-        <div class="section-header animate-on-scroll">
-                <h2>Ce Que Disent Nos Utilisateurs</h2>
-                <p>Découvrez les témoignages de ceux qui ont retrouvé leurs documents grâce à DocMaster</p>
-            </div>
-        <div class="testimonials-container">
-            <div class="testimonials-slider">
-                <div class="testimonial-track" id="testimonialTrack">
-                    <div class="testimonial-slide">
-                        <div class="testimonial-card">
-                            <i class="fas fa-quote-right quote-icon"></i>
-                            <div class="testimonial-text">
-                                J'ai perdu ma carte d'identité lors d'un voyage d'affaires. En moins de 48h, quelqu'un l'avait trouvée et déclarée sur DocMaster. Service exceptionnel !
-                            </div>
-                            <div class="testimonial-author">
-                                <div class="author-avatar">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div class="author-info">
-                                    <h4>Marie NGUYEN</h4>
-                                    <p><i class="fas fa-briefcase"></i> Commerciale, Yaoundé</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="testimonial-slide">
-                        <div class="testimonial-card">
-                            <i class="fas fa-quote-right quote-icon"></i>
-                            <div class="testimonial-text">
-                                Ma fille avait perdu son diplôme de Master. Grâce à DocMaster et à la générosité d'un trouveur, nous l'avons récupéré. Merci infiniment !
-                            </div>
-                            <div class="testimonial-author">
-                                <div class="author-avatar">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div class="author-info">
-                                    <h4>Paul FOTSO</h4>
-                                    <p><i class="fas fa-chalkboard-teacher"></i> Enseignant, Douala</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="testimonial-slide">
-                        <div class="testimonial-card">
-                            <i class="fas fa-quote-right quote-icon"></i>
-                            <div class="testimonial-text">
-                                Interface intuitive, système de récompenses motivant. J'ai déjà aidé 12 personnes à retrouver leurs documents. Une vraie communauté solidaire !
-                            </div>
-                            <div class="testimonial-author">
-                                <div class="author-avatar">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div class="author-info">
-                                    <h4>Sandra EKOTTO</h4>
-                                    <p><i class="fas fa-graduation-cap"></i> Étudiante, Bafoussam</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            
-            <div class="testimonial-controls">
-                <button class="nav-btn" onclick="previousTestimonial()" aria-label="Témoignage précédent">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                
-                <div class="testimonial-indicators">
-                    <div class="indicator active" onclick="goToSlide(0)"></div>
-                    <div class="indicator" onclick="goToSlide(1)"></div>
-                    <div class="indicator" onclick="goToSlide(2)"></div>
-                </div>
-                
-                <button class="nav-btn" onclick="nextTestimonial()" aria-label="Témoignage suivant">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Section Système de Parrainage -->
-    
-    <!-- Section Conseils Saisonniers -->
-    <section class="seasonal-tips">
-        <div class="seasonal-container">
-            <div class="seasonal-content">
-                <div class="seasonal-info animate-on-scroll animate-on-scroll">
-                    <h2>Conseils de Saison</h2>
-                    <p>Pendant les fêtes de fin d'année, les risques de perte de documents augmentent. Voici nos conseils pour éviter les désagréments.</p>
-                </div>
-                <div class="tips-grid animate-on-scroll">
-                    <div class="tip-card animate-on-scroll" data-aos="fade-up" data-aos-delay="100">
-                        <i class="fas fa-shield-alt tip-icon"></i>
-                        <h4>Attention aux Pickpockets</h4>
-                        <p>Restez vigilants dans les marchés et lieux bondés. Gardez vos documents dans des poches intérieures.</p>
-                    </div>
-                    
-                    <div class="tip-card animate-on-scroll" data-aos="fade-up" data-aos-delay="200">
-                        <i class="fas fa-copy tip-icon"></i>
-                        <h4>Faites des Copies</h4>
-                        <p>Numérisez vos documents importants et conservez-les en sécurité dans le cloud.</p>
-                    </div>
-                    
-                    <div class="tip-card animate-on-scroll" data-aos="fade-up" data-aos-delay="300">
-                        <i class="fas fa-bell tip-icon"></i>
-                        <h4>Déclarez Rapidement</h4>
-                        <p>Plus vous déclarez tôt, plus vous avez de chances de récupérer vos documents.</p>
-                    </div>
-                    
-                    <div class="tip-card animate-on-scroll" data-aos="fade-up" data-aos-delay="400">
-                        <i class="fas fa-phone-alt tip-icon"></i>
-                        <h4>Contacts d'Urgence</h4>
-                        <p>Mémorisez les numéros d'urgence locaux et gardez toujours une liste de contacts importants accessible.</p>
-                    </div>
-                </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Section Partenariats -->
-    <section class="partnerships-section">
-        <div class="partnerships-container">
-            <div class="section-header animate-on-scroll">
-                <h2>Nos Partenaires</h2>
-                <p>Découvrez les institutions qui nous font confiance pour améliorer le service</p>
-            </div>
-            <div class="partnerships-grid">
-                <div class="partner-card animate-on-scroll" data-aos="fade-up" data-aos-delay="100">
-                    <div class="partner-logo">
-                        <i class="fas fa-university"></i>
-                    </div>
-                    <h4>Préfecture du Centre</h4>
-                    <p>Partenariat officiel pour la récupération des documents administratifs</p>
-                </div>
-                <div class="partner-card animate-on-scroll" data-aos="fade-up" data-aos-delay="200">
-                    <div class="partner-logo">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <h4>Université de Yaoundé</h4>
-                    <p>Collaboration pour les diplômes et certificats universitaires</p>
-                </div>
-                <div class="partner-card animate-on-scroll" data-aos="fade-up" data-aos-delay="300">
-                    <div class="partner-logo">
-                        <i class="fas fa-building"></i>
-                    </div>
-                    <h4>Mairie de Douala</h4>
-                    <p>Récupération facilitée des actes d'état civil</p>
-                </div>
-                <div class="partner-card animate-on-scroll" data-aos="fade-up" data-aos-delay="400">
-                    <div class="partner-logo">
-                        <i class="fas fa-id-card"></i>
-                    </div>
-                    <h4>Centre National des Cartes</h4>
-                    <p>Partenariat pour les cartes d'identité et passeports</p>
-                </div>
-                <div class="partner-card animate-on-scroll" data-aos="fade-up" data-aos-delay="500">
-                    <div class="partner-logo">
-                        <i class="fas fa-car"></i>
-                    </div>
-                    <h4>Direction des Transports</h4>
-                    <p>Récupération des permis de conduire et cartes grises</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer class="footer">
-        <div class="footer-container">
-            <!-- Section principale -->
-            <div class="footer-main">
-                <div class="footer-section">
-                    <div class="footer-logo">
-                        <img src="{{asset('images/logo.png')}}" alt="DocMaster">
-                        <h3>DocMaster</h3>
-                    </div>
-                    <p class="footer-description">
-                        Retrouvez vos documents perdus grâce à notre plateforme communautaire. 
-                        Plus de 2000 documents déjà retrouvés !
-                    </p>
-                    <div class="footer-stats">
-                        <div class="stat">
-                            <span class="stat-number">2000+</span>
-                            <span class="stat-label">Documents retrouvés</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-number">500+</span>
-                            <span class="stat-label">Utilisateurs actifs</span>
-                        </div>
-                    </div>
-                </div>
-    
-                <div class="footer-section">
-                    <h4>Navigation</h4>
-                    <ul class="footer-links">
-                        <li><a href="{{route('home')}}"><i class="fas fa-home"></i> Accueil</a></li>
-                        <li><a href="{{route('search')}}"><i class="fas fa-search"></i> Rechercher</a></li>
-                        <li><a href=""><i class="fas fa-box"></i> Objets perdus</a></li>
-                        <li><a href="{{route('declarer')}}"><i class="fas fa-file-alt"></i> Faire une déclaration</a></li>
-                    </ul>
-                </div>
-    
-                <div class="footer-section">
-                    <h4>Services</h4>
-                    <ul class="footer-links">
-                        <li><a href="#"><i class="fas fa-id-card"></i> Cartes d'identité</a></li>
-                        <li><a href="#"><i class="fas fa-credit-card"></i> Cartes bancaires</a></li>
-                        <li><a href="#"><i class="fas fa-graduation-cap"></i> Diplômes</a></li>
-                        <li><a href="#"><i class="fas fa-key"></i> Clés</a></li>
-                        <li><a href="#"><i class="fas fa-mobile-alt"></i> Téléphones</a></li>
-                    </ul>
-                </div>
-    
-                <div class="footer-section">
-                    <h4>Support</h4>
-                    <ul class="footer-links">
-                        <li><a href="#"><i class="fas fa-question-circle"></i> FAQ</a></li>
-                        <li><a href="#"><i class="fas fa-envelope"></i> Contact</a></li>
-                        <li><a href="#"><i class="fas fa-shield-alt"></i> Sécurité</a></li>
-                        <li><a href="#"><i class="fas fa-book"></i> Guide d'utilisation</a></li>
-                    </ul>
-                </div>
-    
-                <div class="footer-section">
-                    <h4>Restez connecté</h4>
-                    <div class="social-links">
-                        <a href="#" class="social-link facebook">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="#" class="social-link twitter">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="#" class="social-link instagram">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-                        <a href="#" class="social-link whatsapp">
-                            <i class="fab fa-whatsapp"></i>
-                        </a>
-                    </div>
-                    <div class="newsletter">
-                        <h5>Newsletter</h5>
-                        <div class="newsletter-form">
-                            <input type="email" placeholder="Votre email">
-                            <button type="submit">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-    
-            <!-- Section contact rapide -->
-            <div class="footer-contact">
-                <div class="contact-item">
-                    <i class="fas fa-phone"></i>
-                    <span>+237 672 518 313</span>
-                </div>
-                <div class="contact-item">
-                    <i class="fas fa-envelope"></i>
-                    <span>contact@docmaster.cm</span>
-                </div>
-                <div class="contact-item">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>Yaoundé, Cameroun</span>
-                </div>
-            </div>
-    
-            <!-- Section bottom -->
-            <div class="footer-bottom">
-                <div class="footer-bottom-content">
-                    <p>&copy; 2025 DocMaster. Tous droits réservés.</p>
-                    <div class="footer-bottom-links">
-                        <a href="#">Conditions d'utilisation</a>
-                        <a href="#">Politique de confidentialité</a>
-                        <a href="#">Mentions légales</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    
-        <!-- Décoration du footer -->
-        <div class="footer-decoration">
-            <div class="footer-circle circle-1"></div>
-            <div class="footer-circle circle-2"></div>
-            <div class="footer-circle circle-3"></div>
-        </div>
-    </footer>
-    
-    <div class="bottom-nav" >
-        <a href="{{route('home')}}" class="active" title="Accueil"><i class="fas fa-home"></i> <span>Accueil</span></a>
-        <a href="{{route('search')}}" title="Rechercher"><i class="fas fa-search"></i> <span>Rechercher</span></a>
-        <a href="{{route('objets')}}" title="Objets"><i class="fas fa-box"></i> <span>Objets</span></a>
-        <a href="{{route('declarer')}}" title="déclarer"><i class="fas fa-file-alt"></i>
- <span>Déclarer</span></a>
-    </div>
-
-  <div class="background-circles">
-    <div class="circle top-left"></div>
-    <div class="circle top-right"></div>
+  <div class="containr testimonials-header" style="text-align:center;max-width:1100px;margin:48px auto 0;padding:36px 16px 12px;display:block;">
+  <h2 id="testimonials-title" style="font-size:48px;margin:0 auto 12px;color:var(--orange);font-weight:800;letter-spacing:0.5px;text-align:center;">
+    Ce Que Disent Nos Utilisateurs
+  </h2>
+  <p style="margin:12px auto 18px;max-width:760px;color:#111;font-weight:600;text-align:center;">
+    Découvrez les témoignages de ceux qui ont retrouvé leurs documents grâce à DocMaster
+  </p>
+  <div class="header-accent" style="height:6px;width:120px;margin:12px auto;border-radius:6px;background:linear-gradient(90deg,var(--orange),var(--orange-dark));box-shadow:0 6px 18px rgba(249,115,22,0.08);"></div>
 </div>
 
-    <script src="client/js/home.js"></script>
-    
+
+
+  <!-- Testimonials -->
+ 
+      <div class="testimonials-slider">
+        <div class="testimonial-track" id="testimonialTrack">
+          <article class="testimonial-slide">
+            <div class="testimonial-content">
+              Interface intuitive, système de récompenses motivant. J'ai déjà aidé 12 personnes à retrouver leurs documents. Une vraie communauté solidaire !
+            </div>
+
+            <div class="testimonial-footer">
+              <div class="avatar"><i class="fas fa-user"></i></div>
+              <div>
+                <div class="author">Sandra EKOTTO</div>
+                <div class="author-sub"><i class="fas fa-graduation-cap"></i> Étudiante, Bafoussam</div>
+              </div>
+            </div>
+
+            <div class="testimonial-underline" aria-hidden="true"></div>
+          </article>
+
+          <article class="testimonial-slide">
+            <div class="testimonial-content">"En moins de 48h j'ai récupéré ma carte."</div>
+            <div class="testimonial-footer">
+              <div class="avatar"><i class="fas fa-user"></i></div>
+              <div>
+                <div class="author">Pierre MARTIN</div>
+                <div class="author-sub">Employé, Douala</div>
+              </div>
+            </div>
+            <div class="testimonial-underline" aria-hidden="true"></div>
+          </article>
+
+          <article class="testimonial-slide">
+            <div class="testimonial-content">"Service fiable et facile d'utilisation."</div>
+            <div class="testimonial-footer">
+              <div class="avatar"><i class="fas fa-user"></i></div>
+              <div>
+                <div class="author">Amina NDONGO</div>
+                <div class="author-sub">Commerçante, Yaoundé</div>
+              </div>
+            </div>
+            <div class="testimonial-underline" aria-hidden="true"></div>
+          </article>
+  <section class="testimonials-section">
+    <div class="testimonials-container">
+      <div class="testimonials-slider">
+        <div class="testimonial-track" id="testimonialTrack" aria-live="polite"></div>
+        <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+      </div>
+
+      <div class="testimonial-controls" id="testimonialControls" aria-hidden="false">
+        <button class="nav-btn" id="prevBtn" aria-label="Précédent"><i class="fas fa-chevron-left"></i></button>
+        <div class="indicator-dots" id="dots" role="tablist" aria-label="Indicateurs"></div>
+        <button class="nav-btn" id="nextBtn" aria-label="Suivant"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </section>
+
+        </div>
+
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+  <!-- Scripts -->
+  <script src="./index.js" defer></script>
 </body>
 </html>
->>>>>>> Stashed changes
