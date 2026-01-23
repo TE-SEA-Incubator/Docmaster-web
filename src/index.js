@@ -51,8 +51,19 @@ const data = {
       proprietaire: "Awa Traoré",
       retrouve_par: "Koffi Paul",
       pourcentage_restitution: 80,
-      image_url: "assets/images/passport.jpg",
+      image_url: "assets/images/passport.jpeg",
     },
+    {
+      id: 3,
+      titre: "Acte de Naissance",
+      date_retrouve: "03/02/2025",
+      statut: "RÉCENT",
+      priorite: 3,
+      proprietaire: "Koffi Paul",
+      retrouve_par: "Theodore Mbarga",
+      pourcentage_restitution: 12,
+      image_url: "assets/images/acte-naiss.jpeg",
+   },
   ],
 };
 
@@ -363,16 +374,63 @@ function initStatsCounter() {
 }
 
 /* Animate-on-scroll */
-function initScrollAnimations() {
-  const els = document.querySelectorAll('.animate-on-scroll');
-  if (!els.length) return;
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) e.target.classList.add('in-view');
-    });
-  }, { threshold: 0.12 });
-  els.forEach(el => io.observe(el));
+
+const track = document.getElementById("testimonialTrack");
+const slides = Array.from(track.children);
+const nextBtn = document.getElementById("nextBtn");
+const prevBtn = document.getElementById("prevBtn");
+const dotsContainer = document.getElementById("dots");
+
+let currentIndex = 0;
+
+slides.forEach((_, i) => {
+  const dot = document.createElement("div");
+  dot.classList.add("indicator");
+  if (i === 0) dot.classList.add("active");
+  dot.addEventListener("click", () => goToSlide(i));
+  dotsContainer.appendChild(dot);
+});
+const dots = Array.from(dotsContainer.children);
+
+function updateDots() {
+  dots.forEach(dot => dot.classList.remove("active"));
+  dots[currentIndex].classList.add("active");
 }
+
+function goToSlide(index) {
+  currentIndex = index;
+  track.style.transform = `translateX(-${currentIndex * 100}%)`;
+  updateDots();
+}
+
+nextBtn.addEventListener("click", () => {
+  currentIndex = (currentIndex + 1) % slides.length;
+  goToSlide(currentIndex);
+});
+
+prevBtn.addEventListener("click", () => {
+  currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+  goToSlide(currentIndex);
+});
+
+// index.js
+document.addEventListener("DOMContentLoaded", () => {
+  const animatedSections = document.querySelectorAll(".animate-on-scroll");
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("in-view");
+        }
+      });
+    },
+    { threshold: 0.2 }
+  );
+
+  animatedSections.forEach((section) => observer.observe(section));
+});
+
 
 /* --------------------------
    Stats decorative dots (simple JS animation)

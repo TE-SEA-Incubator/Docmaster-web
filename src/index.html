@@ -1,65 +1,324 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="./output.css" rel="stylesheet" />
+    <link rel="stylesheet" href="./main.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="shortcut icon"
+      href="./assets//images/favicon.png"
+      type="image/x-icon"
+    />
+    <!-- Font Awesome Free CDN -->
+    <script
+      src="https://kit.fontawesome.com/28702e0585.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="./index.js" defer></script>
+    <title>DocMaster</title>
+  </head>
+      <body class="relative min-h-screen bg-white overflow-x-hidden">
+    <div class="fixed inset-0 pointer-events-none" style="z-index: 0">
+     
 
+      <style>
+        .search-input:focus,
+        .form-select:focus {
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+      </style>
+      <div
+        class="mask-radial-at-top-left mask-radial-from-100% bg-orange-300"
+      ></div>
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>DocMaster</title>
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="./main.css" />
-
-  <!-- FontAwesome -->
-  <script src="https://kit.fontawesome.com/28702e0585.js" crossorigin="anonymous" defer></script>
-</head>
-<body class="referral-section"  >
-<div class="absolute inset-0 pointer-events-none"
-        style="background-image: radial-gradient(#EFA751 1px, transparent 1px); background-size: 16px 16px; z-index: 1;">
+      <div
+        class="absolute inset-0 pointer-events-none z-0"
+        style="
+          background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
+          background-repeat: repeat;
+          background-size: 8px 8px;
+        "
+      ></div>
     </div>
 
-  <!-- HERO (main background) -->
-  <div class="main-background" style="background-image: url('./assets/images/bg2.jpeg');">
-    <div class="containr">
-      <p class="main-text">
-        <span class="line1"><strong>Bienvenue,</strong> DocMaster a permis</span>
-        <span class="line2">de retrouver plus de 2000 cartes</span>
-        <span class="line3">et autres documents à ce jour</span>
-      </p>
-    </div>
-  </div>
+    <div class="relative" style="z-index: 10">
+    <header class="pb-5">
+        <nav
+          class="hidden md:flex fixed top-0 z-50 w-full items-center rounded-xl justify-between p-4 bg-white shadow-md"
+        >
+          <div
+            class="absolute inset-0 pointer-events-none z-0"
+            style="
+              background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
+              background-repeat: repeat;
+              background-size: 8px 8px;
+            "
+          ></div>
+          <div class="logo">
+            <a href="index.html">
+              <img
+                src="./assets/images/logo.png"
+                alt="DocMaster Logo"
+                class="h-12"
+              />
+            </a>
+          </div>
+          <div class="menu flex items-center justify-center">
+            <ul class="flex items-center justify-between space-x-5">
+              <li class="nav-link">
+                <a
+                  href="index.html"
+                  class="group flex items-center gap-2 text-orange-300 font-bold hover:bg-[#eca85c] hover:text-white p-2 rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110"
+                >
+                  <i
+                    class="fa-solid fa-house text-black group-hover:text-white transition-colors duration-300"
+                  ></i>
+                  Home</a
+                >
+              </li>
+              <li class="nav-link">
+                <a href="rechercher.html" class="font-bold">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  Recherche
+                </a>
+              </li>
 
- 
-  <!-- Documents récemment ajoutés -->
-  <div class="section-title">
-    <h2><i class="fas fa-clock"></i> Documents récemment ajoutés</h2>
-  </div>
+              <li class="nav-link">
+                <a
+                  href="./object.html"
+                  class="group flex items-center gap-2 text-orange-300 font-bold hover:bg-[#eca85c] hover:text-white p-2 rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110"
+                >
+                  <i
+                    class="fa-solid fa-box text-black group-hover:text-white transition-colors duration-300"
+                  ></i>
+                  Object
+                </a>
+              </li>
+              <li class="nav-link">
+                <a
+                  href="document.html"
+                  class="group flex items-center gap-2 text-orange-300 font-bold hover:bg-[#eca85c] hover:text-white p-2 rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110"
+                  ><i
+                    class="fa-solid fa-file text-black group-hover:text-white transition-colors duration-300"
+                  ></i>
+                  document</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="p-1">
+            <a
+              href="login.html"
+              class="bg-orange-300 p-1 rounded-full shadow-md hover:bg-orange-400 transition duration-300 transform hover:-translate-y-2 hover:scale-110 inline-block"
+            >
+              <span class="text-white font-semibold">DM</span>
+            </a>
+            <div class="relative inline-block text-left">
+              <button
+                id="langButtonMobile"
+                class="flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 px-3 py-2 rounded-xl hover:bg-orange-50 transition-all shadow-sm"
+              >
+                <img
+                  id="currentFlagMobile"
+                  src="https://flagcdn.com/w20/fr.png"
+                  alt="Français"
+                  class="w-5 h-auto"
+                />
+                <span class="text-sm font-bold text-gray-700">FR</span>
+                <i
+                  class="fa-solid fa-chevron-down text-[10px] text-gray-400"
+                ></i>
+              </button>
 
-  <div class="contain" id="trouve">
-    <div class="cards-grid">
-      <article class="card recent">
-        <img src="./assets/images/Carte d'identité.png" alt="Carte d'identité">
-        <div class="card-content">
-          <div class="title">Carte d'identité</div>
-          <div class="meta">13/08/2025 — Propriétaire: <span class="owner">Jean Dupont</span></div>
-          <div class="restitution-section">
-            <div class="restitution-progress">
-              <div class="progress-circle" style="--progress: 180deg;">
-                <div class="progress-text">50%</div>
+              <div
+                id="langDropdownMobile"
+                class="hidden absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+              >
+                <button
+                  onclick="changeLang('fr', 'https://flagcdn.com/w20/fr.png')"
+                  class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition"
+                >
+                  <img
+                    src="https://flagcdn.com/w20/fr.png"
+                    class="w-5"
+                    alt="FR"
+                  />
+                  <span class="text-sm">Français</span>
+                </button>
+                <button
+                  onclick="changeLang('en', 'https://flagcdn.com/w20/gb.png')"
+                  class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition"
+                >
+                  <img
+                    src="https://flagcdn.com/w20/gb.png"
+                    class="w-5"
+                    alt="EN"
+                  />
+                  <span class="text-sm">English</span>
+                </button>
               </div>
-              <div class="progress-label">Restitution</div>
-            </div>
-            <div class="restitution-action">
-              <button class="btn-recuperer" onclick="handleRecuperation('123')">Récupérer</button>
             </div>
           </div>
-        </div>
-      </article>
-      <!-- autres cards dynamiques -->
-    </div>
+        </nav>
+        <nav
+          class="flex md:hidden fixed top-0 z-60 w-full items-center  justify-between p-2 bg-white shadow-md"
+        >
+          <div
+            class="absolute inset-0 pointer-events-none z-0"
+            style="
+              background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
+              background-repeat: repeat;
+              background-size: 8px 8px;
+            "
+          ></div>
+          <div class="logo">
+            <a href="index.html">
+              <img
+                src="./assets/images/logo.png"
+                alt="DocMaster Logo"
+                class="h-12"
+              />
+            </a>
+          </div>
+          
+          <div class="p-1">
+            <a
+              href="login.html"
+              class="bg-orange-300 p-1 rounded-full shadow-md hover:bg-orange-400 transition duration-300 transform hover:-translate-y-2 hover:scale-110 inline-block"
+            >
+              <span class="text-white font-semibold">DM</span>
+            </a>
+            <div class="relative inline-block text-left">
+              <button
+                id="langButton"
+                class="flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 px-3 py-2 rounded-xl hover:bg-orange-50 transition-all shadow-sm"
+              >
+                <img
+                  id="currentFlag"
+                  src="https://flagcdn.com/w20/fr.png"
+                  alt="Français"
+                  class="w-5 h-auto"
+                />
+                <span class="text-sm font-bold text-gray-700">FR</span>
+                <i
+                  class="fa-solid fa-chevron-down text-[10px] text-gray-400"
+                ></i>
+              </button>
+
+              <div
+                id="langDropdown"
+                class="hidden absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+              >
+                <button
+                  onclick="changeLang('fr', 'https://flagcdn.com/w20/fr.png')"
+                  class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition"
+                >
+                  <img
+                    src="https://flagcdn.com/w20/fr.png"
+                    class="w-5"
+                    alt="FR"
+                  />
+                  <span class="text-sm">Français</span>
+                </button>
+                <button
+                  onclick="changeLang('en', 'https://flagcdn.com/w20/gb.png')"
+                  class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition"
+                >
+                  <img
+                    src="https://flagcdn.com/w20/gb.png"
+                    class="w-5"
+                    alt="EN"
+                  />
+                  <span class="text-sm">English</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </nav>
+      </header>
+    <main class="relative min-h-screen z-10 px-4">
+
+     <div class="hero-container">
+  <div class="hero-image">
+    <img src="./assets/images/bg2.jpeg" alt="Documents retrouvés" />
   </div>
 
+  <div class="hero-text">
+    <p class="main-text">
+      <span class="line1"><strong>Bienvenue,</strong> DocMaster a permis</span>
+      <span class="line2">de retrouver plus de 2000 cartes</span>
+      <span class="line3">et autres documents à ce jour</span>
+    </p>
+  </div>
+</div> 
  
+ <!-- fin #document-container -->
+
+
+
+<!-- Documents récemment ajoutés -->
+<div class="section-title col-span-full text-center my-8">
+  <h2 class="text-3xl font-extrabold text-gray-800 flex items-center justify-center gap-3">
+    <i class="fas fa-clock text-orange-400"></i>
+    Documents récemment ajoutés
+  </h2>
+</div>
+
+<section>
+  <div
+    id="document-container"
+    class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 p-6"
+  ></div>
+</section>
+
+<!-- WHY / Pourquoi Utiliser DocMaster ? - ajouté après "Documents récemment ajoutés" -->
+<section class="why-section" aria-labelledby="why-title">
+  <div class="containr why-inner">
+    <h2 id="why-title" class="why-title">Pourquoi Utiliser DocMaster ?</h2>
+
+    <div class="why-grid">
+      <article class="why-feature">
+        <span class="badge">PRINCIPAL</span>
+        <h3>Retrouvez Vos Documents Facilement</h3>
+        <p class="why-lead">
+          Grâce à notre système intelligent et notre réseau communautaire, récupérez vos documents perdus en quelques clics. Notre assistance personnalisée vous accompagne à chaque étape du processus de récupération.
+        </p>
+        <p class="why-meta"><i class="fas fa-search"></i> Récupération assistée 24h/7j</p>
+      </article>
+
+      <div class="why-cards">
+        <article class="mini-card">
+          <h4>Enregistrez Vos Objets Précieux</h4>
+          <p>Créez un profil sécurisé pour chaque objet important. Photos et descriptions sont chiffrées.</p>
+        </article>
+
+        <article class="mini-card">
+          <h4>Récompenses Pour Retrouvailles</h4>
+          <p>Motivez la communauté avec notre système de récompenses. Plus vous aidez, plus vous gagnez !</p>
+        </article>
+
+        <article class="mini-card">
+          <h4>Sécurité & Confidentialité</h4>
+          <p>Toutes les données sont stockées en conformité et protégées par chiffrement.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ...existing code... -->
+
+<div style="text-align:center;margin:40px 0 18px;">
+  <h2 style="margin:0;font-size:clamp(22px,4vw,40px);font-weight:900;color:#000;">Docmaster en chiffres</h2>
+  <div style="width:110px;height:6px;background:linear-gradient(90deg,#f97316,#ea580c);margin:25px auto;border-radius:6px;"></div>
+</div>
+
 
   <!-- STATS : layout avec positions et décor animé -->
   <section class="stats-section animate-on-scroll" aria-label="DocMaster en chiffres">
@@ -159,73 +418,448 @@
   <div class="header-accent" style="height:6px;width:120px;margin:12px auto;border-radius:6px;background:linear-gradient(90deg,var(--orange),var(--orange-dark));box-shadow:0 6px 18px rgba(249,115,22,0.08);"></div>
 </div>
 
+<!-- Testimonials Section -->
+<section class="testimonials-section ">
+  <div class="testimonials-container">
+    <!-- Header du slider -->
+    <div class="testimonials-header">
+      <h2 id="testimonials-title"></h2>
+      <div class="header-accent"></div>
+    </div>
 
-
-  <!-- Testimonials -->
- 
-      <div class="testimonials-slider">
-        <div class="testimonial-track" id="testimonialTrack">
-          <article class="testimonial-slide">
-            <div class="testimonial-content">
-              Interface intuitive, système de récompenses motivant. J'ai déjà aidé 12 personnes à retrouver leurs documents. Une vraie communauté solidaire !
+    <!-- Slider -->
+    <div class="testimonials-slider">
+      <div class="testimonial-track" id="testimonialTrack">
+        <!-- Slide 1 -->
+        <article class="testimonial-slide">
+          <div class="testimonial-content">
+            Interface intuitive, système de récompenses motivant. J'ai déjà aidé 12 personnes à retrouver leurs documents. Une vraie communauté solidaire !
+          </div>
+          <div class="testimonial-footer">
+            <div class="avatar"><i class="fas fa-user"></i></div>
+            <div>
+              <div class="author">Sandra EKOTTO</div>
+              <div class="author-sub"><i class="fas fa-graduation-cap"></i> Étudiante, Bafoussam</div>
             </div>
+          </div>
+          <div class="testimonial-underline" aria-hidden="true"></div>
+        </article>
 
-            <div class="testimonial-footer">
-              <div class="avatar"><i class="fas fa-user"></i></div>
-              <div>
-                <div class="author">Sandra EKOTTO</div>
-                <div class="author-sub"><i class="fas fa-graduation-cap"></i> Étudiante, Bafoussam</div>
-              </div>
+        <!-- Slide 2 -->
+        <article class="testimonial-slide">
+          <div class="testimonial-content">
+            En moins de 48h j'ai récupéré ma carte.
+          </div>
+          <div class="testimonial-footer">
+            <div class="avatar"><i class="fas fa-user"></i></div>
+            <div>
+              <div class="author">Pierre MARTIN</div>
+              <div class="author-sub">Employé, Douala</div>
             </div>
+          </div>
+          <div class="testimonial-underline" aria-hidden="true"></div>
+        </article>
 
-            <div class="testimonial-underline" aria-hidden="true"></div>
-          </article>
-
-          <article class="testimonial-slide">
-            <div class="testimonial-content">"En moins de 48h j'ai récupéré ma carte."</div>
-            <div class="testimonial-footer">
-              <div class="avatar"><i class="fas fa-user"></i></div>
-              <div>
-                <div class="author">Pierre MARTIN</div>
-                <div class="author-sub">Employé, Douala</div>
-              </div>
+        <!-- Slide 3 -->
+        <article class="testimonial-slide">
+          <div class="testimonial-content">
+            Service fiable et facile d'utilisation.
+          </div>
+          <div class="testimonial-footer">
+            <div class="avatar"><i class="fas fa-user"></i></div>
+            <div>
+              <div class="author">Amina NDONGO</div>
+              <div class="author-sub">Commerçante, Yaoundé</div>
             </div>
-            <div class="testimonial-underline" aria-hidden="true"></div>
-          </article>
-
-          <article class="testimonial-slide">
-            <div class="testimonial-content">"Service fiable et facile d'utilisation."</div>
-            <div class="testimonial-footer">
-              <div class="avatar"><i class="fas fa-user"></i></div>
-              <div>
-                <div class="author">Amina NDONGO</div>
-                <div class="author-sub">Commerçante, Yaoundé</div>
-              </div>
-            </div>
-            <div class="testimonial-underline" aria-hidden="true"></div>
-          </article>
-  <section class="testimonials-section">
-    <div class="testimonials-container">
-      <div class="testimonials-slider">
-        <div class="testimonial-track" id="testimonialTrack" aria-live="polite"></div>
-        <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+          </div>
+          <div class="testimonial-underline" aria-hidden="true"></div>
+        </article>
       </div>
 
-      <div class="testimonial-controls" id="testimonialControls" aria-hidden="false">
+      <!-- Contrôles -->
+      <div class="testimonial-controls" id="testimonialControls">
         <button class="nav-btn" id="prevBtn" aria-label="Précédent"><i class="fas fa-chevron-left"></i></button>
-        <div class="indicator-dots" id="dots" role="tablist" aria-label="Indicateurs"></div>
+        <div class="indicator-dots" id="dots"></div>
         <button class="nav-btn" id="nextBtn" aria-label="Suivant"><i class="fas fa-chevron-right"></i></button>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-        </div>
+    </main>
+    <nav
+      class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 -shadow-lg md:hidden"
+    >
+     <div
+        class="mask-radial-at-top-left mask-radial-from-100% bg-orange-300"
+      ></div>
 
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
+      <div
+        class="absolute inset-0 pointer-events-none z-0"
+        style="
+          background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
+          background-repeat: repeat;
+          background-size: 8px 8px;
+        "
+      ></div>
+      <ul class="flex justify-around items-center py-2">
+        <li class="nav-link">
+          <a href="index.html" class="flex flex-col items-center text-gray-500">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span class="text-xs">Home</span>
+          </a>
+        </li>
+
+        <li class="nav-link-mobile">
+          <a
+            href="rechercher.html"
+            class="flex flex-col items-center text-gray-500"
+          >
+            <i class="fa-solid fa-magnifying-glass text-xl"></i>
+            <span class="text-xs">Search</span>
+          </a>
+        </li>
+
+        <li class="nav-link-mobile">
+          <a
+            href="object.html"
+            class="flex flex-col items-center text-gray-500"
+          >
+            <i class="fa-solid fa-box text-xl"></i>
+            <span class="text-xs">Objects</span>
+          </a>
+        </li>
+
+        <li class="nav-link-mobile">
+          <a
+            href="document.html"
+            class="flex flex-col items-center text-gray-500"
+          >
+            <i class="fa-solid fa-file text-xl"></i>
+            <span class="text-xs">Docs</span>
+          </a>
+        </li>
+
+        
+      </ul>
+    </nav>
+
+  <!-- ...existing code... -->
+
+ 
+</section> <!-- end testimonials-section -->
+
+<!-- CONSEILS DE SAISON (ajouté après testimonials) -->
+<section class="season-section" aria-labelledby="season-title">
+  <div class="containr season-inner">
+    <div class="season-left">
+      <h2 id="season-title">Conseils de Saisons</h2>
+      <p class="season-lead">
+        Pendant les fêtes de fin d'année, les risques de perte de documents augmentent.
+        Voici nos conseils pour éviter les désagréments et retrouver rapidement vos papiers.
+      </p>
+    </div>
+
+    <div class="season-cards" role="list" aria-label="Conseils">
+      <article class="advice-card" role="listitem">
+        <div class="advice-icon"> <i class="fas fa-shield-alt"></i> </div>
+        <h3>Attention aux Pickpockets</h3>
+        <p>Restez vigilants dans les lieux bondés et gardez vos documents dans des poches intérieures.</p>
+      </article>
+
+      <article class="advice-card" role="listitem">
+        <div class="advice-icon"> <i class="fas fa-copy"></i> </div>
+        <h3>Faites des Copies</h3>
+        <p>Numérisez vos documents importants et conservez-les en sécurité dans le cloud.</p>
+      </article>
+
+      <article class="advice-card" role="listitem">
+        <div class="advice-icon"> <i class="fas fa-bell"></i> </div>
+        <h3>Déclarez Rapidement</h3>
+        <p>Plus vous déclarez tôt, plus vous avez de chances de récupérer vos documents.</p>
+      </article>
+
+      <article class="advice-card" role="listitem">
+        <div class="advice-icon"> <i class="fas fa-phone-alt"></i> </div>
+        <h3>Contacts d'Urgence</h3>
+        <p>Gardez une liste de numéros d'urgence accessible et mémorisez les contacts locaux.</p>
+      </article>
+    </div>
+  </div>
+</section>
+<!-- ...existing code... -->
+
+<!-- PARTENAIRES -->
+<section class="partners-section" aria-labelledby="partners-title">
+  <div class="containr" style="flex-direction:column;align-items:center;">
+    <h2 id="partners-title" class="partners-title">Nos Partenaires</h2>
+    <p class="partners-lead">Découvrez les institutions qui nous font confiance pour améliorer le service</p>
+    <div class="title-accent" aria-hidden="true"></div>
+
+    <div class="partners-grid" role="list">
+      <article class="partner-card" role="listitem">
+        <div class="partner-icon"><i class="fa-solid fa-landmark"></i></div>
+        <h3>Préfecture du Centre</h3>
+        <p>Partenariat officiel pour la récupération des documents administratifs</p>
+      </article>
+
+      <article class="partner-card" role="listitem">
+        <div class="partner-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+        <h3>Université de Yaoundé</h3>
+        <p>Collaboration pour les diplômes et certificats universitaires</p>
+      </article>
+
+      <article class="partner-card" role="listitem">
+        <div class="partner-icon"><i class="fa-solid fa-building"></i></div>
+        <h3>Mairie de Douala</h3>
+        <p>Récupération facilitée des actes d'état civil</p>
+      </article>
+
+      <article class="partner-card" role="listitem">
+        <div class="partner-icon"><i class="fa-solid fa-id-card"></i></div>
+        <h3>Centre National des Cartes</h3>
+        <p>Partenariat pour les cartes d'identité et passeports</p>
+      </article>
+
+      <article class="partner-card" role="listitem">
+        <div class="partner-icon"><i class="fa-solid fa-car"></i></div>
+        <h3>Direction des Transports</h3>
+        <p>Récupération des permis de conduire et cartes grises</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ...existing code... -->
+   
 
   <!-- Scripts -->
   <script src="./index.js" defer></script>
+
+  
+
+
+<footer class="relative bg-black/40 text-white py-12 px-6 overflow-hidden">
+    <div class="absolute inset-0 bg-black/40 pointer-events-none"></div>
+
+    <div class="relative z-10 max-w-7xl mx-auto">
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 border-b border-gray-700 pb-10"
+      >
+        <div class="lg:col-span-1">
+          <div class="flex items-center gap-2 mb-4">
+            <img src="./assets/images/logo.png" alt="Logo" class="h-8" />
+            <span class="text-2xl font-bold">DocMaster</span>
+          </div>
+          <p class="text-sm text-gray-300 mb-6 leading-relaxed">
+            Retrouvez vos documents perdus grâce à notre plateforme
+            communautaire. Plus de 2000 documents déjà retrouvés !
+          </p>
+          <div class="flex gap-8">
+            <div>
+              <div class="text-2xl font-black text-gray-500">2000+</div>
+              <div class="text-[10px] uppercase font-bold text-gray-400">
+                Documents retrouvés
+              </div>
+            </div>
+            <div>
+              <div class="text-2xl font-black text-gray-500">500+</div>
+              <div class="text-[10px] uppercase font-bold text-gray-400">
+                Utilisateurs actifs
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-orange-400 font-bold mb-6 text-lg">Navigation</h3>
+          <ul class="space-y-4">
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-house w-5"></i> Accueil</a
+              >
+            </li>
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-magnifying-glass w-5"></i> Rechercher</a
+              >
+            </li>
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-box w-5"></i> Objets perdus</a
+              >
+            </li>
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-file-lines w-5"></i> Faire une
+                déclaration</a
+              >
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-orange-400 font-bold mb-6 text-lg">Services</h3>
+          <ul class="space-y-4">
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-id-card w-5"></i> Cartes d'identité</a
+              >
+            </li>
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-credit-card w-5"></i> Cartes bancaires</a
+              >
+            </li>
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-graduation-cap w-5"></i> Diplômes</a
+              >
+            </li>
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-key w-5"></i> Clés</a
+              >
+            </li>
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-mobile-screen w-5"></i> Téléphones</a
+              >
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-orange-400 font-bold mb-6 text-lg">Support</h3>
+          <ul class="space-y-4">
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-circle-question w-5"></i> FAQ</a
+              >
+            </li>
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-envelope w-5"></i> Contact</a
+              >
+            </li>
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-shield-halved w-5"></i> Sécurité</a
+              >
+            </li>
+            <li>
+              <a
+                href="#"
+                class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                ><i class="fa-solid fa-book-open w-5"></i> Guide
+                d'utilisation</a
+              >
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="text-orange-400 font-bold mb-6 text-lg">
+            Restez connecté
+          </h3>
+          <div class="flex gap-3 mb-8">
+            <a
+              href="#"
+              class="w-10 h-10 bg-blue-700 flex items-center justify-center rounded-full hover:scale-110 transition"
+              ><i class="fa-brands fa-facebook-f"></i
+            ></a>
+            <a
+              href="#"
+              class="w-10 h-10 bg-sky-400 flex items-center justify-center rounded-full hover:scale-110 transition"
+              ><i class="fa-brands fa-twitter"></i
+            ></a>
+            <a
+              href="#"
+              class="w-10 h-10 bg-pink-600 flex items-center justify-center rounded-full hover:scale-110 transition"
+              ><i class="fa-brands fa-instagram"></i
+            ></a>
+            <a
+              href="#"
+              class="w-10 h-10 bg-green-500 flex items-center justify-center rounded-full hover:scale-110 transition"
+              ><i class="fa-brands fa-whatsapp"></i
+            ></a>
+          </div>
+          <h4
+            class="text-sm font-bold text-orange-400 mb-4 uppercase tracking-wider"
+          >
+            Newsletter
+          </h4>
+          <div class="relative">
+            <input
+              type="email"
+              placeholder="Votre email"
+              class="w-full bg-white/10 border border-white/20 rounded-full py-3 px-6 outline-none focus:border-orange-400 transition text-sm"
+            />
+            <button
+              class="absolute right-1 top-1 bottom-1 bg-orange-400 hover:bg-orange-500 px-4 rounded-full transition"
+            >
+              <i class="fa-solid fa-paper-plane text-white"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="flex flex-wrap justify-center gap-8 md:gap-16 py-8 text-sm font-medium border-gray-700/50"
+      >
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-phone text-orange-400"></i> +237 672 518 313
+        </div>
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-envelope text-orange-400"></i>
+          contact@docmaster.cm
+        </div>
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-location-dot text-orange-400"></i> Yaoundé,
+          Cameroun
+        </div>
+      </div>
+
+      <div
+        class="flex flex-col md:row justify-between items-center pt-6 text-[12px] text-gray-400 gap-4"
+      >
+        <p>© 2025 DocMaster. Tous droits réservés.</p>
+        <div class="flex gap-6">
+          <a href="#" class="hover:text-white transition"
+            >Conditions d'utilisation</a
+          >
+          <a href="#" class="hover:text-white transition"
+            >Politique de confidentialité</a
+          >
+          <a href="#" class="hover:text-white transition">Mentions légales</a>
+        </div>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>
->>>>>>> origin/momo
+
