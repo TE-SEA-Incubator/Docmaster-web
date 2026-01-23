@@ -1,0 +1,145 @@
+
+/* main.css */
+.nav-link.active a {
+  background-color: #eca85c;
+  color: white;
+  font-weight: bold;
+  border-bottom: 2px solid #eca85c;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.nav-link-mobile.active a {
+  
+  color:  #eca85c;
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 10px;
+}
+.clip-curve {
+  clip-path: ellipse(70% 100% at 0% 0%);
+}
+body {
+    font-family: 'Poppins', sans-serif;
+  }
+.footer-molecule {
+  position: absolute;
+  bottom: 0;
+  left: calc(50% - 75px); 
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(#ECA75B, transparent); /* Ajout de transparent pour le dégradé */
+  border-radius: 50% 55% 45% 50% / 50% 45% 55% 50%;
+  filter: blur(10px);
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none; /* AJOUT : Empêche cette bulle de bloquer les clics sur les boutons */
+  animation: moleculeBlob 6s infinite ease-in-out alternate;
+  transform-origin: center;
+}
+/* Animation type “molécule vivante” */
+@keyframes moleculeBlob {
+  0% {
+    transform: scale(1) translate(0,0) rotate(0deg);
+    border-radius: 50% 55% 45% 50% / 50% 45% 55% 50%;
+  }
+  25% {
+    transform: scale(1.1) translate(10px,-5px) rotate(5deg);
+    border-radius: 45% 60% 40% 55% / 55% 40% 60% 45%;
+  }
+  50% {
+    transform: scale(0.9) translate(-10px,-10px) rotate(-8deg);
+    border-radius: 55% 50% 60% 45% / 50% 55% 40% 60%;
+  }
+  75% {
+    transform: scale(1.05) translate(5px,5px) rotate(3deg);
+    border-radius: 50% 45% 55% 50% / 60% 50% 55% 45%;
+  }
+  100% {
+    transform: scale(1) translate(0,0) rotate(0deg);
+    border-radius: 50% 55% 45% 50% / 50% 45% 55% 50%;
+  }
+}
+@keyframes rotate-border {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.featured-card {
+    position: relative;
+    overflow: hidden; /* Empêche l'animation de déborder */
+    padding: 2px; /* L'épaisseur de votre bordure animée */
+    background: white; /* Fond de secours */
+    z-index: 0;
+}
+
+/* L'élément qui tourne (le dégradé) */
+.featured-card::before {
+    content: "";
+    position: absolute;
+    top: -50%; /* Très large pour couvrir les coins en tournant */
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(
+        from 0deg, 
+        transparent 60%, 
+        #F5A64B 80%, 
+        #2ecc71 90%, 
+        transparent 100%
+    );
+    animation: rotate-border 4s linear infinite;
+    z-index: -2;
+}
+
+/* Le fond interne qui cache le centre du dégradé */
+.featured-card::after {
+    content: "";
+    position: absolute;
+    inset: 2px; /* On laisse 2px pour voir la bordure */
+    background: white;
+    border-radius: calc(2.5rem - 2px);
+    z-index: -1;
+}
+
+@keyframes rotate-border {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.wave-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            line-height: 0;
+        }
+        .featured-card {
+            border-color: #F5A64B !important;
+            transform: scale(1.05);
+            z-index: 20;
+        }
+        .btn-featured {
+            background-color: #F5A64B;
+        }
+        .btn-outline {
+            border: 2px solid #2ecc71;
+            color: white;
+        }
+        .text-orange-nuvi {
+            color: #F5A64B;
+        }
+
+        /* Ajustement pour correspondre à ton design orange/slate */
+  .iti { width: 100%; }
+  .iti__country-list { z-index: 10002; border-radius: 1rem; border: none; shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
+  #payPhone {
+      width: 100%;
+      border: 2px solid #f1f5f9; /* slate-100 */
+      border-radius: 0.75rem;
+      padding: 1rem 1rem 1rem 52px; /* Espace pour le drapeau */
+      outline: none;
+      font-weight: 800;
+      background-color: #f8fafc; /* slate-50 */
+      transition: border-color 0.3s;
+  }
+  #payPhone:focus { border-color: #F5A64B; }

@@ -51,7 +51,7 @@ const data = {
       proprietaire: "Awa Traoré",
       retrouve_par: "Koffi Paul",
       pourcentage_restitution: 80,
-      image_url: "assets/images/passport.jpg",
+      image_url: "assets/images/téléchargement (1).jpg",
     },
   ],
 };

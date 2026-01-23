@@ -1,231 +1,1419 @@
-
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>DocMaster</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DocMaster - Plateforme Documentaire</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="./output.css" rel="stylesheet" />
+    <link rel="stylesheet" href="./rechercher.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.0/build/css/intlTelInput.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.0/build/js/intlTelInput.min.js"></script>
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="./main.css" />
+    <link
+      rel="shortcut icon"
+      href="./assets//images/favicon.png"
+      type="image/x-icon"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <script src="index.js"></script>
+    <script src="script.js"></script>
+    <style>
+      /* Motif à points personnalisé pour le fond */
+      .bg-dots {
+        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+        background-size: 20px 20px;
+      }
+    </style>
+  </head>
+  <body class="relative min-h-screen bg-white overflow-x-hidden">
+    <div class="fixed inset-0 pointer-events-none" style="z-index: 0">
+      <div
+        class="absolute -top-32 -left-32 w-70 aspect-square bg-orange-300 rounded-full mix-blend-multiply opacity-70 pointer-events-none z-0 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
+      ></div>
+      <div
+        class="absolute -top-32 -right-32 w-70 aspect-square bg-orange-300 rounded-full mix-blend-multiply opacity-70 pointer-events-none z-0 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
+      ></div>
 
-  <!-- FontAwesome -->
-  <script src="https://kit.fontawesome.com/28702e0585.js" crossorigin="anonymous" defer></script>
-</head>
-<body class="referral-section"  >
-<div class="absolute inset-0 pointer-events-none"
-        style="background-image: radial-gradient(#EFA751 1px, transparent 1px); background-size: 16px 16px; z-index: 1;">
+      <style>
+        .search-input:focus,
+        .form-select:focus {
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+      </style>
+      <div
+        class="mask-radial-at-top-left mask-radial-from-100% bg-orange-300"
+      ></div>
+
+      <div
+        class="absolute inset-0 pointer-events-none z-0"
+        style="
+          background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
+          background-repeat: repeat;
+          background-size: 8px 8px;
+        "
+      ></div>
     </div>
-
-  <!-- HERO (main background) -->
-  <div class="main-background" style="background-image: url('./assets/images/bg2.jpeg');">
-    <div class="containr">
-      <p class="main-text">
-        <span class="line1"><strong>Bienvenue,</strong> DocMaster a permis</span>
-        <span class="line2">de retrouver plus de 2000 cartes</span>
-        <span class="line3">et autres documents à ce jour</span>
-      </p>
+    <div
+      class="absolute inset-0 pointer-events-none overflow-hidden"
+      style="z-index: 0; min-height: 100%"
+    >
+      <div
+        class="absolute -bottom-32 -left-32 w-60 aspect-square bg-orange-300 rounded-full mix-blend-multiply opacity-70 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
+      ></div>
     </div>
-  </div>
+    <header class="pb-5">
+      <nav
+        class="hidden md:flex fixed top-0 z-50 w-full items-center rounded-xl justify-between p-4 bg-white shadow-md"
+      >
+        <div
+          class="absolute inset-0 pointer-events-none z-0"
+          style="
+            background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
+            background-repeat: repeat;
+            background-size: 8px 8px;
+          "
+        ></div>
+        <div class="logo">
+          <a href="index.html">
+            <img
+              src="./assets/images/logo.png"
+              alt="DocMaster Logo"
+              class="h-12"
+            />
+          </a>
+        </div>
+        <div class="menu flex items-center justify-center">
+          <ul class="flex items-center justify-between space-x-5">
+            <li class="nav-link">
+              <a href="index.html" class="font-bold">
+                <i class="fa-solid fa-house"></i>
+                Accueil
+              </a>
+            </li>
+            <li class="nav-link">
+              <a
+                href="rechercher.html"
+                class="group flex items-center gap-2 text-orange-300 font-bold hover:bg-[#eca85c] hover:text-white p-2 rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110"
+              >
+                <i
+                  class="fa-solid fa-magnifying-glass text-black group-hover:text-white transition-colors duration-300"
+                ></i>
+                Rechercher</a
+              >
+            </li>
 
- 
-  <!-- Documents récemment ajoutés -->
-  <div class="section-title">
-    <h2><i class="fas fa-clock"></i> Documents récemment ajoutés</h2>
-  </div>
+            <li class="nav-link">
+              <a
+                href="./object.html"
+                class="group flex items-center gap-2 text-orange-300 font-bold hover:bg-[#eca85c] hover:text-white p-2 rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110"
+              >
+                <i
+                  class="fa-solid fa-box text-black group-hover:text-white transition-colors duration-300"
+                ></i>
+                Object
+              </a>
+            </li>
+            <li class="nav-link">
+              <a
+                href="document.html"
+                class="group flex items-center gap-2 text-orange-300 font-bold hover:bg-[#eca85c] hover:text-white p-2 rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110"
+                ><i
+                  class="fa-solid fa-file text-black group-hover:text-white transition-colors duration-300"
+                ></i>
+                document</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div class="p-1">
+          <a
+            href="login.html"
+            class="bg-orange-300 p-1 rounded-full shadow-md hover:bg-orange-400 transition duration-300 transform hover:-translate-y-2 hover:scale-110 inline-block"
+          >
+            <span class="text-white font-semibold">DM</span>
+          </a>
+          <div class="relative inline-block text-left">
+            <button
+              id="langButton"
+              class="flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 px-3 py-2 rounded-xl hover:bg-orange-50 transition-all shadow-sm"
+            >
+              <img
+                id="currentFlag"
+                src="https://flagcdn.com/w20/fr.png"
+                alt="Français"
+                class="w-5 h-auto"
+              />
+              <span class="text-sm font-bold text-gray-700">FR</span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-gray-400"></i>
+            </button>
 
-  <div class="contain" id="trouve">
-    <div class="cards-grid">
-      <article class="card recent">
-        <img src="./assets/images/Carte d'identité.png" alt="Carte d'identité">
-        <div class="card-content">
-          <div class="title">Carte d'identité</div>
-          <div class="meta">13/08/2025 — Propriétaire: <span class="owner">Jean Dupont</span></div>
-          <div class="restitution-section">
-            <div class="restitution-progress">
-              <div class="progress-circle" style="--progress: 180deg;">
-                <div class="progress-text">50%</div>
-              </div>
-              <div class="progress-label">Restitution</div>
-            </div>
-            <div class="restitution-action">
-              <button class="btn-recuperer" onclick="handleRecuperation('123')">Récupérer</button>
+            <div
+              id="langDropdown"
+              class="hidden absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+            >
+              <button
+                onclick="changeLang('fr', 'https://flagcdn.com/w20/fr.png')"
+                class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition"
+              >
+                <img
+                  src="https://flagcdn.com/w20/fr.png"
+                  class="w-5"
+                  alt="FR"
+                />
+                <span class="text-sm">Français</span>
+              </button>
+              <button
+                onclick="changeLang('en', 'https://flagcdn.com/w20/gb.png')"
+                class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition"
+              >
+                <img
+                  src="https://flagcdn.com/w20/gb.png"
+                  class="w-5"
+                  alt="EN"
+                />
+                <span class="text-sm">English</span>
+              </button>
             </div>
           </div>
         </div>
-      </article>
-      <!-- autres cards dynamiques -->
-    </div>
+      </nav>
+      <nav class="flex md:hidden fixed top-0 left-0 z-[999] w-full h-16 items-center justify-between px-4 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100">
+  
+  <div class="absolute inset-0 pointer-events-none z-0 opacity-10"
+       style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
+              background-repeat: repeat;
+              background-size: 10px 10px;">
   </div>
 
- 
+  <div class="logo relative z-10 flex-shrink-0">
+    <a href="index.html">
+      <img src="./assets/images/logo.png" alt="DocMaster Logo" class="h-9 w-auto" />
+    </a>
+  </div>
 
-  <!-- STATS : layout avec positions et décor animé -->
-  <section class="stats-section animate-on-scroll" aria-label="DocMaster en chiffres">
-    <div class="stats-container">
-      <div class="stats-grid" role="list">
-        <!-- Top -->
-        <div class="stat-item" style="--x:50%; --y:12%;">
-          <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
-          <div class="stat-number" data-target="2847">0</div>
-          <div class="stat-label">DOCUMENTS<br>DÉCLARÉS</div>
-        </div>
+  <div class="relative z-10 flex items-center gap-2">
+    
+    <div class="relative">
+      <button id="langButton" 
+              class="flex items-center gap-1.5 bg-gray-50 border border-gray-200 pl-2 pr-1.5 py-1.5 rounded-lg active:scale-95 transition-all">
+        <img id="currentFlag" src="https://flagcdn.com/w20/fr.png" alt="FR" class="w-4 h-auto rounded-sm" />
+        <span class="text-xs font-black text-gray-700">FR</span>
+        <i class="fa-solid fa-chevron-down text-[8px] text-gray-400"></i>
+      </button>
 
-        <!-- Left -->
-        <div class="stat-item" style="--x:18%; --y:45%;">
-          <div class="stat-icon"><i class="fas fa-star"></i></div>
-          <div class="stat-number" data-target="4.8">0</div>
-          <div class="stat-label">NOTE<br>MOYENNE</div>
-        </div>
-
-        <!-- Right -->
-        <div class="stat-item" style="--x:82%; --y:45%;">
-          <div class="stat-icon"><i class="fas fa-search"></i></div>
-          <div class="stat-number" data-target="2156">0</div>
-          <div class="stat-label">DOCUMENTS<br>RETROUVÉS</div>
-        </div>
-
-        <!-- Bottom -->
-        <div class="stat-item" style="--x:50%; --y:82%;">
-          <div class="stat-icon"><i class="fas fa-users"></i></div>
-          <div class="stat-number" data-target="1523">0</div>
-          <div class="stat-label">UTILISATEURS<br>ACTIFS</div>
-        </div>
-
-        <!-- centre décoratif / orbite -->
-        <div class="stats-center-orbit" aria-hidden="true"></div>
+      <div id="langDropdown" 
+           class="hidden absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
+        <button onclick="changeLang('fr', 'https://flagcdn.com/w20/fr.png')" class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition text-xs font-bold">
+          <img src="https://flagcdn.com/w20/fr.png" class="w-4" alt="FR" /> Français
+        </button>
+        <button onclick="changeLang('en', 'https://flagcdn.com/w20/gb.png')" class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition text-xs font-bold">
+          <img src="https://flagcdn.com/w20/gb.png" class="w-4" alt="EN" /> English
+        </button>
       </div>
     </div>
-  </section>
 
-   <!-- News / Why -->
-  <!-- ...existing code... -->
-<section class="referral-section animate-on-scroll" aria-labelledby="referral-title">
-  <div class="referral-container containr">
-    <div class="referral-left">
-      <h2 id="referral-title">Système de Parrainage</h2>
-      <p class="referral-lead">
-        Invitez vos amis et gagnez des récompenses ! Plus vous parrainez, plus vous gagnez.
-        Ensemble, construisons une communauté solidaire.
+    <a href="login.html" 
+       class="bg-[#F5A64B] w-9 h-9 flex items-center justify-center rounded-full shadow-lg shadow-orange-100 active:scale-90 transition-all border-2 border-white">
+      <span class="text-white text-[10px] font-black uppercase">DM</span>
+    </a>
+  </div>
+</nav>
+
+<div class="h-16 md:hidden"></div>
+    </header>
+    <section class="w-full mb-5">
+      <div class="relative overflow-hidden min-h-125 flex items-center">
+        <div class="absolute inset-0 z-0">
+          <img
+            src="./assets//images/bg2.jpeg"
+            alt="Background DocMaster"
+            class="w-full h-full object-cover opacity-90"
+          />
+          <div class="absolute inset-0 bg-white/10"></div>
+        </div>
+
+        <div class="relative z-10 p-8 md:p-16 max-w-xl">
+          <h2 class="text-2xl text-[#1a1a1a] leading-snug">
+            <span class="font-black font-bold">Bienvenue,</span>
+            <span class="text-[#E9A865]">DocMaster</span> a permis
+            <br class="hidden md:block" />
+            de retrouver plus de <span>2000 cartes</span>
+            <br class="hidden md:block" />
+            et autres documents à ce jour
+          </h2>
+        </div>
+      </div>
+    </section>
+    <section class="items-center justify-center flex flex-col">
+      <div class="max-w-6xl mx-auto items-center justify-center">
+        <h2 class="md:text-3xl text-xl text-center font-bold text-[#f5a64b]">
+          Documents récemment ajoutés
+        </h2>
+        <div class="w-16 h-1 bg-[#F5A64B] mx-auto mb-10 rounded-full"></div>
+        <div
+          id="document-container"
+          class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 p-6"
+        ></div>
+      </div>
+    </section>
+
+    <section class="py-20 px-6">
+      <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl font-bold text-[#f5a64b]">
+            Pourquoi Utiliser DocMaster ?
+          </h2>
+          <div class="w-16 h-1 bg-[#F5A64B] mx-auto mb-10 rounded-full"></div>
+          <p class="text-gray-600 mt-2">
+            Découvrez tous les avantages de notre plateforme innovante pour la
+            gestion de vos documents
+          </p>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div
+            class="lg:col-span-2 bg-[#f5a64b]/70 p-10 rounded-[2rem] text-white flex flex-col justify-center shadow-xl border border-[#f5a64b]/20"
+          >
+            <span
+              class="bg-white/20 self-start px-4 py-1.5 rounded-full text-[10px] font-bold mb-8 uppercase tracking-wider"
+            >
+              Principal
+            </span>
+
+            <h3 class="text-4xl font-bold mb-6 leading-tight">
+              Retrouvez Vos Documents Facilement
+            </h3>
+
+            <p class="text-lg leading-relaxed opacity-90 mb-8 max-w-2xl">
+              Grâce à notre système intelligent et notre réseau communautaire,
+              récupérez vos documents perdus en quelques clics. Notre assistance
+              personnalisée vous accompagne à chaque étape du processus de
+              récupération.
+            </p>
+
+            <div class="flex items-center gap-3 font-medium">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2.5"
+                stroke="currentColor"
+                class="w-5 h-5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                />
+              </svg>
+              <span class="text-sm">Récupération assistée 24h/7j</span>
+            </div>
+          </div>
+          <div class="space-y-6">
+            <div
+              class="bg-white p-6 rounded-2xl border-l-4 border-[#f5a64b] shadow-sm"
+            >
+              <h4 class="font-bold text-gray-800 mb-2 text-lg">
+                Enregistrez Vos Objets
+              </h4>
+              <p class="text-gray-500 text-sm">
+                Créez un profil sécurisé pour chaque objet. Tout est crypté et
+                protégé.
+              </p>
+            </div>
+            <div
+              class="bg-white p-6 rounded-2xl border-l-4 border-[#f5a64b] shadow-sm"
+            >
+              <h4 class="font-bold text-gray-800 mb-2 text-lg">
+                Récompenses de Trouvailles
+              </h4>
+              <p class="text-gray-500 text-sm">
+                Motivez la communauté. Plus vous aidez, plus vous gagnez !
+              </p>
+            </div>
+            <div
+              class="bg-white p-6 rounded-2xl border-l-4 border-[#f5a64b] shadow-sm"
+            >
+              <h4 class="font-bold text-gray-800 mb-2 text-lg">
+                Réseau Solidaire
+              </h4>
+              <p class="text-gray-500 text-sm">
+                Rejoignez plus de 1500 membres actifs prêts à vous aider.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section
+      class="relative pb-5 overflow-hidden flex items-center justify-center"
+    >
+      <div
+        class="absolute inset-0 opacity-10"
+        style="
+          background-image: radial-gradient(#f5a64b 1px, transparent 1px);
+          background-size: 20px 20px;
+        "
+      ></div>
+
+      <div class="relative max-w-7xl mx-auto text-center z-10">
+        <h2 class="text-3xl font-bold mb-24 text-[#1e293b]">
+          DocMaster en Chiffres
+        </h2>
+
+        <div
+          id="radar-container"
+          class="relative w-[350px] h-[350px] md:w-[650px] md:h-[650px] mx-auto flex items-center justify-center"
+        >
+          <div class="absolute w-full h-[1px] bg-[#C5A059]/20"></div>
+          <div class="absolute h-full w-[1px] bg-[#C5A059]/20"></div>
+
+          <div
+            id="radar-needle"
+            class="absolute h-[200px] w-[2px] md:h-[225px] origin-bottom bottom-1/2 transition-transform duration-1000 ease-in-out z-30"
+            style="transform: rotate(0deg)"
+          >
+            <div
+              class="w-full h-full border-l-2 border-dotted border-[#f5a64b]"
+            ></div>
+            <div
+              class="absolute -top-2 -left-[9px] w-5 h-5 bg-[#f5a64b] rounded-full shadow-[0_0_15px_#f5a64b]"
+            ></div>
+          </div>
+
+          <div
+            id="stat-0"
+            class="stat-card absolute top-0 flex flex-col items-center transition-all duration-500"
+          >
+            <div
+              class="icon-box p-4 rounded-full border-2 border-transparent transition-all"
+            >
+              <i class="fa-solid fa-file-lines text-[#C5A059] mb-2 text-xl"></i>
+              <div
+                class="text-2xl font-bold text-gray-800 counter"
+                data-target="2847"
+              >
+                0
+              </div>
+              <p class="text-[10px] text-gray-400 uppercase font-bold">
+                Documents<br />Déclarés
+              </p>
+            </div>
+          </div>
+
+          <div
+            id="stat-1"
+            class="stat-card absolute right-0 flex flex-col items-center transition-all duration-500"
+          >
+            <div
+              class="icon-box p-4 rounded-full border-2 border-transparent transition-all"
+            >
+              <i class="fa-solid fa-search text-[#C5A059] mb-2 text-xl"></i>
+              <div
+                class="text-2xl font-bold text-gray-800 counter"
+                data-target="2156"
+              >
+                0
+              </div>
+              <p class="text-[10px] text-gray-400 uppercase font-bold">
+                Documents<br />Retrouvés
+              </p>
+            </div>
+          </div>
+
+          <div
+            id="stat-2"
+            class="stat-card absolute bottom-0 flex flex-col items-center transition-all duration-500"
+          >
+            <div
+              class="icon-box p-4 rounded-full border-2 border-transparent transition-all"
+            >
+              <i class="fa-solid fa-users text-[#C5A059] mb-2 text-xl"></i>
+              <div
+                class="text-2xl font-bold text-gray-800 counter"
+                data-target="1523"
+              >
+                0
+              </div>
+              <p class="text-[10px] text-gray-400 uppercase font-bold">
+                Utilisateurs<br />Actifs
+              </p>
+            </div>
+          </div>
+
+          <div
+            id="stat-3"
+            class="stat-card absolute left-0 flex flex-col items-center transition-all duration-500"
+          >
+            <div
+              class="icon-box p-4 rounded-full border-2 border-transparent transition-all"
+            >
+              <i class="fa-solid fa-star text-[#C5A059] mb-2 text-xl"></i>
+              <div class="text-2xl font-bold text-gray-800">4.8</div>
+              <p class="text-[10px] text-gray-400 uppercase font-bold">
+                Note<br />Moyenne
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="w-12 h-12 bg-white rounded-full border-2 border-[#C5A059] flex items-center justify-center z-40 shadow-lg"
+          >
+            <div class="w-3 h-3 bg-[#f5a64b] rounded-full animate-ping"></div>
+          </div>
+        </div>
+      </div>
+
+      <style>
+        /* Effet de focus pointillé autour de la stat active */
+        .stat-active .icon-box {
+          border-color: #f5a64b;
+          border-style: dotted;
+          background: rgba(245, 166, 75, 0.05);
+          transform: scale(1.2);
+          box-shadow: 0 0 20px rgba(245, 166, 75, 0.2);
+        }
+        .stat-card {
+          opacity: 0.4;
+          filter: blur(1px);
+        }
+        .stat-active {
+          opacity: 1;
+          filter: blur(0);
+          z-index: 50;
+        }
+      </style>
+
+      <script>
+        const needle = document.getElementById("radar-needle");
+        const stats = document.querySelectorAll(".stat-card");
+        const counters = document.querySelectorAll(".counter");
+        let currentStep = 0;
+
+        // Fonction pour incrémenter les chiffres
+        const runCounter = (el) => {
+          const target = +el.getAttribute("data-target");
+          let count = 0;
+          const increment = target / 50; // Vitesse de montée
+
+          const update = () => {
+            if (count < target) {
+              count += increment;
+              el.innerText = Math.ceil(count);
+              setTimeout(update, 20);
+            } else {
+              el.innerText = target;
+            }
+          };
+          update();
+        };
+
+        const rotateRadar = () => {
+          // 1. Calcul de l'angle (0, 90, 180, 270)
+          const angle = currentStep * 90;
+          needle.style.transform = `rotate(${angle}deg)`;
+
+          // 2. Retirer le focus de partout
+          stats.forEach((s) => s.classList.remove("stat-active"));
+
+          // 3. Appliquer le focus après l'animation de l'aiguille (1s)
+          setTimeout(() => {
+            const activeStat = document.getElementById(
+              `stat-${currentStep % 4}`,
+            );
+            activeStat.classList.add("stat-active");
+
+            // Lancer le compteur si c'est la première fois ou à chaque passage
+            const counter = activeStat.querySelector(".counter");
+            if (counter) runCounter(counter);
+
+            // Attendre 2 secondes sur l'option
+            setTimeout(() => {
+              currentStep++;
+              rotateRadar();
+            }, 2000);
+          }, 1000);
+        };
+
+        // Lancement au chargement
+        window.addEventListener("load", rotateRadar);
+      </script>
+    </section>
+    <section class="py-20 px-6 bg-white">
+      <div
+        class="max-w-7xl mx-auto flex flex-col md:flex-row gap-16 items-center"
+      >
+        <div class="md:w-1/2">
+          <h2 class="text-4xl font-bold text-[#1e293b] mb-6">
+            Système de Parrainage
+          </h2>
+          <p class="text-gray-600 text-lg mb-8">
+            Invitez vos amis et gagnez des récompenses ! Ensemble, construisons
+            une communauté solidaire.
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-center gap-4 text-gray-700 font-medium">
+              <i class="fas fa-gift text-[#f5a64b]"></i> 500 FCFA par ami
+              parrainé
+            </li>
+            <li class="flex items-center gap-4 text-gray-700 font-medium">
+              <i class="fas fa-coins text-[#f5a64b]"></i> Bonus de 10% sur leurs
+              gains
+            </li>
+            <li class="flex items-center gap-4 text-gray-700 font-medium">
+              <i class="fas fa-crown text-[#f5a64b]"></i> Statut VIP à partir de
+              10 parrainages
+            </li>
+            <li class="flex items-center gap-4 text-gray-700 font-medium">
+              <i class="fas fa-trophy text-[#f5a64b]"></i> Récompenses
+              mensuelles exclusives
+            </li>
+          </ul>
+        </div>
+        <div class="md:w-1/2 space-y-4">
+          <div
+            class="bg-[#f5a64b]/10 p-6 rounded-2xl flex items-center gap-6 border border-[#f5a64b]/20"
+          >
+            <span
+              class="w-10 h-10 bg-white text-[#f5a64b] rounded-full flex items-center justify-center font-bold shadow-sm"
+              >1</span
+            >
+            <div>
+              <h4 class="font-bold">Partagez votre code</h4>
+              <p class="text-sm text-gray-500">
+                Envoyez votre code unique à vos amis
+              </p>
+            </div>
+          </div>
+          <div
+            class="bg-[#f5a64b]/10 p-6 rounded-2xl flex items-center gap-6 border border-[#f5a64b]/20"
+          >
+            <span
+              class="w-10 h-10 bg-white text-[#f5a64b] rounded-full flex items-center justify-center font-bold shadow-sm"
+              >2</span
+            >
+            <div>
+              <h4 class="font-bold">Ils s'inscrivent</h4>
+              <p class="text-sm text-gray-500">
+                Vos amis créent leur compte avec votre code
+              </p>
+            </div>
+          </div>
+          <div
+            class="bg-[#f5a64b]/10 p-6 rounded-2xl flex items-center gap-6 border border-[#f5a64b]/20"
+          >
+            <span
+              class="w-10 h-10 bg-white text-[#f5a64b] rounded-full flex items-center justify-center font-bold shadow-sm"
+              >3</span
+            >
+            <div>
+              <h4 class="font-bold">Vous gagnez</h4>
+              <p class="text-sm text-gray-500">
+                Recevez vos récompenses automatiquement
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <section class="py-20 px-6 relative overflow-hidden">
+        <div
+          class="absolute hidden lg:block top-10 right-0 md:right-10 w-48 md:w-80 lg:w-96 pointer-events-none"
+        >
+          <img
+            src="./assets/images/Abonnement_image.png"
+            alt="Illustration d'abonnement"
+            class="w-full h-auto"
+          />
+        </div>
+
+        <div class="max-w-6xl mx-auto text-center mb-16 relative z-10">
+          <h2
+            class="text-4xl font-black text-slate-900 uppercase tracking-tighter mb-4"
+          >
+            Nos Forfaits
+          </h2>
+          <div class="w-20 h-1.5 bg-[#F5A64B] mx-auto rounded-full"></div>
+        </div>
+
+        <div
+          id="pricing-container"
+          class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-0 items-center max-w-5xl mx-auto relative z-10"
+        ></div>
+      </section>
+      <div
+        id="modalWrapper"
+        class="fixed inset-0 z-[10000] hidden flex items-end md:items-center justify-center p-4"
+      >
+        <div
+          id="modalBg"
+          onclick="closeSubscriptionModal()"
+          class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
+        ></div>
+
+        <div
+          id="modalBox"
+          class="relative bg-white w-full max-w-md rounded-t-[2rem] md:rounded-[2rem] p-8 shadow-2xl transform translate-y-full transition-transform duration-300 border border-white/20"
+        >
+          <div
+            onclick="closeSubscriptionModal()"
+            class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 cursor-pointer md:hidden"
+          ></div>
+
+          <div class="text-center mb-6">
+            <h2
+              id="modalTitle"
+              class="text-[#F5A64B] font-black text-xl uppercase tracking-tighter"
+            >
+              Paiement Plan
+            </h2>
+
+            <div
+              class="mt-4 p-5 bg-slate-50 rounded-2xl border border-slate-100 text-left relative overflow-hidden"
+            >
+              <div class="absolute top-0 right-0 p-2 opacity-10">
+                <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"
+                  />
+                </svg>
+              </div>
+              <div class="flex justify-between items-center mb-3">
+                <span id="displayPlan" class="text-slate-800 font-black text-xl"
+                  >-</span
+                >
+                <span
+                  id="displayPrix"
+                  class="text-[#F5A64B] font-black text-2xl"
+                  >-</span
+                >
+              </div>
+
+              <div
+                class="grid grid-cols-2 gap-4 border-t border-slate-200 pt-4"
+              >
+                <div>
+                  <p class="text-[10px] text-slate-400 uppercase font-bold">
+                    Documents
+                  </p>
+                  <span
+                    id="displayDocs"
+                    class="text-slate-800 text-sm font-black"
+                    >-</span
+                  >
+                </div>
+                <div>
+                  <p class="text-[10px] text-slate-400 uppercase font-bold">
+                    Durée
+                  </p>
+                  <span id="displaytime" class="text-slate-800 text-sm font-black uppercase"
+                    >-</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="paymentFlow" class="space-y-4">
+            <p
+              class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3"
+            >
+              Choisir la method de Paiment
+            </p>
+
+            <div
+              id="viewStep1"
+              class="grid animate-fade-in space-y-4 grid-cols-2 gap-4"
+            >
+              <button
+                onclick="goToStep2()"
+                class="w-full flex items-center justify-between border-2 border-slate-100 bg-white rounded-2xl p-4 hover:border-[#F5A64B] hover:bg-orange-50/30 transition-all group"
+              >
+                <div
+                  class="flex flex-col items-center text-center justify-center gap-3"
+                >
+                  <div class="flex gap-1">
+                    <img
+                      src="./assets/images/orange_money.jpg"
+                      class="w-15 h-30 rounded"
+                    />
+                  </div>
+
+                  <span class="font-bold text-slate-700"
+                    >NoKash Paiment mobile</span
+                  >
+                </div>
+              </button>
+              <button
+                onclick="goToStep2()"
+                class="w-full flex items-center justify-between border-2 border-slate-100 bg-white rounded-2xl p-4 hover:border-[#F5A64B] hover:bg-orange-50/30 transition-all group"
+              >
+                <div
+                  class="flex flex-col items-center text-center justify-center gap-3 w-full"
+                >
+                  <div class="flex gap-1 items-center justify-center">
+                    <img
+                      src="./assets/images/paypoint (2).png"
+                      class="w-15 h-30 rounded"
+                    />
+                  </div>
+
+                  <span class="font-bold text-slate-700">PayPoint</span>
+                </div>
+              </button>
+            </div>
+
+            <div id="viewStep2" class="hidden animate-fade-in">
+              <div class="space-y-3">
+                <div class="space-y-3">
+                  <label
+                    class="text-[10px] font-bold text-gray-400 uppercase ml-1"
+                    >Numéro de téléphone</label
+                  >
+                  <div class="relative">
+                    <input type="tel" id="payPhone" placeholder="6xx xxx xxx" />
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  id="payPseudo"
+                  placeholder="@pseudo"
+                  class="w-full border-2 border-slate-100 rounded-xl p-4 outline-none focus:border-[#F5A64B] font-bold bg-slate-50 transition-colors"
+                />
+              </div>
+            </div>
+
+            <button
+              id="submitBtn"
+              onclick="processPayment()"
+              class="w-full mt-4 bg-[#F5A64B] text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-orange-200 hover:brightness-110 active:scale-95 transition-all"
+            >
+              Suivant
+            </button>
+          </div>
+
+          <button
+            onclick="closeSubscriptionModal()"
+            class="w-full mt-6 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:text-red-500 transition-colors"
+          >
+            Annuler la transaction
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="max-w-6xl mx-auto py-20 px-4 text-center overflow-hidden">
+      <h2
+        class="text-3xl font-extrabold text-[#F5A64B] mb-2 uppercase tracking-tighter"
+      >
+        Ce Que Disent Nos Utilisateurs
+      </h2>
+      <p class="text-gray-500 mb-6 text-sm">
+        Découvrez les témoignages de ceux qui ont retrouvé leurs documents grâce
+        à DocMaster
       </p>
+      <div class="w-16 h-1 bg-[#F5A64B] mx-auto mb-10 rounded-full"></div>
 
-      <ul class="referral-features" aria-hidden="false">
-        <li><i class="fas fa-gift"></i><span>500 FCFA par ami parrainé</span></li>
-        <li><i class="fas fa-coins"></i><span>Bonus de 10% sur leurs gains</span></li>
-        <li><i class="fas fa-crown"></i><span>Statut VIP à partir de 10 parrainages</span></li>
-        <li><i class="fas fa-trophy"></i><span>Récompenses mensuelles exclusives</span></li>
+      <div class="relative lg:max-w-4xl mx-auto px-2 md:px-20">
+        <div class="overflow-hidden relative rounded-3xl shadow-xl">
+          <div
+            id="testimonial-rail"
+            class="flex transition-transform duration-500 ease-in-out bg-white"
+          ></div>
+
+          <div class="absolute bottom-0 left-0 h-1 bg-[#C5A059]/10 w-full">
+            <div id="loader-bar" class="h-full bg-[#F5A64B] w-0"></div>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center justify-center space-x-6 mt-10">
+        <button
+          onclick="prevBtn()"
+          class="w-10 h-10 rounded-full border-[#C5A059] text-white bg-[#F5A64B] flex items-center justify-center hover:bg-[#C5A059] hover:text-white transition-all duration-300"
+        >
+          <i class="fa-solid fa-chevron-left text-sm"></i>
+        </button>
+
+        <div id="dots-container" class="flex items-center space-x-3"></div>
+
+        <button
+          onclick="nextBtn()"
+          class="w-10 h-10 rounded-full bg-[#F5A64B] text-white flex items-center justify-center hover:bg-[#a6864a] transition-all duration-300 shadow-md"
+        >
+          <i class="fa-solid fa-chevron-right text-sm"></i>
+        </button>
+      </div>
+
+      <script>
+        const testimonials = [
+          {
+            quote:
+              "J'ai perdu ma carte d'identité lors d'un voyage d'affaires. En moins de 48h, quelqu'un l'avait trouvée et déclarée sur DocMaster. Service exceptionnel !",
+            author: "Marie NGUYEN",
+            role: "Commerciale, Yaoundé",
+            icon: "fas fa-briefcase",
+          },
+          {
+            quote:
+              "Ma fille avait perdu son diplôme de Master. Grâce à DocMaster et à la générosité d'un trouveur, nous l'avons récupéré. Merci infiniment !",
+            author: "Paul FOTSO",
+            role: "Enseignant, Douala",
+            icon: "fas fa-chalkboard-teacher",
+          },
+          {
+            quote:
+              "Interface intuitive, système de récompenses motivant. J'ai déjà aidé 12 personnes à retrouver leurs documents. Une vraie communauté solidaire !",
+            author: "Sandra EKOTTO",
+            role: "Étudiante, Bafoussam",
+            icon: "fa-solid fa-graduation-cap",
+          },
+        ];
+
+        let currentIndex = 0;
+        let autoScroll;
+        const rail = document.getElementById("testimonial-rail");
+        const loaderBar = document.getElementById("loader-bar");
+        const scrollDuration = 5000; // 5 secondes entre chaque carte
+
+        function initCarousel() {
+          rail.innerHTML = testimonials
+            .map(
+              (item) => `
+                <div class="w-full flex-shrink-0">
+                    <div class="bg-white p-8 md:p-14 border-t-[6px] border-[#F5A64B] relative min-h-[350px] flex flex-col justify-center">
+                        <div class="absolute top-6 right-10 text-6xl text-[#F5A64B]/10 select-none">
+                            <i class="fa-solid fa-quote-right"></i>
+                        </div>
+                        
+                        <p class="text-xl text-gray-700 italic leading-relaxed mb-10">
+                            ${item.quote}
+                        </p>
+                        
+                        <div class="flex items-center justify-start md:space-x-5 space-x-1">
+                            <div class="w-16 h-16 bg-[#F5A64B] rounded-full flex items-center justify-center text-white text-2xl shadow-lg">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <div class="text-left">
+                                <h4 class="font-black text-gray-900 uppercase tracking-tight text-lg">${item.author}</h4>
+                                <div class="flex items-center text-xs md:text-sm text-[#F5A64B] font-medium">
+                                    <i class="${item.icon} mr-2 opacity-70"></i>
+                                    ${item.role}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            )
+            .join("");
+          updateDots();
+          resetLoader();
+        }
+
+        function resetLoader() {
+          loaderBar.style.transition = "none";
+          loaderBar.style.width = "0%";
+          void loaderBar.offsetWidth; // Force le repaint
+          loaderBar.style.transition = `width ${scrollDuration}ms linear`;
+          loaderBar.style.width = "100%";
+        }
+
+        function updateCarousel() {
+          rail.style.transform = `translateX(-${currentIndex * 100}%)`;
+          updateDots();
+          resetLoader();
+        }
+
+        function updateDots() {
+          const dotsContainer = document.getElementById("dots-container");
+          dotsContainer.innerHTML = testimonials
+            .map(
+              (_, index) => `
+                <div class="h-2 rounded-full transition-all duration-500 ${index === currentIndex ? "bg-[#F5A64B] w-8" : "bg-gray-300 w-2"}"></div>
+            `,
+            )
+            .join("");
+        }
+
+        function nextBtn() {
+          currentIndex = (currentIndex + 1) % testimonials.length;
+          updateCarousel();
+        }
+
+        function prevBtn() {
+          currentIndex =
+            (currentIndex - 1 + testimonials.length) % testimonials.length;
+          updateCarousel();
+        }
+
+        function startAutoScroll() {
+          stopAutoScroll();
+          autoScroll = setInterval(nextBtn, scrollDuration);
+          resetLoader();
+        }
+
+        function stopAutoScroll() {
+          clearInterval(autoScroll);
+          loaderBar.style.transition = "none";
+          loaderBar.style.width = "0%";
+        }
+
+        // Initialisation et événements
+        initCarousel();
+        startAutoScroll();
+
+        const carouselContainer = document.querySelector(".relative.max-w-4xl");
+        carouselContainer.addEventListener("mouseenter", stopAutoScroll);
+        carouselContainer.addEventListener("mouseleave", startAutoScroll);
+      </script>
+    </section>
+    <section class="bg-[#F5A64B] py-16 px-6 md:px-20 relative overflow-hidden">
+      <div
+        class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-10"
+      >
+        <div class="md:w-1/3 text-white">
+          <h1 class="text-5xl font-bold leading-tight mb-6">
+            Conseils de <br />Saison
+          </h1>
+          <p class="text-lg opacity-90">
+            Pendant les fêtes de fin d'année, les risques de perte de documents
+            augmentent. Voici nos conseils pour éviter les désagréments.
+          </p>
+        </div>
+        <div class="md:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div
+            class="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition-transform"
+          >
+            <i class="fas fa-shield-alt text-[#f5a64b] text-3xl mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">
+              Attention aux Pickpockets
+            </h3>
+            <p class="text-gray-500 text-sm">
+              Restez vigilants dans les marchés et lieux bondés. Gardez vos
+              documents dans des poches intérieures.
+            </p>
+          </div>
+          <div
+            class="bg-white/70 p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition-transform"
+          >
+            <i class="fas fa-copy text-[#f5a64b] text-3xl mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">
+              Faites des Copies
+            </h3>
+            <p class="text-gray-500 text-sm">
+              Numérisez vos documents importants et conservez-les en sécurité
+              dans le cloud.
+            </p>
+          </div>
+          <div
+            class="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition-transform"
+          >
+            <i class="fas fa-bell text-[#f5a64b] text-3xl mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">
+              Déclarez Rapidement
+            </h3>
+            <p class="text-gray-500 text-sm">
+              Plus vous déclarez tôt, plus vous avez de chances de récupérer vos
+              documents.
+            </p>
+          </div>
+          <div
+            class="bg-white p-8 rounded-2xl shadow-lg hover:-translate-y-2 transition-transform"
+          >
+            <i class="fas fa-phone-alt text-[#f5a64b] text-3xl mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">
+              Contacts d'Urgence
+            </h3>
+            <p class="text-gray-500 text-sm">
+              Mémorisez les numéros d'urgence locaux et gardez une liste de
+              contacts accessible.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="py-20 px-6 bg-gray-50">
+      <div class="max-w-7xl mx-auto text-center">
+        <h2 class="text-4xl font-bold text-[#f5a64b] mb-4">Nos Partenaires</h2>
+        <p class="text-gray-500 mb-12">
+          Découvrez les institutions qui nous font confiance
+        </p>
+        <div class="grid grid-cols-2 lg:grid-cols-5 justify-center gap-6">
+          <div
+            class="bg-white p-6 rounded-2xl shadow-sm w-48 text-center border border-transparent hover:border-[#f5a64b] transition-all"
+          >
+            <div
+              class="bg-[#f5a64b]/10 w-15 h-15 rounded-full flex items-center justify-center mx-auto mb-4 text-[#f5a64b] text-2xl"
+            >
+              <i class="fas fa-university"></i>
+            </div>
+            <p class="font-bold text-gray-800 text-sm uppercase">Préfecture</p>
+            <span
+              >Partenariat officiel pour la récupération des documents
+              administratifs</span
+            >
+          </div>
+          <div
+            class="bg-white p-6 rounded-2xl shadow-sm w-48 text-center border border-transparent hover:border-[#f5a64b] transition-all"
+          >
+            <div
+              class="bg-[#f5a64b]/10 w-15 h-15 rounded-full flex items-center justify-center mx-auto mb-4 text-[#f5a64b] text-2xl shadow-lg"
+            >
+              <i class="fas fa-id-card"></i>
+            </div>
+            <p class="font-bold text-gray-800 text-sm uppercase">
+              CNI / Passeport
+            </p>
+            <span>Partenariat pour les cartes d'identité et passeports</span>
+          </div>
+          <div
+            class="bg-white p-6 rounded-2xl shadow-sm w-48 text-center border border-transparent hover:border-[#f5a64b] transition-all"
+          >
+            <div
+              class="bg-[#f5a64b]/10 w-15 h-15 rounded-full flex items-center justify-center mx-auto mb-4 text-[#f5a64b] text-2xl"
+            >
+              <i class="fas fa-graduation-cap"></i>
+            </div>
+            <p class="font-bold text-gray-800 text-sm uppercase">Université</p>
+
+            <span
+              >Collaboration pour les diplômes et certificats
+              universitaires</span
+            >
+          </div>
+          <div
+            class="bg-white p-6 rounded-2xl shadow-sm w-48 text-center border border-transparent hover:border-[#f5a64b] transition-all"
+          >
+            <div
+              class="bg-[#f5a64b]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-[#f5a64b] text-2xl"
+            >
+              <i class="fa-solid fa-building"></i>
+            </div>
+            <p class="font-bold text-gray-800 text-sm uppercase">
+              Centre National des Cartes
+            </p>
+
+            <span>Partenariat pour les cartes d'identité et passeports</span>
+          </div>
+          <div
+            class="bg-white p-6 rounded-2xl shadow-sm w-48 text-center border border-transparent hover:border-[#f5a64b] transition-all"
+          >
+            <div
+              class="bg-[#f5a64b]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-[#f5a64b] text-2xl"
+            >
+              <i class="fa-solid fa-car"></i>
+            </div>
+            <p class="font-bold text-gray-800 text-sm uppercase">
+              Direction des Transports
+            </p>
+
+            <span>Récupération des permis de conduire et cartes grises</span>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Mobile Bottom Navigation -->
+    <nav
+      class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 -shadow-lg md:hidden"
+    >
+      <div
+        class="mask-radial-at-top-left mask-radial-from-100% bg-orange-300"
+      ></div>
+
+      <div
+        class="absolute inset-0 pointer-events-none z-0"
+        style="
+          background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
+          background-repeat: repeat;
+          background-size: 8px 8px;
+        "
+      ></div>
+      <ul class="flex justify-around items-center py-2">
+        <li class="nav-link">
+          <a href="index.html" class="flex flex-col items-center text-gray-500">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span class="text-xs">Accueil</span>
+          </a>
+        </li>
+
+        <li class="nav-link">
+          <a
+            href="rechercher.html"
+            class="flex flex-col items-center text-gray-500"
+          >
+            <i class="fa-solid fa-magnifying-glass text-xl"></i>
+            <span class="text-xs">Rechercher</span>
+          </a>
+        </li>
+
+        <li class="nav-link">
+          <a
+            href="object.html"
+            class="flex flex-col items-center text-gray-500"
+          >
+            <i class="fa-solid fa-box text-xl"></i>
+            <span class="text-xs">Objects</span>
+          </a>
+        </li>
+
+        <li class="nav-link">
+          <a
+            href="document.html"
+            class="flex flex-col items-center text-gray-500"
+          >
+            <i class="fa-solid fa-file text-xl"></i>
+            <span class="text-xs">Documents</span>
+          </a>
+        </li>
       </ul>
-    </div>
+    </nav>
 
-    <aside class="referral-right" aria-label="Comment ça marche">
-      <div class="steps-card" role="list">
-        <div class="step" role="listitem">
-          <div class="step-num" aria-hidden="true">1</div>
-          <div class="step-body">
-            <h4>Partagez votre code</h4>
-            <p>Envoyez votre code unique à vos amis</p>
+    <div class="footer-molecule"></div>
+    <footer
+      class="relative bg-black/40 text-white bottom-0 py-12 pb-24 md:pb-12 overflow-hidden"
+    >
+      <div class="absolute inset-0 bg-black/80 pointer-events-none -z-10"></div>
+
+      <div
+        class="absolute -top-32 -right-32 w-80 aspect-square bg-orange-300 rounded-full mix-blend-multiply opacity-30 pointer-events-none -z-10 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
+      ></div>
+
+      <div class="relative max-w-8xl px-5 mx-auto">
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 border-b border-gray-700 pb-10"
+        >
+          <div class="lg:col-span-1">
+            <div class="flex items-center gap-2 mb-4">
+              <img src="./assets/images/favicon.png" alt="Logo" class="h-8" />
+              <span class="text-2xl font-bold text-[#FFB86A]">DocMaster</span>
+            </div>
+            <p class="text-sm text-gray-300 mb-6 leading-relaxed">
+              Retrouvez vos documents perdus grâce à notre plateforme
+              communautaire. Plus de 2000 documents déjà retrouvés !
+            </p>
+            <div class="flex gap-8">
+              <div>
+                <div class="text-2xl font-black text-gray-500">2000+</div>
+                <div class="text-[10px] uppercase font-bold text-gray-400">
+                  Documents retrouvés
+                </div>
+              </div>
+              <div>
+                <div class="text-2xl font-black text-gray-500">500+</div>
+                <div class="text-[10px] uppercase font-bold text-gray-400">
+                  Utilisateurs actifs
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-orange-400 font-bold mb-6 text-lg">Navigation</h3>
+            <ul class="space-y-4">
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-house w-5"></i> Accueil</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-magnifying-glass w-5"></i>
+                  Rechercher</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-box w-5"></i> Objets perdus</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-file-lines w-5"></i> Faire une
+                  déclaration</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-orange-400 font-bold mb-6 text-lg">Services</h3>
+            <ul class="space-y-4">
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-id-card w-5"></i> Cartes d'identité</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-credit-card w-5"></i> Cartes
+                  bancaires</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-graduation-cap w-5"></i> Diplômes</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-key w-5"></i> Clés</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-mobile-screen w-5"></i> Téléphones</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-orange-400 font-bold mb-6 text-lg">Support</h3>
+            <ul class="space-y-4">
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-circle-question w-5"></i> FAQ</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-envelope w-5"></i> Contact</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-shield-halved w-5"></i> Sécurité</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
+                  ><i class="fa-solid fa-book-open w-5"></i> Guide
+                  d'utilisation</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-orange-400 font-bold mb-6 text-lg">
+              Restez connecté
+            </h3>
+            <div class="flex gap-3 mb-8">
+              <a
+                href="#"
+                class="w-10 h-10 bg-blue-700 flex items-center justify-center rounded-full hover:scale-110 transition"
+                ><i class="fa-brands fa-facebook-f"></i
+              ></a>
+              <a
+                href="#"
+                class="w-10 h-10 bg-sky-400 flex items-center justify-center rounded-full hover:scale-110 transition"
+                ><i class="fa-brands fa-twitter"></i
+              ></a>
+              <a
+                href="#"
+                class="w-10 h-10 bg-pink-600 flex items-center justify-center rounded-full hover:scale-110 transition"
+                ><i class="fa-brands fa-instagram"></i
+              ></a>
+              <a
+                href="#"
+                class="w-10 h-10 bg-green-500 flex items-center justify-center rounded-full hover:scale-110 transition"
+                ><i class="fa-brands fa-whatsapp"></i
+              ></a>
+            </div>
+            <h4
+              class="text-sm font-bold text-orange-400 mb-4 uppercase tracking-wider"
+            >
+              Newsletter
+            </h4>
+            <div class="relative">
+              <input
+                type="email"
+                placeholder="Votre email"
+                class="w-full bg-white/10 border border-white/20 rounded-full py-3 px-6 outline-none focus:border-orange-400 transition text-sm"
+              />
+              <button
+                class="absolute right-1 top-1 bottom-1 bg-orange-400 hover:bg-orange-500 px-4 rounded-full transition"
+              >
+                <i class="fa-solid fa-paper-plane text-white"></i>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="step" role="listitem">
-          <div class="step-num" aria-hidden="true">2</div>
-          <div class="step-body">
-            <h4>Ils s'inscrivent</h4>
-            <p>Vos amis créent leur compte avec votre code</p>
+        <div
+          class="flex flex-wrap justify-center gap-8 md:gap-16 py-8 text-sm font-medium border-gray-700/50"
+        >
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-phone text-orange-400"></i> +237 672 518 313
+          </div>
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-envelope text-orange-400"></i>
+            contact@docmaster.cm
+          </div>
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-location-dot text-orange-400"></i> Yaoundé,
+            Cameroun
           </div>
         </div>
 
-        <div class="step" role="listitem">
-          <div class="step-num" aria-hidden="true">3</div>
-          <div class="step-body">
-            <h4>Vous gagnez</h4>
-            <p>Recevez vos récompenses automatiquement</p>
+        <div
+          class="flex flex-col md:row justify-between items-center pt-6 text-[12px] text-gray-400 gap-4"
+        >
+          <p>© 2025 DocMaster. Tous droits réservés.</p>
+          <div class="flex gap-6">
+            <a href="#" class="hover:text-white transition"
+              >Conditions d'utilisation</a
+            >
+            <a href="#" class="hover:text-white transition"
+              >Politique de confidentialité</a
+            >
+            <a href="#" class="hover:text-white transition">Mentions légales</a>
           </div>
         </div>
       </div>
-    </aside>
-  </div>
-</section>
-<!-- ...existing code... -->
-
-  <div class="containr testimonials-header" style="text-align:center;max-width:1100px;margin:48px auto 0;padding:36px 16px 12px;display:block;">
-  <h2 id="testimonials-title" style="font-size:48px;margin:0 auto 12px;color:var(--orange);font-weight:800;letter-spacing:0.5px;text-align:center;">
-    Ce Que Disent Nos Utilisateurs
-  </h2>
-  <p style="margin:12px auto 18px;max-width:760px;color:#111;font-weight:600;text-align:center;">
-    Découvrez les témoignages de ceux qui ont retrouvé leurs documents grâce à DocMaster
-  </p>
-  <div class="header-accent" style="height:6px;width:120px;margin:12px auto;border-radius:6px;background:linear-gradient(90deg,var(--orange),var(--orange-dark));box-shadow:0 6px 18px rgba(249,115,22,0.08);"></div>
-</div>
-
-
-
-  <!-- Testimonials -->
- 
-      <div class="testimonials-slider">
-        <div class="testimonial-track" id="testimonialTrack">
-          <article class="testimonial-slide">
-            <div class="testimonial-content">
-              Interface intuitive, système de récompenses motivant. J'ai déjà aidé 12 personnes à retrouver leurs documents. Une vraie communauté solidaire !
-            </div>
-
-            <div class="testimonial-footer">
-              <div class="avatar"><i class="fas fa-user"></i></div>
-              <div>
-                <div class="author">Sandra EKOTTO</div>
-                <div class="author-sub"><i class="fas fa-graduation-cap"></i> Étudiante, Bafoussam</div>
-              </div>
-            </div>
-
-            <div class="testimonial-underline" aria-hidden="true"></div>
-          </article>
-
-          <article class="testimonial-slide">
-            <div class="testimonial-content">"En moins de 48h j'ai récupéré ma carte."</div>
-            <div class="testimonial-footer">
-              <div class="avatar"><i class="fas fa-user"></i></div>
-              <div>
-                <div class="author">Pierre MARTIN</div>
-                <div class="author-sub">Employé, Douala</div>
-              </div>
-            </div>
-            <div class="testimonial-underline" aria-hidden="true"></div>
-          </article>
-
-          <article class="testimonial-slide">
-            <div class="testimonial-content">"Service fiable et facile d'utilisation."</div>
-            <div class="testimonial-footer">
-              <div class="avatar"><i class="fas fa-user"></i></div>
-              <div>
-                <div class="author">Amina NDONGO</div>
-                <div class="author-sub">Commerçante, Yaoundé</div>
-              </div>
-            </div>
-            <div class="testimonial-underline" aria-hidden="true"></div>
-          </article>
-  <section class="testimonials-section">
-    <div class="testimonials-container">
-      <div class="testimonials-slider">
-        <div class="testimonial-track" id="testimonialTrack" aria-live="polite"></div>
-        <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
-      </div>
-
-      <div class="testimonial-controls" id="testimonialControls" aria-hidden="false">
-        <button class="nav-btn" id="prevBtn" aria-label="Précédent"><i class="fas fa-chevron-left"></i></button>
-        <div class="indicator-dots" id="dots" role="tablist" aria-label="Indicateurs"></div>
-        <button class="nav-btn" id="nextBtn" aria-label="Suivant"><i class="fas fa-chevron-right"></i></button>
-      </div>
-    </div>
-  </section>
-
-        </div>
-
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
-
-  <!-- Scripts -->
-  <script src="./index.js" defer></script>
-</body>
+    </footer>
+  </body>
 </html>
->>>>>>> origin/momo

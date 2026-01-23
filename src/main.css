@@ -531,25 +531,7 @@ hr{border:none;border-top:1px solid #eef2f7;margin:12px 0}
 .animate-on-scroll{opacity:0;transform:translateY(8px);transition:opacity .6s,transform .6s}
 .animate-on-scroll.in-view{opacity:1;transform:none}
 
-/* Footer styles matching provided design */
-footer{
-  position:relative;
-  background:#1a1a1a;
-  color:#fff;
-  padding:3rem 1.5rem;
-  overflow:hidden;
-  background-image: radial-gradient(#EFA751 1px, transparent 1px);
-  background-size:16px 16px;
-}
-footer .decor-overlay{
-  position:absolute;inset:0;pointer-events:none;z-index:1;
-  background-image: radial-gradient(#EFA751 1px, transparent 1px);
-  background-size:16px 16px;
-}
-footer .footer-inner{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:0 16px;display:flex;gap:24px;align-items:center;justify-content:space-between}
-footer .footer-left{max-width:720px}
-footer .footer-brand{font-weight:800;font-size:20px;color:#fff}
-footer .footer-copy{color:rgba(255,255,255,0.7);margin-top:8px;font-size:14px}
+
 
 /* Larger layout tweaks */
 @media (min-width:700px){

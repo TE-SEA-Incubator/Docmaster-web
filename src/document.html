@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="./output.css" rel="stylesheet" />
-    <link rel="stylesheet" href="./main.css" />
+    <link rel="stylesheet" href="./rechercher.css" />
     <link
       rel="shortcut icon"
       href="./assets//images/favicon.png"
@@ -21,6 +21,7 @@
       src="https://kit.fontawesome.com/28702e0585.js"
       crossorigin="anonymous"
     ></script>
+    <script src="./fillin.js"></script>
     <script src="./index.js" defer></script>
     <title>DocMaster-Object</title>
   </head>
@@ -56,9 +57,10 @@
 
     <div class="relative" style="z-index: 10">
       <header class="pb-5">
-        <nav
-          class="fixed z-1000 flex w-full items-center rounded-xl justify-between p-4 bg-white shadow-md w-full"
-        >
+       <nav
+  class="hidden md:flex fixed top-0 z-50 w-full items-center rounded-xl justify-between p-4 bg-white shadow-md"
+>
+
           <div
             class="absolute inset-0 pointer-events-none z-0"
             style="
@@ -186,19 +188,75 @@
         </section>
       </main>
     </div>
-  </body>
-  <footer
-    class="relative bg-[#1a1a1a] text-white py-12 px-6 overflow-hidden bg-[radial-gradient(#EFA751_1px,transparent_1px)] [background-size:16px_16px]"
-  >
-    <div class="absolute inset-0 bg-black/40 pointer-events-none"></div>
+    <!-- Mobile Bottom Navigation -->
+ <nav
+      class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 -shadow-lg md:hidden"
+    >
+      <div
+        class="mask-radial-at-top-left mask-radial-from-100% bg-orange-300"
+      ></div>
 
-    <div class="relative z-10 max-w-7xl mx-auto">
+      <div
+        class="absolute inset-0 pointer-events-none z-0"
+        style="
+          background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
+          background-repeat: repeat;
+          background-size: 8px 8px;
+        "
+      ></div>
+      <ul class="flex justify-around items-center py-2">
+        <li class="nav-link">
+          <a href="index.html" class="flex flex-col items-center text-gray-500">
+            <i class="fa-solid fa-house text-xl"></i>
+            <span class="text-xs">Accueil</span>
+          </a>
+        </li>
+
+        <li class="nav-link">
+          <a
+            href="rechercher.html"
+            class="flex flex-col items-center text-gray-500"
+          >
+            <i class="fa-solid fa-magnifying-glass text-xl"></i>
+            <span class="text-xs">Rechercher</span>
+          </a>
+        </li>
+
+        <li class="nav-link">
+          <a
+            href="object.html"
+            class="flex flex-col items-center text-gray-500"
+          >
+            <i class="fa-solid fa-box text-xl"></i>
+            <span class="text-xs">Objects</span>
+          </a>
+        </li>
+
+        <li class="nav-link">
+          <a
+            href="document.html"
+            class="flex flex-col items-center text-gray-500"
+          >
+            <i class="fa-solid fa-file text-xl"></i>
+            <span class="text-xs">Documents</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </body>
+<footer class="relative bg-black/40 text-white py-12 px-6 overflow-hidden">
+    <div class="absolute inset-0 bg-black/40 pointer-events-none"></div>
+    <div
+        class="absolute -top-32 -right-32 w-80 aspect-square bg-[#FFEDCC] rounded-full mix-blend-multiply opacity-70 pointer-events-none z-0 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
+      ></div>
+
+    <div class="relative z-10 max-w-8xl px-5 mx-auto">
       <div
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 border-b border-gray-700 pb-10"
       >
         <div class="lg:col-span-1">
           <div class="flex items-center gap-2 mb-4">
-            <img src="./assets/images/logo.png" alt="Logo" class="h-8" />
+            <img src="./assets/images/favicon.png" alt="Logo" class="h-8" />
             <span class="text-2xl font-bold">DocMaster</span>
           </div>
           <p class="text-sm text-gray-300 mb-6 leading-relaxed">
