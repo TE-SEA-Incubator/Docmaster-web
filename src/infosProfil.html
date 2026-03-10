@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<title>Profil</title>
+<link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+
+body{
+background:linear-gradient(180deg,#eaeaea,#dcdcdce6);
+}
+
+.avatar-ring{
+background:linear-gradient(135deg,#ff9d42,#ff6a00);
+padding:4px;
+border-radius:100%;
+}
+
+.avatar-bg{
+background:linear-gradient(135deg,#4da3ff,#ff9d42);
+}
+
+</style>
+
+</head>
+
+
+<body class="min-h-screen flex items-center justify-center">
+
+<div class="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-8">
+
+<!-- PROFILE HEADER -->
+
+<div class="flex flex-col items-center text-center">
+
+<div class="avatar-ring">
+<div class="avatar-bg w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl">
+👤
+</div>
+</div>
+
+<span id="role"
+class="bg-orange-500 text-white px-4 py-1 rounded-full mt-3 text-sm font-semibold">
+</span>
+
+<h1 id="name" class="text-3xl font-bold mt-2"></h1>
+
+<p id="username" class="text-gray-500 text-sm"></p>
+
+<p id="emailHeader" class="mt-3 text-gray-700"></p>
+
+<p id="memberSince" class="text-gray-500 text-sm"></p>
+
+</div>
+
+<hr class="my-6">
+
+<!-- PROFILE INFOS -->
+
+<div id="profileInfos"
+class="bg-gray-100 rounded-xl p-6 space-y-5">
+</div>
+
+</div>
+
+
+<script>
+
+/* PARAMETRES DU PROFIL */
+
+const profile = {
+
+role: "@Contributeur",
+
+name: "Ateba jean",
+
+username: "@nom d'utilisateur",
+
+email: "ateba@gmail.com",
+
+memberSince: "membre depuis janvier 2025",
+
+infos: [
+
+{label:"Nom complet", value:"Ateba jean pierre"},
+{label:"Email", value:"ateba@gmail.com"},
+{label:"Pseudo", value:"Aroldcode"},
+{label:"Téléphone", value:"+237 699999999"}
+
+]
+
+}
+
+
+/* RENDER PROFIL */
+
+document.getElementById("role").innerText = profile.role
+document.getElementById("name").innerText = profile.name
+document.getElementById("username").innerText = profile.username
+document.getElementById("emailHeader").innerText = profile.email
+document.getElementById("memberSince").innerText = profile.memberSince
+
+
+const container = document.getElementById("profileInfos")
+
+
+profile.infos.forEach(info => {
+
+container.innerHTML += `
+
+<div class="flex justify-between items-center">
+
+<span class="text-lg">${info.value}</span>
+
+<button onclick="editField(this)" class="text-blue-500 hover:scale-110 transition">
+<i class="fa-solid fa-pencil"></i>
+</button>
+
+</div>
+
+`
+
+})
+
+
+/* EDIT FUNCTION */
+
+function editField(btn){
+
+let span = btn.parentElement.querySelector("span")
+
+let value = span.innerText
+
+let input = document.createElement("input")
+
+input.value = value
+input.className="border rounded px-2 py-1 w-60"
+
+span.replaceWith(input)
+
+input.focus()
+
+input.addEventListener("blur",()=>{
+
+let newSpan = document.createElement("span")
+newSpan.className="text-lg"
+newSpan.innerText = input.value
+
+input.replaceWith(newSpan)
+
+})
+
+}
+
+</script>
+
+</body>
+</html>
