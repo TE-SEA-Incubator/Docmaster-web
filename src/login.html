@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DocMaster - Connexion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+     <link href="css/output.css" rel="stylesheet" />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#F5A64B',
+                dark: '#D98A30',
+                light: '#FEF0DC',
+              },
+              green: {
+                dark: '#1E3A2F',
+                mid: '#2D5A42',
+                light: '#E8F5EE',
+              },
+              accent: '#F5A64B',
+              bgMain: '#F2EBD9',
+              surface: '#FFFFFF',
+              textMain: '#1A1A1A',
+              textMuted: '#6B7280',
+              borderMain: '#E0D5C4',
+              blobGreen: '#A8CBAF',
+              blobPeach: '#E8B89A',
+            },
+            fontFamily: {
+              poppins: ['Poppins', 'sans-serif'],
+              bricolage: ['"Bricolage Grotesque"', 'sans-serif'],
+            },
+            borderRadius: {
+              'v12': '12px',
+              'v14': '14px',
+              'v16': '16px',
+              'v24': '24px',
+            }
+          }
+        }
+      }
+    </script>
+    <script src="js/auth.js" defer></script>
+<style>
+  html, body { 
+    margin: 0; padding: 0; box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    background: #F2EBD9;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Forms visibility ── */
+  .auth-form { display: none; flex-direction: column; }
+  .auth-form.visible { display: flex; animation: fadeSlide 0.28s ease; }
+
+  /* ── Blobs ── */
+  .blob { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; }
+  .blob-1 { width: 260px; height: 240px; background: #A8CBAF; top: -60px; right: -40px; opacity: 0.7; border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%; }
+  .blob-2 { width: 130px; height: 120px; background: #E8B89A; top: 10px; right: 200px; opacity: 0.6; border-radius: 50% 60% 40% 55% / 55% 45% 60% 40%; }
+  .blob-3 { width: 200px; height: 190px; background: #A8CBAF; bottom: -40px; left: -50px; opacity: 0.6; border-radius: 45% 55% 60% 40% / 60% 40% 55% 45%; }
+  .blob-4 { width: 130px; height: 130px; background: #F5A64B; bottom: 30px; right: 20px; border-radius: 50%; opacity: 0.75; }
+  .blob-5 { width: 100px; height: 90px; background: #E8B89A; top: 50%; left: 10px; transform: translateY(-50%); opacity: 0.45; border-radius: 55% 45% 50% 50%; }
+
+  @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Desktop Desktop specificity ── */
+  @media (min-width: 900px) {
+    .panel-left-desktop::before { content: ""; position: absolute; width: 220px; height: 220px; background: rgba(255, 255, 255, 0.04); border-radius: 50%; bottom: -70px; left: -50px; }
+    .panel-left-desktop::after { content: ""; position: absolute; width: 160px; height: 160px; background: rgba(255, 255, 255, 0.04); border-radius: 50%; top: -40px; right: -40px; }
+  }
+</style>
+  </head>
+  <body>
+    <!-- Blobs always visible -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+    <div class="blob blob-5"></div>
+
+    <div class="relative z-10 min-h-screen flex flex-col md:flex-row md:items-center md:justify-center p-0 md:p-10">
+      
+      <!-- ═══════════ MOBILE HEADER ═══════════ -->
+      <div class="p-[48px_28px_32px] md:hidden">
+        <div class="flex items-center gap-2.5 mb-5">
+          <div class="w-10 h-10 bg-green-dark rounded-v12 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-file-shield text-primary text-[18px]"></i>
+          </div>
+          <img src="./assets/images//docmaster.png" alt="">
+        </div>
+        <h2 class="font-bricolage text-[28px] font-extrabold text-textMain leading-[1.2] tracking-tight mb-1.5">Retrouvez vos documents perdus</h2>
+        <p class="text-[13.5px] text-textMuted leading-[1.55] font-medium">
+          La plateforme qui connecte ceux qui perdent avec ceux qui trouvent.
+        </p>
+      </div>
+
+      <div class="flex-1 p-[0_28px_48px] flex flex-col gap-5 md:hidden" id="mobile-form-area">
+        <!-- Pill Toggle (Mobile) -->
+        <div class="relative flex bg-white/50 backdrop-blur-md border-[1.5px] border-white/80 rounded-v16 p-1.5 shadow-sm overflow-hidden auto-cols-fr">
+          <div id="toggle-slider" class="absolute top-1.5 left-1.5 bottom-1.5 w-[calc(50%-3px)] bg-primary rounded-v12 shadow-[0_3px_12px_rgba(245,166,75,0.4)] transition-all duration-300 ease-out z-0"></div>
+          <button id="tab-login" class="relative z-10 flex-1 py-2.5 rounded-v12 font-poppins text-[14px] font-semibold text-white transition-colors duration-200 flex items-center justify-center gap-2" onclick="switchTab('login')">
+            <i class="fa-solid fa-right-to-bracket text-[13px]"></i> Connexion
+          </button>
+          <button id="tab-register" class="relative z-10 flex-1 py-2.5 rounded-v12 font-poppins text-[14px] font-semibold text-textMuted transition-colors duration-200 flex items-center justify-center gap-2" onclick="switchTab('register')">
+            <i class="fa-solid fa-user-plus text-[13px]"></i> Inscription
+          </button>
+        </div>
+
+        <!-- LOGIN (MOBILE) -->
+        <form class="auth-form visible flex-col gap-3.5 form-login" id="form-login">
+          <div class="mb-1">
+            <h1 class="font-bricolage text-[23px] font-extrabold text-textMain tracking-tight mb-[3px]">Bon retour ! 👋</h1>
+            <p class="text-[13px] text-textMuted font-medium italic">Connectez-vous à votre espace</p>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[12px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-envelope text-primary text-[11px]"></i> Adresse e-mail</label>
+            <div class="relative flex items-center group">
+              <i class="fa-regular fa-envelope absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+              <input type="email" placeholder="vous@exemple.com" class="w-full p-[14px_14px_14px_42px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/18 focus:bg-white/90 placeholder:text-[#c4bab0]" required />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[12px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-lock text-primary text-[11px]"></i> Mot de passe</label>
+            <div class="relative flex items-center group">
+              <i class="fa-solid fa-lock absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+              <input type="password" id="login-pw" placeholder="••••••••" class="w-full p-[14px_45px_14px_42px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/18 focus:bg-white/90 placeholder:text-[#c4bab0]" required />
+              <button class="absolute right-3 p-1.5 text-textMuted hover:text-primary transition-colors cursor-pointer" onclick="togglePw('login-pw', this)" type="button">
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="text-right -mt-1">
+            <a href="#" class="text-[12.5px] text-primary font-semibold hover:underline"><i class="fa-solid fa-key mr-1.5"></i>Mot de passe oublié ?</a>
+          </div>
+
+          <button type="submit" class="p-[15px_20px] bg-primary text-white rounded-v14 font-bricolage text-[16px] font-bold cursor-pointer flex items-center justify-center gap-[9px] transition-all shadow-lg shadow-primary/40 active:scale-[0.98] active:shadow-none mt-1">
+            <i class="fa-solid fa-right-to-bracket"></i> Se connecter
+          </button>
+
+          <div class="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-black/10 after:content-[''] after:flex-1 after:h-[1px] after:bg-black/10">ou continuer avec</div>
+
+          <div class="flex gap-2.5">
+            <button type="button" class="flex-1 p-[13px_12px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 font-poppins text-[13.5px] font-semibold text-gray-700 cursor-pointer flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all">
+              <i class="fa-brands fa-google text-[#db4437]"></i> Google
+            </button>
+            <button type="button" class="flex-1 p-[13px_12px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 font-poppins text-[13.5px] font-semibold text-gray-700 cursor-pointer flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all">
+              <i class="fa-brands fa-apple text-[#1a1a1a]"></i> Apple
+            </button>
+          </div>
+        </form>
+
+        <!-- REGISTER (MOBILE) -->
+        <form class="auth-form flex-col gap-3.5 form-register" id="form-register">
+          <div class="mb-1">
+            <h1 class="font-bricolage text-[23px] font-extrabold text-textMain tracking-tight mb-[3px]">Créer un compte ✨</h1>
+            <p class="text-[13px] text-textMuted font-medium italic">Rejoignez la communauté DocMaster</p>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[12px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-user text-primary text-[11px]"></i> Nom Complet</label>
+            <div class="relative flex items-center group">
+              <i class="fa-regular fa-user absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+              <input type="text" placeholder="Jean Dupont" class="w-full p-[14px_14px_14px_42px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/18 focus:bg-white/90 placeholder:text-[#c4bab0]" required />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[12px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-envelope text-primary text-[11px]"></i> Adresse e-mail</label>
+            <div class="relative flex items-center group">
+              <i class="fa-regular fa-envelope absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+              <input type="email" placeholder="vous@exemple.com" class="w-full p-[14px_14px_14px_42px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/18 focus:bg-white/90 placeholder:text-[#c4bab0]" required />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[12px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-lock text-primary text-[11px]"></i> Mot de passe</label>
+            <div class="relative flex items-center group">
+              <i class="fa-solid fa-lock absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+              <input type="password" id="register-pw" placeholder="Min. 8 caractères" class="w-full p-[14px_45px_14px_42px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/18 focus:bg-white/90 placeholder:text-[#c4bab0]" oninput="checkStrength(this)" required />
+              <button class="absolute right-3 p-1.5 text-textMuted hover:text-primary transition-colors cursor-pointer" onclick="togglePw('register-pw', this)" type="button">
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
+            <div class="flex gap-1 mt-1">
+              <div class="pw-bar flex-1 h-[3px] bg-black/10 rounded-full transition-all" id="bar1"></div>
+              <div class="pw-bar flex-1 h-[3px] bg-black/10 rounded-full transition-all" id="bar2"></div>
+              <div class="pw-bar flex-1 h-[3px] bg-black/10 rounded-full transition-all" id="bar3"></div>
+              <div class="pw-bar flex-1 h-[3px] bg-black/10 rounded-full transition-all" id="bar4"></div>
+            </div>
+          </div>
+
+          <button type="submit" class="p-[15px_20px] bg-primary text-white rounded-v14 font-bricolage text-[16px] font-bold cursor-pointer flex items-center justify-center gap-[9px] transition-all shadow-lg shadow-primary/40 active:scale-[0.98] active:shadow-none mt-1">
+            <i class="fa-solid fa-user-plus"></i> Créer mon compte
+          </button>
+
+          <p class="text-[11px] text-textMuted text-center leading-[1.6]">
+            En vous inscrivant, vous acceptez nos
+            <a href="#" class="text-primary font-semibold hover:underline">Conditions d'utilisation</a> et notre
+            <a href="#" class="text-primary font-semibold hover:underline">Politique de confidentialité</a>.
+          </p>
+        </form>
+
+        <div class="flex flex-col gap-2 mt-2">
+          <div class="flex items-center gap-2.5 p-[10px_14px] bg-white/45 backdrop-blur-md border-white/70 border rounded-v12">
+            <i class="fa-solid fa-circle-check text-primary text-[13px] w-3.5 text-center"></i>
+            <span class="text-[12px] text-gray-700 font-medium">+150 documents retrouvés</span>
+          </div>
+          <div class="flex items-center gap-2.5 p-[10px_14px] bg-white/45 backdrop-blur-md border-white/70 border rounded-v12">
+            <i class="fa-solid fa-users text-primary text-[13px] w-3.5 text-center"></i>
+            <span class="text-[12px] text-gray-700 font-medium">+2 400 membres actifs</span>
+          </div>
+          <div class="flex items-center gap-2.5 p-[10px_14px] bg-white/45 backdrop-blur-md border-white/70 border rounded-v12">
+            <i class="fa-solid fa-shield-halved text-primary text-[13px] w-3.5 text-center"></i>
+            <span class="text-[12px] text-gray-700 font-medium">Données sécurisées & privées</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ═══════════ DESKTOP CARD ═══════════ -->
+      <!-- ═══════════ DESKTOP CARD ═══════════ -->
+      <div class="hidden md:flex w-full max-w-[960px] min-h-[560px] bg-white rounded-v24 shadow-2xl shadow-black/10 overflow-hidden relative z-20">
+        
+        <!-- LEFT PANEL -->
+        <aside class="w-[300px] shrink-0 bg-green-dark p-[44px_36px] flex flex-col justify-between relative overflow-hidden panel-left-desktop">
+          <div class="flex items-center gap-2.5 relative z-10">
+           <a href="./index.html"> <img src="./assets/images/logo.png" alt="Docmaster logo" class="rounded-md"></a> 
+          </div>
+          
+          <div class="relative z-10">
+            <h2 class="font-bricolage text-[26px] font-extrabold text-white leading-[1.25] mb-3 tracking-tight">Retrouvez vos documents perdus</h2>
+            <p class="text-[13.5px] text-white/60 leading-[1.6]">
+              La plateforme communautaire qui connecte ceux qui perdent avec ceux qui trouvent.
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-2.5 relative z-10">
+            <div class="flex items-center gap-2.5 p-[10px_14px] bg-white/5 border-white/10 border rounded-v12">
+              <i class="fa-solid fa-circle-check text-primary text-[13px] w-3.5 text-center"></i>
+              <span class="text-[12px] text-white/80 font-medium">+150 documents retrouvés</span>
+            </div>
+            <div class="flex items-center gap-2.5 p-[10px_14px] bg-white/5 border-white/10 border rounded-v12">
+              <i class="fa-solid fa-users text-primary text-[13px] w-3.5 text-center"></i>
+              <span class="text-[12px] text-white/80 font-medium">+2 400 membres actifs</span>
+            </div>
+            <div class="flex items-center gap-2.5 p-[10px_14px] bg-white/5 border-white/10 border rounded-v12">
+              <i class="fa-solid fa-shield-halved text-primary text-[13px] w-3.5 text-center"></i>
+              <span class="text-[12px] text-white/80 font-medium">Données sécurisées</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- RIGHT FORM PANEL -->
+        <main class="flex-1 p-[44px_48px] bg-white flex flex-col gap-[22px] justify-center">
+          <!-- Pill Toggle (Desktop) -->
+          <div class="relative flex bg-surface2 border-[1.5px] border-borderMain rounded-v16 p-1.5 shadow-sm overflow-hidden auto-cols-fr">
+            <div id="dtoggle-slider" class="absolute top-1.5 left-1.5 bottom-1.5 w-[calc(50%-3px)] bg-primary rounded-v12 shadow-[0_3px_12px_rgba(245,166,75,0.4)] transition-all duration-300 ease-out z-0"></div>
+            <button id="dtab-login" class="relative z-10 flex-1 py-1.5 rounded-v12 font-poppins text-[14px] font-semibold text-white transition-colors duration-200 flex items-center justify-center gap-2" onclick="switchTab('login', 'd')">
+              <i class="fa-solid fa-right-to-bracket"></i> Connexion
+            </button>
+            <button id="dtab-register" class="relative z-10 flex-1 py-1.5 rounded-v12 font-poppins text-[14px] font-semibold text-textMuted transition-colors duration-200 flex items-center justify-center gap-2" onclick="switchTab('register', 'd')">
+              <i class="fa-solid fa-user-plus"></i> Inscription
+            </button>
+          </div>
+
+          <!-- LOGIN (DESKTOP) -->
+          <form class="auth-form visible flex-col gap-3.5 form-login" id="dform-login">
+            <div class="mb-1">
+              <h1 class="font-bricolage text-[26px] font-extrabold text-textMain tracking-tight mb-[3px]">Bon retour !</h1>
+              <p class="text-[13px] text-textMuted font-medium italic">Connectez-vous à votre espace DocMaster</p>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[12px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-envelope text-primary text-[11px]"></i> Adresse e-mail</label>
+              <div class="relative flex items-center group">
+                <i class="fa-regular fa-envelope absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+                <input type="email" placeholder="vous@exemple.com" class="w-full p-[14px_14px_14px_42px] bg-surface2 border-[1.5px] border-borderMain rounded-v14 font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/15 focus:bg-white placeholder:text-[#c4bab0]" required />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[12px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-lock text-primary text-[11px]"></i> Mot de passe</label>
+              <div class="relative flex items-center group">
+                <i class="fa-solid fa-lock absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+                <input type="password" id="dlogin-pw" placeholder="••••••••" class="w-full p-[14px_45px_14px_42px] bg-surface2 border-[1.5px] border-borderMain rounded-v14 font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/15 focus:bg-white placeholder:text-[#c4bab0]" required />
+                <button class="absolute right-3 p-1.5 text-textMuted hover:text-primary transition-colors cursor-pointer" onclick="togglePw('dlogin-pw', this)" type="button">
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="text-right -mt-1">
+              <a href="#" class="text-[12.5px] text-primary font-semibold hover:underline"><i class="fa-solid fa-key mr-1.5"></i>Mot de passe oublié ?</a>
+            </div>
+
+            <button type="submit" class="p-[15px_20px] bg-primary text-white rounded-v14 font-bricolage text-[16px] font-bold cursor-pointer flex items-center justify-center gap-[9px] transition-all shadow-lg shadow-primary/40 active:scale-[0.98] active:shadow-none mt-1">
+              <i class="fa-solid fa-right-to-bracket"></i> Se connecter
+            </button>
+
+            <div class="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-borderMain after:content-[''] after:flex-1 after:h-[1px] after:bg-borderMain">ou continuer avec</div>
+
+            <div class="flex gap-2.5">
+               <button type="button" class="flex-1 p-[13px_12px] bg-surface2 border-[1.5px] border-borderMain rounded-v14 font-poppins text-[13.5px] font-semibold text-gray-700 cursor-pointer flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
+                <i class="fa-brands fa-facebook text-blue-500"></i>facebook
+              </button>
+               <button type="button" class="flex-1 p-[13px_12px] bg-surface2 border-[1.5px] border-borderMain rounded-v14 font-poppins text-[13.5px] font-semibold text-gray-700 cursor-pointer flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
+                <i class="fa-brands fa-instagram text-red-700"></i>instagram
+              </button>
+
+              <button type="button" class="flex-1 p-[13px_12px] bg-surface2 border-[1.5px] border-borderMain rounded-v14 font-poppins text-[13.5px] font-semibold text-gray-700 cursor-pointer flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
+                <i class="fa-brands fa-google text-[#db4437]"></i> Google
+              </button>
+              <button type="button" class="flex-1 p-[13px_12px] bg-surface2 border-[1.5px] border-borderMain rounded-v14 font-poppins text-[13.5px] font-semibold text-gray-700 cursor-pointer flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
+                <i class="fa-brands fa-apple text-[#1a1a1a]"></i> Apple
+              </button>
+            </div>
+          </form>
+
+          <!-- REGISTER (DESKTOP) -->
+          <form class="auth-form flex-col gap-3.5 form-register" id="dform-register">
+            <div class="mb-1">
+              <h1 class="font-bricolage text-[26px] font-extrabold text-textMain tracking-tight mb-[3px]">Créer un compte</h1>
+              <p class="text-[13px] text-textMuted font-medium italic">Rejoignez la communauté DocMaster</p>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[12px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-user text-primary text-[11px]"></i> Nom Complet</label>
+              <div class="relative flex items-center group">
+                <i class="fa-regular fa-user absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+                <input type="text" placeholder="Jean Dupont" class="w-full p-[14px_14px_14px_42px] bg-surface2 border-[1.5px] border-borderMain rounded-v14 font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/15 focus:bg-white placeholder:text-[#c4bab0]" required />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[12px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-envelope text-primary text-[11px]"></i> Adresse e-mail</label>
+              <div class="relative flex items-center group">
+                <i class="fa-regular fa-envelope absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+                <input type="email" placeholder="vous@exemple.com" class="w-full p-[14px_14px_14px_42px] bg-surface2 border-[1.5px] border-borderMain rounded-v14 font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/15 focus:bg-white placeholder:text-[#c4bab0]" required />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[12px] font-bold text-gray-500 tracking-wider uppercase flex items-center gap-1.5"><i class="fa-solid fa-lock text-primary text-[11px]"></i> Mot de passe</label>
+              <div class="relative flex items-center group">
+                <i class="fa-solid fa-lock absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+                <input type="password" id="dregister-pw" placeholder="Min. 8 caractères" class="w-full p-[14px_45px_14px_42px] bg-surface2 border-[1.5px] border-borderMain rounded-v14 font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/15 focus:bg-white placeholder:text-[#c4bab0]" oninput="checkStrength(this, 'd')" required />
+                <button class="absolute right-3 p-1.5 text-textMuted hover:text-primary transition-colors cursor-pointer" onclick="togglePw('dregister-pw', this)" type="button">
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </div>
+              <div class="flex gap-1 mt-1">
+                <div class="pw-bar flex-1 h-[3px] bg-black/10 rounded-full transition-all" id="dbar1"></div>
+                <div class="pw-bar flex-1 h-[3px] bg-black/10 rounded-full transition-all" id="dbar2"></div>
+                <div class="pw-bar flex-1 h-[3px] bg-black/10 rounded-full transition-all" id="dbar3"></div>
+                <div class="pw-bar flex-1 h-[3px] bg-black/10 rounded-full transition-all" id="dbar4"></div>
+              </div>
+            </div>
+
+            <button type="submit" class="p-[15px_20px] bg-primary text-white rounded-v14 font-bricolage text-[16px] font-bold cursor-pointer flex items-center justify-center gap-[9px] transition-all shadow-lg shadow-primary/40 active:scale-[0.98] active:shadow-none mt-1">
+              <i class="fa-solid fa-user-plus"></i> Créer mon compte
+            </button>
+
+            <p class="text-[11px] text-textMuted text-center leading-[1.6]">
+              En vous inscrivant, vous acceptez nos
+              <a href="#" class="text-primary font-semibold hover:underline">Conditions</a> et notre
+              <a href="#" class="text-primary font-semibold hover:underline">Politique de confidentialité</a>.
+            </p>
+          </form>
+        </main>
+      </div>
+      <!-- /card-desktop -->
+    </div>
+    <!-- /page-wrapper -->
+
+    <script>
+      function switchTab(tab, prefix) {
+        prefix = prefix || "";
+        const isLogin = tab === "login";
+        
+        // Toggle forms visibility
+        ["login", "register"].forEach((t) => {
+          const form = document.getElementById(prefix + "form-" + t);
+          if (form) form.classList.toggle("visible", t === tab);
+          
+          const btn = document.getElementById(prefix + "tab-" + t);
+          if (btn) {
+            btn.classList.toggle("text-white", t === tab);
+            btn.classList.toggle("text-textMuted", t !== tab);
+          }
+        });
+
+        // Toggle background slider position
+        const slider = document.getElementById(prefix + "toggle-slider");
+        if (slider) {
+          slider.style.left = isLogin ? "1.5px" : "calc(50% + 1.5px)";
+        }
+      }
+
+      function togglePw(id, btn) {
+        const input = document.getElementById(id);
+        const icon = btn.querySelector("i");
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        icon.className = show ? "fa-regular fa-eye-slash" : "fa-regular fa-eye";
+      }
+
+      function checkStrength(input, prefix) {
+        prefix = prefix || "";
+        const v = input.value;
+        const bars = [1, 2, 3, 4].map((n) =>
+          document.getElementById(prefix + "bar" + n),
+        );
+        bars.forEach((b) => {
+          if (b) b.className = "pw-bar";
+        });
+        let s = 0;
+        if (v.length >= 6) s++;
+        if (v.length >= 10) s++;
+        if (/[A-Z]/.test(v) && /[0-9]/.test(v)) s++;
+        if (/[^A-Za-z0-9]/.test(v)) s++;
+        const cls = s <= 1 ? "weak" : s <= 2 ? "medium" : "strong";
+        for (let i = 0; i < s; i++) {
+          if (bars[i]) bars[i].classList.add(cls);
+        }
+      }
+    </script>
+  </body>
+</html>

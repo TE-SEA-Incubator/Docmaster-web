@@ -1,17 +1,17 @@
 
 /* main.css */
 .nav-link.active a {
-  background-color: #eca85c;
+  background-color: #F5A64B;
   color: white;
   font-weight: bold;
-  border-bottom: 2px solid #eca85c;
+  border-bottom: 2px solid #F5A64B;
   padding: 10px;
   border-radius: 10px;
 }
 
 .nav-link-mobile.active a {
   
-  color:  #eca85c;
+  color:  #F5A64B;
   font-weight: bold;
   padding: 10px;
   border-radius: 10px;
@@ -28,7 +28,7 @@ body {
   left: calc(50% - 75px); 
   width: 150px;
   height: 150px;
-  background: radial-gradient(#ECA75B, transparent); /* Ajout de transparent pour le dégradé */
+  background: radial-gradient(#F5A64B, transparent); /* Ajout de transparent pour le dégradé */
   border-radius: 50% 55% 45% 50% / 50% 45% 55% 50%;
   filter: blur(10px);
   opacity: 0.5;
@@ -131,7 +131,7 @@ body {
 
         /* Ajustement pour correspondre à ton design orange/slate */
   .iti { width: 100%; }
-  .iti__country-list { z-index: 10002; border-radius: 1rem; border: none; shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
+  .iti__country-list { z-index: 10002; border-radius: 1rem; border: none; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
   #payPhone {
       width: 100%;
       border: 2px solid #f1f5f9; /* slate-100 */

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DocMaster - Plateforme Documentaire</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="./output.css" rel="stylesheet" />
-    <link rel="stylesheet" href="./rechercher.css" />
+    <link href="css/output.css" rel="stylesheet" />
+    <link rel="stylesheet" href="css/rechercher.css" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.0/build/css/intlTelInput.css"
@@ -21,7 +21,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Bricolage+Grotesque:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link
@@ -32,23 +32,29 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
-    <script src="index.js"></script>
-    <script src="script.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/script.js"></script>
     <style>
       /* Motif à points personnalisé pour le fond */
       .bg-dots {
-        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+        background-image: radial-gradient(#F5A64B 1px, transparent 1px);
         background-size: 20px 20px;
+      }
+      body {
+        font-family: 'Poppins', sans-serif;
+      }
+      h1, h2, h3, h4, .logo-text {
+        font-family: 'Bricolage Grotesque', sans-serif;
       }
     </style>
   </head>
   <body class="relative min-h-screen bg-white overflow-x-hidden">
     <div class="fixed inset-0 pointer-events-none" style="z-index: 0">
       <div
-        class="absolute -top-32 -left-32 w-70 aspect-square bg-orange-300 rounded-full mix-blend-multiply opacity-70 pointer-events-none z-0 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
+        class="absolute -top-32 -left-32 w-70 aspect-square bg-[#F5A64B] rounded-full mix-blend-multiply opacity-70 pointer-events-none z-0 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
       ></div>
       <div
-        class="absolute -top-32 -right-32 w-70 aspect-square bg-orange-300 rounded-full mix-blend-multiply opacity-70 pointer-events-none z-0 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
+        class="absolute -top-32 -right-32 w-70 aspect-square bg-[#F5A64B] rounded-full mix-blend-multiply opacity-70 pointer-events-none z-0 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
       ></div>
 
       <style>
@@ -58,7 +64,7 @@
         }
       </style>
       <div
-        class="mask-radial-at-top-left mask-radial-from-100% bg-orange-300"
+        class="mask-radial-at-top-left mask-radial-from-100% bg-[#F5A64B]"
       ></div>
 
       <div
@@ -75,7 +81,7 @@
       style="z-index: 0; min-height: 100%"
     >
       <div
-        class="absolute -bottom-32 -left-32 w-60 aspect-square bg-orange-300 rounded-full mix-blend-multiply opacity-70 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
+        class="absolute -bottom-32 -left-32 w-60 aspect-square bg-[#F5A64B] rounded-full mix-blend-multiply opacity-70 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
       ></div>
     </div>
     <header class="pb-5">
@@ -110,7 +116,7 @@
             <li class="nav-link">
               <a
                 href="rechercher.html"
-                class="group flex items-center gap-2 text-orange-300 font-bold hover:bg-[#eca85c] hover:text-white p-2 rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110"
+                class="group flex items-center gap-2 text-[#F5A64B] font-bold hover:bg-[#F5A64B] hover:text-white p-2 rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110"
               >
                 <i
                   class="fa-solid fa-magnifying-glass text-black group-hover:text-white transition-colors duration-300"
@@ -125,7 +131,7 @@
         <div class="p-1">
           <a
             href="login.html"
-            class="bg-orange-300 p-1 rounded-full shadow-md hover:bg-orange-400 transition duration-300 transform hover:-translate-y-2 hover:scale-110 inline-block"
+            class="bg-[#F5A64B] p-1 rounded-full shadow-md hover:bg-orange-400 transition duration-300 transform hover:-translate-y-2 hover:scale-110 inline-block"
           >
             <span class="text-white font-semibold">DM</span>
           </a>
@@ -231,7 +237,7 @@
 
         <div class="relative z-10 p-8 md:p-16 max-w-xl">
           <h2 class="text-2xl text-[#1a1a1a] leading-snug">
-            <span class="font-black font-bold">Bienvenue,</span>
+            <span class="font-black">Bienvenue,</span>
             <span class="text-[#E9A865]">DocMaster</span> a permis
             <br class="hidden md:block" />
             de retrouver plus de <span>2000 cartes</span>
@@ -640,7 +646,7 @@
       </section>
       <div
         id="modalWrapper"
-        class="fixed inset-0 z-[10000] hidden flex items-end md:items-center justify-center p-4"
+        class="fixed inset-0 z-[10000] hidden items-end md:items-center justify-center p-4"
       >
         <div
           id="modalBg"
@@ -1114,7 +1120,7 @@
       class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 -shadow-lg md:hidden"
     >
       <div
-        class="mask-radial-at-top-left mask-radial-from-100% bg-orange-300"
+        class="mask-radial-at-top-left mask-radial-from-100% bg-[#F5A64B]"
       ></div>
 
       <div
@@ -1154,7 +1160,7 @@
       <div class="absolute inset-0 bg-black/80 pointer-events-none -z-10"></div>
 
       <div
-        class="absolute -top-32 -right-32 w-80 aspect-square bg-orange-300 rounded-full mix-blend-multiply opacity-30 pointer-events-none -z-10 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
+        class="absolute -top-32 -right-32 w-80 aspect-square bg-[#F5A64B] rounded-full mix-blend-multiply opacity-30 pointer-events-none -z-10 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
       ></div>
 
       <div class="relative max-w-8xl px-5 mx-auto">
