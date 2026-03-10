@@ -7,23 +7,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
- <link href="css/output.css" rel="stylesheet" />
+<script src="./js//auth.js"></script>
+ <link
+      rel="shortcut icon"
+      href="./assets//images/favicon.png"
+      type="image/x-icon"
+    />
 <script>
   tailwind.config = {
     theme: {
       extend: {
         colors: {
-          primary: {
-            DEFAULT: '#F5A64B',
-            dark: '#D98A30',
-            light: '#FEF0DC',
-          },
-          green: {
-            dark: '#1E3A2F',
-            mid: '#2D5A42',
-            light: '#E8F5EE',
-          },
-          accent: '#F5A64B',
+          primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
+          'green-dark': '#1E3A2F',
+          'green-mid': '#2D5A42',
+          'green-light': '#E8F5EE',
           bgMain: '#F4EFE6',
           surface: '#FFFFFF',
           surface2: '#FAF7F2',
@@ -35,462 +33,545 @@
         fontFamily: {
           poppins: ['Poppins', 'sans-serif'],
           bricolage: ['"Bricolage Grotesque"', 'sans-serif'],
+        },
+        screens: {
+          'xs': '400px',
         }
       }
     }
   }
 </script>
-<script src="js/auth.js" defer></script>
 <style>
-/* ══ CUSTOM UTILITIES (Complex components not easily done with base Tailwind) ══ */
-:root {
-  --sidebar: 260px;
-}
-html, body { height: 100%; font-family: 'Poppins', sans-serif; overflow: hidden; background-color: #F4EFE6; }
+:root { --sidebar: 260px; }
 
-/* Sidebar logic (Mobile) */
-@media(max-width:900px){
-  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; transform: translateX(-100%); transition: transform .28s ease; z-index: 50; }
-  .sidebar.open { transform: translateX(0); }
-  .sb-overlay { display: block; opacity: 0; pointer-events: none; transition: opacity .28s; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 40; backdrop-filter: blur(3px); }
-  .sb-overlay.open { opacity: 1; pointer-events: all; }
-  body { overflow: auto; }
+/* ── Base: mobile-first, scroll allowed ── */
+html { font-family: 'Poppins', sans-serif; background: #F4EFE6; }
+body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100vh; overflow-x: hidden; }
+
+/* ── Sidebar: drawer on mobile, fixed on desktop ── */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar);
+  transform: translateX(-100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  z-index: 50;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.sidebar.open { transform: translateX(0); }
+
+/* Desktop: sidebar always visible */
+@media (min-width: 900px) {
+  body { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { position: relative; transform: none !important; flex-shrink: 0; }
+  .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+  .main-content { flex: 1; overflow-y: auto; }
 }
 
-/* Sidebar decorative circle */
+/* Mobile: main is a normal flow div */
+@media (max-width: 899px) {
+  .main-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
+  .main-content { flex: 1; }
+}
+
+/* Sidebar overlay */
+.sb-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 40;
+  backdrop-filter: blur(3px); opacity: 0;
+  pointer-events: none; transition: opacity .28s;
+}
+.sb-overlay.show { display: block; opacity: 1; pointer-events: all; }
+
+/* Sidebar decorative */
 .sidebar::after {
   content: ''; position: absolute; width: 260px; height: 260px; border-radius: 50%;
-  background: rgba(245,166,75,0.05); bottom: -80px; left: -60px; pointer-events: none;
+  background: rgba(245,166,75,.05); bottom: -80px; left: -60px; pointer-events: none;
 }
 
-/* Sidebar active indicator */
+/* Active sidebar item */
+.sb-item.active { background: rgba(245,166,75,.15); color: #fff; }
 .sb-item.active::before {
   content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
   width: 3px; height: 55%; background: #F5A64B; border-radius: 0 3px 3px 0;
 }
 
-/* Action card decorative circle */
+/* Action card deco */
 .action-card::after {
   content: ''; position: absolute; width: 100px; height: 100px; border-radius: 50%;
-  right: -20px; bottom: -30px; background: rgba(255,255,255,0.07);
+  right: -20px; bottom: -30px; background: rgba(255,255,255,.07);
 }
 
-/* Donut Chart Animation/Styles */
+/* Donut */
 .donut-wrap svg { transform: rotate(-90deg); }
 
-/* Custom Scrollbar */
+/* Scrollbar */
 .custom-scroll::-webkit-scrollbar { width: 4px; }
 .custom-scroll::-webkit-scrollbar-thumb { background: #EAE3D8; border-radius: 10px; }
+
+/* Bottom nav (mobile only) */
+.bottom-nav { display: flex; }
+@media (min-width: 900px) { .bottom-nav { display: none; } }
+
+/* Hide mobile topbar search on very small screens, show on md+ */
+.search-bar-wrap { display: none; }
+@media (min-width: 640px) { .search-bar-wrap { display: flex; } }
 </style>
 </head>
 <body>
 
+<!-- Sidebar Overlay -->
 <div class="sb-overlay" id="overlay" onclick="closeSb()"></div>
 
-<div class="app flex h-screen overflow-hidden">
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar w-[var(--sidebar)] bg-green-dark flex flex-col" id="sidebar">
+  <!-- Logo -->
+  <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 flex-shrink-0">
+   
+<img src="./assets/images/logo.png" alt="Docmaster logo" class="rounded-md w-70 h-10">    <!-- Close btn mobile -->
+    <button class="ml-auto text-white/40 hover:text-white transition-colors md:hidden" onclick="closeSb()">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+  </div>
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar w-[var(--sidebar)] flex-shrink-0 bg-green-dark flex flex-col relative z-[60] overflow-hidden" id="sidebar">
-    <div class="flex items-center gap-[11px] p-6 pb-5 border-b border-white/10">
-      <div class="w-9 h-9 rounded-[10px] bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
-        <i class="fa-solid fa-file-shield text-primary text-[15px]"></i>
-      </div>
-      <span class="font-bricolage text-[18px] font-bold text-white tracking-tight">DocMaster</span>
-    </div>
-
-    <div class="px-[22px] pt-[18px] pb-[6px] text-[10px] font-bold text-white/30 uppercase tracking-widest">Principal</div>
-    <nav class="flex flex-col gap-0.5 px-[10px]">
-      <a class="sb-item active flex items-center gap-3 px-[13px] py-[10px] rounded-[11px] text-[13.5px] font-medium text-white cursor-pointer bg-primary/10 relative" href="dashboard.html">
+  <div class="flex-1 overflow-y-auto py-2">
+    <div class="px-[22px] pt-4 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Principal</div>
+    <nav class="flex flex-col gap-0.5 px-2.5">
+      <a class="sb-item active flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#">
         <i class="fa-solid fa-house w-[18px] text-center text-primary"></i> Tableau de bord
       </a>
-      <a class="sb-item flex items-center gap-3 px-[13px] py-[10px] rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90" href="#">
-        <i class="fa-solid fa-file-circle-plus w-[18px] text-center opacity-80"></i> Mes Signalements 
-        <span class="ml-auto bg-primary text-white text-[10px] font-bold px-[7px] py-[2px] rounded-[10px] leading-tight">3</span>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#">
+        <i class="fa-solid fa-file-circle-plus w-[18px] text-center opacity-80"></i> Mes Signalements
+        <span class="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-tight">3</span>
       </a>
-      <a class="sb-item flex items-center gap-3 px-[13px] py-[10px] rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90" href="rechercher.html">
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#">
         <i class="fa-solid fa-magnifying-glass w-[18px] text-center opacity-80"></i> Rechercher
       </a>
-      <a class="sb-item flex items-center gap-3 px-[13px] py-[10px] rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90" href="#">
-        <i class="fa-solid fa-envelope w-[18px] text-center opacity-80"></i> Messages 
-        <span class="ml-auto bg-primary text-white text-[10px] font-bold px-[7px] py-[2px] rounded-[10px] leading-tight">5</span>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#">
+        <i class="fa-solid fa-envelope w-[18px] text-center opacity-80"></i> Messages
+        <span class="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-tight">5</span>
       </a>
-      <a class="sb-item flex items-center gap-3 px-[13px] py-[10px] rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90" href="#">
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#">
         <i class="fa-solid fa-bell w-[18px] text-center opacity-80"></i> Notifications
       </a>
     </nav>
 
-    <div class="px-[22px] pt-[18px] pb-[6px] text-[10px] font-bold text-white/30 uppercase tracking-widest">Compte</div>
-    <nav class="flex flex-col gap-0.5 px-[10px]">
-      <a class="sb-item flex items-center gap-3 px-[13px] py-[10px] rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90" href="#"><i class="fa-solid fa-crown w-[18px] text-center opacity-80"></i> Abonnement</a>
-      <a class="sb-item flex items-center gap-3 px-[13px] py-[10px] rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90" href="#"><i class="fa-solid fa-users-gear w-[18px] text-center opacity-80"></i> Parrainage</a>
-      <a class="sb-item flex items-center gap-3 px-[13px] py-[10px] rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90" href="#"><i class="fa-solid fa-gear w-[18px] text-center opacity-80"></i> Paramètres</a>
-      <a class="sb-item logout-btn flex items-center gap-3 px-[13px] py-[10px] rounded-[11px] text-[13.5px] font-medium text-red-400/70 cursor-pointer transition-all hover:bg-white/5 hover:text-red-400" href="#"><i class="fa-solid fa-right-from-bracket w-[18px] text-center opacity-80"></i> Déconnexion</a>
+    <div class="px-[22px] pt-5 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Compte</div>
+    <nav class="flex flex-col gap-0.5 px-2.5">
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#"><i class="fa-solid fa-crown w-[18px] text-center opacity-80"></i> Abonnement</a>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#"><i class="fa-solid fa-users-gear w-[18px] text-center opacity-80"></i> Parrainage</a>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#"><i class="fa-solid fa-gear w-[18px] text-center opacity-80"></i> Paramètres</a>
+      <a class="sb-item logout-btn flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-red-400/70 cursor-pointer transition-all hover:bg-white/5 hover:text-red-400 relative" href="#"><i class="fa-solid fa-right-from-bracket w-[18px] text-center opacity-80"></i> Déconnexion</a>
     </nav>
+  </div>
 
-    <div class="mt-auto p-[14px_10px_18px] border-t border-white/10">
-      <div class="flex items-center gap-[10px] p-[10px_13px] rounded-[11px] cursor-pointer hover:bg-white/5 transition-colors group">
-        <div class="w-[33px] h-[33px] rounded-[9px] bg-primary flex items-center justify-center font-bricolage text-[12px] font-extrabold text-white flex-shrink-0" id="userInitial">JM</div>
-        <div class="flex flex-col"><div class="text-[13px] font-semibold text-white leading-tight" id="userName">Jean-Marc D.</div><div class="text-[11px] text-white/40">Plan Standard</div></div>
-        <i class="fa-solid fa-chevron-up ml-auto text-white/30 text-[11px] group-hover:text-white/50 transition-colors"></i>
-      </div>
-    </div>
-  </aside>
-
-  <!-- MAIN -->
-  <div class="flex-1 flex flex-col overflow-hidden min-w-0">
-    <header class="h-[62px] bg-surface border-b border-borderMain flex items-center px-[28px] gap-[14px] flex-shrink-0">
-      <button class="md:hidden p-1 text-[20px] text-textMain cursor-pointer" onclick="openSb()"><i class="fa-solid fa-bars"></i></button>
-      <span class="font-bricolage text-[17px] font-bold text-textMain tracking-tight whitespace-nowrap">Tableau de bord</span>
-      <div class="flex-1 max-w-[400px] ml-6 hidden md:flex items-center bg-surface2 border-[1.5px] border-borderMain rounded-[11px] overflow-hidden transition-colors focus-within:border-primary">
-        <i class="fa-solid fa-search px-[13px] text-textMuted text-[13px] flex-shrink-0"></i>
-        <input type="text" placeholder="Rechercher un document, une personne…" class="flex-1 py-[9px] pr-[13px] bg-transparent border-none outline-none font-poppins text-[13.5px] text-textMain placeholder:text-textMuted">
-      </div>
-      <div class="ml-auto flex items-center gap-2">
-        <div class="w-9 h-9 rounded-[9px] bg-surface2 border-[1.5px] border-borderMain flex items-center justify-center text-[14px] text-textMain/70 cursor-pointer relative transition-all hover:border-primary hover:text-primary group" title="Notifications">
-          <i class="fa-regular fa-bell"></i>
-          <div class="absolute top-[7px] right-[7px] w-[7px] h-[7px] rounded-full bg-primary border-2 border-surface"></div>
-        </div>
-        <div class="w-9 h-9 rounded-[9px] bg-surface2 border-[1.5px] border-borderMain flex items-center justify-center text-[14px] text-textMain/70 cursor-pointer transition-all hover:border-primary hover:text-primary" title="Aide">
-          <i class="fa-regular fa-circle-question"></i>
-        </div>
-        <div class="flex items-center gap-2 p-[5px_11px_5px_5px] bg-surface2 border-[1.5px] border-borderMain rounded-[11px] cursor-pointer transition-colors hover:border-primary">
-          <div class="w-7 h-7 rounded-[7px] bg-green-dark flex items-center justify-center font-bricolage text-[11px] font-extrabold text-primary" id="topInitial">JM</div>
-          <span class="text-[13px] font-semibold text-textMain" id="topName">Jean-Marc</span>
-          <i class="fa-solid fa-chevron-down text-[9px] text-textMuted ml-0.5"></i>
-        </div>
-      </div>
-    </header>
-
-    <div class="flex-1 overflow-y-auto custom-scroll p-[24px_28px_28px] flex flex-col gap-5">
-
-      <!-- Greeting -->
-      <div class="flex items-end justify-between flex-wrap gap-2.5">
-        <div class="flex flex-col">
-          <h1 class="font-bricolage text-2xl font-extrabold text-textMain tracking-tight leading-tight">Bonjour, <span id="helloName">Jean-Marc</span> 👋</h1>
-          <p class="text-[13.5px] text-textMuted font-medium italic">Voici un aperçu de vos activités sur DocMaster</p>
-        </div>
-        <div class="text-[12.5px] text-textMuted font-medium bg-surface border-[1.5px] border-borderMain p-[7px_14px] rounded-[9px] flex items-center gap-[7px] whitespace-nowrap">
-          <i class="fa-regular fa-calendar text-primary"></i>
-          <span id="currentDay">Lundi 9 mars 2026</span>
-        </div>
-      </div>
-
-      <!-- Quick actions + Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[14px]">
-        <div class="action-card rounded-[18px] p-[22px_20px] cursor-pointer transition-all duration-200 hover:-translate-y-0.5 relative overflow-hidden flex flex-col gap-3.5 bg-primary shadow-lg shadow-primary/20 group">
-          <div class="w-[46px] h-[46px] rounded-[14px] bg-white/20 flex items-center justify-center text-[20px] text-white relative z-10 transition-transform group-hover:scale-110">
-            <i class="fa-solid fa-file-circle-xmark"></i>
-          </div>
-          <div class="relative z-10">
-            <div class="font-bricolage text-[16px] font-bold text-white leading-tight">J'ai perdu un document</div>
-            <div class="text-[11.5px] text-white/70 font-medium">Signaler maintenant →</div>
-          </div>
-        </div>
-        <div class="action-card rounded-[18px] p-[22px_20px] cursor-pointer transition-all duration-200 hover:-translate-y-0.5 relative overflow-hidden flex flex-col gap-3.5 bg-green-dark shadow-lg shadow-green-dark/20 group">
-          <div class="w-[46px] h-[46px] rounded-[14px] bg-white/10 flex items-center justify-center text-[20px] text-white relative z-10 transition-transform group-hover:scale-110">
-            <i class="fa-solid fa-file-circle-check"></i>
-          </div>
-          <div class="relative z-10">
-            <div class="font-bricolage text-[16px] font-bold text-white leading-tight">J'ai trouvé un document</div>
-            <div class="text-[11.5px] text-white/70 font-medium">Déposer maintenant →</div>
-          </div>
-        </div>
-        <div class="bg-surface border-[1.5px] border-borderMain rounded-[18px] p-5 flex flex-col gap-3 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5">
-          <div class="flex items-center justify-between">
-            <div class="w-10 h-10 rounded-[11px] bg-green-light flex items-center justify-center text-[17px] flex-shrink-0">
-              <i class="fa-solid fa-circle-check text-green-500"></i>
-            </div>
-            <span class="text-[11px] font-bold py-[3px] px-2 rounded-[8px] bg-green-100 text-green-700">↑ 12%</span>
-          </div>
-          <div class="font-bricolage text-[28px] font-extrabold text-textMain leading-none">150+</div>
-          <div class="text-[12.5px] text-textMuted font-medium">Documents retrouvés ce mois</div>
-        </div>
-        <div class="bg-surface border-[1.5px] border-borderMain rounded-[18px] p-5 flex flex-col gap-3 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5">
-          <div class="flex items-center justify-between">
-            <div class="w-10 h-10 rounded-[11px] bg-primary/10 flex items-center justify-center text-[17px] flex-shrink-0">
-              <i class="fa-solid fa-users text-primary"></i>
-            </div>
-            <span class="text-[11px] font-bold py-[3px] px-2 rounded-[8px] bg-primary-light text-primary-dark">+38</span>
-          </div>
-          <div class="font-bricolage text-[28px] font-extrabold text-textMain leading-none">2 400</div>
-          <div class="text-[12.5px] text-textMuted font-medium">Membres actifs</div>
-        </div>
-      </div>
-
-      <!-- Main grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-[18px] items-start">
-
-        <!-- Left -->
-        <div class="flex flex-col gap-[18px]">
-
-          <!-- Mes signalements -->
-          <div class="bg-surface border-[1.5px] border-borderMain rounded-[18px] overflow-hidden">
-            <div class="flex items-center justify-between p-[16px_20px_14px] border-b border-borderMain">
-              <div class="font-bricolage text-[14.5px] font-bold text-textMain flex items-center gap-2">
-                <i class="fa-solid fa-clock-rotate-left text-primary text-[13px]"></i> Mes signalements récents
-              </div>
-              <a href="#" class="text-[12px] font-semibold text-primary flex items-center gap-1.5 transition-all hover:gap-2 underline-offset-4 hover:underline">
-                Tout voir <i class="fa-solid fa-arrow-right text-[10px]"></i>
-              </a>
-            </div>
-            <div class="flex flex-col">
-              <div class="flex items-center gap-3.5 px-5 py-3.5 border-b border-borderMain transition-colors cursor-pointer hover:bg-surface2">
-                <div class="w-[38px] h-[38px] rounded-[11px] bg-primary-light flex items-center justify-center text-[15px] flex-shrink-0">
-                  <i class="fa-solid fa-id-card text-primary-dark"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-[13.5px] font-semibold text-textMain mb-0.5 truncate">CNI perdue</div>
-                  <div class="text-[11.5px] text-textMuted flex items-center gap-1.5 font-medium italic">
-                    <i class="fa-solid fa-location-dot text-[10px]"></i> Yaoundé Centre-ville &nbsp;·&nbsp; <i class="fa-regular fa-clock text-[10px]"></i> 10/05/2024
-                  </div>
-                </div>
-                <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 whitespace-nowrap">En cours</span>
-              </div>
-              <div class="flex items-center gap-3.5 px-5 py-3.5 border-b border-borderMain transition-colors cursor-pointer hover:bg-surface2">
-                <div class="w-[38px] h-[38px] rounded-[11px] bg-green-100 flex items-center justify-center text-[15px] flex-shrink-0">
-                  <i class="fa-solid fa-credit-card text-green-700"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-[13.5px] font-semibold text-textMain mb-0.5 truncate">Carte Vitale perdue</div>
-                  <div class="text-[11.5px] text-textMuted flex items-center gap-1.5 font-medium italic">
-                    <i class="fa-solid fa-location-dot text-[10px]"></i> Douala Akwa &nbsp;·&nbsp; <i class="fa-regular fa-clock text-[10px]"></i> 28/04/2024
-                  </div>
-                </div>
-                <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-700 whitespace-nowrap">Retrouvé</span>
-              </div>
-              <div class="flex items-center gap-3.5 px-5 py-3.5 border-b border-borderMain transition-colors cursor-pointer hover:bg-surface2">
-                <div class="w-[38px] h-[38px] rounded-[11px] bg-blue-50 flex items-center justify-center text-[15px] flex-shrink-0">
-                  <i class="fa-solid fa-passport text-blue-500"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-[13.5px] font-semibold text-textMain mb-0.5 truncate">Passeport perdu</div>
-                  <div class="text-[11.5px] text-textMuted flex items-center gap-1.5 font-medium italic">
-                    <i class="fa-solid fa-location-dot text-[10px]"></i> Bafoussam &nbsp;·&nbsp; <i class="fa-regular fa-clock text-[10px]"></i> 02/04/2024
-                  </div>
-                </div>
-                <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-700 whitespace-nowrap">Retrouvé</span>
-              </div>
-              <div class="flex items-center gap-3.5 px-5 py-3.5 border-b border-borderMain transition-colors cursor-pointer hover:bg-surface2">
-                <div class="w-[38px] h-[38px] rounded-[11px] bg-purple-50 flex items-center justify-center text-[15px] flex-shrink-0">
-                  <i class="fa-solid fa-graduation-cap text-purple-600"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-[13.5px] font-semibold text-textMain mb-0.5 truncate">Diplôme BAC perdu</div>
-                  <div class="text-[11.5px] text-textMuted flex items-center gap-1.5 font-medium italic">
-                    <i class="fa-solid fa-location-dot text-[10px]"></i> Ngaoundéré &nbsp;·&nbsp; <i class="fa-regular fa-clock text-[10px]"></i> 15/03/2024
-                  </div>
-                </div>
-                <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-600 whitespace-nowrap">Nouveau</span>
-              </div>
-              <div class="flex items-center gap-3.5 px-5 py-3.5 last:border-b-0 transition-colors cursor-pointer hover:bg-surface2">
-                <div class="w-[38px] h-[38px] rounded-[11px] bg-amber-50 flex items-center justify-center text-[15px] flex-shrink-0">
-                  <i class="fa-solid fa-car text-amber-600"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-[13.5px] font-semibold text-textMain mb-0.5 truncate">Permis de conduire perdu</div>
-                  <div class="text-[11.5px] text-textMuted flex items-center gap-1.5 font-medium italic">
-                    <i class="fa-solid fa-location-dot text-[10px]"></i> Garoua &nbsp;·&nbsp; <i class="fa-regular fa-clock text-[10px]"></i> 10/03/2024
-                  </div>
-                </div>
-                <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 whitespace-nowrap">En cours</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Trouvés près de moi -->
-          <div class="bg-surface border-[1.5px] border-borderMain rounded-[18px] overflow-hidden">
-            <div class="flex items-center justify-between p-[16px_20px_14px] border-b border-borderMain">
-              <div class="font-bricolage text-[14.5px] font-bold text-textMain flex items-center gap-2">
-                <i class="fa-solid fa-location-dot text-primary text-[13px]"></i> Trouvés près de vous — Yaoundé
-              </div>
-              <a href="#" class="text-[12px] font-semibold text-primary flex items-center gap-1.5 transition-all hover:gap-2 underline-offset-4 hover:underline">
-                Rechercher <i class="fa-solid fa-arrow-right text-[10px]"></i>
-              </a>
-            </div>
-            <div class="flex flex-col">
-              <div class="flex items-center gap-3.5 px-5 py-3.5 border-b border-borderMain transition-colors cursor-pointer hover:bg-surface2">
-                <div class="w-[38px] h-[38px] rounded-[11px] bg-primary-light flex items-center justify-center text-[15px] flex-shrink-0">
-                  <i class="fa-solid fa-id-card text-primary-dark"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-[13.5px] font-semibold text-textMain mb-0.5 truncate">CNI trouvée — Nom illisible</div>
-                  <div class="text-[11.5px] text-textMuted flex items-center gap-1.5 font-medium italic">
-                    <i class="fa-solid fa-location-dot text-[10px]"></i> Marché Central &nbsp;·&nbsp; <i class="fa-regular fa-clock text-[10px]"></i> Il y a 2h
-                  </div>
-                </div>
-                <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary-dark whitespace-nowrap">Voir →</span>
-              </div>
-              <div class="flex items-center gap-3.5 px-5 py-3.5 border-b border-borderMain transition-colors cursor-pointer hover:bg-surface2">
-                <div class="w-[38px] h-[38px] rounded-[11px] bg-blue-50 flex items-center justify-center text-[15px] flex-shrink-0">
-                  <i class="fa-solid fa-passport text-blue-500"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-[13.5px] font-semibold text-textMain mb-0.5 truncate">Passeport trouvé — Init. A.M.</div>
-                  <div class="text-[11.5px] text-textMuted flex items-center gap-1.5 font-medium italic">
-                    <i class="fa-solid fa-location-dot text-[10px]"></i> Mvan &nbsp;·&nbsp; <i class="fa-regular fa-clock text-[10px]"></i> Il y a 5h
-                  </div>
-                </div>
-                <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary-dark whitespace-nowrap">Voir →</span>
-              </div>
-              <div class="flex items-center gap-3.5 px-5 py-3.5 last:border-b-0 transition-colors cursor-pointer hover:bg-surface2">
-                <div class="w-[38px] h-[38px] rounded-[11px] bg-amber-50 flex items-center justify-center text-[15px] flex-shrink-0">
-                  <i class="fa-solid fa-car text-amber-600"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-[13.5px] font-semibold text-textMain mb-0.5 truncate">Permis trouvé — Init. K.N.</div>
-                  <div class="text-[11.5px] text-textMuted flex items-center gap-1.5 font-medium italic">
-                    <i class="fa-solid fa-location-dot text-[10px]"></i> Essos &nbsp;·&nbsp; <i class="fa-regular fa-clock text-[10px]"></i> Il y a 1j
-                  </div>
-                </div>
-                <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary-dark whitespace-nowrap">Voir →</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Right col -->
-        <div class="flex flex-col gap-[18px]">
-
-          <!-- Donut -->
-          <div class="bg-surface border-[1.5px] border-borderMain rounded-[18px] overflow-hidden">
-            <div class="flex items-center justify-between p-[16px_20px_14px] border-b border-borderMain">
-              <div class="font-bricolage text-[14.5px] font-bold text-textMain flex items-center gap-2">
-                <i class="fa-solid fa-chart-pie text-primary text-[13px]"></i> Mes signalements
-              </div>
-            </div>
-            <div class="p-5 flex flex-col items-center gap-4">
-              <div class="donut-wrap relative w-32 h-32">
-                <svg width="128" height="128" viewBox="0 0 128 128">
-                  <circle cx="64" cy="64" r="50" fill="none" stroke="#EAE3D8" stroke-width="13"/>
-                  <circle cx="64" cy="64" r="50" fill="none" stroke="#10B981" stroke-width="13" stroke-dasharray="125.7 188.5" stroke-dashoffset="0"/>
-                  <circle cx="64" cy="64" r="50" fill="none" stroke="#F5A64B" stroke-width="13" stroke-dasharray="125.7 188.5" stroke-dashoffset="-125.7"/>
-                  <circle cx="64" cy="64" r="50" fill="none" stroke="#7C3AED" stroke-width="13" stroke-dasharray="62.8 251.3" stroke-dashoffset="-251.3"/>
-                </svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                  <div class="font-bricolage text-[26px] font-extrabold text-textMain leading-none">5</div>
-                  <div class="text-[10.5px] text-textMuted mt-0.5">Total</div>
-                </div>
-              </div>
-              <div class="flex flex-col gap-[7px] w-full">
-                <div class="flex items-center justify-between text-[13px]">
-                  <div class="flex items-center gap-2 text-textMain font-medium"><div class="w-[9px] h-[9px] rounded-[3px] flex-shrink-0 bg-[#10B981]"></div>Retrouvés</div>
-                  <span class="font-bricolage font-bold text-textMain text-[14px]">2</span>
-                </div>
-                <div class="flex items-center justify-between text-[13px]">
-                  <div class="flex items-center gap-2 text-textMain font-medium"><div class="w-[9px] h-[9px] rounded-[3px] flex-shrink-0 bg-[#F5A64B]"></div>En cours</div>
-                  <span class="font-bricolage font-bold text-textMain text-[14px]">2</span>
-                </div>
-                <div class="flex items-center justify-between text-[13px]">
-                  <div class="flex items-center gap-2 text-textMain font-medium"><div class="w-[9px] h-[9px] rounded-[3px] flex-shrink-0 bg-[#7C3AED]"></div>Nouveaux</div>
-                  <span class="font-bricolage font-bold text-textMain text-[14px]">1</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Notifications -->
-          <div class="bg-surface border-[1.5px] border-borderMain rounded-[18px] overflow-hidden">
-            <div class="flex items-center justify-between p-[16px_20px_14px] border-b border-borderMain">
-              <div class="font-bricolage text-[14.5px] font-bold text-textMain flex items-center gap-2">
-                <i class="fa-solid fa-bell text-primary text-[13px]"></i> Notifications
-              </div>
-              <a href="#" class="text-[12px] font-semibold text-primary flex items-center gap-1.5 transition-all hover:gap-2 underline-offset-4 hover:underline">
-                Tout voir <i class="fa-solid fa-arrow-right text-[10px]"></i>
-              </a>
-            </div>
-            <div class="flex flex-col">
-              <div class="flex gap-2.5 px-5 py-3.5 border-b border-borderMain cursor-pointer transition-colors hover:bg-surface2 relative">
-                <div class="absolute left-[9px] top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-primary"></div>
-                <div class="w-[34px] h-[34px] rounded-[9px] bg-green-100 flex items-center justify-center text-[13px] flex-shrink-0">
-                  <i class="fa-solid fa-circle-check text-green-700"></i>
-                </div>
-                <div class="flex flex-col">
-                  <div class="text-[12.5px] text-textMain leading-snug mb-0.5 italic"><strong>Carte Vitale retrouvée !</strong> Un utilisateur l'a signalée à Douala.</div>
-                  <div class="text-[10.5px] text-textMuted font-medium italic">Il y a 30 min</div>
-                </div>
-              </div>
-              <div class="flex gap-2.5 px-5 py-3.5 border-b border-borderMain cursor-pointer transition-colors hover:bg-surface2 relative">
-                <div class="absolute left-[9px] top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-primary"></div>
-                <div class="w-[34px] h-[34px] rounded-[9px] bg-primary-light flex items-center justify-center text-[13px] flex-shrink-0">
-                  <i class="fa-solid fa-envelope text-primary-dark"></i>
-                </div>
-                <div class="flex flex-col">
-                  <div class="text-[12.5px] text-textMain leading-snug mb-0.5 italic"><strong>Nouveau message</strong> concernant votre CNI perdue.</div>
-                  <div class="text-[10.5px] text-textMuted font-medium italic">Il y a 2h</div>
-                </div>
-              </div>
-              <div class="flex gap-2.5 px-5 py-3.5 last:border-b-0 cursor-pointer transition-colors hover:bg-surface2 relative">
-                <div class="w-[34px] h-[34px] rounded-[9px] bg-purple-50 flex items-center justify-center text-[13px] flex-shrink-0">
-                  <i class="fa-solid fa-star text-purple-600"></i>
-                </div>
-                <div class="flex flex-col">
-                  <div class="text-[12.5px] text-textMain leading-snug mb-0.5 italic"><strong>Plan Standard activé.</strong> Vos 5 signalements sont actifs.</div>
-                  <div class="text-[10.5px] text-textMuted font-medium italic">Hier</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Plan -->
-          <div class="bg-green-dark rounded-[18px] p-5 relative overflow-hidden group">
-            <div class="inline-flex items-center gap-1.5 bg-primary/15 border border-primary/25 rounded-full px-2.5 py-1 mb-3">
-              <i class="fa-solid fa-star text-primary text-[9px]"></i>
-              <span class="text-[10.5px] font-bold text-primary uppercase tracking-wide">Plan actuel</span>
-            </div>
-            <div class="font-bricolage text-[18px] font-extrabold text-white mb-0.5">Standard</div>
-            <div class="text-[12px] text-white/50 mb-3.5">5 signalements · SMS & Email</div>
-            <div class="mb-3.5">
-              <div class="flex justify-between text-[11.5px] mb-1.5">
-                <span class="text-white/60">Signalements utilisés</span>
-                <span class="text-primary font-bold">3 / 5</span>
-              </div>
-              <div class="h-[5px] bg-white/10 rounded-full overflow-hidden">
-                <div class="h-full bg-primary rounded-full w-[60%] shadow-[0_0_8px_rgba(245,166,75,0.4)]"></div>
-              </div>
-            </div>
-            <div class="flex flex-col gap-1.5 mb-4 relative z-10">
-              <div class="flex items-center gap-2 text-[12.5px] text-white/70">
-                <i class="fa-solid fa-check text-primary text-[11px]"></i> Alertes SMS + Email
-              </div>
-              <div class="flex items-center gap-2 text-[12.5px] text-white/70">
-                <i class="fa-solid fa-check text-primary text-[11px]"></i> Suivi en temps réel
-              </div>
-              <div class="flex items-center gap-2 text-[12.5px] text-white/30 italic">
-                <i class="fa-solid fa-lock text-[11px]"></i> Géolocalisation avancée
-              </div>
-            </div>
-            <button class="w-full py-2.5 rounded-[11px] bg-primary text-white font-bricolage text-[13.5px] font-bold cursor-pointer flex items-center justify-center gap-2 transition-all hover:bg-primary-dark hover:-translate-y-0.5 active:translate-y-0 shadow-lg shadow-primary/20 relative z-10">
-              <i class="fa-solid fa-rocket"></i> Passer au plan Pro
-            </button>
-          </div>
-
-        </div>
-      </div>
-
+  <!-- User footer -->
+  <div class="px-2.5 py-3.5 border-t border-white/10 flex-shrink-0">
+    <div class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[11px] cursor-pointer hover:bg-white/5 transition-colors group">
+      <div class="w-[33px] h-[33px] rounded-[9px] bg-primary flex items-center justify-center font-bricolage text-xs font-extrabold text-white flex-shrink-0" id="userInitial">JM</div>
+      <div><div class="text-[13px] font-semibold text-white leading-tight" id="userName">Jean-Marc D.</div><div class="text-[11px] text-white/40">Plan Standard</div></div>
+      <i class="fa-solid fa-chevron-up ml-auto text-white/30 text-[11px]"></i>
     </div>
   </div>
-</div>
+</aside>
+
+<!-- ══ MAIN WRAPPER ══ -->
+<div class="main-wrapper" id="mainWrapper">
+
+  <!-- ── Topbar ── -->
+  <header class="sticky top-0 z-30 h-[58px] bg-white border-b border-borderMain flex items-center px-4 gap-3 flex-shrink-0">
+    <!-- Hamburger -->
+    <button class="w-9 h-9 flex  md:hidden items-center justify-center rounded-[9px] bg-surface2 border border-borderMain text-textMain text-base cursor-pointer hover:border-primary hover:text-primary transition-all" onclick="openSb()">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Tableau de bord</span>
+
+    <!-- Search (hidden on mobile, visible sm+) -->
+    <div class="search-bar-wrap flex-1 max-w-[360px] ml-3 items-center bg-surface2 border border-borderMain rounded-[10px] overflow-hidden transition-colors focus-within:border-primary">
+      <i class="fa-solid fa-search px-3 text-textMuted text-xs flex-shrink-0"></i>
+      <input type="text" placeholder="Rechercher un document…" class="flex-1 py-2 pr-3 bg-transparent border-none outline-none font-poppins text-[13px] text-textMain placeholder:text-textMuted">
+    </div>
+
+    <div class="ml-auto flex items-center gap-2">
+      <!-- Notif bell -->
+      <div class="relative w-9 h-9 rounded-[9px] bg-surface2 border border-borderMain flex items-center justify-center text-sm text-textMain cursor-pointer hover:border-primary hover:text-primary transition-all">
+        <i class="fa-regular fa-bell"></i>
+        <div class="absolute top-[7px] right-[7px] w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
+      </div>
+      <!-- Profile -->
+      <div class="flex items-center gap-2 pl-1.5 pr-3 py-1 bg-surface2 border border-borderMain rounded-[10px] cursor-pointer hover:border-primary transition-colors">
+        <div class="w-[26px] h-[26px] rounded-[6px] bg-green-dark flex items-center justify-center font-bricolage text-[11px] font-extrabold text-primary" id="topInitial">JM</div>
+        <span class="text-[12.5px] font-semibold text-textMain hidden xs:block" id="topName">Jean-Marc</span>
+        <i class="fa-solid fa-chevron-down text-[8px] text-textMuted ml-0.5 hidden xs:block"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Mobile search bar (below topbar, only mobile) ── -->
+  <div class="sm:hidden px-4 py-2.5 bg-white border-b border-borderMain">
+    <div class="flex items-center bg-surface2 border border-borderMain rounded-[10px] overflow-hidden focus-within:border-primary transition-colors">
+      <i class="fa-solid fa-search px-3 text-textMuted text-xs flex-shrink-0"></i>
+      <input type="text" placeholder="Rechercher un document, une personne…" class="flex-1 py-2.5 pr-3 bg-transparent border-none outline-none font-poppins text-[13px] text-textMain placeholder:text-textMuted">
+    </div>
+  </div>
+
+  <!-- ── Content ── -->
+  <div class="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-4 sm:gap-5 pb-24 md:pb-6">
+
+    <!-- Greeting -->
+    <div class="flex items-start justify-between gap-3 flex-wrap">
+      <div>
+        <h1 class="font-bricolage text-xl sm:text-2xl font-extrabold text-textMain tracking-tight leading-tight">Bonjour, <span id="helloName">Jean-Marc</span> </h1>
+        <p class="text-[12.5px] sm:text-[13.5px] text-textMuted font-medium mt-0.5 italic">Aperçu de vos activités sur DocMaster</p>
+      </div>
+      <div class="text-[11.5px] text-textMuted font-medium bg-white border border-borderMain px-3 py-1.5 rounded-[9px] flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-regular fa-calendar text-primary"></i>
+        <span id="currentDay">Lundi 9 mars 2026</span>
+      </div>
+    </div>
+
+    <!-- CTA + Stats: 2 col mobile, 4 col desktop -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <!-- J'ai perdu -->
+      <div class="action-card col-span-1 rounded-[16px] sm:rounded-[18px] p-4 sm:p-5 cursor-pointer transition-all duration-200 active:scale-[.98] hover:-translate-y-0.5 relative overflow-hidden flex flex-col gap-3 bg-primary shadow-lg shadow-primary/25 group">
+        <div class="w-10 h-10 sm:w-[46px] sm:h-[46px] rounded-[12px] sm:rounded-[14px] bg-white/20 flex items-center justify-center text-lg sm:text-[20px] text-white relative z-10 transition-transform group-hover:scale-110">
+          <i class="fa-solid fa-file-circle-xmark"></i>
+        </div>
+        <div class="relative z-10">
+          <div class="font-bricolage text-[14px] sm:text-[16px] font-bold text-white leading-tight">J'ai perdu un document</div>
+          <div class="text-[10.5px] sm:text-[11.5px] text-white/70 mt-0.5">Signaler →</div>
+        </div>
+      </div>
+
+      <!-- J'ai trouvé -->
+      <div class="action-card col-span-1 rounded-[16px] sm:rounded-[18px] p-4 sm:p-5 cursor-pointer transition-all duration-200 active:scale-[.98] hover:-translate-y-0.5 relative overflow-hidden flex flex-col gap-3 bg-green-dark shadow-lg shadow-green-dark/20 group">
+        <div class="w-10 h-10 sm:w-[46px] sm:h-[46px] rounded-[12px] sm:rounded-[14px] bg-white/10 flex items-center justify-center text-lg sm:text-[20px] text-white relative z-10 transition-transform group-hover:scale-110">
+          <i class="fa-solid fa-file-circle-check"></i>
+        </div>
+        <div class="relative z-10">
+          <div class="font-bricolage text-[14px] sm:text-[16px] font-bold text-white leading-tight">J'ai trouvé un document</div>
+          <div class="text-[10.5px] sm:text-[11.5px] text-white/70 mt-0.5">Déposer →</div>
+        </div>
+      </div>
+
+      <!-- Stat 1 -->
+      <div class="col-span-1 bg-white border border-borderMain rounded-[16px] sm:rounded-[18px] p-4 flex flex-col gap-2.5 hover:border-primary/50 transition-all">
+        <div class="flex items-center justify-between">
+          <div class="w-9 h-9 rounded-[10px] bg-green-light flex items-center justify-center text-base flex-shrink-0">
+            <i class="fa-solid fa-circle-check text-green-500"></i>
+          </div>
+          <span class="text-[10px] font-bold py-0.5 px-2 rounded-[7px] bg-green-100 text-green-700">↑ 12%</span>
+        </div>
+        <div class="font-bricolage text-[24px] sm:text-[28px] font-extrabold text-textMain leading-none">150+</div>
+        <div class="text-[11px] sm:text-[12.5px] text-textMuted font-medium leading-tight">Docs retrouvés ce mois</div>
+      </div>
+
+      <!-- Stat 2 -->
+      
+    </div>
+
+    <!-- Main grid: 1 col mobile → 2 col desktop -->
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_340px] gap-4 sm:gap-5 items-start">
+
+      <!-- Left column -->
+      <div class="flex flex-col gap-4 sm:gap-5">
+
+        <!-- Signalements récents -->
+        <div class="bg-white border border-borderMain rounded-[18px] overflow-hidden">
+          <div class="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-borderMain">
+            <div class="font-bricolage text-[14px] sm:text-[14.5px] font-bold text-textMain flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-primary text-[12px] sm:text-[13px]"></i> Mes signalements
+            </div>
+            <a href="#" class="text-[11.5px] sm:text-[12px] font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all">
+              Tout voir <i class="fa-solid fa-arrow-right text-[9px]"></i>
+            </a>
+          </div>
+          <div class="flex flex-col divide-y divide-borderMain">
+
+            <div class="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer">
+              <div class="w-9 h-9 sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[11px] bg-primary-light flex items-center justify-center text-sm sm:text-[15px] flex-shrink-0">
+                <i class="fa-solid fa-id-card text-primary-dark"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] sm:text-[13.5px] font-semibold text-textMain truncate">CNI perdue</div>
+                <div class="text-[10.5px] sm:text-[11.5px] text-textMuted flex items-center gap-1 italic">
+                  <i class="fa-solid fa-location-dot text-[9px]"></i> Yaoundé · <i class="fa-regular fa-clock text-[9px]"></i> 10/05/2024
+                </div>
+              </div>
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 whitespace-nowrap">En cours</span>
+            </div>
+
+            <div class="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer">
+              <div class="w-9 h-9 sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[11px] bg-green-100 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-credit-card text-green-700"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] sm:text-[13.5px] font-semibold text-textMain truncate">Carte Vitale perdue</div>
+                <div class="text-[10.5px] sm:text-[11.5px] text-textMuted flex items-center gap-1 italic">
+                  <i class="fa-solid fa-location-dot text-[9px]"></i> Douala · <i class="fa-regular fa-clock text-[9px]"></i> 28/04/2024
+                </div>
+              </div>
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 whitespace-nowrap">Retrouvé</span>
+            </div>
+
+            <div class="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer">
+              <div class="w-9 h-9 sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[11px] bg-blue-50 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-passport text-blue-500"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] sm:text-[13.5px] font-semibold text-textMain truncate">Passeport perdu</div>
+                <div class="text-[10.5px] sm:text-[11.5px] text-textMuted flex items-center gap-1 italic">
+                  <i class="fa-solid fa-location-dot text-[9px]"></i> Bafoussam · <i class="fa-regular fa-clock text-[9px]"></i> 02/04/2024
+                </div>
+              </div>
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 whitespace-nowrap">Retrouvé</span>
+            </div>
+
+            <div class="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer">
+              <div class="w-9 h-9 sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[11px] bg-purple-50 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-graduation-cap text-purple-600"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] sm:text-[13.5px] font-semibold text-textMain truncate">Diplôme BAC perdu</div>
+                <div class="text-[10.5px] sm:text-[11.5px] text-textMuted flex items-center gap-1 italic">
+                  <i class="fa-solid fa-location-dot text-[9px]"></i> Ngaoundéré · <i class="fa-regular fa-clock text-[9px]"></i> 15/03/2024
+                </div>
+              </div>
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-600 whitespace-nowrap">Nouveau</span>
+            </div>
+
+            <div class="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer">
+              <div class="w-9 h-9 sm:w-[38px] sm:h-[38px] rounded-[10px] sm:rounded-[11px] bg-amber-50 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-car text-amber-600"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] sm:text-[13.5px] font-semibold text-textMain truncate">Permis de conduire perdu</div>
+                <div class="text-[10.5px] sm:text-[11.5px] text-textMuted flex items-center gap-1 italic">
+                  <i class="fa-solid fa-location-dot text-[9px]"></i> Garoua · <i class="fa-regular fa-clock text-[9px]"></i> 10/03/2024
+                </div>
+              </div>
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 whitespace-nowrap">En cours</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Trouvés près de moi -->
+        <div class="bg-white border border-borderMain rounded-[18px] overflow-hidden">
+          <div class="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-borderMain">
+            <div class="font-bricolage text-[14px] sm:text-[14.5px] font-bold text-textMain flex items-center gap-2">
+              <i class="fa-solid fa-location-dot text-primary text-[12px] sm:text-[13px]"></i>
+              <span class="hidden xs:inline">Trouvés près de vous —</span> Yaoundé
+            </div>
+            <a href="#" class="text-[11.5px] sm:text-[12px] font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all">
+              Rechercher <i class="fa-solid fa-arrow-right text-[9px]"></i>
+            </a>
+          </div>
+          <div class="flex flex-col divide-y divide-borderMain">
+
+            <div class="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer">
+              <div class="w-9 h-9 rounded-[10px] bg-primary-light flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-id-card text-primary-dark"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-semibold text-textMain truncate">CNI trouvée — Nom illisible</div>
+                <div class="text-[10.5px] text-textMuted flex items-center gap-1 italic">
+                  <i class="fa-solid fa-location-dot text-[9px]"></i> Marché Central · <i class="fa-regular fa-clock text-[9px]"></i> Il y a 2h
+                </div>
+              </div>
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary-dark whitespace-nowrap">Voir →</span>
+            </div>
+
+            <div class="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer">
+              <div class="w-9 h-9 rounded-[10px] bg-blue-50 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-passport text-blue-500"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-semibold text-textMain truncate">Passeport trouvé — Init. A.M.</div>
+                <div class="text-[10.5px] text-textMuted flex items-center gap-1 italic">
+                  <i class="fa-solid fa-location-dot text-[9px]"></i> Mvan · <i class="fa-regular fa-clock text-[9px]"></i> Il y a 5h
+                </div>
+              </div>
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary-dark whitespace-nowrap">Voir →</span>
+            </div>
+
+            <div class="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer">
+              <div class="w-9 h-9 rounded-[10px] bg-amber-50 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-car text-amber-600"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] font-semibold text-textMain truncate">Permis trouvé — Init. K.N.</div>
+                <div class="text-[10.5px] text-textMuted flex items-center gap-1 italic">
+                  <i class="fa-solid fa-location-dot text-[9px]"></i> Essos · <i class="fa-regular fa-clock text-[9px]"></i> Il y a 1j
+                </div>
+              </div>
+              <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary-dark whitespace-nowrap">Voir →</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right column -->
+      <div class="flex flex-col gap-4 sm:gap-5">
+
+        <!-- Donut chart -->
+        <div class="bg-white border border-borderMain rounded-[18px] overflow-hidden">
+          <div class="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-borderMain font-bricolage text-[14px] sm:text-[14.5px] font-bold text-textMain flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-primary text-[12px] sm:text-[13px]"></i> Mes signalements
+          </div>
+          <div class="p-5 flex flex-col items-center gap-4">
+            <div class="donut-wrap relative w-32 h-32">
+              <svg width="128" height="128" viewBox="0 0 128 128">
+                <circle cx="64" cy="64" r="50" fill="none" stroke="#EAE3D8" stroke-width="13"/>
+                <circle cx="64" cy="64" r="50" fill="none" stroke="#10B981" stroke-width="13" stroke-dasharray="125.7 188.5" stroke-dashoffset="0"/>
+                <circle cx="64" cy="64" r="50" fill="none" stroke="#F5A64B" stroke-width="13" stroke-dasharray="125.7 188.5" stroke-dashoffset="-125.7"/>
+                <circle cx="64" cy="64" r="50" fill="none" stroke="#7C3AED" stroke-width="13" stroke-dasharray="62.8 251.3" stroke-dashoffset="-251.3"/>
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <div class="font-bricolage text-[26px] font-extrabold text-textMain leading-none">5</div>
+                <div class="text-[10.5px] text-textMuted mt-0.5">Total</div>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2 w-full">
+              <div class="flex items-center justify-between text-[13px]">
+                <div class="flex items-center gap-2 text-textMain font-medium"><div class="w-2.5 h-2.5 rounded-[3px] bg-[#10B981] flex-shrink-0"></div>Retrouvés</div>
+                <span class="font-bricolage font-bold text-textMain">2</span>
+              </div>
+              <div class="flex items-center justify-between text-[13px]">
+                <div class="flex items-center gap-2 text-textMain font-medium"><div class="w-2.5 h-2.5 rounded-[3px] bg-primary flex-shrink-0"></div>En cours</div>
+                <span class="font-bricolage font-bold text-textMain">2</span>
+              </div>
+              <div class="flex items-center justify-between text-[13px]">
+                <div class="flex items-center gap-2 text-textMain font-medium"><div class="w-2.5 h-2.5 rounded-[3px] bg-[#7C3AED] flex-shrink-0"></div>Nouveaux</div>
+                <span class="font-bricolage font-bold text-textMain">1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="bg-white border border-borderMain rounded-[18px] overflow-hidden">
+          <div class="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-borderMain">
+            <div class="font-bricolage text-[14px] sm:text-[14.5px] font-bold text-textMain flex items-center gap-2">
+              <i class="fa-solid fa-bell text-primary text-[12px] sm:text-[13px]"></i> Notifications
+            </div>
+            <a href="#" class="text-[11.5px] font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all">
+              Tout voir <i class="fa-solid fa-arrow-right text-[9px]"></i>
+            </a>
+          </div>
+          <div class="flex flex-col divide-y divide-borderMain">
+            <div class="flex gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer relative">
+              <div class="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary"></div>
+              <div class="w-9 h-9 rounded-[9px] bg-green-100 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-circle-check text-green-700"></i>
+              </div>
+              <div>
+                <div class="text-[12px] sm:text-[12.5px] text-textMain leading-snug italic"><strong>Carte Vitale retrouvée !</strong> Un utilisateur l'a signalée à Douala.</div>
+                <div class="text-[10px] sm:text-[10.5px] text-textMuted font-medium italic mt-0.5">Il y a 30 min</div>
+              </div>
+            </div>
+            <div class="flex gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer relative">
+              <div class="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary"></div>
+              <div class="w-9 h-9 rounded-[9px] bg-primary-light flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-envelope text-primary-dark"></i>
+              </div>
+              <div>
+                <div class="text-[12px] sm:text-[12.5px] text-textMain leading-snug italic"><strong>Nouveau message</strong> concernant votre CNI perdue.</div>
+                <div class="text-[10px] sm:text-[10.5px] text-textMuted font-medium italic mt-0.5">Il y a 2h</div>
+              </div>
+            </div>
+            <div class="flex gap-3 px-4 sm:px-5 py-3 sm:py-3.5 hover:bg-surface2 transition-colors cursor-pointer">
+              <div class="w-9 h-9 rounded-[9px] bg-purple-50 flex items-center justify-center text-sm flex-shrink-0">
+                <i class="fa-solid fa-star text-purple-600"></i>
+              </div>
+              <div>
+                <div class="text-[12px] sm:text-[12.5px] text-textMain leading-snug italic"><strong>Plan Standard activé.</strong> Vos 5 signalements sont actifs.</div>
+                <div class="text-[10px] sm:text-[10.5px] text-textMuted font-medium italic mt-0.5">Hier</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plan card -->
+        <div class="bg-green-dark rounded-[18px] p-5 relative overflow-hidden">
+          <div class="absolute w-[200px] h-[200px] rounded-full bg-primary/6 -bottom-12 -right-10 pointer-events-none"></div>
+          <div class="inline-flex items-center gap-1.5 bg-primary/15 border border-primary/25 rounded-full px-2.5 py-1 mb-3">
+            <i class="fa-solid fa-star text-primary text-[9px]"></i>
+            <span class="text-[10.5px] font-bold text-primary uppercase tracking-wide">Plan actuel</span>
+          </div>
+          <div class="font-bricolage text-[18px] font-extrabold text-white mb-0.5">Standard</div>
+          <div class="text-[12px] text-white/50 mb-3.5">5 signalements · SMS & Email</div>
+          <div class="mb-3.5">
+            <div class="flex justify-between text-[11.5px] mb-1.5">
+              <span class="text-white/60">Signalements utilisés</span>
+              <span class="text-primary font-bold">3 / 5</span>
+            </div>
+            <div class="h-[5px] bg-white/10 rounded-full overflow-hidden">
+              <div class="h-full bg-primary rounded-full w-[60%] shadow-[0_0_8px_rgba(245,166,75,0.4)]"></div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1.5 mb-4 relative z-10">
+            <div class="flex items-center gap-2 text-[12.5px] text-white/70"><i class="fa-solid fa-check text-primary text-[11px]"></i>Alertes SMS + Email</div>
+            <div class="flex items-center gap-2 text-[12.5px] text-white/70"><i class="fa-solid fa-check text-primary text-[11px]"></i>Suivi en temps réel</div>
+            <div class="flex items-center gap-2 text-[12.5px] text-white/30 italic"><i class="fa-solid fa-lock text-[11px]"></i>Géolocalisation avancée</div>
+          </div>
+          <button class="w-full py-2.5 rounded-[11px] bg-primary text-white font-bricolage text-[13.5px] font-bold cursor-pointer flex items-center justify-center gap-2 transition-all hover:bg-primary-dark active:scale-[.98] shadow-lg shadow-primary/20 relative z-10">
+            <i class="fa-solid fa-rocket"></i> Passer au plan Pro
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- ══ BOTTOM NAV (mobile only) ══ -->
+  <nav class="bottom-nav fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-borderMain px-2 py-2 justify-around">
+    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-primary">
+      <i class="fa-solid fa-house text-base"></i>
+      <span class="text-[10px] font-semibold">Accueil</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
+      <i class="fa-solid fa-file-circle-plus text-base"></i>
+      <span class="text-[10px] font-medium">Signaler</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
+      <i class="fa-solid fa-magnifying-glass text-base"></i>
+      <span class="text-[10px] font-medium">Rechercher</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted relative">
+      <i class="fa-solid fa-envelope text-base"></i>
+      <span class="text-[10px] font-medium">Messages</span>
+      <div class="absolute top-1 right-2 w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted" onclick="openSb()">
+      <i class="fa-solid fa-bars text-base"></i>
+      <span class="text-[10px] font-medium">Plus</span>
+    </a>
+  </nav>
+
+</div><!-- /main-wrapper -->
 
 <script>
-function openSb(){
+function openSb() {
   document.getElementById('sidebar').classList.add('open');
-  document.getElementById('overlay').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
 }
-function closeSb(){
+function closeSb() {
   document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
 }
-document.querySelectorAll('.sb-item').forEach(item=>{
-  item.addEventListener('click',function(e){
-    if(this.classList.contains('logout-btn')) return;
-    document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+document.querySelectorAll('.sb-item').forEach(item => {
+  item.addEventListener('click', function(e) {
+    if (this.classList.contains('logout-btn')) return;
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
     this.classList.add('active');
-    closeSb();
+    if (window.innerWidth < 900) closeSb();
   });
 });
-
-// Current Date
 const dateOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
 document.getElementById('currentDay').innerText = new Intl.DateTimeFormat('fr-FR', dateOptions).format(new Date());
 </script>
