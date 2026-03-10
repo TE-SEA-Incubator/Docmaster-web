@@ -141,13 +141,7 @@ body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100v
         <i class="fa-solid fa-house w-[18px] text-center text-primary"></i> Tableau de bord
       </a>
       <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="Mesdocument.html"><i class="fa-solid fa-folder-open w-[18px] text-center opacity-80"></i> Mes Documents</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#">
-        <i class="fa-solid fa-file-circle-plus w-[18px] text-center opacity-80"></i> Mes Signalements
-        <span class="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-tight">3</span>
-      </a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#">
-        <i class="fa-solid fa-magnifying-glass w-[18px] text-center opacity-80"></i> Rechercher
-      </a>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="rechercher.html"><i class="fa-solid fa-magnifying-glass w-[18px] text-center opacity-80"></i> Rechercher</a>
       <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#">
         <i class="fa-solid fa-envelope w-[18px] text-center opacity-80"></i> Messages
         <span class="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-tight">5</span>
@@ -241,7 +235,7 @@ body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100v
         </div>
         <div class="relative z-10">
           <div class="font-bricolage text-[14px] sm:text-[16px] font-bold text-white leading-tight">J'ai perdu un document</div>
-          <div class="text-[10.5px] sm:text-[11.5px] text-white/70 mt-0.5">Signaler →</div>
+          <div class="text-[10.5px] sm:text-[11.5px] text-white/70 mt-0.5">Déclarer →</div>
         </div>
       </div>
 
@@ -282,7 +276,7 @@ body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100v
         <div class="bg-white border border-borderMain rounded-[18px] overflow-hidden">
           <div class="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-borderMain">
             <div class="font-bricolage text-[14px] sm:text-[14.5px] font-bold text-textMain flex items-center gap-2">
-              <i class="fa-solid fa-clock-rotate-left text-primary text-[12px] sm:text-[13px]"></i> Mes signalements
+              <i class="fa-solid fa-clock-rotate-left text-primary text-[12px] sm:text-[13px]"></i> Activités récentes
             </div>
             <a href="#" class="text-[11.5px] sm:text-[12px] font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all">
               Tout voir <i class="fa-solid fa-arrow-right text-[9px]"></i>
@@ -421,7 +415,7 @@ body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100v
         <!-- Donut chart -->
         <div class="bg-white border border-borderMain rounded-[18px] overflow-hidden">
           <div class="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-borderMain font-bricolage text-[14px] sm:text-[14.5px] font-bold text-textMain flex items-center gap-2">
-            <i class="fa-solid fa-chart-pie text-primary text-[12px] sm:text-[13px]"></i> Mes signalements
+            <i class="fa-solid fa-chart-pie text-primary text-[12px] sm:text-[13px]"></i> Statistiques des documents
           </div>
           <div class="p-5 flex flex-col items-center gap-4">
             <div class="donut-wrap relative w-32 h-32">
@@ -504,10 +498,10 @@ body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100v
             <span class="text-[10.5px] font-bold text-primary uppercase tracking-wide">Plan actuel</span>
           </div>
           <div class="font-bricolage text-[18px] font-extrabold text-white mb-0.5">Standard</div>
-          <div class="text-[12px] text-white/50 mb-3.5">5 signalements · SMS & Email</div>
+          <div class="text-[12px] text-white/50 mb-3.5">5 documents / type · SMS & Email</div>
           <div class="mb-3.5">
             <div class="flex justify-between text-[11.5px] mb-1.5">
-              <span class="text-white/60">Signalements utilisés</span>
+              <span class="text-white/60">Quotas utilisés</span>
               <span class="text-primary font-bold">3 / 5</span>
             </div>
             <div class="h-[5px] bg-white/10 rounded-full overflow-hidden">
@@ -531,15 +525,15 @@ body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100v
 
   <!-- ══ BOTTOM NAV (mobile only) ══ -->
   <nav class="bottom-nav fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-borderMain px-2 py-2 justify-around">
-    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-primary">
+    <a href="dashboard.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-primary">
       <i class="fa-solid fa-house text-base"></i>
       <span class="text-[10px] font-semibold">Accueil</span>
     </a>
-    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
-      <i class="fa-solid fa-file-circle-plus text-base"></i>
-      <span class="text-[10px] font-medium">Signaler</span>
+    <a href="Mesdocument.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
+      <i class="fa-solid fa-plus-circle text-base"></i>
+      <span class="text-[10px] font-medium">Ajouter</span>
     </a>
-    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
+    <a href="rechercher.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
       <i class="fa-solid fa-magnifying-glass text-base"></i>
       <span class="text-[10px] font-medium">Rechercher</span>
     </a>
