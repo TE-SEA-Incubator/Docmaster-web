@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Mon Portefeuille</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+
+
+<body class="bg-gray-200 min-h-screen flex justify-center p-6">
+
+<div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-8">
+
+<!-- TITLE -->
+
+<h1 class="text-2xl font-bold text-center mb-6 flex items-center justify-center gap-3">
+
+<i class="fa-solid fa-wallet"></i>
+
+Mon Portefeuille
+
+</h1>
+
+
+<!-- SOLDE -->
+
+<div class="bg-gradient-to-r from-orange-600 to-orange-400 text-white rounded-xl p-8 text-center mb-8">
+
+<p class="text-lg font-semibold">
+Solde Disponible
+</p>
+
+<p id="balance" class="text-3xl font-bold mt-2"></p>
+
+</div>
+
+
+
+<!-- STATS -->
+
+<div id="statsContainer" class="space-y-5"></div>
+
+
+
+<!-- BUTTON -->
+
+<div class="text-center mt-8">
+
+<button onclick="withdraw()"
+class="bg-green-500 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-lg font-semibold flex items-center gap-3 mx-auto">
+
+<i class="fa-solid fa-credit-card"></i>
+
+Retirer mes Gains
+
+</button>
+
+</div>
+
+</div>
+
+
+
+<script>
+
+/* PARAMETRES */
+
+const wallet = {
+
+balance:150,
+
+currency:"XAF",
+
+stats:[
+
+{
+icon:"fa-file",
+title:"Documents Retrouvés",
+value:"8 Documents",
+color:"text-orange-500"
+},
+
+{
+icon:"fa-handshake",
+title:"Documents Remis",
+value:"5 Documents",
+color:"text-orange-500"
+},
+
+{
+icon:"fa-coins",
+title:"Montant Gagné",
+value:"230 XAF",
+color:"text-orange-500"
+},
+
+{
+icon:"fa-money-bill",
+title:"Montant Retiré",
+value:"80 XAF",
+color:"text-orange-500"
+}
+
+]
+
+}
+
+
+
+/* RENDER BALANCE */
+
+document.getElementById("balance").innerHTML =
+`<i class="fa-solid fa-sack-dollar"></i> ${wallet.balance}${wallet.currency}`
+
+
+
+/* RENDER STATS */
+
+const container = document.getElementById("statsContainer")
+
+wallet.stats.forEach(stat=>{
+
+container.innerHTML += `
+
+<div class="bg-gray-100 rounded-xl p-5 flex items-center gap-4">
+
+<i class="fa-solid ${stat.icon} text-2xl ${stat.color}"></i>
+
+<div>
+
+<p class="font-semibold text-lg">${stat.title}</p>
+
+<p class="text-gray-600">${stat.value}</p>
+
+</div>
+
+</div>
+
+`
+
+})
+
+
+
+/* ACTION */
+
+function withdraw(){
+
+alert("Fonction de retrait à connecter avec paiement")
+
+}
+
+</script>
+
+</body>
+</html>

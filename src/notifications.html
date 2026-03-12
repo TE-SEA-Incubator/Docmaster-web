@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Notifications</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Font Awesome -->
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+</head>
+
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-2xl bg-gray-50 rounded-xl shadow p-6">
+
+<!-- HEADER -->
+<div class="flex items-center gap-3 mb-6">
+
+<i class="fa-solid fa-bell text-xl"></i>
+
+<h1 class="text-2xl font-bold">Notifications</h1>
+
+<span id="notifCount"
+class="bg-orange-500 text-white text-sm px-2 py-1 rounded-full">
+3
+</span>
+
+<button onclick="toggleSettings()"
+class="ml-auto text-gray-500 hover:text-black">
+<i class="fa-solid fa-gear"></i>
+</button>
+
+</div>
+
+
+<!-- PARAMETRES -->
+<div id="settingsPanel"
+class="hidden mb-6 p-4 border rounded-lg bg-white">
+
+<h2 class="font-semibold mb-3">Paramètres</h2>
+
+<label class="flex items-center gap-2 mb-2">
+<input type="checkbox" checked>
+Notifications email
+</label>
+
+<label class="flex items-center gap-2 mb-2">
+<input type="checkbox" checked>
+Notifications système
+</label>
+
+<label class="flex items-center gap-2">
+<input type="checkbox">
+Mode silencieux
+</label>
+
+</div>
+
+
+<!-- LISTE -->
+<div id="notifications" class="space-y-6 border-l-4 border-orange-400 pl-6">
+
+<!-- NOTIFICATION 1 -->
+<div class="flex gap-4 items-start">
+
+<div class="bg-green-600 text-white w-10 h-10 flex items-center justify-center rounded-full">
+<i class="fa-solid fa-file-lines"></i>
+</div>
+
+<div>
+<p>
+<span class="font-semibold">Document retrouvé :</span>
+Votre document "Carte ID" a été retrouvé.
+</p>
+
+<span class="text-gray-400 text-sm">
+Il y a 2 heures
+</span>
+</div>
+
+</div>
+
+
+<!-- NOTIFICATION 2 -->
+<div class="flex gap-4 items-start">
+
+<div class="bg-green-600 text-white w-10 h-10 flex items-center justify-center rounded-full">
+<i class="fa-solid fa-check"></i>
+</div>
+
+<div>
+<p>
+<span class="font-semibold">Validation :</span>
+Vous avez confirmé la récupération d’un document.
+</p>
+
+<span class="text-gray-400 text-sm">
+Il y a 1 jour
+</span>
+</div>
+
+</div>
+
+
+<!-- NOTIFICATION 3 -->
+<div class="flex gap-4 items-start">
+
+<div class="bg-orange-400 text-white w-10 h-10 flex items-center justify-center rounded-full">
+<i class="fa-solid fa-money-bill-wave"></i>
+</div>
+
+<div>
+<p>
+<span class="font-semibold">Paiement reçu :</span>
+Vous avez perçu 30€ pour un document remis.
+</p>
+
+<span class="text-gray-400 text-sm">
+Il y a 3 jours
+</span>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<script>
+
+function toggleSettings(){
+document.getElementById("settingsPanel").classList.toggle("hidden")
+}
+
+
+// Ajouter notification dynamique
+function addNotification(title,message,time){
+
+const container = document.getElementById("notifications")
+
+const notif = `
+<div class="flex gap-4 items-start mt-6">
+
+<div class="bg-blue-500 text-white w-10 h-10 flex items-center justify-center rounded-full">
+<i class="fa-solid fa-bell"></i>
+</div>
+
+<div>
+<p>
+<span class="font-semibold">${title} :</span>
+${message}
+</p>
+
+<span class="text-gray-400 text-sm">${time}</span>
+</div>
+
+</div>
+`
+
+container.insertAdjacentHTML("afterbegin",notif)
+
+let count = document.getElementById("notifCount")
+count.innerText = parseInt(count.innerText)+1
+
+}
+
+</script>
+
+
+</body>
+</html>
