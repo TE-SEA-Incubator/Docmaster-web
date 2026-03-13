@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocMaster — J'ai trouvé un document</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
+     <link href="css/output.css" rel="stylesheet" />
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
+        'green-dark': '#1E3A2F', 'green-mid': '#2D5A42', 'green-light': '#E8F5EE',
+        bgMain: '#F4EFE6', surface: '#FFFFFF', surface2: '#FAF7F2',
+        textMain: '#1A1A1A', textMuted: '#9CA3AF', borderMain: '#EAE3D8',
+      },
+      fontFamily: { poppins: ['Poppins','sans-serif'], bricolage: ['"Bricolage Grotesque"','sans-serif'] }
+    }
+  }
+}
+</script>
+<style>
+:root{--sidebar:260px}
+html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:50;overflow-y:auto}
+.sidebar.open{transform:translateX(0)}
+@media(min-width:900px){
+  body{display:flex;height:100vh;overflow:hidden}
+  .sidebar{position:relative;transform:none!important;flex-shrink:0}
+  .main-wrapper{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+  .main-content{flex:1;overflow-y:auto}
+}
+@media(max-width:899px){.main-wrapper{display:flex;flex-direction:column;min-height:100vh}}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .28s}
+.sb-overlay.show{display:block;opacity:1;pointer-events:all}
+.sidebar::after{content:'';position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(245,166,75,.05);bottom:-80px;left:-60px;pointer-events:none}
+.sb-item.active{background:rgba(245,166,75,.15);color:#fff}
+.sb-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:55%;background:#F5A64B;border-radius:0 3px 3px 0}
+.custom-scroll::-webkit-scrollbar{width:4px}
+.custom-scroll::-webkit-scrollbar-thumb{background:#DDD5C8;border-radius:10px}
+
+/* Steps */
+.step-wrap{display:flex;align-items:center;gap:0}
+.step-item{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;position:relative}
+.step-item:not(:last-child)::after{content:'';position:absolute;top:18px;left:calc(50% + 18px);right:calc(-50% + 18px);height:2px;background:#EAE3D8;z-index:0;transition:background .4s}
+.step-item.done:not(:last-child)::after{background:#10B981}
+.step-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;transition:all .3s;position:relative;z-index:1;flex-shrink:0}
+.step-circle.done{background:#10B981;color:#fff;box-shadow:0 0 0 4px rgba(16,185,129,.15)}
+.step-circle.active{background:#F5A64B;color:#fff;box-shadow:0 0 0 5px rgba(245,166,75,.2)}
+.step-circle.pending{background:#F4EFE6;border:2px solid #EAE3D8;color:#9CA3AF}
+.step-label{font-size:10.5px;font-weight:600;color:#9CA3AF;white-space:nowrap;text-align:center}
+.step-item.active .step-label{color:#F5A64B;font-weight:700}
+.step-item.done .step-label{color:#10B981}
+
+/* Inputs */
+.form-input{width:100%;padding:12px 14px;border:1.5px solid #EAE3D8;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13.5px;color:#1A1A1A;background:#FAF7F2;outline:none;transition:all .15s}
+.form-input:focus{border-color:#F5A64B;background:#fff;box-shadow:0 0 0 3px rgba(245,166,75,.1)}
+.form-input::placeholder{color:#9CA3AF}
+.form-label{font-size:11.5px;font-weight:700;color:#4B5563;margin-bottom:6px;display:block;letter-spacing:.3px}
+.form-hint{font-size:11px;color:#9CA3AF;margin-top:4px}
+
+/* Doc type card */
+.doc-type-card{border:2px solid #EAE3D8;border-radius:14px;padding:14px 10px;cursor:pointer;transition:all .18s;text-align:center;background:#fff;position:relative}
+.doc-type-card:hover{border-color:#F5A64B;transform:translateY(-2px);box-shadow:0 4px 16px rgba(245,166,75,.15)}
+.doc-type-card.selected{border-color:#F5A64B;background:#FEF0DC;box-shadow:0 0 0 4px rgba(245,166,75,.12)}
+.doc-type-card.selected::after{content:'\f00c';font-family:'Font Awesome 6 Free';font-weight:900;position:absolute;top:6px;right:8px;color:#F5A64B;font-size:10px}
+
+/* Map placeholder */
+.map-placeholder{width:100%;height:200px;background:linear-gradient(135deg,#E8F5EE 0%,#F4EFE6 50%,#E8F5EE 100%);border-radius:14px;border:1.5px dashed #EAE3D8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .2s}
+.map-placeholder:hover{border-color:#F5A64B;background:linear-gradient(135deg,#D1FAE5 0%,#FEF0DC 50%,#D1FAE5 100%)}
+
+/* Upload zone */
+.drop-zone{border:2px dashed #EAE3D8;border-radius:14px;transition:all .2s;cursor:pointer}
+.drop-zone:hover,.drop-zone.drag-over{border-color:#F5A64B;background:#FEF0DC}
+
+/* Radio pill */
+.radio-pill input[type=radio]{display:none}
+.radio-pill label{display:flex;align-items:center;gap:8px;padding:10px 16px;border:1.5px solid #EAE3D8;border-radius:22px;cursor:pointer;font-size:13px;font-weight:600;color:#4B5563;transition:all .18s;background:#fff;white-space:nowrap}
+.radio-pill input[type=radio]:checked + label{border-color:#F5A64B;background:#FEF0DC;color:#D98A30}
+
+/* Reward toggle */
+.reward-card{border:2px solid #EAE3D8;border-radius:16px;padding:16px;cursor:pointer;transition:all .2s;background:#fff}
+.reward-card:hover{border-color:#F5A64B}
+.reward-card.selected{border-color:#F5A64B;background:#FEF0DC}
+.reward-card.selected .reward-check{opacity:1}
+.reward-check{opacity:0;transition:opacity .2s}
+
+/* Animate panel */
+.panel-content{animation:fadeSlide .3s ease}
+@keyframes fadeSlide{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+
+/* Progress upload */
+.upload-progress{height:5px;background:#EAE3D8;border-radius:10px;overflow:hidden}
+.upload-bar{height:100%;background:linear-gradient(90deg,#10B981,#2D5A42);border-radius:10px;transition:width .35s ease;width:0}
+
+/* Tag input */
+.tag{display:inline-flex;align-items:center;gap:5px;background:#FEF0DC;border:1px solid #F5A64B;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:#D98A30}
+.tag button{background:none;border:none;cursor:pointer;color:#D98A30;font-size:11px;line-height:1;padding:0}
+</style>
+</head>
+<body>
+<div class="sb-overlay" id="overlay" onclick="closeSb()"></div>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar w-[var(--sidebar)] bg-green-dark flex flex-col" id="sidebar">
+  <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 flex-shrink-0">
+    <div class="w-9 h-9 rounded-[10px] bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0">
+      <i class="fa-solid fa-file-shield text-primary text-base"></i>
+    </div>
+    <span class="font-bricolage text-[18px] font-bold text-white tracking-tight">DocMaster</span>
+    <button class="ml-auto text-white/40 hover:text-white lg:hidden" onclick="closeSb()"><i class="fa-solid fa-xmark text-lg"></i></button>
+  </div>
+  <div class="flex-1 overflow-y-auto py-2">
+    <div class="px-[22px] pt-4 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Principal</div>
+    <nav class="flex flex-col gap-0.5 px-2.5">
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="dashboard.html"><i class="fa-solid fa-house w-[18px] text-center opacity-80"></i>Tableau de bord</a>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="Mesdocument.html"><i class="fa-solid fa-folder-open w-[18px] text-center opacity-80"></i>Mes Documents</a>
+      <a class="sb-item active flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white relative" href="trouverdocument.html"><i class="fa-solid fa-file-circle-check w-[18px] text-center text-primary"></i>Déclarer trouvé</a>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="rechercher.html"><i class="fa-solid fa-magnifying-glass w-[18px] text-center opacity-80"></i>Rechercher</a>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="#"><i class="fa-solid fa-envelope w-[18px] text-center opacity-80"></i>Messages<span class="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">5</span></a>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="mesGains.html"><i class="fa-solid fa-wallet w-[18px] text-center opacity-80"></i>Mes Gains</a>
+    </nav>
+    <div class="px-[22px] pt-5 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Compte</div>
+    <nav class="flex flex-col gap-0.5 px-2.5">
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="Abonnement.html"><i class="fa-solid fa-crown w-[18px] text-center opacity-80"></i>Abonnement</a>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="parrainage.html"><i class="fa-solid fa-users-gear w-[18px] text-center opacity-80"></i>Parrainage</a>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="#"><i class="fa-solid fa-gear w-[18px] text-center opacity-80"></i>Paramètres</a>
+      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400 relative transition-all" href="login.html"><i class="fa-solid fa-right-from-bracket w-[18px] text-center opacity-80"></i>Déconnexion</a>
+    </nav>
+  </div>
+  <div class="px-2.5 py-3.5 border-t border-white/10 flex-shrink-0">
+    <div class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[11px] cursor-pointer hover:bg-white/5 transition-colors">
+      <div class="w-[33px] h-[33px] rounded-[9px] bg-primary flex items-center justify-center font-bricolage text-xs font-extrabold text-white flex-shrink-0">JM</div>
+      <div><div class="text-[13px] font-semibold text-white leading-tight">Jean-Marc D.</div><div class="text-[11px] text-white/40">Plan Standard</div></div>
+      <i class="fa-solid fa-chevron-up ml-auto text-white/30 text-[11px]"></i>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main-wrapper">
+
+  <!-- Topbar -->
+  <header class="sticky top-0 z-30 h-[58px] bg-white border-b border-borderMain flex items-center px-4 gap-3 flex-shrink-0">
+    <button class="w-9 h-9 flex items-center justify-center rounded-[9px] bg-surface2 border border-borderMain hover:border-primary hover:text-primary transition-all lg:hidden" onclick="openSb()"><i class="fa-solid fa-bars"></i></button>
+    <div class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-[8px] bg-green-light flex items-center justify-center"><i class="fa-solid fa-file-circle-check text-green-mid text-sm"></i></div>
+      <span class="font-bricolage text-base font-bold text-textMain tracking-tight">J'ai trouvé un document</span>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <div class="relative w-9 h-9 rounded-[9px] bg-surface2 border border-borderMain flex items-center justify-center text-sm hover:border-primary hover:text-primary transition-all cursor-pointer">
+        <i class="fa-regular fa-bell"></i>
+        <div class="absolute top-[7px] right-[7px] w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
+      </div>
+      <div class="flex items-center gap-2 pl-1.5 pr-3 py-1 bg-surface2 border border-borderMain rounded-[10px] cursor-pointer hover:border-primary transition-colors">
+        <div class="w-[26px] h-[26px] rounded-[6px] bg-green-dark flex items-center justify-center font-bricolage text-[11px] font-extrabold text-primary">JM</div>
+        <span class="text-[12.5px] font-semibold text-textMain hidden sm:block">Jean-Marc</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div class="main-content custom-scroll pb-12" id="main-content">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
+
+      <!-- Hero -->
+      <div class="text-center">
+        <div class="w-16 h-16 rounded-[20px] bg-green-light border-2 border-green-dark/15 flex items-center justify-center mx-auto mb-4">
+          <i class="fa-solid fa-hand-holding-heart text-green-mid text-3xl"></i>
+        </div>
+        <h1 class="font-bricolage text-2xl sm:text-3xl font-extrabold text-textMain tracking-tight mb-2">Vous avez trouvé un document ?</h1>
+        <p class="text-[14px] text-textMuted leading-relaxed max-w-md mx-auto">Merci pour votre geste civique ! Remplissez ce formulaire pour aider le propriétaire à retrouver son bien rapidement.</p>
+      </div>
+
+      <!-- Steps indicator -->
+      <div class="bg-white border border-borderMain rounded-[18px] p-5">
+        <div class="step-wrap" id="steps-wrap">
+          <div class="step-item active" id="si-1">
+            <div class="step-circle active" id="sc-1">1</div>
+            <span class="step-label">Type</span>
+          </div>
+          <div class="step-item pending" id="si-2">
+            <div class="step-circle pending" id="sc-2">2</div>
+            <span class="step-label">Infos</span>
+          </div>
+          <div class="step-item pending" id="si-3">
+            <div class="step-circle pending" id="sc-3">3</div>
+            <span class="step-label">Lieu</span>
+          </div>
+          <div class="step-item pending" id="si-4">
+            <div class="step-circle pending" id="sc-4">4</div>
+            <span class="step-label">Photos</span>
+          </div>
+          <div class="step-item pending" id="si-5">
+            <div class="step-circle pending" id="sc-5">5</div>
+            <span class="step-label">Contact</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ STEP PANELS ══════════ -->
+
+      <!-- STEP 1 — Type de document -->
+      <div class="bg-white border border-borderMain rounded-[20px] p-5 sm:p-6 panel-content" id="panel-1">
+        <div class="flex items-center gap-2.5 mb-5">
+          <div class="w-8 h-8 rounded-[9px] bg-primary/10 flex items-center justify-center"><i class="fa-solid fa-tag text-primary text-sm"></i></div>
+          <h2 class="font-bricolage text-lg font-bold text-textMain">Quel type de document avez-vous trouvé ?</h2>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5" id="type-grid">
+          <button class="doc-type-card" onclick="selectDocType(this,'cni')">
+            <div class="w-11 h-11 rounded-[12px] bg-green-light flex items-center justify-center mx-auto mb-2.5"><i class="fa-solid fa-id-card text-green-mid text-xl"></i></div>
+            <div class="text-[13px] font-bold text-textMain">CNI</div>
+            <div class="text-[11px] text-textMuted mt-0.5">Carte d'identité</div>
+          </button>
+          <button class="doc-type-card" onclick="selectDocType(this,'passport')">
+            <div class="w-11 h-11 rounded-[12px] bg-blue-50 flex items-center justify-center mx-auto mb-2.5"><i class="fa-solid fa-passport text-blue-500 text-xl"></i></div>
+            <div class="text-[13px] font-bold text-textMain">Passeport</div>
+            <div class="text-[11px] text-textMuted mt-0.5">International</div>
+          </button>
+          <button class="doc-type-card" onclick="selectDocType(this,'permis')">
+            <div class="w-11 h-11 rounded-[12px] bg-amber-50 flex items-center justify-center mx-auto mb-2.5"><i class="fa-solid fa-car text-amber-500 text-xl"></i></div>
+            <div class="text-[13px] font-bold text-textMain">Permis</div>
+            <div class="text-[11px] text-textMuted mt-0.5">Conduire</div>
+          </button>
+          <button class="doc-type-card" onclick="selectDocType(this,'diplome')">
+            <div class="w-11 h-11 rounded-[12px] bg-purple-50 flex items-center justify-center mx-auto mb-2.5"><i class="fa-solid fa-graduation-cap text-purple-500 text-xl"></i></div>
+            <div class="text-[13px] font-bold text-textMain">Diplôme</div>
+            <div class="text-[11px] text-textMuted mt-0.5">BAC, Licence…</div>
+          </button>
+          <button class="doc-type-card" onclick="selectDocType(this,'acte')">
+            <div class="w-11 h-11 rounded-[12px] bg-pink-50 flex items-center justify-center mx-auto mb-2.5"><i class="fa-solid fa-file-lines text-pink-500 text-xl"></i></div>
+            <div class="text-[13px] font-bold text-textMain">Acte d'état civil</div>
+            <div class="text-[11px] text-textMuted mt-0.5">Naissance, mariage</div>
+          </button>
+          <button class="doc-type-card" onclick="selectDocType(this,'carte-pro')">
+            <div class="w-11 h-11 rounded-[12px] bg-teal-50 flex items-center justify-center mx-auto mb-2.5"><i class="fa-solid fa-id-badge text-teal-500 text-xl"></i></div>
+            <div class="text-[13px] font-bold text-textMain">Carte pro</div>
+            <div class="text-[11px] text-textMuted mt-0.5">Pro, étudiant…</div>
+          </button>
+          <button class="doc-type-card sm:col-span-3 col-span-2" onclick="selectDocType(this,'autre')">
+            <div class="flex items-center justify-center gap-2">
+              <div class="w-9 h-9 rounded-[10px] bg-gray-100 flex items-center justify-center"><i class="fa-solid fa-ellipsis text-gray-500"></i></div>
+              <div class="text-left"><div class="text-[13px] font-bold text-textMain">Autre document</div><div class="text-[11px] text-textMuted">Attestation, certificat, carte grise…</div></div>
+            </div>
+          </button>
+        </div>
+        <div id="autre-input" class="hidden mb-5">
+          <label class="form-label">Précisez le type de document</label>
+          <input type="text" class="form-input" placeholder="Ex: Carte grise, Attestation d'assurance…">
+        </div>
+        <button onclick="goToStep(2)" id="btn-s1" disabled class="w-full py-3.5 rounded-[13px] bg-primary text-white font-bricolage text-[15px] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-dark transition-all active:scale-[.98]">
+          Continuer <i class="fa-solid fa-arrow-right ml-1 text-[13px]"></i>
+        </button>
+      </div>
+
+      <!-- STEP 2 — Informations lisibles -->
+      <div class="bg-white border border-borderMain rounded-[20px] p-5 sm:p-6 panel-content hidden" id="panel-2">
+        <div class="flex items-center gap-2.5 mb-5">
+          <div class="w-8 h-8 rounded-[9px] bg-primary/10 flex items-center justify-center"><i class="fa-solid fa-user text-primary text-sm"></i></div>
+          <div>
+            <h2 class="font-bricolage text-lg font-bold text-textMain">Informations visibles sur le document</h2>
+            <p class="text-[12px] text-textMuted mt-0.5">Ne notez que ce qui est clairement lisible. Ne devinez pas.</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-4 mb-6">
+
+          <!-- Nom visible -->
+          <div>
+            <label class="form-label">Nom de la personne <span class="text-textMuted font-normal normal-case">(si lisible)</span></label>
+            <input type="text" id="owner-name" class="form-input" placeholder="Ex: MBANG Alice ou A. MBANG">
+            <p class="form-hint"><i class="fa-solid fa-eye-slash text-[10px]"></i> Cette info ne sera partagée qu'avec l'équipe DocMaster</p>
+          </div>
+
+          <!-- Numéro -->
+          <div>
+            <label class="form-label">Numéro du document <span class="text-textMuted font-normal normal-case">(si visible)</span></label>
+            <input type="text" id="doc-num" class="form-input" placeholder="Ex: 123456789CM — partiel accepté">
+          </div>
+
+          <!-- État physique -->
+          <div>
+            <label class="form-label">État du document</label>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="radio-pill"><input type="radio" name="etat" id="e-bon" value="bon"><label for="e-bon"><i class="fa-solid fa-circle-check text-green-500 text-sm"></i>Bon état</label></div>
+              <div class="radio-pill"><input type="radio" name="etat" id="e-moyen" value="moyen"><label for="e-moyen"><i class="fa-solid fa-triangle-exclamation text-amber-500 text-sm"></i>Moyen</label></div>
+              <div class="radio-pill"><input type="radio" name="etat" id="e-abime" value="abime"><label for="e-abime"><i class="fa-solid fa-circle-xmark text-red-400 text-sm"></i>Abîmé</label></div>
+            </div>
+          </div>
+
+          <!-- Détails supplémentaires -->
+          <div>
+            <label class="form-label">Détails que vous pouvez partager</label>
+            <textarea id="doc-details" rows="3" class="form-input resize-none" placeholder="Ex: CNI avec photo d'une femme d'environ 30 ans, document plastifié, légèrement mouillé…"></textarea>
+            <p class="form-hint">Ne mentionnez pas d'informations trop précises qui permettraient d'usurper l'identité.</p>
+          </div>
+
+          <!-- Tags -->
+          <div>
+            <label class="form-label">Mots-clés associés <span class="text-textMuted font-normal normal-case">(appuyez Entrée)</span></label>
+            <div class="flex flex-wrap items-center gap-2 p-2.5 border-[1.5px] border-borderMain rounded-[12px] bg-surface2 min-h-[46px] cursor-text" id="tag-container" onclick="document.getElementById('tag-input').focus()">
+              <div id="tags-list" class="flex flex-wrap gap-1.5"></div>
+              <input id="tag-input" type="text" placeholder="Ex: femme, jeune, photo floue…" class="bg-transparent outline-none border-none text-[13px] text-textMain placeholder:text-textMuted flex-1 min-w-[120px] py-1" onkeydown="handleTag(event)">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="goToStep(1)" class="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left text-[12px]"></i> Retour
+          </button>
+          <button onclick="goToStep(3)" class="flex-1 py-3 rounded-[13px] bg-primary text-white font-bricolage text-[15px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]">
+            Continuer <i class="fa-solid fa-arrow-right ml-1 text-[12px]"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3 — Lieu de découverte -->
+      <div class="bg-white border border-borderMain rounded-[20px] p-5 sm:p-6 panel-content hidden" id="panel-3">
+        <div class="flex items-center gap-2.5 mb-5">
+          <div class="w-8 h-8 rounded-[9px] bg-green-light flex items-center justify-center"><i class="fa-solid fa-location-dot text-green-mid text-sm"></i></div>
+          <div>
+            <h2 class="font-bricolage text-lg font-bold text-textMain">Où avez-vous trouvé le document ?</h2>
+            <p class="text-[12px] text-textMuted mt-0.5">Le lieu exact aide à retrouver le propriétaire plus vite.</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-4 mb-6">
+
+          <!-- Map placeholder -->
+          <div class="map-placeholder" id="map-btn" onclick="simulateMapClick()">
+            <i class="fa-solid fa-map-location-dot text-green-mid text-3xl"></i>
+            <div class="text-center">
+              <p class="text-[13.5px] font-bold text-textMain" id="map-label">Cliquer pour indiquer le lieu sur la carte</p>
+              <p class="text-[12px] text-textMuted" id="map-sub">Ou saisissez l'adresse manuellement ci-dessous</p>
+            </div>
+          </div>
+
+          <!-- Adresse -->
+          <div>
+            <label class="form-label">Adresse ou description du lieu *</label>
+            <input type="text" id="lieu-adresse" class="form-input" placeholder="Ex: Marché Central de Yaoundé, près de l'entrée principale" required>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="form-label">Ville *</label>
+              <select id="lieu-ville" class="form-input appearance-none">
+                <option value="">Choisir…</option>
+                <option value="yaounde" selected>Yaoundé</option>
+                <option value="douala">Douala</option>
+                <option value="bafoussam">Bafoussam</option>
+                <option value="garoua">Garoua</option>
+                <option value="maroua">Maroua</option>
+                <option value="ngaoundere">Ngaoundéré</option>
+                <option value="autre">Autre ville</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Quartier / Zone</label>
+              <input type="text" id="lieu-quartier" class="form-input" placeholder="Ex: Bastos, Mvan…">
+            </div>
+          </div>
+
+          <!-- Date & heure -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="form-label">Date de découverte *</label>
+              <input type="date" id="lieu-date" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">Heure approximative</label>
+              <input type="time" id="lieu-heure" class="form-input">
+            </div>
+          </div>
+
+          <!-- Contexte -->
+          <div>
+            <label class="form-label">Contexte de la découverte</label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div class="radio-pill"><input type="radio" name="contexte" id="c-rue" value="rue"><label for="c-rue" class="justify-center"><i class="fa-solid fa-road text-[13px]"></i>Rue</label></div>
+              <div class="radio-pill"><input type="radio" name="contexte" id="c-marche" value="marche"><label for="c-marche" class="justify-center"><i class="fa-solid fa-store text-[13px]"></i>Marché</label></div>
+              <div class="radio-pill"><input type="radio" name="contexte" id="c-transport" value="transport"><label for="c-transport" class="justify-center"><i class="fa-solid fa-bus text-[13px]"></i>Transport</label></div>
+              <div class="radio-pill"><input type="radio" name="contexte" id="c-autre-ctx" value="autre"><label for="c-autre-ctx" class="justify-center"><i class="fa-solid fa-ellipsis text-[13px]"></i>Autre</label></div>
+            </div>
+          </div>
+
+          <!-- Document conservé où ? -->
+          <div>
+            <label class="form-label">Où conservez-vous le document actuellement ? *</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div class="radio-pill"><input type="radio" name="conservation" id="cons-chez-moi" value="chez-moi"><label for="cons-chez-moi"><i class="fa-solid fa-house text-green-mid text-sm"></i>Chez moi</label></div>
+              <div class="radio-pill"><input type="radio" name="conservation" id="cons-police" value="police"><label for="cons-police"><i class="fa-solid fa-shield-halved text-blue-500 text-sm"></i>Commissariat</label></div>
+              <div class="radio-pill"><input type="radio" name="conservation" id="cons-mairie" value="mairie"><label for="cons-mairie"><i class="fa-solid fa-landmark text-purple-500 text-sm"></i>Mairie</label></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="goToStep(2)" class="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left text-[12px]"></i> Retour
+          </button>
+          <button onclick="goToStep(4)" class="flex-1 py-3 rounded-[13px] bg-primary text-white font-bricolage text-[15px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]">
+            Continuer <i class="fa-solid fa-arrow-right ml-1 text-[12px]"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 4 — Photos -->
+      <div class="bg-white border border-borderMain rounded-[20px] p-5 sm:p-6 panel-content hidden" id="panel-4">
+        <div class="flex items-center gap-2.5 mb-2">
+          <div class="w-8 h-8 rounded-[9px] bg-primary/10 flex items-center justify-center"><i class="fa-solid fa-camera text-primary text-sm"></i></div>
+          <h2 class="font-bricolage text-lg font-bold text-textMain">Photos du document</h2>
+        </div>
+        <div class="flex items-start gap-2.5 p-3.5 bg-amber-50 border border-amber-100 rounded-[12px] mb-5">
+          <i class="fa-solid fa-triangle-exclamation text-amber-500 text-sm mt-0.5 flex-shrink-0"></i>
+          <p class="text-[12.5px] text-amber-800 leading-snug"><strong>Important :</strong> Prenez une photo qui permet d'identifier le document <strong>sans révéler les informations personnelles complètes</strong>. Couvrez le numéro ou la photo si nécessaire. L'objectif est de prouver que vous l'avez.</p>
+        </div>
+
+        <div class="flex flex-col gap-4 mb-6">
+
+          <!-- Photo principale -->
+          <div>
+            <label class="form-label">Photo principale du document *</label>
+            <div class="drop-zone p-5 text-center" id="drop-main" onclick="document.getElementById('file-main').click()" ondragover="drgOver(event,'drop-main')" ondragleave="drgLeave('drop-main')" ondrop="drgDrop(event,'drop-main','prev-main','img-main')">
+              <input type="file" id="file-main" class="hidden" accept="image/*" onchange="fileChg(this,'prev-main','img-main','drop-main')">
+              <div id="prev-main" class="hidden">
+                <img id="img-main" class="w-full max-h-40 object-contain rounded-[9px] mb-2 mx-auto" src="" alt="">
+                <p class="text-[12px] text-green-mid font-semibold flex items-center justify-center gap-1.5"><i class="fa-solid fa-check-circle"></i>Photo ajoutée — cliquez pour changer</p>
+              </div>
+              <div id="phold-main">
+                <i class="fa-solid fa-cloud-arrow-up text-3xl text-textMuted mb-2 block"></i>
+                <p class="text-[13.5px] font-bold text-textMain">Glissez ou cliquez pour uploader</p>
+                <p class="text-[12px] text-textMuted">JPG, PNG · Max 10 Mo</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Photos supplémentaires -->
+          <div>
+            <label class="form-label">Photos supplémentaires <span class="text-textMuted font-normal normal-case">— optionnel (max 3)</span></label>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="drop-zone p-3 text-center min-h-[80px] flex items-center justify-center" onclick="document.getElementById('file-extra1').click()">
+                <input type="file" id="file-extra1" class="hidden" accept="image/*" onchange="fileChg(this,'prev-e1','img-e1','drop-e1')">
+                <div id="prev-e1" class="hidden w-full"><img id="img-e1" class="w-full h-[70px] object-cover rounded-[8px]" src="" alt=""></div>
+                <div id="phold-e1"><i class="fa-solid fa-plus text-textMuted text-lg block mb-0.5"></i><span class="text-[11px] text-textMuted">Photo 2</span></div>
+              </div>
+              <div class="drop-zone p-3 text-center min-h-[80px] flex items-center justify-center" onclick="document.getElementById('file-extra2').click()">
+                <input type="file" id="file-extra2" class="hidden" accept="image/*" onchange="fileChg(this,'prev-e2','img-e2','drop-e2')">
+                <div id="prev-e2" class="hidden w-full"><img id="img-e2" class="w-full h-[70px] object-cover rounded-[8px]" src="" alt=""></div>
+                <div id="phold-e2"><i class="fa-solid fa-plus text-textMuted text-lg block mb-0.5"></i><span class="text-[11px] text-textMuted">Photo 3</span></div>
+              </div>
+              <div class="drop-zone p-3 text-center min-h-[80px] flex items-center justify-center" onclick="document.getElementById('file-extra3').click()">
+                <input type="file" id="file-extra3" class="hidden" accept="image/*" onchange="fileChg(this,'prev-e3','img-e3','drop-e3')">
+                <div id="prev-e3" class="hidden w-full"><img id="img-e3" class="w-full h-[70px] object-cover rounded-[8px]" src="" alt=""></div>
+                <div id="phold-e3"><i class="fa-solid fa-plus text-textMuted text-lg block mb-0.5"></i><span class="text-[11px] text-textMuted">Photo 4</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floutage -->
+          <div class="flex items-start gap-3 p-3.5 bg-green-light border border-green-dark/10 rounded-[12px]">
+            <input type="checkbox" id="floutage" class="mt-0.5 accent-primary w-4 h-4 flex-shrink-0 cursor-pointer" checked>
+            <label for="floutage" class="text-[12.5px] text-textMain cursor-pointer leading-snug">
+              <strong>Appliquer un floutage automatique</strong> sur les zones sensibles (numéro, photo d'identité) avant publication. <span class="text-green-mid font-semibold">Recommandé.</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="goToStep(3)" class="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left text-[12px]"></i> Retour
+          </button>
+          <button onclick="goToStep(5)" class="flex-1 py-3 rounded-[13px] bg-primary text-white font-bricolage text-[15px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]">
+            Continuer <i class="fa-solid fa-arrow-right ml-1 text-[12px]"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 5 — Contact & Récompense -->
+      <div class="bg-white border border-borderMain rounded-[20px] p-5 sm:p-6 panel-content hidden" id="panel-5">
+        <div class="flex items-center gap-2.5 mb-5">
+          <div class="w-8 h-8 rounded-[9px] bg-primary/10 flex items-center justify-center"><i class="fa-solid fa-handshake text-primary text-sm"></i></div>
+          <div>
+            <h2 class="font-bricolage text-lg font-bold text-textMain">Vos coordonnées & récompense</h2>
+            <p class="text-[12px] text-textMuted mt-0.5">Le propriétaire pourra vous contacter via DocMaster uniquement.</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-4 mb-6">
+
+          <!-- Contact -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="form-label">Votre prénom *</label>
+              <input type="text" id="contact-prenom" class="form-input" placeholder="Jean-Marc" value="Jean-Marc">
+            </div>
+            <div>
+              <label class="form-label">Votre numéro de téléphone *</label>
+              <input type="tel" id="contact-tel" class="form-input" placeholder="+237 6XX XXX XXX">
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">Mode de contact préféré</label>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="radio-pill"><input type="radio" name="contact-mode" id="cm-app" value="app" checked><label for="cm-app"><i class="fa-solid fa-comment-dots text-primary text-sm"></i>Via l'app</label></div>
+              <div class="radio-pill"><input type="radio" name="contact-mode" id="cm-wa" value="whatsapp"><label for="cm-wa"><i class="fa-brands fa-whatsapp text-[#25D366] text-sm"></i>WhatsApp</label></div>
+              <div class="radio-pill"><input type="radio" name="contact-mode" id="cm-tel" value="tel"><label for="cm-tel"><i class="fa-solid fa-phone text-blue-500 text-sm"></i>Appel</label></div>
+            </div>
+          </div>
+
+          <!-- Disponibilité -->
+          <div>
+            <label class="form-label">Plage horaire de disponibilité</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <input type="time" id="dispo-de" class="form-input" value="08:00">
+              </div>
+              <div>
+                <input type="time" id="dispo-a" class="form-input" value="18:00">
+              </div>
+            </div>
+            <p class="form-hint">Le propriétaire sera informé de vos disponibilités.</p>
+          </div>
+
+          <!-- Récompense -->
+          <div>
+            <label class="form-label">Souhaitez-vous une récompense ?</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="reward-card" id="rw-non" onclick="selectReward(this,'non')">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="w-9 h-9 rounded-[10px] bg-green-light flex items-center justify-center"><i class="fa-solid fa-heart text-green-mid text-sm"></i></div>
+                  <i class="fa-solid fa-circle-check text-primary reward-check"></i>
+                </div>
+                <div class="text-[13px] font-bold text-textMain">Non merci</div>
+                <div class="text-[11px] text-textMuted mt-0.5">Geste gratuit</div>
+              </div>
+              <div class="reward-card" id="rw-points" onclick="selectReward(this,'points')">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="w-9 h-9 rounded-[10px] bg-primary/10 flex items-center justify-center"><i class="fa-solid fa-star text-primary text-sm"></i></div>
+                  <i class="fa-solid fa-circle-check text-primary reward-check"></i>
+                </div>
+                <div class="text-[13px] font-bold text-textMain">Points DocMaster</div>
+                <div class="text-[11px] text-textMuted mt-0.5">+50 pts bonus</div>
+              </div>
+              <div class="reward-card" id="rw-proprio" onclick="selectReward(this,'proprio')">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="w-9 h-9 rounded-[10px] bg-amber-50 flex items-center justify-center"><i class="fa-solid fa-coins text-amber-500 text-sm"></i></div>
+                  <i class="fa-solid fa-circle-check text-primary reward-check"></i>
+                </div>
+                <div class="text-[13px] font-bold text-textMain">Gré du propriétaire</div>
+                <div class="text-[11px] text-textMuted mt-0.5">À sa discrétion</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Récap -->
+          <div class="p-4 bg-bgMain border border-borderMain rounded-[14px]">
+            <p class="text-[11.5px] font-bold text-textMuted uppercase tracking-wide mb-3">Récapitulatif de votre déclaration</p>
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-[13px]"><span class="text-textMuted">Type de document</span><span class="font-bold text-textMain" id="recap-doc-type">—</span></div>
+              <div class="flex justify-between text-[13px]"><span class="text-textMuted">Lieu de découverte</span><span class="font-bold text-textMain" id="recap-lieu">—</span></div>
+              <div class="flex justify-between text-[13px]"><span class="text-textMuted">Date</span><span class="font-bold text-textMain" id="recap-date">—</span></div>
+              <div class="flex justify-between text-[13px]"><span class="text-textMuted">Photos jointes</span><span class="font-bold text-green-mid" id="recap-photos">0 photo(s)</span></div>
+            </div>
+          </div>
+
+          <!-- Consentement -->
+          <div class="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-100 rounded-[12px]">
+            <input type="checkbox" id="consent-found" class="mt-0.5 accent-primary flex-shrink-0 w-4 h-4 cursor-pointer">
+            <label for="consent-found" class="text-[12.5px] text-textMain cursor-pointer leading-snug">
+              Je certifie avoir trouvé ce document en toute bonne foi et m'engage à le remettre à son propriétaire légitime. J'accepte les <strong class="underline cursor-pointer">conditions d'utilisation</strong> de DocMaster.
+            </label>
+          </div>
+        </div>
+
+        <!-- Upload progress -->
+        <div id="prog-wrap" class="hidden mb-4">
+          <div class="flex justify-between text-[12.5px] font-semibold text-textMain mb-2">
+            <span id="prog-label">Publication en cours…</span>
+            <span id="prog-pct">0%</span>
+          </div>
+          <div class="upload-progress"><div class="upload-bar" id="upload-bar"></div></div>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="goToStep(4)" class="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left text-[12px]"></i> Retour
+          </button>
+          <button onclick="submitDeclaration()" id="btn-submit" class="flex-1 py-3.5 rounded-[13px] bg-green-dark text-white font-bricolage text-[15px] font-bold hover:bg-green-mid transition-all active:scale-[.98] flex items-center justify-center gap-2">
+            <i class="fa-solid fa-paper-plane text-[13px]"></i> Publier la déclaration
+          </button>
+        </div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="bg-white border border-borderMain rounded-[20px] p-6 panel-content hidden text-center" id="panel-success">
+        <div class="w-20 h-20 rounded-[24px] bg-green-light flex items-center justify-center mx-auto mb-5">
+          <i class="fa-solid fa-circle-check text-green-mid text-4xl"></i>
+        </div>
+        <h2 class="font-bricolage text-2xl font-extrabold text-textMain mb-2">Déclaration publiée !</h2>
+        <p class="text-[14px] text-textMuted mb-2 leading-relaxed">Votre déclaration a été publiée avec succès. Le système DocMaster va maintenant chercher une correspondance parmi les documents perdus déclarés.</p>
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-green-light border border-green-dark/15 rounded-full text-[13px] font-bold text-green-mid mb-6">
+          <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
+          Recherche de correspondance en cours…
+        </div>
+
+        <!-- Ref -->
+        <div class="p-4 bg-bgMain border border-borderMain rounded-[14px] mb-5 text-left">
+          <p class="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-2">Numéro de déclaration</p>
+          <div class="flex items-center gap-2">
+            <span class="font-bricolage text-xl font-extrabold text-textMain tracking-widest flex-1" id="decl-ref">DOC-FND-2024-0041</span>
+            <button onclick="copyRef()" class="px-3 py-1.5 bg-primary text-white text-[12px] font-bold rounded-[8px] hover:bg-primary-dark transition-all active:scale-95 flex items-center gap-1.5">
+              <i class="fa-regular fa-copy text-[11px]"></i> Copier
+            </button>
+          </div>
+          <p class="form-hint mt-2">Conservez ce numéro pour le suivi de votre déclaration.</p>
+        </div>
+
+        <!-- What's next -->
+        <div class="text-left space-y-3 mb-6">
+          <p class="text-[12px] font-bold text-textMuted uppercase tracking-wide">Et maintenant ?</p>
+          <div class="flex items-start gap-3">
+            <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-[11px] font-bold text-primary">1</span></div>
+            <p class="text-[13px] text-textMuted leading-snug">DocMaster vérifie votre déclaration et la publie dans les <strong class="text-textMain">2 à 4 heures</strong>.</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-[11px] font-bold text-primary">2</span></div>
+            <p class="text-[13px] text-textMuted leading-snug">Si une correspondance est trouvée, vous serez <strong class="text-textMain">notifié immédiatement</strong> par SMS et dans l'app.</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-[11px] font-bold text-primary">3</span></div>
+            <p class="text-[13px] text-textMuted leading-snug">La remise se fait en <strong class="text-textMain">lieu public sécurisé</strong> ou dans un partenaire DocMaster.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="window.location.reload()" class="py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors text-[13.5px]">
+            Nouvelle déclaration
+          </button>
+          <button class="py-3 rounded-[13px] bg-primary text-white font-bricolage text-[13.5px] font-bold hover:bg-primary-dark transition-all">
+            Voir mes déclarations
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function openSb(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+function closeSb(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+
+// ── State ──
+let currentStep = 1;
+let selectedDocType = null;
+let mapClicked = false;
+const typeLabels = {cni:'CNI',passport:'Passeport',permis:'Permis de conduire',diplome:'Diplôme',acte:'Acte d\'état civil','carte-pro':'Carte professionnelle',autre:'Autre document'};
+
+// ── Step navigation ──
+function goToStep(n) {
+  for(let i = 1; i <= 5; i++){
+    document.getElementById('panel-' + i).classList.add('hidden');
+    const si = document.getElementById('si-' + i);
+    const sc = document.getElementById('sc-' + i);
+    if(i < n){ si.className='step-item done'; sc.className='step-circle done'; sc.innerHTML='<i class="fa-solid fa-check text-[10px]"></i>'; }
+    else if(i === n){ si.className='step-item active'; sc.className='step-circle active'; sc.textContent=i; }
+    else{ si.className='step-item pending'; sc.className='step-circle pending'; sc.textContent=i; }
+  }
+  document.getElementById('panel-' + n).classList.remove('hidden');
+  document.getElementById('panel-' + n).classList.add('panel-content');
+  currentStep = n;
+  if(n === 5) fillRecap();
+  // Scroll to top of content
+  document.getElementById('main-content').scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── Step 1: doc type ──
+function selectDocType(btn, type) {
+  document.querySelectorAll('.doc-type-card').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedDocType = type;
+  document.getElementById('btn-s1').disabled = false;
+  document.getElementById('autre-input').classList.toggle('hidden', type !== 'autre');
+}
+
+// ── Tags ──
+const tags = [];
+function handleTag(e) {
+  if((e.key === 'Enter' || e.key === ',') && e.target.value.trim()) {
+    e.preventDefault();
+    const v = e.target.value.trim().replace(',','');
+    if(v && !tags.includes(v)) {
+      tags.push(v);
+      const t = document.createElement('span');
+      t.className = 'tag';
+      t.innerHTML = v + '<button onclick="removeTag(this,\'' + v + '\')">✕</button>';
+      document.getElementById('tags-list').appendChild(t);
+    }
+    e.target.value = '';
+  }
+}
+function removeTag(btn, v) { const i = tags.indexOf(v); if(i > -1) tags.splice(i,1); btn.parentElement.remove(); }
+
+// ── Map click simulation ──
+function simulateMapClick() {
+  mapClicked = true;
+  const btn = document.getElementById('map-btn');
+  btn.classList.add('border-green-dark/30');
+  btn.innerHTML = '<i class="fa-solid fa-location-dot text-green-mid text-4xl"></i><div class="text-center"><p class="text-[14px] font-bold text-green-mid">📍 Position marquée : Marché Central, Yaoundé</p><p class="text-[12px] text-textMuted">Cliquez pour repositionner</p></div>';
+  document.getElementById('lieu-adresse').value = 'Marché Central de Yaoundé, entrée principale';
+}
+
+// ── Reward selection ──
+function selectReward(card, type) {
+  document.querySelectorAll('.reward-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+}
+
+// ── Recap ──
+function fillRecap() {
+  document.getElementById('recap-doc-type').textContent = typeLabels[selectedDocType] || '—';
+  const addr = document.getElementById('lieu-adresse').value;
+  document.getElementById('recap-lieu').textContent = addr || '—';
+  const d = document.getElementById('lieu-date').value;
+  document.getElementById('recap-date').textContent = d ? new Date(d).toLocaleDateString('fr-FR') : '—';
+  let photos = 0;
+  ['file-main','file-extra1','file-extra2','file-extra3'].forEach(id => { if(document.getElementById(id).files.length) photos++; });
+  document.getElementById('recap-photos').textContent = photos + ' photo(s)';
+}
+
+// ── Submit ──
+function submitDeclaration() {
+  if(!document.getElementById('consent-found').checked) { alert('Veuillez accepter les conditions pour continuer.'); return; }
+  const btn = document.getElementById('btn-submit');
+  const wrap = document.getElementById('prog-wrap');
+  const bar = document.getElementById('upload-bar');
+  const pct = document.getElementById('prog-pct');
+  const lbl = document.getElementById('prog-label');
+  wrap.classList.remove('hidden');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[13px]"></i> Publication en cours…';
+  const steps = ['Vérification des données…', 'Traitement des photos…', 'Publication de la déclaration…', 'Envoi des notifications…'];
+  let p = 0, si = 0;
+  const iv = setInterval(() => {
+    p += Math.random() * 10 + 5;
+    if(p >= 100) { p = 100; clearInterval(iv);
+      setTimeout(() => {
+        document.getElementById('panel-5').classList.add('hidden');
+        document.getElementById('panel-success').classList.remove('hidden');
+        document.getElementById('panel-success').classList.add('panel-content');
+        for(let i=1;i<=5;i++){ const sc=document.getElementById('sc-'+i); sc.className='step-circle done'; sc.innerHTML='<i class="fa-solid fa-check text-[10px]"></i>'; document.getElementById('si-'+i).className='step-item done'; }
+      }, 500);
+    }
+    bar.style.width = p + '%';
+    pct.textContent = Math.round(p) + '%';
+    if(Math.round(p) % 25 === 0 && si < steps.length) lbl.textContent = steps[si++] || lbl.textContent;
+  }, 200);
+}
+
+function copyRef() {
+  navigator.clipboard.writeText('DOC-FND-2024-0041').then(() => alert('Référence copiée !'));
+}
+
+// ── File upload helpers ──
+function drgOver(e, id) { e.preventDefault(); document.getElementById(id).classList.add('drag-over'); }
+function drgLeave(id) { document.getElementById(id).classList.remove('drag-over'); }
+function drgDrop(e, zoneId, prevId, imgId) {
+  e.preventDefault(); drgLeave(zoneId);
+  const file = e.dataTransfer.files[0];
+  if(file && file.type.startsWith('image/')) showPreview(file, prevId, imgId, zoneId);
+}
+function fileChg(input, prevId, imgId, zoneId) {
+  if(input.files[0]) showPreview(input.files[0], prevId, imgId, zoneId||'');
+}
+function showPreview(file, prevId, imgId, zoneId) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById(imgId);
+    if(img) img.src = e.target.result;
+    document.getElementById(prevId).classList.remove('hidden');
+    // hide placeholder
+    const phold = prevId.replace('prev','phold');
+    const phEl = document.getElementById(phold);
+    if(phEl) phEl.classList.add('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+// Set today's date
+document.getElementById('lieu-date').valueAsDate = new Date();
+</script>
+</body>
+</html>

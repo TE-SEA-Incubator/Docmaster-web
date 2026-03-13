@@ -1,427 +1,643 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DocMaster — Abonnement</title>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="./js/auth.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.0/build/css/intlTelInput.css">
-<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.0/build/js/intlTelInput.min.js"></script>
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
-        'green-dark': '#1E3A2F', 'green-mid': '#2D5A42', 'green-light': '#E8F5EE',
-        bgMain: '#F4EFE6', surface: '#FFFFFF', surface2: '#FAF7F2',
-        textMain: '#1A1A1A', textMuted: '#9CA3AF', borderMain: '#EAE3D8',
-      },
-      fontFamily: { poppins: ['Poppins','sans-serif'], bricolage: ['"Bricolage Grotesque"','sans-serif'] }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocMaster — Abonnement</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./js/auth.js"></script>
+       <link href="css/output.css" rel="stylesheet" />
+
+  <link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.0/build/css/intlTelInput.css">
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.5.0/build/js/intlTelInput.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
+            'green-dark': '#1E3A2F', 'green-mid': '#2D5A42', 'green-light': '#E8F5EE',
+            bgMain: '#F4EFE6', surface: '#FFFFFF', surface2: '#FAF7F2',
+            textMain: '#1A1A1A', textMuted: '#9CA3AF', borderMain: '#EAE3D8',
+          },
+          fontFamily: { poppins: ['Poppins', 'sans-serif'], bricolage: ['"Bricolage Grotesque"', 'sans-serif'] }
+        }
+      }
     }
-  }
-}
-</script>
-<style>
-:root{--sidebar:260px}
-html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:50;overflow-y:auto}
-.sidebar.open{transform:translateX(0)}
-@media(min-width:900px){
-  body{display:flex;height:100vh;overflow:hidden}
-  .sidebar{position:relative;transform:none!important;flex-shrink:0}
-  .main-wrapper{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-  .main-content{flex:1;overflow-y:auto}
-}
-@media(max-width:899px){
-  .main-wrapper{display:flex;flex-direction:column;min-height:100vh}
-}
-.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .28s}
-.sb-overlay.show{display:block;opacity:1;pointer-events:all}
-.sidebar::after{content:'';position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(245,166,75,.05);bottom:-80px;left:-60px;pointer-events:none}
-.sb-item.active{background:rgba(245,166,75,.15);color:#fff}
-.sb-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:55%;background:#F5A64B;border-radius:0 3px 3px 0}
-.custom-scroll::-webkit-scrollbar{width:4px}
-.custom-scroll::-webkit-scrollbar-thumb{background:#DDD5C8;border-radius:10px}
-.plan-card{transition:transform .2s,box-shadow .2s}
-.plan-card:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.1)}
-.plan-card.featured{box-shadow:0 8px 32px rgba(245,166,75,.25)}
-.plan-card.featured:hover{box-shadow:0 16px 48px rgba(245,166,75,.3)}
-.toggle-bg{transition:background .2s}
-.tab-btn{transition:all .2s}
-.tab-btn.active{background:#1E3A2F;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.feature-check{color:#10B981}
-.feature-lock{color:#E5E7EB}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
-.opacity-0 { opacity: 0; }
-</style>
+  </script>
+  <style>
+    :root {
+      --sidebar: 260px
+    }
+
+    html,
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #F4EFE6
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar);
+      transform: translateX(-100%);
+      transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+      z-index: 50;
+      overflow-y: auto
+    }
+
+    .sidebar.open {
+      transform: translateX(0)
+    }
+
+    @media(min-width:900px) {
+      body {
+        display: flex;
+        height: 100vh;
+        overflow: hidden
+      }
+
+      .sidebar {
+        position: relative;
+        transform: none !important;
+        flex-shrink: 0
+      }
+
+      .main-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0
+      }
+
+      .main-content {
+        flex: 1;
+        overflow-y: auto
+      }
+    }
+
+    @media(max-width:899px) {
+      .main-wrapper {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh
+      }
+    }
+
+    .sb-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .45);
+      z-index: 40;
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .28s
+    }
+
+    .sb-overlay.show {
+      display: block;
+      opacity: 1;
+      pointer-events: all
+    }
+
+    .sidebar::after {
+      content: '';
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: rgba(245, 166, 75, .05);
+      bottom: -80px;
+      left: -60px;
+      pointer-events: none
+    }
+
+    .sb-item.active {
+      background: rgba(245, 166, 75, .15);
+      color: #fff
+    }
+
+    .sb-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 55%;
+      background: #F5A64B;
+      border-radius: 0 3px 3px 0
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #DDD5C8;
+      border-radius: 10px
+    }
+
+    .plan-card {
+      transition: transform .2s, box-shadow .2s
+    }
+
+    .plan-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .1)
+    }
+
+    .plan-card.featured {
+      box-shadow: 0 8px 32px rgba(245, 166, 75, .25)
+    }
+
+    .plan-card.featured:hover {
+      box-shadow: 0 16px 48px rgba(245, 166, 75, .3)
+    }
+
+    .toggle-bg {
+      transition: background .2s
+    }
+
+    .tab-btn {
+      transition: all .2s
+    }
+
+    .tab-btn.active {
+      background: #1E3A2F;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .15)
+    }
+
+    .feature-check {
+      color: #10B981
+    }
+
+    .feature-lock {
+      color: #E5E7EB
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .opacity-0 {
+      opacity: 0;
+    }
+  </style>
 </head>
+
 <body>
-<div class="sb-overlay" id="overlay" onclick="closeSb()"></div>
+  <div class="sb-overlay" id="overlay" onclick="closeSb()"></div>
 
-<!-- SIDEBAR -->
-<aside class="sidebar w-[var(--sidebar)] bg-green-dark flex flex-col" id="sidebar">
-  <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 flex-shrink-0">
-    <div class="w-9 h-9 rounded-[10px] bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0">
-      <i class="fa-solid fa-file-shield text-primary text-base"></i>
-    </div>
-    <span class="font-bricolage text-[18px] font-bold text-white tracking-tight">DocMaster</span>
-    <button class="ml-auto text-white/40 hover:text-white transition-colors lg:hidden" onclick="closeSb()"><i class="fa-solid fa-xmark text-lg"></i></button>
-  </div>
-  <div class="flex-1 overflow-y-auto py-2">
-    <div class="px-[22px] pt-4 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Principal</div>
-    <nav class="flex flex-col gap-0.5 px-2.5">
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="dashboard.html"><i class="fa-solid fa-house w-[18px] text-center opacity-80"></i>Tableau de bord</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="Mesdocument.html"><i class="fa-solid fa-folder-open w-[18px] text-center opacity-80"></i>Mes Documents</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="trouverdocument.html"><i class="fa-solid fa-file-circle-check w-[18px] text-center opacity-80"></i>Déclarer trouvé</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="rechercher.html"><i class="fa-solid fa-magnifying-glass w-[18px] text-center opacity-80"></i>Rechercher</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="mesGains.html"><i class="fa-solid fa-wallet w-[18px] text-center opacity-80"></i>Mes Gains</a>
-    </nav>
-    <div class="px-[22px] pt-5 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Compte</div>
-    <nav class="flex flex-col gap-0.5 px-2.5">
-      <a class="sb-item active flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white cursor-pointer relative" href="Abonnement.html"><i class="fa-solid fa-crown w-[18px] text-center text-primary"></i>Abonnement</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="parrainage.html"><i class="fa-solid fa-users-gear w-[18px] text-center opacity-80"></i>Parrainage</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative" href="#"><i class="fa-solid fa-gear w-[18px] text-center opacity-80"></i>Paramètres</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-red-400/70 cursor-pointer transition-all hover:bg-white/5 hover:text-red-400 relative" href="#"><i class="fa-solid fa-right-from-bracket w-[18px] text-center opacity-80"></i>Déconnexion</a>
-    </nav>
-  </div>
-  <div class="px-2.5 py-3.5 border-t border-white/10 flex-shrink-0">
-    <div class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[11px] cursor-pointer hover:bg-white/5 transition-colors">
-      <div class="w-[33px] h-[33px] rounded-[9px] bg-primary flex items-center justify-center font-bricolage text-xs font-extrabold text-white flex-shrink-0" id="userInitial">JM</div>
-      <div><div class="text-[13px] font-semibold text-white leading-tight" id="userName">Jean-Marc D.</div><div class="text-[11px] text-white/40">Plan Standard</div></div>
-      <i class="fa-solid fa-chevron-up ml-auto text-white/30 text-[11px]"></i>
-    </div>
-  </div>
-</aside>
-
-<!-- MAIN -->
-<div class="main-wrapper">
-  <header class="sticky top-0 z-30 h-[58px] bg-white border-b border-borderMain flex items-center px-4 gap-3 flex-shrink-0">
-    <button class="w-9 h-9 flex items-center justify-center rounded-[9px] bg-surface2 border border-borderMain text-textMain text-base cursor-pointer hover:border-primary hover:text-primary transition-all md:hidden" onclick="openSb()"><i class="fa-solid fa-bars"></i></button>
-    <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Abonnement</span>
-    <div class="ml-auto flex items-center gap-2">
-      <div class="relative w-9 h-9 rounded-[9px] bg-surface2 border border-borderMain flex items-center justify-center text-sm text-textMain cursor-pointer hover:border-primary hover:text-primary transition-all">
-        <i class="fa-regular fa-bell"></i>
-        <div class="absolute top-[7px] right-[7px] w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
-      </div>
-      <div class="flex items-center gap-2 pl-1.5 pr-3 py-1 bg-surface2 border border-borderMain rounded-[10px] cursor-pointer hover:border-primary transition-colors">
-        <div class="w-[26px] h-[26px] rounded-[6px] bg-green-dark flex items-center justify-center font-bricolage text-[11px] font-extrabold text-primary" id="topInitial">JM</div>
-        <span class="text-[12.5px] font-semibold text-textMain hidden xs:block" id="topName">Jean-Marc</span>
-      </div>
-    </div>
-  </header>
-
-  <div class="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-10">
-
-    <!-- Greeting -->
-    <div class="flex items-start justify-between gap-3 flex-wrap">
-      <div>
-        <h1 class="font-bricolage text-xl sm:text-2xl font-extrabold text-textMain tracking-tight leading-tight">Bonjour, <span id="helloName">Jean-Marc</span> </h1>
-        <p class="text-[12.5px] sm:text-[13.5px] text-textMuted font-medium mt-0.5 italic">Gérez votre abonnement</p>
-      </div>
-      <div class="text-[11.5px] text-textMuted font-medium bg-white border border-borderMain px-3 py-1.5 rounded-[9px] flex items-center gap-2 whitespace-nowrap">
-        <i class="fa-regular fa-calendar text-primary"></i>
-        <span id="currentDay">Lundi 9 mars 2026</span>
-      </div>
-    </div>
-
-    <!-- Plan actuel card -->
-    <div class="bg-green-dark rounded-[24px] p-6 md:p-8 relative overflow-hidden shadow-2xl shadow-green-950/40 min-h-[220px] flex items-center">
-      <div class="absolute w-80 h-80 rounded-full bg-primary/10 -top-24 -right-24 blur-3xl pointer-events-none"></div>
-      <div class="absolute w-40 h-40 rounded-full bg-white/5 bottom-0 left-24 blur-2xl pointer-events-none"></div>
+  <!-- SIDEBAR -->
+  <aside class="sidebar w-[var(--sidebar)] bg-green-dark flex flex-col" id="sidebar">
+    <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 flex-shrink-0">
       
-      <div class="relative z-10 w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-        <div class="flex-1 w-full">
-          <div class="inline-flex items-center gap-2 bg-primary/20 border border-primary/30 rounded-full px-4 py-1.5 mb-5">
-            <i class="fa-solid fa-bolt text-primary text-[10px] animate-pulse"></i>
-            <span class="text-[11px] font-bold text-primary uppercase tracking-widest">Plan actuel</span>
-          </div>
-          <h1 class="font-bricolage text-3xl md:text-5xl font-extrabold text-white leading-tight mb-3">Plan Standard</h1>
-          <p class="text-white/60 text-[14px] md:text-[15px] mb-6 max-w-lg">Renouvelé le <strong class="text-white/90">10 avril 2024</strong> · Prochaine échéance le <strong class="text-white/90">10 mai 2024</strong></p>
-          
-          <div class="flex flex-wrap gap-3">
-            <div class="flex items-center gap-3 bg-white/10 border border-white/10 backdrop-blur-xl rounded-2xl px-5 py-2.5 transition-transform hover:scale-105">
-              <i class="fa-solid fa-file-circle-check text-primary text-lg"></i>
-              <div class="flex flex-col">
-                <span class="text-white/90 text-[13px] font-bold leading-none">1 Document</span>
-                <span class="text-white/40 text-[10px] uppercase font-bold mt-1">Par type</span>
-              </div>
-            </div>
-            <div class="flex items-center gap-3 bg-white/10 border border-white/10 backdrop-blur-xl rounded-2xl px-5 py-2.5 transition-transform hover:scale-105">
-              <i class="fa-solid fa-box-open text-primary text-lg"></i>
-              <div class="flex flex-col">
-                <span class="text-white/90 text-[13px] font-bold leading-none">2 Objets</span>
-                <span class="text-white/40 text-[10px] uppercase font-bold mt-1">Bientôt disponible</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="w-full md:w-auto bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col items-center min-w-[200px] backdrop-blur-md">
-          <div class="relative w-28 h-28 mb-4">
-            <svg class="w-28 h-28 -rotate-90" viewBox="0 0 80 80">
-              <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="6"/>
-              <circle cx="40" cy="40" r="34" fill="none" stroke="#F5A64B" stroke-width="6" stroke-dasharray="213.6" stroke-dashoffset="85.4" stroke-linecap="round" class="transition-all duration-1000"/>
-            </svg>
-            <div class="absolute inset-0 flex flex-col items-center justify-center">
-              <span class="font-bricolage text-2xl font-black text-white leading-none">60%</span>
-              <span class="text-white/40 text-[9px] font-bold uppercase mt-1">Quota</span>
-            </div>
-          </div>
-          <div class="text-white/50 text-[11px] font-bold uppercase tracking-widest mb-3">Capacité utilisée</div>
-          <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-            <div class="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full" style="width:60%"></div>
-          </div>
-        </div>
-      </div>
+<img src="./assets/images/logo.png" alt="Docmaster logo" class="rounded-md w-70 h-10">    <!-- Close btn mobile -->
+      <button class="ml-auto text-white/40 hover:text-white transition-colors lg:hidden" onclick="closeSb()"><i
+          class="fa-solid fa-xmark text-lg"></i></button>
     </div>
-
-    <!-- Billing toggle + plans -->
-    <div>
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-        <h2 class="font-bricolage text-xl font-bold text-textMain">Choisir un plan</h2>
-        <!-- Monthly / Annual toggle -->
-        <div class="flex items-center gap-1 self-start sm:self-auto bg-white border border-borderMain rounded-[12px] p-1">
-          <button class="tab-btn active px-4 py-2 rounded-[9px] text-[12.5px] font-bold" id="tab-monthly" onclick="setTab('monthly')">Mensuel</button>
-          <button class="tab-btn px-4 py-2 rounded-[9px] text-[12.5px] font-bold text-textMuted" id="tab-annual" onclick="setTab('annual')">
-            Annuel
-            <span class="ml-1.5 text-[10px] font-bold text-green-mid bg-green-light px-1.5 py-0.5 rounded-full">-20%</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Plans grid (JS injected) -->
-      <div id="pricing-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- JS will populate this -->
-      </div>
+    <div class="flex-1 overflow-y-auto py-2">
+      <div class="px-[22px] pt-4 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Principal</div>
+      <nav class="flex flex-col gap-0.5 px-2.5">
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative"
+          href="dashboard.html"><i class="fa-solid fa-house w-[18px] text-center opacity-80"></i>Tableau de bord</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative"
+          href="Mesdocument.html"><i class="fa-solid fa-folder-open w-[18px] text-center opacity-80"></i>Mes
+          Documents</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative"
+          href="trouverdocument.html"><i
+            class="fa-solid fa-file-circle-check w-[18px] text-center opacity-80"></i>Déclarer trouvé</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative"
+          href="rechercher.html"><i
+            class="fa-solid fa-magnifying-glass w-[18px] text-center opacity-80"></i>Rechercher</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative"
+          href="mesGains.html"><i class="fa-solid fa-wallet w-[18px] text-center opacity-80"></i>Mes Gains</a>
+      </nav>
+      <div class="px-[22px] pt-5 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Compte</div>
+      <nav class="flex flex-col gap-0.5 px-2.5">
+        <a class="sb-item active flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white cursor-pointer relative"
+          href="Abonnement.html"><i class="fa-solid fa-crown w-[18px] text-center text-primary"></i>Abonnement</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative"
+          href="parrainage.html"><i class="fa-solid fa-users-gear w-[18px] text-center opacity-80"></i>Parrainage</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 cursor-pointer transition-all hover:bg-white/5 hover:text-white/90 relative"
+          href="#"><i class="fa-solid fa-gear w-[18px] text-center opacity-80"></i>Paramètres</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-red-400/70 cursor-pointer transition-all hover:bg-white/5 hover:text-red-400 relative"
+          href="#"><i class="fa-solid fa-right-from-bracket w-[18px] text-center opacity-80"></i>Déconnexion</a>
+      </nav>
     </div>
-
-    <!-- Factures & Historique -->
-    <div class="bg-white border border-borderMain rounded-[20px] overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-borderMain">
-        <h2 class="font-bricolage text-base font-bold text-textMain flex items-center gap-2">
-          <i class="fa-solid fa-receipt text-primary text-sm"></i>Historique de facturation
-        </h2>
-        <button class="text-[11.5px] font-semibold text-primary hover:underline">Tout exporter</button>
-      </div>
-      <div id="invoice-container" class="divide-y divide-borderMain">
-        <!-- JS will populate this -->
-        <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors">
-          <div class="w-9 h-9 rounded-[10px] bg-green-light flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-file-invoice text-green-mid text-sm"></i></div>
-          <div class="flex-1 min-w-0">
-            <div class="text-[13.5px] font-semibold text-textMain">Plan Standard — Avril 2024</div>
-            <div class="text-[11.5px] text-textMuted italic">10 avr. 2024 · Paiement automatique</div>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <div class="text-[13.5px] font-bold text-textMain">500 XAF</div>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Payé</span>
-          </div>
-          <button class="ml-2 w-8 h-8 rounded-[8px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted flex-shrink-0">
-            <i class="fa-solid fa-download text-[11px]"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Méthode de paiement + Annulation -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div class="bg-white border border-borderMain rounded-[18px] p-5">
-        <h3 class="font-bricolage text-base font-bold text-textMain mb-4 flex items-center gap-2"><i class="fa-solid fa-credit-card text-primary text-sm"></i>Moyen de paiement</h3>
-        <div class="flex items-center gap-3 p-3.5 bg-bgMain border border-borderMain rounded-[12px] mb-3">
-          <div class="w-10 h-7 bg-[#F96900] rounded-[6px] flex items-center justify-center flex-shrink-0">
-            <span class="text-white text-[9px] font-extrabold tracking-tight">MTN</span>
-          </div>
-          <div class="flex-1">
-            <div class="text-[13px] font-semibold text-textMain">MTN Mobile Money</div>
-            <div class="text-[11.5px] text-textMuted">+237 6XX XXX XXX</div>
-          </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Actif</span>
-        </div>
-        <button class="w-full py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2">
-          <i class="fa-solid fa-plus text-[11px]"></i> Ajouter un moyen de paiement
-        </button>
-      </div>
-
-      <div class="bg-white border border-borderMain rounded-[18px] p-5 flex flex-col justify-between">
+    <div class="px-2.5 py-3.5 border-t border-white/10 flex-shrink-0">
+      <div
+        class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[11px] cursor-pointer hover:bg-white/5 transition-colors">
+        <div
+          class="w-[33px] h-[33px] rounded-[9px] bg-primary flex items-center justify-center font-bricolage text-xs font-extrabold text-white flex-shrink-0"
+          id="userInitial">JM</div>
         <div>
-          <h3 class="font-bricolage text-base font-bold text-textMain mb-2 flex items-center gap-2"><i class="fa-solid fa-circle-xmark text-red-400 text-sm"></i>Gestion de l'abonnement</h3>
-          <p class="text-[12.5px] text-textMuted leading-relaxed mb-4">Votre abonnement se renouvelle automatiquement. Vous pouvez l'annuler à tout moment sans frais supplémentaires.</p>
+          <div class="text-[13px] font-semibold text-white leading-tight" id="userName">Jean-Marc D.</div>
+          <div class="text-[11px] text-white/40">Plan Standard</div>
         </div>
-        <div class="flex flex-col gap-2">
-          <button class="w-full py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors">
-            Mettre en pause
+        <i class="fa-solid fa-chevron-up ml-auto text-white/30 text-[11px]"></i>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-wrapper">
+    <header
+      class="sticky top-0 z-30 h-[58px] bg-white border-b border-borderMain flex items-center px-4 gap-3 flex-shrink-0">
+      <button
+        class="w-9 h-9 flex items-center justify-center rounded-[9px] bg-surface2 border border-borderMain text-textMain text-base cursor-pointer hover:border-primary hover:text-primary transition-all md:hidden"
+        onclick="openSb()"><i class="fa-solid fa-bars"></i></button>
+      <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Abonnement</span>
+      <div class="ml-auto flex items-center gap-2">
+        <div
+          class="relative w-9 h-9 rounded-[9px] bg-surface2 border border-borderMain flex items-center justify-center text-sm text-textMain cursor-pointer hover:border-primary hover:text-primary transition-all">
+          <i class="fa-regular fa-bell"></i>
+          <div class="absolute top-[7px] right-[7px] w-[7px] h-[7px] rounded-full bg-primary border-2 border-white">
+          </div>
+        </div>
+        <div
+          class="flex items-center gap-2 pl-1.5 pr-3 py-1 bg-surface2 border border-borderMain rounded-[10px] cursor-pointer hover:border-primary transition-colors">
+          <div
+            class="w-[26px] h-[26px] rounded-[6px] bg-green-dark flex items-center justify-center font-bricolage text-[11px] font-extrabold text-primary"
+            id="topInitial">JM</div>
+          <span class="text-[12.5px] font-semibold text-textMain hidden xs:block" id="topName">Jean-Marc</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-10">
+
+      <!-- Greeting -->
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 class="font-bricolage text-xl sm:text-2xl font-extrabold text-textMain tracking-tight leading-tight">
+            Bonjour, <span id="helloName">Jean-Marc</span> </h1>
+          <p class="text-[12.5px] sm:text-[13.5px] text-textMuted font-medium mt-0.5 italic">Gérez votre abonnement</p>
+        </div>
+        <div
+          class="text-[11.5px] text-textMuted font-medium bg-white border border-borderMain px-3 py-1.5 rounded-[9px] flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-regular fa-calendar text-primary"></i>
+          <span id="currentDay">Lundi 9 mars 2026</span>
+        </div>
+      </div>
+
+      <!-- Plan actuel card -->
+      <div
+        class="bg-green-dark rounded-[24px] p-6 md:p-8 relative overflow-hidden shadow-2xl shadow-green-950/40 min-h-[220px] flex items-center">
+        <div class="absolute w-80 h-80 rounded-full bg-primary/10 -top-24 -right-24 blur-3xl pointer-events-none"></div>
+        <div class="absolute w-40 h-40 rounded-full bg-white/5 bottom-0 left-24 blur-2xl pointer-events-none"></div>
+
+        <div class="relative z-10 w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div class="flex-1 w-full">
+            <div
+              class="inline-flex items-center gap-2 bg-primary/20 border border-primary/30 rounded-full px-4 py-1.5 mb-5">
+              <i class="fa-solid fa-bolt text-primary text-[10px] animate-pulse"></i>
+              <span class="text-[11px] font-bold text-primary uppercase tracking-widest">Plan actuel</span>
+            </div>
+            <h1 class="font-bricolage text-3xl md:text-5xl font-extrabold text-white leading-tight mb-3">Plan Standard
+            </h1>
+            <p class="text-white/60 text-[14px] md:text-[15px] mb-6 max-w-lg">Renouvelé le <strong
+                class="text-white/90">10 avril 2024</strong> · Prochaine échéance le <strong class="text-white/90">10
+                mai 2024</strong></p>
+
+            <div class="flex flex-wrap gap-3">
+              <div
+                class="flex items-center gap-3 bg-white/10 border border-white/10 backdrop-blur-xl rounded-2xl px-5 py-2.5 transition-transform hover:scale-105">
+                <i class="fa-solid fa-file-circle-check text-primary text-lg"></i>
+                <div class="flex flex-col">
+                  <span class="text-white/90 text-[13px] font-bold leading-none">1 Document</span>
+                  <span class="text-white/40 text-[10px] uppercase font-bold mt-1">Par type</span>
+                </div>
+              </div>
+              <div
+                class="flex items-center gap-3 bg-white/10 border border-white/10 backdrop-blur-xl rounded-2xl px-5 py-2.5 transition-transform hover:scale-105">
+                <i class="fa-solid fa-box-open text-primary text-lg"></i>
+                <div class="flex flex-col">
+                  <span class="text-white/90 text-[13px] font-bold leading-none">2 Objets</span>
+                  <span class="text-white/40 text-[10px] uppercase font-bold mt-1">Bientôt disponible</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="w-full md:w-auto bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col items-center min-w-[200px] backdrop-blur-md">
+            <div class="relative w-28 h-28 mb-4">
+              <svg class="w-28 h-28 -rotate-90" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="6" />
+                <circle cx="40" cy="40" r="34" fill="none" stroke="#F5A64B" stroke-width="6" stroke-dasharray="213.6"
+                  stroke-dashoffset="85.4" stroke-linecap="round" class="transition-all duration-1000" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="font-bricolage text-2xl font-black text-white leading-none">60%</span>
+                <span class="text-white/40 text-[9px] font-bold uppercase mt-1">Quota</span>
+              </div>
+            </div>
+            <div class="text-white/50 text-[11px] font-bold uppercase tracking-widest mb-3">Capacité utilisée</div>
+            <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full" style="width:60%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Billing toggle + plans -->
+      <div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+          <h2 class="font-bricolage text-xl font-bold text-textMain">Choisir un plan</h2>
+          <!-- Monthly / Annual toggle -->
+          <div
+            class="flex items-center gap-1 self-start sm:self-auto bg-white border border-borderMain rounded-[12px] p-1">
+            <button class="tab-btn active px-4 py-2 rounded-[9px] text-[12.5px] font-bold" id="tab-monthly"
+              onclick="setTab('monthly')">Mensuel</button>
+            <button class="tab-btn px-4 py-2 rounded-[9px] text-[12.5px] font-bold text-textMuted" id="tab-annual"
+              onclick="setTab('annual')">
+              Annuel
+              <span
+                class="ml-1.5 text-[10px] font-bold text-green-mid bg-green-light px-1.5 py-0.5 rounded-full">-20%</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Plans grid (JS injected) -->
+        <div id="pricing-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- JS will populate this -->
+        </div>
+      </div>
+
+      <!-- Factures & Historique -->
+      <div class="bg-white border border-borderMain rounded-[20px] overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-borderMain">
+          <h2 class="font-bricolage text-base font-bold text-textMain flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-primary text-sm"></i>Historique de facturation
+          </h2>
+          <button class="text-[11.5px] font-semibold text-primary hover:underline">Tout exporter</button>
+        </div>
+        <div id="invoice-container" class="divide-y divide-borderMain">
+          <!-- JS will populate this -->
+          <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors">
+            <div class="w-9 h-9 rounded-[10px] bg-green-light flex items-center justify-center flex-shrink-0"><i
+                class="fa-solid fa-file-invoice text-green-mid text-sm"></i></div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[13.5px] font-semibold text-textMain">Plan Standard — Avril 2024</div>
+              <div class="text-[11.5px] text-textMuted italic">10 avr. 2024 · Paiement automatique</div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="text-[13.5px] font-bold text-textMain">500 XAF</div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Payé</span>
+            </div>
+            <button
+              class="ml-2 w-8 h-8 rounded-[8px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted flex-shrink-0">
+              <i class="fa-solid fa-download text-[11px]"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Méthode de paiement + Annulation -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-white border border-borderMain rounded-[18px] p-5">
+          <h3 class="font-bricolage text-base font-bold text-textMain mb-4 flex items-center gap-2"><i
+              class="fa-solid fa-credit-card text-primary text-sm"></i>Moyen de paiement</h3>
+          <div class="flex items-center gap-3 p-3.5 bg-bgMain border border-borderMain rounded-[12px] mb-3">
+            <div class="w-10 h-7 bg-[#F96900] rounded-[6px] flex items-center justify-center flex-shrink-0">
+              <span class="text-white text-[9px] font-extrabold tracking-tight">MTN</span>
+            </div>
+            <div class="flex-1">
+              <div class="text-[13px] font-semibold text-textMain">MTN Mobile Money</div>
+              <div class="text-[11.5px] text-textMuted">+237 6XX XXX XXX</div>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Actif</span>
+          </div>
+          <button
+            class="w-full py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2">
+            <i class="fa-solid fa-plus text-[11px]"></i> Ajouter un moyen de paiement
           </button>
-          <button onclick="confirmCancel()" class="w-full py-2.5 rounded-[12px] bg-red-50 border border-red-100 text-red-600 text-[13px] font-bold hover:bg-red-100 transition-colors">
-            Annuler l'abonnement
+        </div>
+
+        <div class="bg-white border border-borderMain rounded-[18px] p-5 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bricolage text-base font-bold text-textMain mb-2 flex items-center gap-2"><i
+                class="fa-solid fa-circle-xmark text-red-400 text-sm"></i>Gestion de l'abonnement</h3>
+            <p class="text-[12.5px] text-textMuted leading-relaxed mb-4">Votre abonnement se renouvelle automatiquement.
+              Vous pouvez l'annuler à tout moment sans frais supplémentaires.</p>
+          </div>
+          <div class="flex flex-col gap-2">
+            <button
+              class="w-full py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors">
+              Mettre en pause
+            </button>
+            <button onclick="confirmCancel()"
+              class="w-full py-2.5 rounded-[12px] bg-red-50 border border-red-100 text-red-600 text-[13px] font-bold hover:bg-red-100 transition-colors">
+              Annuler l'abonnement
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparatif des plans -->
+      <div class="bg-white border border-borderMain rounded-[20px] overflow-hidden">
+        <div class="px-5 py-4 border-b border-borderMain">
+          <h2 class="font-bricolage text-base font-bold text-textMain flex items-center gap-2">
+            <i class="fa-solid fa-table-columns text-primary text-sm"></i>Comparatif complet des plans
+          </h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[520px]">
+            <thead>
+              <tr class="border-b border-borderMain">
+                <th class="text-left px-5 py-3 text-[12px] font-bold text-textMuted uppercase tracking-wide w-2/5">
+                  Fonctionnalité</th>
+                <th class="px-3 py-3 text-center text-[12.5px] font-bold text-textMuted">Gratuit</th>
+                <th class="px-3 py-3 text-center text-[12.5px] font-bold text-primary bg-primary/5">Standard</th>
+                <th class="px-3 py-3 text-center text-[12.5px] font-bold text-green-mid">Pro</th>
+                <th class="px-3 py-3 text-center text-[12.5px] font-bold text-amber-600">VIP</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-borderMain">
+              <!-- JS will populate this -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /main-wrapper -->
+
+  <!-- ══ BOTTOM NAV (mobile only) ══ -->
+  <nav
+    class="bottom-nav fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-borderMain px-2 py-2 justify-around flex md:hidden">
+    <a href="dashboard.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
+      <i class="fa-solid fa-house text-base"></i>
+      <span class="text-[10px] font-medium">Accueil</span>
+    </a>
+    <a href="Mesdocument.html"
+      class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted hover:text-primary transition-colors">
+      <i class="fa-solid fa-plus-circle text-base"></i>
+      <span class="text-[10px] font-medium">Ajouter</span>
+    </a>
+    <a href="rechercher.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
+      <i class="fa-solid fa-magnifying-glass text-base"></i>
+      <span class="text-[10px] font-medium">Rechercher</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted relative">
+      <i class="fa-solid fa-envelope text-base"></i>
+      <span class="text-[10px] font-medium">Messages</span>
+      <div class="absolute top-1 right-2 w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted" onclick="openSb()">
+      <i class="fa-solid fa-bars text-base"></i>
+      <span class="text-[10px] font-medium">Plus</span>
+    </a>
+  </nav>
+
+  <!-- Subscription Modal -->
+  <div id="modalWrapper" class="fixed inset-0 z-[10000] hidden items-end md:items-center justify-center p-4">
+    <div id="modalBg" onclick="closeSubscriptionModal()"
+      class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
+
+    <div id="modalBox"
+      class="relative bg-white w-full max-w-md rounded-t-[2rem] md:rounded-[2rem] p-8 shadow-2xl transform translate-y-full transition-transform duration-300 border border-white/20">
+      <div onclick="closeSubscriptionModal()"
+        class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 cursor-pointer md:hidden"></div>
+
+      <div class="text-center mb-6">
+        <h2 id="modalTitle" class="text-[#F5A64B] font-black text-xl uppercase tracking-tighter">Paiement Plan</h2>
+
+        <div class="mt-4 p-5 bg-slate-50 rounded-2xl border border-slate-100 text-left relative overflow-hidden">
+          <div class="absolute top-0 right-0 p-2 opacity-10">
+            <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
+            </svg>
+          </div>
+          <div class="flex justify-between items-center mb-3">
+            <span id="displayPlan" class="text-slate-800 font-black text-xl">-</span>
+            <span id="displayPrix" class="text-[#F5A64B] font-black text-2xl">-</span>
+          </div>
+          <div class="grid grid-cols-2 gap-4 border-t border-slate-200 pt-4">
+            <div>
+              <p class="text-[10px] text-slate-400 uppercase font-bold">Signalements</p>
+              <span id="displayDocs" class="text-slate-800 text-sm font-black">-</span>
+            </div>
+            <div>
+              <p class="text-[10px] text-slate-400 uppercase font-bold">Durée</p>
+              <span id="displaytime" class="text-slate-800 text-sm font-black uppercase">30 JOURS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="paymentFlow" class="space-y-4">
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Choisir la méthode de Paiement
+        </p>
+
+        <div id="viewStep1" class="grid animate-fade-in space-y-4 grid-cols-2 gap-4">
+          <button onclick="goToStep2()"
+            class="w-full flex items-center justify-between border-2 border-slate-100 bg-white rounded-2xl p-4 hover:border-[#F5A64B] hover:bg-orange-50/30 transition-all group">
+            <div class="flex flex-col items-center text-center justify-center gap-3">
+              <img src="./assets/images/orange_money.jpg" class="w-12 h-12 rounded object-cover" />
+              <span class="font-bold text-slate-700 text-xs">Paiement mobile</span>
+            </div>
+          </button>
+          <button onclick="goToStep2()"
+            class="w-full flex items-center justify-between border-2 border-slate-100 bg-white rounded-2xl p-4 hover:border-[#F5A64B] hover:bg-orange-50/30 transition-all group">
+            <div class="flex flex-col items-center text-center justify-center gap-3 w-full">
+              <img src="./assets/images/paypoint (2).png" class="w-12 h-12 rounded object-cover" />
+              <span class="font-bold text-slate-700 text-xs">PayPoint</span>
+            </div>
           </button>
         </div>
-      </div>
-    </div>
 
-    <!-- Comparatif des plans -->
-    <div class="bg-white border border-borderMain rounded-[20px] overflow-hidden">
-      <div class="px-5 py-4 border-b border-borderMain">
-        <h2 class="font-bricolage text-base font-bold text-textMain flex items-center gap-2">
-          <i class="fa-solid fa-table-columns text-primary text-sm"></i>Comparatif complet des plans
-        </h2>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-[520px]">
-          <thead>
-            <tr class="border-b border-borderMain">
-              <th class="text-left px-5 py-3 text-[12px] font-bold text-textMuted uppercase tracking-wide w-2/5">Fonctionnalité</th>
-              <th class="px-3 py-3 text-center text-[12.5px] font-bold text-textMuted">Gratuit</th>
-              <th class="px-3 py-3 text-center text-[12.5px] font-bold text-primary bg-primary/5">Standard</th>
-              <th class="px-3 py-3 text-center text-[12.5px] font-bold text-green-mid">Pro</th>
-              <th class="px-3 py-3 text-center text-[12.5px] font-bold text-amber-600">VIP</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-borderMain">
-            <!-- JS will populate this -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
-</div><!-- /main-wrapper -->
-
-<!-- ══ BOTTOM NAV (mobile only) ══ -->
-<nav class="bottom-nav fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-borderMain px-2 py-2 justify-around flex md:hidden">
-  <a href="dashboard.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
-    <i class="fa-solid fa-house text-base"></i>
-    <span class="text-[10px] font-medium">Accueil</span>
-  </a>
-  <a href="Mesdocument.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted hover:text-primary transition-colors">
-    <i class="fa-solid fa-plus-circle text-base"></i>
-    <span class="text-[10px] font-medium">Ajouter</span>
-  </a>
-  <a href="rechercher.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
-    <i class="fa-solid fa-magnifying-glass text-base"></i>
-    <span class="text-[10px] font-medium">Rechercher</span>
-  </a>
-  <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted relative">
-    <i class="fa-solid fa-envelope text-base"></i>
-    <span class="text-[10px] font-medium">Messages</span>
-    <div class="absolute top-1 right-2 w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
-  </a>
-  <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted" onclick="openSb()">
-    <i class="fa-solid fa-bars text-base"></i>
-    <span class="text-[10px] font-medium">Plus</span>
-  </a>
-</nav>
-
-<!-- Subscription Modal -->
-<div id="modalWrapper" class="fixed inset-0 z-[10000] hidden items-end md:items-center justify-center p-4">
-  <div id="modalBg" onclick="closeSubscriptionModal()" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
-
-  <div id="modalBox" class="relative bg-white w-full max-w-md rounded-t-[2rem] md:rounded-[2rem] p-8 shadow-2xl transform translate-y-full transition-transform duration-300 border border-white/20">
-    <div onclick="closeSubscriptionModal()" class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 cursor-pointer md:hidden"></div>
-
-    <div class="text-center mb-6">
-      <h2 id="modalTitle" class="text-[#F5A64B] font-black text-xl uppercase tracking-tighter">Paiement Plan</h2>
-
-      <div class="mt-4 p-5 bg-slate-50 rounded-2xl border border-slate-100 text-left relative overflow-hidden">
-        <div class="absolute top-0 right-0 p-2 opacity-10">
-          <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
-        </div>
-        <div class="flex justify-between items-center mb-3">
-          <span id="displayPlan" class="text-slate-800 font-black text-xl">-</span>
-          <span id="displayPrix" class="text-[#F5A64B] font-black text-2xl">-</span>
-        </div>
-        <div class="grid grid-cols-2 gap-4 border-t border-slate-200 pt-4">
-          <div>
-            <p class="text-[10px] text-slate-400 uppercase font-bold">Signalements</p>
-            <span id="displayDocs" class="text-slate-800 text-sm font-black">-</span>
-          </div>
-          <div>
-            <p class="text-[10px] text-slate-400 uppercase font-bold">Durée</p>
-            <span id="displaytime" class="text-slate-800 text-sm font-black uppercase">30 JOURS</span>
+        <div id="viewStep2" class="hidden animate-fade-in">
+          <div class="space-y-3">
+            <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Numéro de téléphone</label>
+            <input type="tel" id="payPhone"
+              class="w-full border-2 border-slate-100 rounded-xl p-4 outline-none focus:border-[#F5A64B] font-bold bg-slate-50">
+            <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Nom / Pseudo</label>
+            <input type="text" id="payPseudo" placeholder="@pseudo"
+              class="w-full border-2 border-slate-100 rounded-xl p-4 outline-none focus:border-[#F5A64B] font-bold bg-slate-50 transition-colors">
           </div>
         </div>
-      </div>
-    </div>
 
-    <div id="paymentFlow" class="space-y-4">
-      <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Choisir la méthode de Paiement</p>
-      
-      <div id="viewStep1" class="grid animate-fade-in space-y-4 grid-cols-2 gap-4">
-        <button onclick="goToStep2()" class="w-full flex items-center justify-between border-2 border-slate-100 bg-white rounded-2xl p-4 hover:border-[#F5A64B] hover:bg-orange-50/30 transition-all group">
-          <div class="flex flex-col items-center text-center justify-center gap-3">
-             <img src="./assets/images/orange_money.jpg" class="w-12 h-12 rounded object-cover" />
-             <span class="font-bold text-slate-700 text-xs">Paiement mobile</span>
-          </div>
-        </button>
-        <button onclick="goToStep2()" class="w-full flex items-center justify-between border-2 border-slate-100 bg-white rounded-2xl p-4 hover:border-[#F5A64B] hover:bg-orange-50/30 transition-all group">
-          <div class="flex flex-col items-center text-center justify-center gap-3 w-full">
-             <img src="./assets/images/paypoint (2).png" class="w-12 h-12 rounded object-cover" />
-             <span class="font-bold text-slate-700 text-xs">PayPoint</span>
-          </div>
+        <button id="submitBtn" onclick="processPayment()"
+          class="w-full mt-4 bg-[#F5A64B] text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-orange-200 hover:brightness-110 active:scale-95 transition-all">
+          Suivant
         </button>
       </div>
+    </div>
+  </div>
 
-      <div id="viewStep2" class="hidden animate-fade-in">
-        <div class="space-y-3">
-          <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Numéro de téléphone</label>
-          <input type="tel" id="payPhone" class="w-full border-2 border-slate-100 rounded-xl p-4 outline-none focus:border-[#F5A64B] font-bold bg-slate-50">
-          <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Nom / Pseudo</label>
-          <input type="text" id="payPseudo" placeholder="@pseudo" class="w-full border-2 border-slate-100 rounded-xl p-4 outline-none focus:border-[#F5A64B] font-bold bg-slate-50 transition-colors">
-        </div>
+  <!-- Modal confirm cancel -->
+  <div id="cancel-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      onclick="document.getElementById('cancel-modal').classList.add('hidden')"></div>
+    <div class="relative bg-white rounded-[24px] p-6 max-w-sm w-full shadow-2xl">
+      <div class="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-triangle-exclamation text-red-500 text-xl"></i>
       </div>
-
-      <button id="submitBtn" onclick="processPayment()" class="w-full mt-4 bg-[#F5A64B] text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-orange-200 hover:brightness-110 active:scale-95 transition-all">
-        Suivant
-      </button>
+      <h3 class="font-bricolage text-xl font-bold text-textMain text-center mb-2">Annuler l'abonnement ?</h3>
+      <p class="text-[13.5px] text-textMuted text-center mb-5 leading-relaxed">Vous conserverez votre plan Standard
+        jusqu'au <strong class="text-textMain">10 mai 2024</strong>. Aucun remboursement ne sera effectué.</p>
+      <div class="flex gap-3">
+        <button onclick="document.getElementById('cancel-modal').classList.add('hidden')"
+          class="flex-1 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors">Annuler</button>
+        <button
+          class="flex-1 py-2.5 rounded-[12px] bg-red-500 text-white font-bold hover:bg-red-600 transition-colors">Confirmer</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Modal confirm cancel -->
-<div id="cancel-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
-  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="document.getElementById('cancel-modal').classList.add('hidden')"></div>
-  <div class="relative bg-white rounded-[24px] p-6 max-w-sm w-full shadow-2xl">
-    <div class="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
-      <i class="fa-solid fa-triangle-exclamation text-red-500 text-xl"></i>
-    </div>
-    <h3 class="font-bricolage text-xl font-bold text-textMain text-center mb-2">Annuler l'abonnement ?</h3>
-    <p class="text-[13.5px] text-textMuted text-center mb-5 leading-relaxed">Vous conserverez votre plan Standard jusqu'au <strong class="text-textMain">10 mai 2024</strong>. Aucun remboursement ne sera effectué.</p>
-    <div class="flex gap-3">
-      <button onclick="document.getElementById('cancel-modal').classList.add('hidden')" class="flex-1 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors">Annuler</button>
-      <button class="flex-1 py-2.5 rounded-[12px] bg-red-500 text-white font-bold hover:bg-red-600 transition-colors">Confirmer</button>
-    </div>
-  </div>
-</div>
+  <script src="./js/script.js"></script>
+  <script>
+    function openSb() {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('overlay').classList.add('show');
+    }
+    function closeSb() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('show');
+    }
+    function confirmCancel() { document.getElementById('cancel-modal').classList.remove('hidden') }
 
-<script src="./js/script.js"></script>
-<script>
-function openSb() {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-}
-function closeSb() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-}
-function confirmCancel(){document.getElementById('cancel-modal').classList.remove('hidden')}
-
-const prices = {
-  monthly: { std: '500', pro: '1 500', prem: '2 000' },
-  annual:  { std: '400', pro: '1 200', prem: '1 600' }
-};
-function setTab(tab){
-  ['monthly','annual'].forEach(t=>{
-    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
-    document.getElementById('tab-'+t).classList.toggle('text-textMuted',t!==tab);
-  });
-  document.getElementById('std-price').textContent = prices[tab].std;
-  document.getElementById('pro-price').textContent = prices[tab].pro;
-  document.getElementById('prem-price').textContent = prices[tab].prem;
-}
-function selectPlan(plan){alert('Passage au plan '+plan+' en cours de déploiement !')}
-</script>
+    const prices = {
+      monthly: { std: '500', pro: '1 500', prem: '2 000' },
+      annual: { std: '400', pro: '1 200', prem: '1 600' }
+    };
+    function setTab(tab) {
+      ['monthly', 'annual'].forEach(t => {
+        document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+        document.getElementById('tab-' + t).classList.toggle('text-textMuted', t !== tab);
+      });
+      document.getElementById('std-price').textContent = prices[tab].std;
+      document.getElementById('pro-price').textContent = prices[tab].pro;
+      document.getElementById('prem-price').textContent = prices[tab].prem;
+    }
+    function selectPlan(plan) { alert('Passage au plan ' + plan + ' en cours de déploiement !') }
+  </script>
 </body>
+
 </html>

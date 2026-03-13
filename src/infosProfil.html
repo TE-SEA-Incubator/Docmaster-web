@@ -3,183 +3,180 @@
 
 <head>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Profil public</title>
+    <title>Profil public</title>
+<link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
 
-<script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+     <link href="css/output.css" rel="stylesheet" />
 
-<style>
+    <style>
+        body {
+            background: linear-gradient(180deg, #eaeaea, #dcdcdc);
+        }
 
-body{
-background:linear-gradient(180deg,#eaeaea,#dcdcdc);
-}
-
-.avatar-bg{
-background:#f3d1b8;
-}
-
-</style>
+        .avatar-bg {
+            background: #f3d1b8;
+        }
+    </style>
 
 </head>
 
 
 <body class="min-h-screen flex items-center justify-center p-6">
 
-<div class="w-full max-w-5xl bg-white rounded-xl shadow p-6">
+    <div class="w-full max-w-5xl bg-white rounded-xl shadow p-6">
 
-<!-- HEADER -->
+        <!-- HEADER -->
 
-<div class="flex justify-between items-center mb-6">
+        <div class="flex justify-between items-center mb-6">
 
-<div class="flex items-center gap-2 text-gray-700 font-semibold">
-<i class="fa-regular fa-user text-orange-500"></i>
-Profil public
-</div>
+            <div class="flex items-center gap-2 text-gray-700 font-semibold">
+                <i class="fa-regular fa-user text-orange-500"></i>
+                Profil public
+            </div>
 
-<button onclick="enableEdit()" 
-class="text-orange-500 font-semibold hover:underline">
-Modifier
-</button>
+            <button onclick="enableEdit()" class="text-orange-500 font-semibold hover:underline">
+                Modifier
+            </button>
 
-</div>
-
-
-<!-- CONTENU -->
-
-<div class="grid md:grid-cols-[120px_1fr] gap-6 items-center">
-
-<!-- AVATAR -->
-
-<div class="relative">
-
-<img id="avatarPreview"
-src="https://i.pravatar.cc/150"
-class="w-24 h-24 rounded-xl object-cover">
-
-<input type="file" id="avatarInput" accept="image/*" class="hidden">
-
-<button onclick="document.getElementById('avatarInput').click()"
-class="absolute bottom-0 right-0 bg-white shadow p-2 rounded">
-
-<i class="fa-solid fa-camera text-gray-500"></i>
-
-</button>
-
-</div>
+        </div>
 
 
-<!-- INFOS -->
+        <!-- CONTENU -->
 
-<div class="grid md:grid-cols-2 gap-y-6 gap-x-10">
+        <div class="grid md:grid-cols-[120px_1fr] gap-6 items-center">
 
-<div>
-<p class="text-xs uppercase text-gray-400 font-semibold">Nom complet</p>
-<p class="font-semibold text-gray-700 editable">Jean Dupont</p>
-</div>
+            <!-- AVATAR -->
 
-<div>
-<p class="text-xs uppercase text-gray-400 font-semibold">Adresse e-mail</p>
-<p class="font-semibold text-gray-700 editable">jean.dupont@docmaster.fr</p>
-</div>
+            <div class="relative">
 
-<div>
-<p class="text-xs uppercase text-gray-400 font-semibold">Rôle</p>
-<p class="font-semibold text-gray-700 editable">Administrateur système</p>
-</div>
+                <img id="avatarPreview" src="https://i.pravatar.cc/150" class="w-24 h-24 rounded-xl object-cover">
 
-<div>
-<p class="text-xs uppercase text-gray-400 font-semibold">Localisation</p>
-<p class="font-semibold text-gray-700 editable">Paris, France</p>
-</div>
+                <input type="file" id="avatarInput" accept="image/*" class="hidden">
 
-</div>
+                <button onclick="document.getElementById('avatarInput').click()"
+                    class="absolute bottom-0 right-0 bg-white shadow p-2 rounded">
 
-</div>
+                    <i class="fa-solid fa-camera text-gray-500"></i>
 
-</div>
+                </button>
+
+            </div>
 
 
-<script>
+            <!-- INFOS -->
 
-/* ============================= */
-/* CHANGER PHOTO PROFIL */
-/* ============================= */
+            <div class="grid md:grid-cols-2 gap-y-6 gap-x-10">
 
-const avatarInput = document.getElementById("avatarInput")
-const avatarPreview = document.getElementById("avatarPreview")
+                <div>
+                    <p class="text-xs uppercase text-gray-400 font-semibold">Nom complet</p>
+                    <p class="font-semibold text-gray-700 editable">Jean Dupont</p>
+                </div>
 
-avatarInput.addEventListener("change",function(){
+                <div>
+                    <p class="text-xs uppercase text-gray-400 font-semibold">Adresse e-mail</p>
+                    <p class="font-semibold text-gray-700 editable">jean.dupont@docmaster.fr</p>
+                </div>
 
-const file = this.files[0]
+                <div>
+                    <p class="text-xs uppercase text-gray-400 font-semibold">Rôle</p>
+                    <p class="font-semibold text-gray-700 editable">Administrateur système</p>
+                </div>
 
-if(file){
+                <div>
+                    <p class="text-xs uppercase text-gray-400 font-semibold">Localisation</p>
+                    <p class="font-semibold text-gray-700 editable">Paris, France</p>
+                </div>
 
-const reader = new FileReader()
+            </div>
 
-reader.onload = function(e){
+        </div>
 
-avatarPreview.src = e.target.result
-
-}
-
-reader.readAsDataURL(file)
-
-}
-
-})
+    </div>
 
 
-/* ============================= */
-/* MODIFIER LES INFOS */
-/* ============================= */
+    <script>
 
-let editMode = false
+        /* ============================= */
+        /* CHANGER PHOTO PROFIL */
+        /* ============================= */
 
-function enableEdit(){
+        const avatarInput = document.getElementById("avatarInput")
+        const avatarPreview = document.getElementById("avatarPreview")
 
-const fields = document.querySelectorAll(".editable")
+        avatarInput.addEventListener("change", function () {
 
-fields.forEach(field => {
+            const file = this.files[0]
 
-if(!editMode){
+            if (file) {
 
-let value = field.innerText
+                const reader = new FileReader()
 
-let input = document.createElement("input")
+                reader.onload = function (e) {
 
-input.value = value
+                    avatarPreview.src = e.target.result
 
-input.className = "border rounded px-2 py-1 w-full"
+                }
 
-field.replaceWith(input)
+                reader.readAsDataURL(file)
 
-}else{
+            }
 
-let input = field
+        })
 
-let span = document.createElement("p")
 
-span.className="font-semibold text-gray-700 editable"
+        /* ============================= */
+        /* MODIFIER LES INFOS */
+        /* ============================= */
 
-span.innerText = input.value
+        let editMode = false
 
-input.replaceWith(span)
+        function enableEdit() {
 
-}
+            const fields = document.querySelectorAll(".editable")
 
-})
+            fields.forEach(field => {
 
-editMode = !editMode
+                if (!editMode) {
 
-}
+                    let value = field.innerText
 
-</script>
+                    let input = document.createElement("input")
+
+                    input.value = value
+
+                    input.className = "border rounded px-2 py-1 w-full"
+
+                    field.replaceWith(input)
+
+                } else {
+
+                    let input = field
+
+                    let span = document.createElement("p")
+
+                    span.className = "font-semibold text-gray-700 editable"
+
+                    span.innerText = input.value
+
+                    input.replaceWith(span)
+
+                }
+
+            })
+
+            editMode = !editMode
+
+        }
+
+    </script>
 
 
 </body>
+
 </html>

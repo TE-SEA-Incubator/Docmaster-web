@@ -1,777 +1,1230 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DocMaster — Mes Documents</title>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
-        'green-dark': '#1E3A2F', 'green-mid': '#2D5A42', 'green-light': '#E8F5EE',
-        bgMain: '#F4EFE6', surface: '#FFFFFF', surface2: '#FAF7F2',
-        textMain: '#1A1A1A', textMuted: '#9CA3AF', borderMain: '#EAE3D8',
-      },
-      fontFamily: { poppins: ['Poppins','sans-serif'], bricolage: ['"Bricolage Grotesque"','sans-serif'] }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocMaster — Mes Documents</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
+     <link href="css/output.css" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
+            'green-dark': '#1E3A2F', 'green-mid': '#2D5A42', 'green-light': '#E8F5EE',
+            bgMain: '#F4EFE6', surface: '#FFFFFF', surface2: '#FAF7F2',
+            textMain: '#1A1A1A', textMuted: '#9CA3AF', borderMain: '#EAE3D8',
+          },
+          fontFamily: { poppins: ['Poppins', 'sans-serif'], bricolage: ['"Bricolage Grotesque"', 'sans-serif'] }
+        }
+      }
     }
-  }
-}
-</script>
-<style>
-:root{--sidebar:260px}
-html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:50;overflow-y:auto}
-.sidebar.open{transform:translateX(0)}
-@media(min-width:900px){
-  body{display:flex;height:100vh;overflow:hidden}
-  .sidebar{position:relative;transform:none!important;flex-shrink:0}
-  .main-wrapper{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-  .main-content{flex:1;overflow-y:auto}
-}
-@media(max-width:899px){.main-wrapper{display:flex;flex-direction:column;min-height:100vh}}
-.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .28s}
-.sb-overlay.show{display:block;opacity:1;pointer-events:all}
-.sidebar::after{content:'';position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(245,166,75,.05);bottom:-80px;left:-60px;pointer-events:none}
-.sb-item.active{background:rgba(245,166,75,.15);color:#fff}
-.sb-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:55%;background:#F5A64B;border-radius:0 3px 3px 0}
-.custom-scroll::-webkit-scrollbar{width:4px}
-.custom-scroll::-webkit-scrollbar-thumb{background:#DDD5C8;border-radius:10px}
+  </script>
+  <style>
+    :root {
+      --sidebar: 260px
+    }
 
-/* Upload zone */
-.drop-zone{border:2px dashed #EAE3D8;transition:all .2s}
-.drop-zone:hover,.drop-zone.drag-over{border-color:#F5A64B;background:#FEF0DC}
+    html,
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #F4EFE6
+    }
 
-/* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:flex-end;justify-content:center}
-@media(min-width:640px){.modal-overlay{align-items:center}}
-.modal-box{background:#fff;width:100%;max-width:560px;border-radius:28px 28px 0 0;max-height:92vh;overflow-y:auto;padding:28px 24px 32px;animation:slideUp .28s ease}
-@media(min-width:640px){.modal-box{border-radius:28px;margin:16px}}
-@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar);
+      transform: translateX(-100%);
+      transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+      z-index: 50;
+      overflow-y: auto
+    }
 
-/* Steps */
-.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;transition:all .3s}
-.step-dot.done{background:#10B981;color:#fff}
-.step-dot.active{background:#F5A64B;color:#fff;box-shadow:0 0 0 4px rgba(245,166,75,.2)}
-.step-dot.pending{background:#EAE3D8;color:#9CA3AF}
-.step-line{flex:1;height:2px;background:#EAE3D8;margin:0 6px;transition:background .3s}
-.step-line.done{background:#10B981}
+    .sidebar.open {
+      transform: translateX(0)
+    }
 
-/* Doc type card */
-.doc-type-btn{border:2px solid #EAE3D8;border-radius:14px;padding:14px 12px;cursor:pointer;transition:all .18s;text-align:center;background:#fff}
-.doc-type-btn:hover{border-color:#F5A64B;background:#FEF0DC}
-.doc-type-btn.selected{border-color:#F5A64B;background:#FEF0DC;box-shadow:0 0 0 3px rgba(245,166,75,.15)}
+    @media(min-width:900px) {
+      body {
+        display: flex;
+        height: 100vh;
+        overflow: hidden
+      }
 
-/* Input */
-.form-input{width:100%;padding:11px 14px;border:1.5px solid #EAE3D8;border-radius:11px;font-family:'Poppins',sans-serif;font-size:13.5px;color:#1A1A1A;background:#FAF7F2;outline:none;transition:border-color .15s}
-.form-input:focus{border-color:#F5A64B;background:#fff}
-.form-label{font-size:12px;font-weight:600;color:#4B5563;margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.4px}
+      .sidebar {
+        position: relative;
+        transform: none !important;
+        flex-shrink: 0
+      }
 
-/* Progress bar */
-.upload-progress{height:5px;background:#EAE3D8;border-radius:10px;overflow:hidden}
-.upload-bar{height:100%;background:linear-gradient(90deg,#F5A64B,#D98A30);border-radius:10px;transition:width .4s ease;width:0%}
+      .main-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0
+      }
 
-/* Document card */
-.doc-card{background:#fff;border:1.5px solid #EAE3D8;border-radius:18px;overflow:hidden;transition:all .2s}
-.doc-card:hover{border-color:#F5A64B;box-shadow:0 4px 20px rgba(245,166,75,.12)}
-.doc-card .card-thumb{width:100%;height:80px;object-fit:cover;background:#F4EFE6;display:flex;align-items:center;justify-content:center}
+      .main-content {
+        flex: 1;
+        overflow-y: auto
+      }
+    }
 
-/* Badge */
-.badge-verified{background:#D1FAE5;color:#065F46}
-.badge-pending{background:#FEF3C7;color:#92400E}
+    @media(max-width:899px) {
+      .main-wrapper {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh
+      }
+    }
 
-/* Tabs */
-.tab-filter{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;border:1.5px solid transparent}
-.tab-filter.active{background:#1E3A2F;color:#fff;border-color:#1E3A2F}
-.tab-filter:not(.active){color:#9CA3AF;background:#fff;border-color:#EAE3D8}
-.tab-filter:not(.active):hover{border-color:#F5A64B;color:#F5A64B}
+    .sb-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .45);
+      z-index: 40;
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .28s
+    }
 
-/* Floating action */
-.fab{position:fixed;bottom:24px;right:20px;z-index:30;width:54px;height:54px;border-radius:50%;background:#F5A64B;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 6px 24px rgba(245,166,75,.4);transition:transform .2s,box-shadow .2s}
-.fab:hover{transform:scale(1.08);box-shadow:0 8px 32px rgba(245,166,75,.5)}
-@media(min-width:900px){.fab{display:none}}
-</style>
+    .sb-overlay.show {
+      display: block;
+      opacity: 1;
+      pointer-events: all
+    }
+
+    .sidebar::after {
+      content: '';
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: rgba(245, 166, 75, .05);
+      bottom: -80px;
+      left: -60px;
+      pointer-events: none
+    }
+
+    .sb-item.active {
+      background: rgba(245, 166, 75, .15);
+      color: #fff
+    }
+
+    .sb-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 55%;
+      background: #F5A64B;
+      border-radius: 0 3px 3px 0
+    }
+
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #DDD5C8;
+      border-radius: 10px
+    }
+
+    /* Upload zone */
+    .drop-zone {
+      border: 2px dashed #EAE3D8;
+      transition: all .2s
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: #F5A64B;
+      background: #FEF0DC
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .5);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center
+    }
+
+    @media(min-width:640px) {
+      .modal-overlay {
+        align-items: center
+      }
+    }
+
+    .modal-box {
+      background: #fff;
+      width: 100%;
+      max-width: 560px;
+      border-radius: 28px 28px 0 0;
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 28px 24px 32px;
+      animation: slideUp .28s ease
+    }
+
+    @media(min-width:640px) {
+      .modal-box {
+        border-radius: 28px;
+        margin: 16px
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(40px);
+        opacity: 0
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1
+      }
+    }
+
+    /* Steps */
+    .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: all .3s
+    }
+
+    .step-dot.done {
+      background: #10B981;
+      color: #fff
+    }
+
+    .step-dot.active {
+      background: #F5A64B;
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(245, 166, 75, .2)
+    }
+
+    .step-dot.pending {
+      background: #EAE3D8;
+      color: #9CA3AF
+    }
+
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: #EAE3D8;
+      margin: 0 6px;
+      transition: background .3s
+    }
+
+    .step-line.done {
+      background: #10B981
+    }
+
+    /* Doc type card */
+    .doc-type-btn {
+      border: 2px solid #EAE3D8;
+      border-radius: 14px;
+      padding: 14px 12px;
+      cursor: pointer;
+      transition: all .18s;
+      text-align: center;
+      background: #fff
+    }
+
+    .doc-type-btn:hover {
+      border-color: #F5A64B;
+      background: #FEF0DC
+    }
+
+    .doc-type-btn.selected {
+      border-color: #F5A64B;
+      background: #FEF0DC;
+      box-shadow: 0 0 0 3px rgba(245, 166, 75, .15)
+    }
+
+    /* Input */
+    .form-input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #EAE3D8;
+      border-radius: 11px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 13.5px;
+      color: #1A1A1A;
+      background: #FAF7F2;
+      outline: none;
+      transition: border-color .15s
+    }
+
+    .form-input:focus {
+      border-color: #F5A64B;
+      background: #fff
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4B5563;
+      margin-bottom: 5px;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: .4px
+    }
+
+    /* Progress bar */
+    .upload-progress {
+      height: 5px;
+      background: #EAE3D8;
+      border-radius: 10px;
+      overflow: hidden
+    }
+
+    .upload-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #F5A64B, #D98A30);
+      border-radius: 10px;
+      transition: width .4s ease;
+      width: 0%
+    }
+
+    /* Document card */
+    .doc-card {
+      background: #fff;
+      border: 1.5px solid #EAE3D8;
+      border-radius: 18px;
+      overflow: hidden;
+      transition: all .2s
+    }
+
+    .doc-card:hover {
+      border-color: #F5A64B;
+      box-shadow: 0 4px 20px rgba(245, 166, 75, .12)
+    }
+
+    .doc-card .card-thumb {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      background: #F4EFE6;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    /* Badge */
+    .badge-verified {
+      background: #D1FAE5;
+      color: #065F46
+    }
+
+    .badge-pending {
+      background: #FEF3C7;
+      color: #92400E
+    }
+
+    /* Tabs */
+    .tab-filter {
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .18s;
+      border: 1.5px solid transparent
+    }
+
+    .tab-filter.active {
+      background: #1E3A2F;
+      color: #fff;
+      border-color: #1E3A2F
+    }
+
+    .tab-filter:not(.active) {
+      color: #9CA3AF;
+      background: #fff;
+      border-color: #EAE3D8
+    }
+
+    .tab-filter:not(.active):hover {
+      border-color: #F5A64B;
+      color: #F5A64B
+    }
+
+    /* Floating action */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      z-index: 30;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #F5A64B;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 6px 24px rgba(245, 166, 75, .4);
+      transition: transform .2s, box-shadow .2s
+    }
+
+    .fab:hover {
+      transform: scale(1.08);
+      box-shadow: 0 8px 32px rgba(245, 166, 75, .5)
+    }
+
+    @media(min-width:900px) {
+      .fab {
+        display: none
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="sb-overlay" id="overlay" onclick="closeSb()"></div>
+  <div class="sb-overlay" id="overlay" onclick="closeSb()"></div>
 
-<!-- ══ SIDEBAR ══ -->
-<aside class="sidebar w-[var(--sidebar)] bg-green-dark flex flex-col" id="sidebar">
-  <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 flex-shrink-0">
-    <div class="w-9 h-9 rounded-[10px] bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0">
-      <i class="fa-solid fa-file-shield text-primary text-base"></i>
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar w-[var(--sidebar)] bg-green-dark flex flex-col" id="sidebar">
+    <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10 flex-shrink-0">
+      <div
+        class="w-9 h-9 rounded-[10px] bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0">
+        <i class="fa-solid fa-file-shield text-primary text-base"></i>
+      </div>
+      <span class="font-bricolage text-[18px] font-bold text-white tracking-tight">DocMaster</span>
+      <button class="ml-auto text-white/40 hover:text-white lg:hidden" onclick="closeSb()"><i
+          class="fa-solid fa-xmark text-lg"></i></button>
     </div>
-    <span class="font-bricolage text-[18px] font-bold text-white tracking-tight">DocMaster</span>
-    <button class="ml-auto text-white/40 hover:text-white lg:hidden" onclick="closeSb()"><i class="fa-solid fa-xmark text-lg"></i></button>
-  </div>
-  <div class="flex-1 overflow-y-auto py-2">
-    <div class="px-[22px] pt-4 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Principal</div>
-    <nav class="flex flex-col gap-0.5 px-2.5">
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="dashboard.html"><i class="fa-solid fa-house w-[18px] text-center opacity-80"></i>Tableau de bord</a>
-      <a class="sb-item active flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white relative" href="Mesdocument.html"><i class="fa-solid fa-folder-open w-[18px] text-center text-primary"></i>Mes Documents</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="trouverdocument.html"><i class="fa-solid fa-file-circle-check w-[18px] text-center opacity-80"></i>Déclarer trouvé</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="rechercher.html"><i class="fa-solid fa-magnifying-glass w-[18px] text-center opacity-80"></i>Rechercher</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="#"><i class="fa-solid fa-envelope w-[18px] text-center opacity-80"></i>Messages<span class="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">5</span></a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="mesGains.html"><i class="fa-solid fa-wallet w-[18px] text-center opacity-80"></i>Mes Gains</a>
-    </nav>
-    <div class="px-[22px] pt-5 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Compte</div>
-    <nav class="flex flex-col gap-0.5 px-2.5">
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="Abonnement.html"><i class="fa-solid fa-crown w-[18px] text-center opacity-80"></i>Abonnement</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="parrainage.html"><i class="fa-solid fa-users-gear w-[18px] text-center opacity-80"></i>Parrainage</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all" href="#"><i class="fa-solid fa-gear w-[18px] text-center opacity-80"></i>Paramètres</a>
-      <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400 relative transition-all" href="#"><i class="fa-solid fa-right-from-bracket w-[18px] text-center opacity-80"></i>Déconnexion</a>
-    </nav>
-  </div>
-  <div class="px-2.5 py-3.5 border-t border-white/10 flex-shrink-0">
-    <div class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[11px] cursor-pointer hover:bg-white/5 transition-colors">
-      <div class="w-[33px] h-[33px] rounded-[9px] bg-primary flex items-center justify-center font-bricolage text-xs font-extrabold text-white flex-shrink-0">JM</div>
-      <div><div class="text-[13px] font-semibold text-white leading-tight">Jean-Marc D.</div><div class="text-[11px] text-white/40">Plan Standard</div></div>
-      <i class="fa-solid fa-chevron-up ml-auto text-white/30 text-[11px]"></i>
+    <div class="flex-1 overflow-y-auto py-2">
+      <div class="px-[22px] pt-4 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Principal</div>
+      <nav class="flex flex-col gap-0.5 px-2.5">
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all"
+          href="dashboard.html"><i class="fa-solid fa-house w-[18px] text-center opacity-80"></i>Tableau de bord</a>
+        <a class="sb-item active flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white relative"
+          href="Mesdocument.html"><i class="fa-solid fa-folder-open w-[18px] text-center text-primary"></i>Mes
+          Documents</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all"
+          href="trouverdocument.html"><i
+            class="fa-solid fa-file-circle-check w-[18px] text-center opacity-80"></i>Déclarer trouvé</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all"
+          href="rechercher.html"><i
+            class="fa-solid fa-magnifying-glass w-[18px] text-center opacity-80"></i>Rechercher</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all"
+          href="#"><i class="fa-solid fa-envelope w-[18px] text-center opacity-80"></i>Messages<span
+            class="ml-auto bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">5</span></a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all"
+          href="mesGains.html"><i class="fa-solid fa-wallet w-[18px] text-center opacity-80"></i>Mes Gains</a>
+      </nav>
+      <div class="px-[22px] pt-5 pb-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">Compte</div>
+      <nav class="flex flex-col gap-0.5 px-2.5">
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all"
+          href="Abonnement.html"><i class="fa-solid fa-crown w-[18px] text-center opacity-80"></i>Abonnement</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all"
+          href="parrainage.html"><i class="fa-solid fa-users-gear w-[18px] text-center opacity-80"></i>Parrainage</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90 relative transition-all"
+          href="#"><i class="fa-solid fa-gear w-[18px] text-center opacity-80"></i>Paramètres</a>
+        <a class="sb-item flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] text-[13.5px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400 relative transition-all"
+          href="#"><i class="fa-solid fa-right-from-bracket w-[18px] text-center opacity-80"></i>Déconnexion</a>
+      </nav>
     </div>
-  </div>
-</aside>
-
-<!-- ══ MAIN ══ -->
-<div class="main-wrapper">
-
-  <!-- Topbar -->
-  <header class="sticky top-0 z-30 h-[58px] bg-white border-b border-borderMain flex items-center px-4 gap-3 flex-shrink-0">
-    <button class="w-9 h-9 flex items-center justify-center rounded-[9px] bg-surface2 border border-borderMain hover:border-primary hover:text-primary transition-all md:hidden" onclick="openSb()"><i class="fa-solid fa-bars"></i></button>
-    <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Mes Documents</span>
-    <div class="ml-auto flex items-center gap-2">
-      <!-- Desktop add btn -->
-      <button onclick="openModal()" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary text-white text-[13px] font-bold rounded-[10px] hover:bg-primary-dark transition-all active:scale-95">
-        <i class="fa-solid fa-plus text-[11px]"></i> Enregistrer un document
-      </button>
-      <div class="relative w-9 h-9 rounded-[9px] bg-surface2 border border-borderMain flex items-center justify-center text-sm hover:border-primary hover:text-primary transition-all cursor-pointer">
-        <i class="fa-regular fa-bell"></i>
-        <div class="absolute top-[7px] right-[7px] w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
-      </div>
-      <div class="flex items-center gap-2 pl-1.5 pr-3 py-1 bg-surface2 border border-borderMain rounded-[10px] cursor-pointer hover:border-primary transition-colors">
-        <div class="w-[26px] h-[26px] rounded-[6px] bg-green-dark flex items-center justify-center font-bricolage text-[11px] font-extrabold text-primary">JM</div>
-        <span class="text-[12.5px] font-semibold text-textMain hidden sm:block">Jean-Marc</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- Content -->
-  <div class="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-8">
-
-    <!-- Info banner -->
-    <div class="flex items-start gap-3 p-4 bg-primary/8 border border-primary/20 rounded-[14px]">
-      <div class="w-9 h-9 rounded-[10px] bg-primary/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <i class="fa-solid fa-shield-halved text-primary text-sm"></i>
-      </div>
-      <div>
-        <p class="text-[13.5px] font-bold text-textMain mb-0.5">Pourquoi enregistrer mes documents ?</p>
-        <p class="text-[12.5px] text-textMuted leading-relaxed">En cas de perte, vos documents enregistrés servent de <strong class="text-textMain">preuve de propriété</strong>. DocMaster peut ainsi vous identifier rapidement et faciliter la récupération. Vos données sont <strong class="text-textMain">chiffrées et sécurisées</strong>.</p>
-      </div>
-      <button class="flex-shrink-0 text-textMuted hover:text-textMain transition-colors" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark text-sm"></i></button>
-    </div>
-
-    <!-- Stats row -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <div class="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
-        <div class="w-9 h-9 rounded-[10px] bg-primary/10 flex items-center justify-center"><i class="fa-solid fa-folder-open text-primary text-sm"></i></div>
-        <div class="font-bricolage text-2xl font-extrabold text-textMain">6</div>
-        <div class="text-[12px] text-textMuted font-medium">Total enregistrés</div>
-      </div>
-      <div class="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
-        <div class="w-9 h-9 rounded-[10px] bg-green-light flex items-center justify-center"><i class="fa-solid fa-shield-check text-green-mid text-sm"></i></div>
-        <div class="font-bricolage text-2xl font-extrabold text-textMain">4</div>
-        <div class="text-[12px] text-textMuted font-medium">Vérifiés</div>
-      </div>
-      <div class="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
-        <div class="w-9 h-9 rounded-[10px] bg-amber-50 flex items-center justify-center"><i class="fa-solid fa-clock text-amber-500 text-sm"></i></div>
-        <div class="font-bricolage text-2xl font-extrabold text-textMain">2</div>
-        <div class="text-[12px] text-textMuted font-medium">En attente</div>
-      </div>
-      <div class="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
-        <div class="w-9 h-9 rounded-[10px] bg-blue-50 flex items-center justify-center"><i class="fa-solid fa-cloud-arrow-up text-blue-500 text-sm"></i></div>
-        <div class="font-bricolage text-2xl font-extrabold text-textMain">94%</div>
-        <div class="text-[12px] text-textMuted font-medium">Profil complété</div>
+    <div class="px-2.5 py-3.5 border-t border-white/10 flex-shrink-0">
+      <div
+        class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[11px] cursor-pointer hover:bg-white/5 transition-colors">
+        <div
+          class="w-[33px] h-[33px] rounded-[9px] bg-primary flex items-center justify-center font-bricolage text-xs font-extrabold text-white flex-shrink-0">
+          JM</div>
+        <div>
+          <div class="text-[13px] font-semibold text-white leading-tight">Jean-Marc D.</div>
+          <div class="text-[11px] text-white/40">Plan Standard</div>
+        </div>
+        <i class="fa-solid fa-chevron-up ml-auto text-white/30 text-[11px]"></i>
       </div>
     </div>
+  </aside>
 
-    <!-- Filters + search -->
-    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-      <div class="flex items-center bg-white border border-borderMain rounded-[11px] overflow-hidden flex-1 max-w-sm focus-within:border-primary transition-colors">
-        <i class="fa-solid fa-search px-3 text-textMuted text-xs flex-shrink-0"></i>
-        <input type="text" placeholder="Rechercher un document…" class="flex-1 py-2.5 pr-3 bg-transparent border-none outline-none font-poppins text-[13.5px] text-textMain placeholder:text-textMuted">
+  <!-- ══ MAIN ══ -->
+  <div class="main-wrapper">
+
+    <!-- Topbar -->
+    <header
+      class="sticky top-0 z-30 h-[58px] bg-white border-b border-borderMain flex items-center px-4 gap-3 flex-shrink-0">
+      <button
+        class="w-9 h-9 flex items-center justify-center rounded-[9px] bg-surface2 border border-borderMain hover:border-primary hover:text-primary transition-all md:hidden"
+        onclick="openSb()"><i class="fa-solid fa-bars"></i></button>
+      <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Mes Documents</span>
+      <div class="ml-auto flex items-center gap-2">
+        <!-- Desktop add btn -->
+        <button onclick="openModal()"
+          class="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary text-white text-[13px] font-bold rounded-[10px] hover:bg-primary-dark transition-all active:scale-95">
+          <i class="fa-solid fa-plus text-[11px]"></i> Enregistrer un document
+        </button>
+        <div
+          class="relative w-9 h-9 rounded-[9px] bg-surface2 border border-borderMain flex items-center justify-center text-sm hover:border-primary hover:text-primary transition-all cursor-pointer">
+          <i class="fa-regular fa-bell"></i>
+          <div class="absolute top-[7px] right-[7px] w-[7px] h-[7px] rounded-full bg-primary border-2 border-white">
+          </div>
+        </div>
+        <div
+          class="flex items-center gap-2 pl-1.5 pr-3 py-1 bg-surface2 border border-borderMain rounded-[10px] cursor-pointer hover:border-primary transition-colors">
+          <div
+            class="w-[26px] h-[26px] rounded-[6px] bg-green-dark flex items-center justify-center font-bricolage text-[11px] font-extrabold text-primary">
+            JM</div>
+          <span class="text-[12.5px] font-semibold text-textMain hidden sm:block">Jean-Marc</span>
+        </div>
       </div>
-      <div class="flex items-center gap-2 flex-wrap">
-        <button class="tab-filter active" onclick="filterDocs(this,'all')">Tous (6)</button>
-        <button class="tab-filter" onclick="filterDocs(this,'identity')">Identité</button>
-        <button class="tab-filter" onclick="filterDocs(this,'travel')">Voyage</button>
-        <button class="tab-filter" onclick="filterDocs(this,'study')">Études</button>
-        <button class="tab-filter" onclick="filterDocs(this,'vehicle')">Véhicule</button>
+    </header>
+
+    <!-- Content -->
+    <div class="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-8">
+
+      <!-- Info banner -->
+      <div class="flex items-start gap-3 p-4 bg-primary/8 border border-primary/20 rounded-[14px]">
+        <div class="w-9 h-9 rounded-[10px] bg-primary/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <i class="fa-solid fa-shield-halved text-primary text-sm"></i>
+        </div>
+        <div>
+          <p class="text-[13.5px] font-bold text-textMain mb-0.5">Pourquoi enregistrer mes documents ?</p>
+          <p class="text-[12.5px] text-textMuted leading-relaxed">En cas de perte, vos documents enregistrés servent de
+            <strong class="text-textMain">preuve de propriété</strong>. DocMaster peut ainsi vous identifier rapidement
+            et faciliter la récupération. Vos données sont <strong class="text-textMain">chiffrées et
+              sécurisées</strong>.</p>
+        </div>
+        <button class="flex-shrink-0 text-textMuted hover:text-textMain transition-colors"
+          onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark text-sm"></i></button>
       </div>
+
+      <!-- Stats row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
+          <div class="w-9 h-9 rounded-[10px] bg-primary/10 flex items-center justify-center"><i
+              class="fa-solid fa-folder-open text-primary text-sm"></i></div>
+          <div class="font-bricolage text-2xl font-extrabold text-textMain">6</div>
+          <div class="text-[12px] text-textMuted font-medium">Total enregistrés</div>
+        </div>
+        <div class="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
+          <div class="w-9 h-9 rounded-[10px] bg-green-light flex items-center justify-center"><i
+              class="fa-solid fa-shield-check text-green-mid text-sm"></i></div>
+          <div class="font-bricolage text-2xl font-extrabold text-textMain">4</div>
+          <div class="text-[12px] text-textMuted font-medium">Vérifiés</div>
+        </div>
+        <div class="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
+          <div class="w-9 h-9 rounded-[10px] bg-amber-50 flex items-center justify-center"><i
+              class="fa-solid fa-clock text-amber-500 text-sm"></i></div>
+          <div class="font-bricolage text-2xl font-extrabold text-textMain">2</div>
+          <div class="text-[12px] text-textMuted font-medium">En attente</div>
+        </div>
+        <div class="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
+          <div class="w-9 h-9 rounded-[10px] bg-blue-50 flex items-center justify-center"><i
+              class="fa-solid fa-cloud-arrow-up text-blue-500 text-sm"></i></div>
+          <div class="font-bricolage text-2xl font-extrabold text-textMain">94%</div>
+          <div class="text-[12px] text-textMuted font-medium">Profil complété</div>
+        </div>
+      </div>
+
+      <!-- Filters + search -->
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div
+          class="flex items-center bg-white border border-borderMain rounded-[11px] overflow-hidden flex-1 max-w-sm focus-within:border-primary transition-colors">
+          <i class="fa-solid fa-search px-3 text-textMuted text-xs flex-shrink-0"></i>
+          <input type="text" placeholder="Rechercher un document…"
+            class="flex-1 py-2.5 pr-3 bg-transparent border-none outline-none font-poppins text-[13.5px] text-textMain placeholder:text-textMuted">
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button class="tab-filter active" onclick="filterDocs(this,'all')">Tous (6)</button>
+          <button class="tab-filter" onclick="filterDocs(this,'identity')">Identité</button>
+          <button class="tab-filter" onclick="filterDocs(this,'travel')">Voyage</button>
+          <button class="tab-filter" onclick="filterDocs(this,'study')">Études</button>
+          <button class="tab-filter" onclick="filterDocs(this,'vehicle')">Véhicule</button>
+        </div>
+      </div>
+
+      <!-- Documents grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="docs-grid">
+
+        <!-- CNI -->
+        <div class="doc-card" data-cat="identity">
+          <div
+            class="card-thumb bg-gradient-to-br from-green-dark to-green-mid flex items-center justify-center relative">
+            <i class="fa-solid fa-id-card text-4xl text-white/30"></i>
+            <div class="absolute top-2.5 right-2.5">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full badge-verified">Vérifié</span>
+            </div>
+            <div class="absolute bottom-2.5 left-3">
+              <span class="text-white/60 text-[10px] font-medium">CNI</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <div class="text-[14px] font-bold text-textMain leading-tight">Carte Nationale d'Identité</div>
+                <div class="text-[12px] text-textMuted mt-0.5 italic">N° 123456789CM</div>
+              </div>
+              <div class="flex gap-1 flex-shrink-0">
+                <button onclick="viewDoc('CNI')"
+                  class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted"><i
+                    class="fa-solid fa-eye text-[10px]"></i></button>
+                <button onclick="openDeleteModal('CNI')"
+                  class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i
+                    class="fa-solid fa-trash text-[10px]"></i></button>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 text-[11.5px] text-textMuted">
+              <span class="flex items-center gap-1"><i class="fa-regular fa-calendar text-[10px]"></i>Expire le
+                15/06/2028</span>
+              <span class="flex items-center gap-1 text-green-mid font-semibold"><i
+                  class="fa-solid fa-shield-check text-[10px]"></i>Sécurisé</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Passeport -->
+        <div class="doc-card" data-cat="travel">
+          <div class="card-thumb bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center relative">
+            <i class="fa-solid fa-passport text-4xl text-white/30"></i>
+            <div class="absolute top-2.5 right-2.5"><span
+                class="text-[10px] font-bold px-2 py-0.5 rounded-full badge-verified">Vérifié</span></div>
+            <div class="absolute bottom-2.5 left-3"><span class="text-white/60 text-[10px] font-medium">PASSEPORT</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <div class="text-[14px] font-bold text-textMain leading-tight">Passeport Camerounais</div>
+                <div class="text-[12px] text-textMuted mt-0.5 italic">N° CM456789</div>
+              </div>
+              <div class="flex gap-1 flex-shrink-0">
+                <button onclick="viewDoc('Passeport')"
+                  class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted"><i
+                    class="fa-solid fa-eye text-[10px]"></i></button>
+                <button onclick="openDeleteModal('Passeport')"
+                  class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i
+                    class="fa-solid fa-trash text-[10px]"></i></button>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 text-[11.5px] text-textMuted">
+              <span class="flex items-center gap-1"><i class="fa-regular fa-calendar text-[10px]"></i>Expire le
+                03/09/2029</span>
+              <span class="flex items-center gap-1 text-green-mid font-semibold"><i
+                  class="fa-solid fa-shield-check text-[10px]"></i>Sécurisé</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Permis de conduire -->
+        <div class="doc-card" data-cat="vehicle">
+          <div
+            class="card-thumb bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center relative">
+            <i class="fa-solid fa-car text-4xl text-white/30"></i>
+            <div class="absolute top-2.5 right-2.5"><span
+                class="text-[10px] font-bold px-2 py-0.5 rounded-full badge-verified">Vérifié</span></div>
+            <div class="absolute bottom-2.5 left-3"><span class="text-white/60 text-[10px] font-medium">PERMIS</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <div class="text-[14px] font-bold text-textMain leading-tight">Permis de conduire</div>
+                <div class="text-[12px] text-textMuted mt-0.5 italic">Catégorie B · N° PC-7823</div>
+              </div>
+              <div class="flex gap-1 flex-shrink-0">
+                <button onclick="viewDoc('Permis')"
+                  class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted"><i
+                    class="fa-solid fa-eye text-[10px]"></i></button>
+                <button onclick="openDeleteModal('Permis')"
+                  class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i
+                    class="fa-solid fa-trash text-[10px]"></i></button>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 text-[11.5px] text-textMuted">
+              <span class="flex items-center gap-1"><i class="fa-regular fa-calendar text-[10px]"></i>Expire le
+                22/11/2026</span>
+              <span class="flex items-center gap-1 text-amber-500 font-semibold"><i
+                  class="fa-solid fa-triangle-exclamation text-[10px]"></i>Bientôt expiré</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Diplôme BAC -->
+        <div class="doc-card" data-cat="study">
+          <div
+            class="card-thumb bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center relative">
+            <i class="fa-solid fa-graduation-cap text-4xl text-white/30"></i>
+            <div class="absolute top-2.5 right-2.5"><span
+                class="text-[10px] font-bold px-2 py-0.5 rounded-full badge-verified">Vérifié</span></div>
+            <div class="absolute bottom-2.5 left-3"><span class="text-white/60 text-[10px] font-medium">DIPLÔME</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <div class="text-[14px] font-bold text-textMain leading-tight">Baccalauréat Général</div>
+                <div class="text-[12px] text-textMuted mt-0.5 italic">Série C · Yaoundé · 2019</div>
+              </div>
+              <div class="flex gap-1 flex-shrink-0">
+                <button onclick="viewDoc('BAC')"
+                  class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted"><i
+                    class="fa-solid fa-eye text-[10px]"></i></button>
+                <button onclick="openDeleteModal('BAC')"
+                  class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i
+                    class="fa-solid fa-trash text-[10px]"></i></button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-[11.5px] text-textMuted">
+              <span class="flex items-center gap-1"><i class="fa-solid fa-infinity text-[10px]"></i>Pas
+                d'expiration</span>
+              <span class="flex items-center gap-1 text-green-mid font-semibold"><i
+                  class="fa-solid fa-shield-check text-[10px]"></i>Sécurisé</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acte de naissance — En attente -->
+        <div class="doc-card" data-cat="identity">
+          <div class="card-thumb bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center relative">
+            <i class="fa-solid fa-file-lines text-4xl text-white/30"></i>
+            <div class="absolute top-2.5 right-2.5"><span
+                class="text-[10px] font-bold px-2 py-0.5 rounded-full badge-pending">En attente</span></div>
+            <div class="absolute bottom-2.5 left-3"><span class="text-white/60 text-[10px] font-medium">ÉTAT
+                CIVIL</span></div>
+          </div>
+          <div class="p-4">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <div class="text-[14px] font-bold text-textMain leading-tight">Acte de naissance</div>
+                <div class="text-[12px] text-textMuted mt-0.5 italic">Mairie de Yaoundé · 1994</div>
+              </div>
+              <div class="flex gap-1 flex-shrink-0">
+                <button onclick="viewDoc('Acte')"
+                  class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted"><i
+                    class="fa-solid fa-eye text-[10px]"></i></button>
+                <button onclick="openDeleteModal('Acte')"
+                  class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i
+                    class="fa-solid fa-trash text-[10px]"></i></button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-[11.5px]">
+              <span class="flex items-center gap-1 text-amber-600 font-semibold"><i
+                  class="fa-solid fa-clock text-[10px]"></i>Vérification en cours…</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add new card -->
+        <button onclick="openModal()"
+          class="drop-zone rounded-[18px] p-6 flex flex-col items-center justify-center gap-3 min-h-[180px] cursor-pointer group">
+          <div
+            class="w-12 h-12 rounded-2xl bg-primary/10 border-2 border-primary/25 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+            <i class="fa-solid fa-plus text-primary text-xl"></i>
+          </div>
+          <div class="text-center">
+            <p class="text-[14px] font-bold text-textMain">Ajouter un document</p>
+            <p class="text-[12px] text-textMuted">CNI, Passeport, Diplôme…</p>
+          </div>
+        </button>
+      </div>
+
+      <!-- Security notice -->
+      <div class="flex items-center gap-3 p-4 bg-white border border-borderMain rounded-[14px]">
+        <i class="fa-solid fa-lock text-green-mid text-lg flex-shrink-0"></i>
+        <div>
+          <p class="text-[12.5px] font-bold text-textMain">Vos données sont protégées</p>
+          <p class="text-[11.5px] text-textMuted">Chiffrement AES-256 · Accès limité à vous seul · Conforme RGPD ·
+            Stockage sécurisé au Cameroun</p>
+        </div>
+      </div>
+
     </div>
+  </div><!-- /main-wrapper -->
 
-    <!-- Documents grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="docs-grid">
+  <!-- ══ BOTTOM NAV (mobile only) ══ -->
+  <nav
+    class="bottom-nav fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-borderMain px-2 py-2 justify-around flex md:hidden">
+    <a href="dashboard.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
+      <i class="fa-solid fa-house text-base"></i>
+      <span class="text-[10px] font-medium">Accueil</span>
+    </a>
+    <a href="Mesdocument.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-primary">
+      <i class="fa-solid fa-plus-circle text-base"></i>
+      <span class="text-[10px] font-semibold">Ajouter</span>
+    </a>
+    <a href="rechercher.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
+      <i class="fa-solid fa-magnifying-glass text-base"></i>
+      <span class="text-[10px] font-medium">Rechercher</span>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted relative">
+      <i class="fa-solid fa-envelope text-base"></i>
+      <span class="text-[10px] font-medium">Messages</span>
+      <div class="absolute top-1 right-2 w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
+    </a>
+    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted" onclick="openSb()">
+      <i class="fa-solid fa-bars text-base"></i>
+      <span class="text-[10px] font-medium">Plus</span>
+    </a>
+  </nav>
 
-      <!-- CNI -->
-      <div class="doc-card" data-cat="identity">
-        <div class="card-thumb bg-gradient-to-br from-green-dark to-green-mid flex items-center justify-center relative">
-          <i class="fa-solid fa-id-card text-4xl text-white/30"></i>
-          <div class="absolute top-2.5 right-2.5">
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full badge-verified">Vérifié</span>
-          </div>
-          <div class="absolute bottom-2.5 left-3">
-            <span class="text-white/60 text-[10px] font-medium">CNI</span>
-          </div>
-        </div>
-        <div class="p-4">
-          <div class="flex items-start justify-between gap-2 mb-2">
-            <div>
-              <div class="text-[14px] font-bold text-textMain leading-tight">Carte Nationale d'Identité</div>
-              <div class="text-[12px] text-textMuted mt-0.5 italic">N° 123456789CM</div>
-            </div>
-            <div class="flex gap-1 flex-shrink-0">
-              <button onclick="viewDoc('CNI')" class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted"><i class="fa-solid fa-eye text-[10px]"></i></button>
-              <button onclick="openDeleteModal('CNI')" class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i class="fa-solid fa-trash text-[10px]"></i></button>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 text-[11.5px] text-textMuted">
-            <span class="flex items-center gap-1"><i class="fa-regular fa-calendar text-[10px]"></i>Expire le 15/06/2028</span>
-            <span class="flex items-center gap-1 text-green-mid font-semibold"><i class="fa-solid fa-shield-check text-[10px]"></i>Sécurisé</span>
-          </div>
-        </div>
-      </div>
+  <!-- Mobile FAB -->
+  <button class="fab" onclick="openModal()"><i class="fa-solid fa-plus"></i></button>
 
-      <!-- Passeport -->
-      <div class="doc-card" data-cat="travel">
-        <div class="card-thumb bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center relative">
-          <i class="fa-solid fa-passport text-4xl text-white/30"></i>
-          <div class="absolute top-2.5 right-2.5"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full badge-verified">Vérifié</span></div>
-          <div class="absolute bottom-2.5 left-3"><span class="text-white/60 text-[10px] font-medium">PASSEPORT</span></div>
-        </div>
-        <div class="p-4">
-          <div class="flex items-start justify-between gap-2 mb-2">
-            <div>
-              <div class="text-[14px] font-bold text-textMain leading-tight">Passeport Camerounais</div>
-              <div class="text-[12px] text-textMuted mt-0.5 italic">N° CM456789</div>
-            </div>
-            <div class="flex gap-1 flex-shrink-0">
-              <button onclick="viewDoc('Passeport')" class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted"><i class="fa-solid fa-eye text-[10px]"></i></button>
-              <button onclick="openDeleteModal('Passeport')" class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i class="fa-solid fa-trash text-[10px]"></i></button>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 text-[11.5px] text-textMuted">
-            <span class="flex items-center gap-1"><i class="fa-regular fa-calendar text-[10px]"></i>Expire le 03/09/2029</span>
-            <span class="flex items-center gap-1 text-green-mid font-semibold"><i class="fa-solid fa-shield-check text-[10px]"></i>Sécurisé</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Permis de conduire -->
-      <div class="doc-card" data-cat="vehicle">
-        <div class="card-thumb bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center relative">
-          <i class="fa-solid fa-car text-4xl text-white/30"></i>
-          <div class="absolute top-2.5 right-2.5"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full badge-verified">Vérifié</span></div>
-          <div class="absolute bottom-2.5 left-3"><span class="text-white/60 text-[10px] font-medium">PERMIS</span></div>
-        </div>
-        <div class="p-4">
-          <div class="flex items-start justify-between gap-2 mb-2">
-            <div>
-              <div class="text-[14px] font-bold text-textMain leading-tight">Permis de conduire</div>
-              <div class="text-[12px] text-textMuted mt-0.5 italic">Catégorie B · N° PC-7823</div>
-            </div>
-            <div class="flex gap-1 flex-shrink-0">
-              <button onclick="viewDoc('Permis')" class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted"><i class="fa-solid fa-eye text-[10px]"></i></button>
-              <button onclick="openDeleteModal('Permis')" class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i class="fa-solid fa-trash text-[10px]"></i></button>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 text-[11.5px] text-textMuted">
-            <span class="flex items-center gap-1"><i class="fa-regular fa-calendar text-[10px]"></i>Expire le 22/11/2026</span>
-            <span class="flex items-center gap-1 text-amber-500 font-semibold"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i>Bientôt expiré</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Diplôme BAC -->
-      <div class="doc-card" data-cat="study">
-        <div class="card-thumb bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center relative">
-          <i class="fa-solid fa-graduation-cap text-4xl text-white/30"></i>
-          <div class="absolute top-2.5 right-2.5"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full badge-verified">Vérifié</span></div>
-          <div class="absolute bottom-2.5 left-3"><span class="text-white/60 text-[10px] font-medium">DIPLÔME</span></div>
-        </div>
-        <div class="p-4">
-          <div class="flex items-start justify-between gap-2 mb-2">
-            <div>
-              <div class="text-[14px] font-bold text-textMain leading-tight">Baccalauréat Général</div>
-              <div class="text-[12px] text-textMuted mt-0.5 italic">Série C · Yaoundé · 2019</div>
-            </div>
-            <div class="flex gap-1 flex-shrink-0">
-              <button onclick="viewDoc('BAC')" class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted"><i class="fa-solid fa-eye text-[10px]"></i></button>
-              <button onclick="openDeleteModal('BAC')" class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i class="fa-solid fa-trash text-[10px]"></i></button>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 text-[11.5px] text-textMuted">
-            <span class="flex items-center gap-1"><i class="fa-solid fa-infinity text-[10px]"></i>Pas d'expiration</span>
-            <span class="flex items-center gap-1 text-green-mid font-semibold"><i class="fa-solid fa-shield-check text-[10px]"></i>Sécurisé</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Acte de naissance — En attente -->
-      <div class="doc-card" data-cat="identity">
-        <div class="card-thumb bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center relative">
-          <i class="fa-solid fa-file-lines text-4xl text-white/30"></i>
-          <div class="absolute top-2.5 right-2.5"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full badge-pending">En attente</span></div>
-          <div class="absolute bottom-2.5 left-3"><span class="text-white/60 text-[10px] font-medium">ÉTAT CIVIL</span></div>
-        </div>
-        <div class="p-4">
-          <div class="flex items-start justify-between gap-2 mb-2">
-            <div>
-              <div class="text-[14px] font-bold text-textMain leading-tight">Acte de naissance</div>
-              <div class="text-[12px] text-textMuted mt-0.5 italic">Mairie de Yaoundé · 1994</div>
-            </div>
-            <div class="flex gap-1 flex-shrink-0">
-              <button onclick="viewDoc('Acte')" class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted"><i class="fa-solid fa-eye text-[10px]"></i></button>
-              <button onclick="openDeleteModal('Acte')" class="w-7 h-7 rounded-[7px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i class="fa-solid fa-trash text-[10px]"></i></button>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 text-[11.5px]">
-            <span class="flex items-center gap-1 text-amber-600 font-semibold"><i class="fa-solid fa-clock text-[10px]"></i>Vérification en cours…</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Add new card -->
-      <button onclick="openModal()" class="drop-zone rounded-[18px] p-6 flex flex-col items-center justify-center gap-3 min-h-[180px] cursor-pointer group">
-        <div class="w-12 h-12 rounded-2xl bg-primary/10 border-2 border-primary/25 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-          <i class="fa-solid fa-plus text-primary text-xl"></i>
-        </div>
-        <div class="text-center">
-          <p class="text-[14px] font-bold text-textMain">Ajouter un document</p>
-          <p class="text-[12px] text-textMuted">CNI, Passeport, Diplôme…</p>
-        </div>
-      </button>
-    </div>
-
-    <!-- Security notice -->
-    <div class="flex items-center gap-3 p-4 bg-white border border-borderMain rounded-[14px]">
-      <i class="fa-solid fa-lock text-green-mid text-lg flex-shrink-0"></i>
-      <div>
-        <p class="text-[12.5px] font-bold text-textMain">Vos données sont protégées</p>
-        <p class="text-[11.5px] text-textMuted">Chiffrement AES-256 · Accès limité à vous seul · Conforme RGPD · Stockage sécurisé au Cameroun</p>
-      </div>
-    </div>
-
-  </div>
-</div><!-- /main-wrapper -->
-
-<!-- ══ BOTTOM NAV (mobile only) ══ -->
-<nav class="bottom-nav fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-borderMain px-2 py-2 justify-around flex md:hidden">
-  <a href="dashboard.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
-    <i class="fa-solid fa-house text-base"></i>
-    <span class="text-[10px] font-medium">Accueil</span>
-  </a>
-  <a href="Mesdocument.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-primary">
-    <i class="fa-solid fa-plus-circle text-base"></i>
-    <span class="text-[10px] font-semibold">Ajouter</span>
-  </a>
-  <a href="rechercher.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
-    <i class="fa-solid fa-magnifying-glass text-base"></i>
-    <span class="text-[10px] font-medium">Rechercher</span>
-  </a>
-  <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted relative">
-    <i class="fa-solid fa-envelope text-base"></i>
-    <span class="text-[10px] font-medium">Messages</span>
-    <div class="absolute top-1 right-2 w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
-  </a>
-  <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted" onclick="openSb()">
-    <i class="fa-solid fa-bars text-base"></i>
-    <span class="text-[10px] font-medium">Plus</span>
-  </a>
-</nav>
-
-<!-- Mobile FAB -->
-<button class="fab" onclick="openModal()"><i class="fa-solid fa-plus"></i></button>
-
-<!-- ════════════════════════════════════
+  <!-- ════════════════════════════════════
      MODAL — Enregistrer un document
 ════════════════════════════════════ -->
-<div class="modal-overlay hidden" id="add-modal">
-  <div class="modal-box" id="modal-box">
+  <div class="modal-overlay hidden" id="add-modal">
+    <div class="modal-box" id="modal-box">
 
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h2 class="font-bricolage text-xl font-extrabold text-textMain">Enregistrer un document</h2>
-        <p class="text-[12.5px] text-textMuted mt-0.5">Étape <span id="step-num">1</span> sur 3</p>
-      </div>
-      <button onclick="closeModal()" class="w-9 h-9 rounded-full bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i class="fa-solid fa-xmark text-sm"></i></button>
-    </div>
-
-    <!-- Step indicators -->
-    <div class="flex items-center mb-7">
-      <div class="step-dot active" id="dot-1">1</div>
-      <div class="step-line" id="line-1"></div>
-      <div class="step-dot pending" id="dot-2">2</div>
-      <div class="step-line" id="line-2"></div>
-      <div class="step-dot pending" id="dot-3">3</div>
-    </div>
-
-    <!-- ── STEP 1: Type de document ── -->
-    <div id="step-1">
-      <p class="text-[13.5px] font-semibold text-textMain mb-4">Quel type de document voulez-vous enregistrer ?</p>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-        <button class="doc-type-btn" onclick="selectType(this,'cni')" data-type="cni">
-          <div class="w-10 h-10 rounded-[11px] bg-green-light flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-id-card text-green-mid text-lg"></i></div>
-          <div class="text-[12.5px] font-bold text-textMain">CNI</div>
-          <div class="text-[11px] text-textMuted">Carte nationale</div>
-        </button>
-        <button class="doc-type-btn" onclick="selectType(this,'passport')" data-type="passport">
-          <div class="w-10 h-10 rounded-[11px] bg-blue-50 flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-passport text-blue-500 text-lg"></i></div>
-          <div class="text-[12.5px] font-bold text-textMain">Passeport</div>
-          <div class="text-[11px] text-textMuted">International</div>
-        </button>
-        <button class="doc-type-btn" onclick="selectType(this,'permis')" data-type="permis">
-          <div class="w-10 h-10 rounded-[11px] bg-amber-50 flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-car text-amber-500 text-lg"></i></div>
-          <div class="text-[12.5px] font-bold text-textMain">Permis</div>
-          <div class="text-[11px] text-textMuted">Conduire</div>
-        </button>
-        <button class="doc-type-btn" onclick="selectType(this,'diplome')" data-type="diplome">
-          <div class="w-10 h-10 rounded-[11px] bg-purple-50 flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-graduation-cap text-purple-500 text-lg"></i></div>
-          <div class="text-[12.5px] font-bold text-textMain">Diplôme</div>
-          <div class="text-[11px] text-textMuted">BAC, Licence…</div>
-        </button>
-        <button class="doc-type-btn" onclick="selectType(this,'naissance')" data-type="naissance">
-          <div class="w-10 h-10 rounded-[11px] bg-pink-50 flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-baby text-pink-500 text-lg"></i></div>
-          <div class="text-[12.5px] font-bold text-textMain">Acte naissance</div>
-          <div class="text-[11px] text-textMuted">État civil</div>
-        </button>
-        <button class="doc-type-btn" onclick="selectType(this,'autre')" data-type="autre">
-          <div class="w-10 h-10 rounded-[11px] bg-gray-100 flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-file text-gray-500 text-lg"></i></div>
-          <div class="text-[12.5px] font-bold text-textMain">Autre</div>
-          <div class="text-[11px] text-textMuted">Document divers</div>
-        </button>
-      </div>
-      <button onclick="goStep(2)" id="btn-step1" disabled class="w-full py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-dark transition-all active:scale-[.98]">
-        Continuer <i class="fa-solid fa-arrow-right text-[12px] ml-1"></i>
-      </button>
-    </div>
-
-    <!-- ── STEP 2: Informations ── -->
-    <div id="step-2" class="hidden">
-      <div class="flex flex-col gap-4 mb-6">
-
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-6">
         <div>
-          <label class="form-label">Numéro du document *</label>
-          <input type="text" id="doc-number" class="form-input" placeholder="Ex: 123456789CM">
+          <h2 class="font-bricolage text-xl font-extrabold text-textMain">Enregistrer un document</h2>
+          <p class="text-[12.5px] text-textMuted mt-0.5">Étape <span id="step-num">1</span> sur 3</p>
         </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="form-label">Date de délivrance</label>
-            <input type="date" id="doc-issued" class="form-input">
-          </div>
-          <div>
-            <label class="form-label">Date d'expiration</label>
-            <input type="date" id="doc-expiry" class="form-input">
-          </div>
-        </div>
-
-        <div>
-          <label class="form-label">Autorité délivrante</label>
-          <input type="text" id="doc-authority" class="form-input" placeholder="Ex: Préfecture du Centre, Yaoundé">
-        </div>
-
-        <div>
-          <label class="form-label">Notes / Informations complémentaires</label>
-          <textarea id="doc-notes" rows="2" class="form-input resize-none" placeholder="Couleur, signes distinctifs, contenu…"></textarea>
-        </div>
-
-        <!-- Upload zone -->
-        <div>
-          <label class="form-label">Photo du document (recto) *</label>
-          <div class="drop-zone rounded-[13px] p-5 text-center cursor-pointer relative" id="drop-recto" onclick="document.getElementById('file-recto').click()" ondragover="onDragOver(event,'drop-recto')" ondragleave="onDragLeave('drop-recto')" ondrop="onDrop(event,'drop-recto','preview-recto')">
-            <input type="file" id="file-recto" class="hidden" accept="image/*,.pdf" onchange="onFileSelect(this,'preview-recto','drop-recto')">
-            <div id="preview-recto" class="hidden"><img id="img-recto" class="w-full max-h-32 object-contain rounded-[9px] mb-2" src="" alt=""><p class="text-[12px] text-green-mid font-semibold">Fichier sélectionné ✓</p></div>
-            <div id="placeholder-recto">
-              <i class="fa-solid fa-cloud-arrow-up text-2xl text-textMuted mb-2 block"></i>
-              <p class="text-[13px] font-semibold text-textMain">Glissez ou cliquez pour uploader</p>
-              <p class="text-[11.5px] text-textMuted">JPG, PNG, PDF · Max 5 Mo</p>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="form-label">Photo du document (verso) <span class="text-textMuted font-normal normal-case">— optionnel</span></label>
-          <div class="drop-zone rounded-[13px] p-4 text-center cursor-pointer relative" id="drop-verso" onclick="document.getElementById('file-verso').click()">
-            <input type="file" id="file-verso" class="hidden" accept="image/*,.pdf" onchange="onFileSelect(this,'preview-verso','drop-verso')">
-            <div id="preview-verso" class="hidden"><img id="img-verso" class="w-full max-h-28 object-contain rounded-[9px] mb-1" src="" alt=""><p class="text-[11px] text-green-mid font-semibold">Fichier sélectionné ✓</p></div>
-            <div id="placeholder-verso">
-              <i class="fa-solid fa-plus text-textMuted text-sm mb-1 block"></i>
-              <p class="text-[12px] font-medium text-textMuted">Ajouter le verso</p>
-            </div>
-          </div>
-        </div>
+        <button onclick="closeModal()"
+          class="w-9 h-9 rounded-full bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted"><i
+            class="fa-solid fa-xmark text-sm"></i></button>
       </div>
 
-      <div class="flex gap-3">
-        <button onclick="goStep(1)" class="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
-          <i class="fa-solid fa-arrow-left text-[12px]"></i> Retour
-        </button>
-        <button onclick="goStep(3)" class="flex-1 py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]">
+      <!-- Step indicators -->
+      <div class="flex items-center mb-7">
+        <div class="step-dot active" id="dot-1">1</div>
+        <div class="step-line" id="line-1"></div>
+        <div class="step-dot pending" id="dot-2">2</div>
+        <div class="step-line" id="line-2"></div>
+        <div class="step-dot pending" id="dot-3">3</div>
+      </div>
+
+      <!-- ── STEP 1: Type de document ── -->
+      <div id="step-1">
+        <p class="text-[13.5px] font-semibold text-textMain mb-4">Quel type de document voulez-vous enregistrer ?</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+          <button class="doc-type-btn" onclick="selectType(this,'cni')" data-type="cni">
+            <div class="w-10 h-10 rounded-[11px] bg-green-light flex items-center justify-center mx-auto mb-2"><i
+                class="fa-solid fa-id-card text-green-mid text-lg"></i></div>
+            <div class="text-[12.5px] font-bold text-textMain">CNI</div>
+            <div class="text-[11px] text-textMuted">Carte nationale</div>
+          </button>
+          <button class="doc-type-btn" onclick="selectType(this,'passport')" data-type="passport">
+            <div class="w-10 h-10 rounded-[11px] bg-blue-50 flex items-center justify-center mx-auto mb-2"><i
+                class="fa-solid fa-passport text-blue-500 text-lg"></i></div>
+            <div class="text-[12.5px] font-bold text-textMain">Passeport</div>
+            <div class="text-[11px] text-textMuted">International</div>
+          </button>
+          <button class="doc-type-btn" onclick="selectType(this,'permis')" data-type="permis">
+            <div class="w-10 h-10 rounded-[11px] bg-amber-50 flex items-center justify-center mx-auto mb-2"><i
+                class="fa-solid fa-car text-amber-500 text-lg"></i></div>
+            <div class="text-[12.5px] font-bold text-textMain">Permis</div>
+            <div class="text-[11px] text-textMuted">Conduire</div>
+          </button>
+          <button class="doc-type-btn" onclick="selectType(this,'diplome')" data-type="diplome">
+            <div class="w-10 h-10 rounded-[11px] bg-purple-50 flex items-center justify-center mx-auto mb-2"><i
+                class="fa-solid fa-graduation-cap text-purple-500 text-lg"></i></div>
+            <div class="text-[12.5px] font-bold text-textMain">Diplôme</div>
+            <div class="text-[11px] text-textMuted">BAC, Licence…</div>
+          </button>
+          <button class="doc-type-btn" onclick="selectType(this,'naissance')" data-type="naissance">
+            <div class="w-10 h-10 rounded-[11px] bg-pink-50 flex items-center justify-center mx-auto mb-2"><i
+                class="fa-solid fa-baby text-pink-500 text-lg"></i></div>
+            <div class="text-[12.5px] font-bold text-textMain">Acte naissance</div>
+            <div class="text-[11px] text-textMuted">État civil</div>
+          </button>
+          <button class="doc-type-btn" onclick="selectType(this,'autre')" data-type="autre">
+            <div class="w-10 h-10 rounded-[11px] bg-gray-100 flex items-center justify-center mx-auto mb-2"><i
+                class="fa-solid fa-file text-gray-500 text-lg"></i></div>
+            <div class="text-[12.5px] font-bold text-textMain">Autre</div>
+            <div class="text-[11px] text-textMuted">Document divers</div>
+          </button>
+        </div>
+        <button onclick="goStep(2)" id="btn-step1" disabled
+          class="w-full py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-dark transition-all active:scale-[.98]">
           Continuer <i class="fa-solid fa-arrow-right text-[12px] ml-1"></i>
         </button>
       </div>
+
+      <!-- ── STEP 2: Informations ── -->
+      <div id="step-2" class="hidden">
+        <div class="flex flex-col gap-4 mb-6">
+
+          <div>
+            <label class="form-label">Numéro du document *</label>
+            <input type="text" id="doc-number" class="form-input" placeholder="Ex: 123456789CM">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="form-label">Date de délivrance</label>
+              <input type="date" id="doc-issued" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">Date d'expiration</label>
+              <input type="date" id="doc-expiry" class="form-input">
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">Autorité délivrante</label>
+            <input type="text" id="doc-authority" class="form-input" placeholder="Ex: Préfecture du Centre, Yaoundé">
+          </div>
+
+          <div>
+            <label class="form-label">Notes / Informations complémentaires</label>
+            <textarea id="doc-notes" rows="2" class="form-input resize-none"
+              placeholder="Couleur, signes distinctifs, contenu…"></textarea>
+          </div>
+
+          <!-- Upload zone -->
+          <div>
+            <label class="form-label">Photo du document (recto) *</label>
+            <div class="drop-zone rounded-[13px] p-5 text-center cursor-pointer relative" id="drop-recto"
+              onclick="document.getElementById('file-recto').click()" ondragover="onDragOver(event,'drop-recto')"
+              ondragleave="onDragLeave('drop-recto')" ondrop="onDrop(event,'drop-recto','preview-recto')">
+              <input type="file" id="file-recto" class="hidden" accept="image/*,.pdf"
+                onchange="onFileSelect(this,'preview-recto','drop-recto')">
+              <div id="preview-recto" class="hidden"><img id="img-recto"
+                  class="w-full max-h-32 object-contain rounded-[9px] mb-2" src="" alt="">
+                <p class="text-[12px] text-green-mid font-semibold">Fichier sélectionné ✓</p>
+              </div>
+              <div id="placeholder-recto">
+                <i class="fa-solid fa-cloud-arrow-up text-2xl text-textMuted mb-2 block"></i>
+                <p class="text-[13px] font-semibold text-textMain">Glissez ou cliquez pour uploader</p>
+                <p class="text-[11.5px] text-textMuted">JPG, PNG, PDF · Max 5 Mo</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">Photo du document (verso) <span class="text-textMuted font-normal normal-case">—
+                optionnel</span></label>
+            <div class="drop-zone rounded-[13px] p-4 text-center cursor-pointer relative" id="drop-verso"
+              onclick="document.getElementById('file-verso').click()">
+              <input type="file" id="file-verso" class="hidden" accept="image/*,.pdf"
+                onchange="onFileSelect(this,'preview-verso','drop-verso')">
+              <div id="preview-verso" class="hidden"><img id="img-verso"
+                  class="w-full max-h-28 object-contain rounded-[9px] mb-1" src="" alt="">
+                <p class="text-[11px] text-green-mid font-semibold">Fichier sélectionné ✓</p>
+              </div>
+              <div id="placeholder-verso">
+                <i class="fa-solid fa-plus text-textMuted text-sm mb-1 block"></i>
+                <p class="text-[12px] font-medium text-textMuted">Ajouter le verso</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="goStep(1)"
+            class="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left text-[12px]"></i> Retour
+          </button>
+          <button onclick="goStep(3)"
+            class="flex-1 py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]">
+            Continuer <i class="fa-solid fa-arrow-right text-[12px] ml-1"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: Confirmation & Upload ── -->
+      <div id="step-3" class="hidden">
+        <div class="p-4 bg-bgMain border border-borderMain rounded-[14px] mb-5">
+          <p class="text-[12px] font-bold text-textMuted uppercase tracking-wide mb-3">Récapitulatif</p>
+          <div class="space-y-2">
+            <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Type</span><span
+                class="font-bold text-textMain" id="recap-type">—</span></div>
+            <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Numéro</span><span
+                class="font-bold text-textMain" id="recap-number">—</span></div>
+            <div class="flex justify-between text-[13.5px]"><span
+                class="text-textMuted font-medium">Expiration</span><span class="font-bold text-textMain"
+                id="recap-expiry">—</span></div>
+            <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Documents
+                joints</span><span class="font-bold text-green-mid" id="recap-files">0 fichier(s)</span></div>
+          </div>
+        </div>
+
+        <!-- Upload progress (shown during submit) -->
+        <div id="upload-progress-wrap" class="hidden mb-5">
+          <div class="flex items-center justify-between text-[12.5px] font-semibold text-textMain mb-2">
+            <span>Chiffrement et envoi…</span>
+            <span id="progress-pct">0%</span>
+          </div>
+          <div class="upload-progress">
+            <div class="upload-bar" id="upload-bar"></div>
+          </div>
+          <p class="text-[11.5px] text-textMuted mt-1.5 italic flex items-center gap-1.5"><i
+              class="fa-solid fa-shield-halved text-green-mid text-[10px]"></i>Vos données sont chiffrées avant l'envoi
+          </p>
+        </div>
+
+        <!-- Consent -->
+        <div class="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-100 rounded-[12px] mb-5">
+          <input type="checkbox" id="consent" class="mt-0.5 accent-primary flex-shrink-0 w-4 h-4 cursor-pointer">
+          <label for="consent" class="text-[12.5px] text-textMain cursor-pointer leading-snug">J'accepte que DocMaster
+            conserve ces informations de manière <strong>sécurisée et confidentielle</strong> conformément à la
+            politique de confidentialité.</label>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="goStep(2)"
+            class="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left text-[12px]"></i> Retour
+          </button>
+          <button onclick="submitDocument()"
+            class="flex-1 py-3 rounded-[13px] bg-green-dark text-white font-bricolage text-[14px] font-bold hover:bg-green-mid transition-all active:scale-[.98] flex items-center justify-center gap-2"
+            id="submit-btn">
+            <i class="fa-solid fa-shield-halved text-[13px]"></i> Enregistrer et sécuriser
+          </button>
+        </div>
+      </div>
+
+      <!-- ── SUCCESS state ── -->
+      <div id="step-success" class="hidden text-center py-4">
+        <div class="w-16 h-16 rounded-2xl bg-green-light flex items-center justify-center mx-auto mb-4">
+          <i class="fa-solid fa-circle-check text-green-mid text-3xl"></i>
+        </div>
+        <h3 class="font-bricolage text-xl font-extrabold text-textMain mb-2">Document enregistré !</h3>
+        <p class="text-[13.5px] text-textMuted mb-2 leading-relaxed">Votre document a été chiffré et sécurisé avec
+          succès. Il sera vérifié par notre équipe sous <strong class="text-textMain">24–48h</strong>.</p>
+        <div class="flex items-center justify-center gap-2 text-[12.5px] text-green-mid font-semibold mb-6">
+          <i class="fa-solid fa-shield-check text-[13px]"></i>
+          Chiffrement AES-256 activé
+        </div>
+        <button onclick="closeModal()"
+          class="w-full py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all">
+          Fermer
+        </button>
+      </div>
+
     </div>
+  </div>
 
-    <!-- ── STEP 3: Confirmation & Upload ── -->
-    <div id="step-3" class="hidden">
-      <div class="p-4 bg-bgMain border border-borderMain rounded-[14px] mb-5">
-        <p class="text-[12px] font-bold text-textMuted uppercase tracking-wide mb-3">Récapitulatif</p>
-        <div class="space-y-2">
-          <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Type</span><span class="font-bold text-textMain" id="recap-type">—</span></div>
-          <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Numéro</span><span class="font-bold text-textMain" id="recap-number">—</span></div>
-          <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Expiration</span><span class="font-bold text-textMain" id="recap-expiry">—</span></div>
-          <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Documents joints</span><span class="font-bold text-green-mid" id="recap-files">0 fichier(s)</span></div>
-        </div>
+  <!-- Delete confirm modal -->
+  <div class="modal-overlay hidden" id="delete-modal">
+    <div class="modal-box max-w-sm" style="padding:24px">
+      <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-trash text-red-500 text-lg"></i>
       </div>
-
-      <!-- Upload progress (shown during submit) -->
-      <div id="upload-progress-wrap" class="hidden mb-5">
-        <div class="flex items-center justify-between text-[12.5px] font-semibold text-textMain mb-2">
-          <span>Chiffrement et envoi…</span>
-          <span id="progress-pct">0%</span>
-        </div>
-        <div class="upload-progress"><div class="upload-bar" id="upload-bar"></div></div>
-        <p class="text-[11.5px] text-textMuted mt-1.5 italic flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-green-mid text-[10px]"></i>Vos données sont chiffrées avant l'envoi</p>
-      </div>
-
-      <!-- Consent -->
-      <div class="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-100 rounded-[12px] mb-5">
-        <input type="checkbox" id="consent" class="mt-0.5 accent-primary flex-shrink-0 w-4 h-4 cursor-pointer">
-        <label for="consent" class="text-[12.5px] text-textMain cursor-pointer leading-snug">J'accepte que DocMaster conserve ces informations de manière <strong>sécurisée et confidentielle</strong> conformément à la politique de confidentialité.</label>
-      </div>
-
+      <h3 class="font-bricolage text-lg font-bold text-textMain text-center mb-1">Supprimer ce document ?</h3>
+      <p class="text-[13px] text-textMuted text-center mb-5 leading-relaxed">Le document <strong id="delete-doc-name"
+          class="text-textMain"></strong> sera définitivement supprimé de vos archives.</p>
       <div class="flex gap-3">
-        <button onclick="goStep(2)" class="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
-          <i class="fa-solid fa-arrow-left text-[12px]"></i> Retour
-        </button>
-        <button onclick="submitDocument()" class="flex-1 py-3 rounded-[13px] bg-green-dark text-white font-bricolage text-[14px] font-bold hover:bg-green-mid transition-all active:scale-[.98] flex items-center justify-center gap-2" id="submit-btn">
-          <i class="fa-solid fa-shield-halved text-[13px]"></i> Enregistrer et sécuriser
-        </button>
+        <button onclick="document.getElementById('delete-modal').classList.add('hidden')"
+          class="flex-1 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors">Annuler</button>
+        <button onclick="document.getElementById('delete-modal').classList.add('hidden')"
+          class="flex-1 py-2.5 rounded-[12px] bg-red-500 text-white font-bold hover:bg-red-600 transition-colors">Supprimer</button>
       </div>
     </div>
+  </div>
 
-    <!-- ── SUCCESS state ── -->
-    <div id="step-success" class="hidden text-center py-4">
-      <div class="w-16 h-16 rounded-2xl bg-green-light flex items-center justify-center mx-auto mb-4">
-        <i class="fa-solid fa-circle-check text-green-mid text-3xl"></i>
+  <!-- View modal -->
+  <div class="modal-overlay hidden" id="view-modal">
+    <div class="modal-box max-w-sm" style="padding:24px">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bricolage text-lg font-bold text-textMain" id="view-title">Document</h3>
+        <button onclick="document.getElementById('view-modal').classList.add('hidden')"
+          class="w-8 h-8 rounded-full bg-bgMain border border-borderMain flex items-center justify-center text-textMuted hover:text-red-500 transition-colors"><i
+            class="fa-solid fa-xmark text-sm"></i></button>
       </div>
-      <h3 class="font-bricolage text-xl font-extrabold text-textMain mb-2">Document enregistré !</h3>
-      <p class="text-[13.5px] text-textMuted mb-2 leading-relaxed">Votre document a été chiffré et sécurisé avec succès. Il sera vérifié par notre équipe sous <strong class="text-textMain">24–48h</strong>.</p>
-      <div class="flex items-center justify-center gap-2 text-[12.5px] text-green-mid font-semibold mb-6">
-        <i class="fa-solid fa-shield-check text-[13px]"></i>
-        Chiffrement AES-256 activé
+      <div
+        class="w-full h-40 bg-gradient-to-br from-green-dark to-green-mid rounded-[14px] flex items-center justify-center mb-4">
+        <i class="fa-solid fa-file-shield text-5xl text-white/30"></i>
       </div>
-      <button onclick="closeModal()" class="w-full py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all">
-        Fermer
-      </button>
-    </div>
-
-  </div>
-</div>
-
-<!-- Delete confirm modal -->
-<div class="modal-overlay hidden" id="delete-modal">
-  <div class="modal-box max-w-sm" style="padding:24px">
-    <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
-      <i class="fa-solid fa-trash text-red-500 text-lg"></i>
-    </div>
-    <h3 class="font-bricolage text-lg font-bold text-textMain text-center mb-1">Supprimer ce document ?</h3>
-    <p class="text-[13px] text-textMuted text-center mb-5 leading-relaxed">Le document <strong id="delete-doc-name" class="text-textMain"></strong> sera définitivement supprimé de vos archives.</p>
-    <div class="flex gap-3">
-      <button onclick="document.getElementById('delete-modal').classList.add('hidden')" class="flex-1 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors">Annuler</button>
-      <button onclick="document.getElementById('delete-modal').classList.add('hidden')" class="flex-1 py-2.5 rounded-[12px] bg-red-500 text-white font-bold hover:bg-red-600 transition-colors">Supprimer</button>
+      <div class="p-3.5 bg-bgMain border border-borderMain rounded-[12px] text-[12.5px] space-y-1.5 mb-4">
+        <div class="flex justify-between"><span class="text-textMuted">Statut</span><span
+            class="font-bold text-green-mid">Vérifié ✓</span></div>
+        <div class="flex justify-between"><span class="text-textMuted">Chiffrement</span><span
+            class="font-bold text-textMain">AES-256</span></div>
+        <div class="flex justify-between"><span class="text-textMuted">Enregistré le</span><span
+            class="font-bold text-textMain">15 jan. 2024</span></div>
+      </div>
+      <p class="text-[12px] text-textMuted text-center italic">Le contenu complet n'est visible que sur demande
+        officielle.</p>
     </div>
   </div>
-</div>
 
-<!-- View modal -->
-<div class="modal-overlay hidden" id="view-modal">
-  <div class="modal-box max-w-sm" style="padding:24px">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="font-bricolage text-lg font-bold text-textMain" id="view-title">Document</h3>
-      <button onclick="document.getElementById('view-modal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-bgMain border border-borderMain flex items-center justify-center text-textMuted hover:text-red-500 transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button>
-    </div>
-    <div class="w-full h-40 bg-gradient-to-br from-green-dark to-green-mid rounded-[14px] flex items-center justify-center mb-4">
-      <i class="fa-solid fa-file-shield text-5xl text-white/30"></i>
-    </div>
-    <div class="p-3.5 bg-bgMain border border-borderMain rounded-[12px] text-[12.5px] space-y-1.5 mb-4">
-      <div class="flex justify-between"><span class="text-textMuted">Statut</span><span class="font-bold text-green-mid">Vérifié ✓</span></div>
-      <div class="flex justify-between"><span class="text-textMuted">Chiffrement</span><span class="font-bold text-textMain">AES-256</span></div>
-      <div class="flex justify-between"><span class="text-textMuted">Enregistré le</span><span class="font-bold text-textMain">15 jan. 2024</span></div>
-    </div>
-    <p class="text-[12px] text-textMuted text-center italic">Le contenu complet n'est visible que sur demande officielle.</p>
-  </div>
-</div>
-
-<script>
-function openSb() {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-}
-function closeSb() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-}
-
-let currentStep = 1;
-let selectedType = null;
-let fileCount = 0;
-
-const typeLabels = {cni:'CNI',passport:'Passeport',permis:'Permis de conduire',diplome:'Diplôme',naissance:'Acte de naissance',autre:'Autre document'};
-
-function openModal(){
-  resetModal();
-  document.getElementById('add-modal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(){
-  document.getElementById('add-modal').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-function resetModal(){
-  currentStep = 1; selectedType = null; fileCount = 0;
-  ['step-1','step-2','step-3','step-success'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-  document.getElementById('step-1').classList.remove('hidden');
-  document.querySelectorAll('.doc-type-btn').forEach(b=>b.classList.remove('selected'));
-  document.getElementById('btn-step1').disabled = true;
-  document.getElementById('step-num').textContent = '1';
-  ['dot-1','dot-2','dot-3'].forEach((id,i)=>{
-    const d = document.getElementById(id);
-    d.className = 'step-dot ' + (i===0?'active':'pending');
-    d.textContent = i+1;
-  });
-  ['line-1','line-2'].forEach(id=>document.getElementById(id).classList.remove('done'));
-  // reset files
-  ['preview-recto','preview-verso'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-  ['placeholder-recto','placeholder-verso'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
-}
-
-function selectType(btn, type){
-  document.querySelectorAll('.doc-type-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  selectedType = type;
-  document.getElementById('btn-step1').disabled = false;
-}
-
-function goStep(n){
-  ['step-1','step-2','step-3'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-  document.getElementById('step-'+n).classList.remove('hidden');
-  document.getElementById('step-num').textContent = n;
-  currentStep = n;
-
-  // update indicators
-  for(let i=1;i<=3;i++){
-    const d = document.getElementById('dot-'+i);
-    if(i<n){d.className='step-dot done';d.innerHTML='<i class="fa-solid fa-check text-[10px]"></i>'}
-    else if(i===n){d.className='step-dot active';d.textContent=i}
-    else{d.className='step-dot pending';d.textContent=i}
-  }
-  for(let i=1;i<=2;i++){
-    document.getElementById('line-'+i).classList.toggle('done',i<n);
-  }
-
-  if(n===3) fillRecap();
-}
-
-function fillRecap(){
-  fileCount = (document.getElementById('file-recto').files.length + document.getElementById('file-verso').files.length);
-  document.getElementById('recap-type').textContent = typeLabels[selectedType] || '—';
-  document.getElementById('recap-number').textContent = document.getElementById('doc-number').value || '—';
-  const expiry = document.getElementById('doc-expiry').value;
-  document.getElementById('recap-expiry').textContent = expiry ? new Date(expiry).toLocaleDateString('fr-FR') : 'Aucune';
-  document.getElementById('recap-files').textContent = fileCount + ' fichier(s)';
-}
-
-function submitDocument(){
-  if(!document.getElementById('consent').checked){
-    alert('Veuillez accepter les conditions pour continuer.');return;
-  }
-  const wrap = document.getElementById('upload-progress-wrap');
-  const bar = document.getElementById('upload-bar');
-  const pct = document.getElementById('progress-pct');
-  const btn = document.getElementById('submit-btn');
-  wrap.classList.remove('hidden');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[13px]"></i> Envoi en cours…';
-  let p = 0;
-  const iv = setInterval(()=>{
-    p += Math.random()*12 + 4;
-    if(p>=100){p=100;clearInterval(iv);
-      setTimeout(()=>{
-        document.getElementById('step-3').classList.add('hidden');
-        document.getElementById('step-success').classList.remove('hidden');
-        ['dot-1','dot-2','dot-3'].forEach(id=>{const d=document.getElementById(id);d.className='step-dot done';d.innerHTML='<i class="fa-solid fa-check text-[10px]"></i>'});
-        document.getElementById('line-1').classList.add('done');
-        document.getElementById('line-2').classList.add('done');
-      },400);
+  <script>
+    function openSb() {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('overlay').classList.add('show');
     }
-    bar.style.width = p + '%';
-    pct.textContent = Math.round(p) + '%';
-  },180);
-}
+    function closeSb() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('show');
+    }
 
-function onDragOver(e,id){e.preventDefault();document.getElementById(id).classList.add('drag-over')}
-function onDragLeave(id){document.getElementById(id).classList.remove('drag-over')}
-function onDrop(e,id,preview){
-  e.preventDefault();document.getElementById(id).classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if(file) showPreview(file,preview,id);
-}
-function onFileSelect(input,preview,zone){
-  if(input.files[0]) showPreview(input.files[0],preview,zone);
-}
-function showPreview(file,previewId,zoneId){
-  const p = document.getElementById(previewId);
-  const placeholder = document.getElementById(previewId.replace('preview','placeholder'));
-  if(file.type.startsWith('image/')){
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = document.getElementById('img-'+previewId.split('-')[1]);
-      if(img) img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-  p.classList.remove('hidden');
-  placeholder.classList.add('hidden');
-}
+    let currentStep = 1;
+    let selectedType = null;
+    let fileCount = 0;
 
-function filterDocs(btn, cat){
-  document.querySelectorAll('.tab-filter').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('#docs-grid .doc-card').forEach(card=>{
-    const show = cat==='all' || card.dataset.cat===cat;
-    card.style.display = show ? '' : 'none';
-  });
-}
+    const typeLabels = { cni: 'CNI', passport: 'Passeport', permis: 'Permis de conduire', diplome: 'Diplôme', naissance: 'Acte de naissance', autre: 'Autre document' };
 
-function viewDoc(name){
-  document.getElementById('view-title').textContent = name;
-  document.getElementById('view-modal').classList.remove('hidden');
-}
-function openDeleteModal(name){
-  document.getElementById('delete-doc-name').textContent = name;
-  document.getElementById('delete-modal').classList.remove('hidden');
-}
+    function openModal() {
+      resetModal();
+      document.getElementById('add-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+      document.getElementById('add-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
 
-// Close modals on overlay click
-document.getElementById('add-modal').addEventListener('click',function(e){if(e.target===this)closeModal()});
-document.getElementById('delete-modal').addEventListener('click',function(e){if(e.target===this)this.classList.add('hidden')});
-document.getElementById('view-modal').addEventListener('click',function(e){if(e.target===this)this.classList.add('hidden')});
-</script>
+    function resetModal() {
+      currentStep = 1; selectedType = null; fileCount = 0;
+      ['step-1', 'step-2', 'step-3', 'step-success'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      document.getElementById('step-1').classList.remove('hidden');
+      document.querySelectorAll('.doc-type-btn').forEach(b => b.classList.remove('selected'));
+      document.getElementById('btn-step1').disabled = true;
+      document.getElementById('step-num').textContent = '1';
+      ['dot-1', 'dot-2', 'dot-3'].forEach((id, i) => {
+        const d = document.getElementById(id);
+        d.className = 'step-dot ' + (i === 0 ? 'active' : 'pending');
+        d.textContent = i + 1;
+      });
+      ['line-1', 'line-2'].forEach(id => document.getElementById(id).classList.remove('done'));
+      // reset files
+      ['preview-recto', 'preview-verso'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      ['placeholder-recto', 'placeholder-verso'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+    }
+
+    function selectType(btn, type) {
+      document.querySelectorAll('.doc-type-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedType = type;
+      document.getElementById('btn-step1').disabled = false;
+    }
+
+    function goStep(n) {
+      ['step-1', 'step-2', 'step-3'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      document.getElementById('step-' + n).classList.remove('hidden');
+      document.getElementById('step-num').textContent = n;
+      currentStep = n;
+
+      // update indicators
+      for (let i = 1; i <= 3; i++) {
+        const d = document.getElementById('dot-' + i);
+        if (i < n) { d.className = 'step-dot done'; d.innerHTML = '<i class="fa-solid fa-check text-[10px]"></i>' }
+        else if (i === n) { d.className = 'step-dot active'; d.textContent = i }
+        else { d.className = 'step-dot pending'; d.textContent = i }
+      }
+      for (let i = 1; i <= 2; i++) {
+        document.getElementById('line-' + i).classList.toggle('done', i < n);
+      }
+
+      if (n === 3) fillRecap();
+    }
+
+    function fillRecap() {
+      fileCount = (document.getElementById('file-recto').files.length + document.getElementById('file-verso').files.length);
+      document.getElementById('recap-type').textContent = typeLabels[selectedType] || '—';
+      document.getElementById('recap-number').textContent = document.getElementById('doc-number').value || '—';
+      const expiry = document.getElementById('doc-expiry').value;
+      document.getElementById('recap-expiry').textContent = expiry ? new Date(expiry).toLocaleDateString('fr-FR') : 'Aucune';
+      document.getElementById('recap-files').textContent = fileCount + ' fichier(s)';
+    }
+
+    function submitDocument() {
+      if (!document.getElementById('consent').checked) {
+        alert('Veuillez accepter les conditions pour continuer.'); return;
+      }
+      const wrap = document.getElementById('upload-progress-wrap');
+      const bar = document.getElementById('upload-bar');
+      const pct = document.getElementById('progress-pct');
+      const btn = document.getElementById('submit-btn');
+      wrap.classList.remove('hidden');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[13px]"></i> Envoi en cours…';
+      let p = 0;
+      const iv = setInterval(() => {
+        p += Math.random() * 12 + 4;
+        if (p >= 100) {
+          p = 100; clearInterval(iv);
+          setTimeout(() => {
+            document.getElementById('step-3').classList.add('hidden');
+            document.getElementById('step-success').classList.remove('hidden');
+            ['dot-1', 'dot-2', 'dot-3'].forEach(id => { const d = document.getElementById(id); d.className = 'step-dot done'; d.innerHTML = '<i class="fa-solid fa-check text-[10px]"></i>' });
+            document.getElementById('line-1').classList.add('done');
+            document.getElementById('line-2').classList.add('done');
+          }, 400);
+        }
+        bar.style.width = p + '%';
+        pct.textContent = Math.round(p) + '%';
+      }, 180);
+    }
+
+    function onDragOver(e, id) { e.preventDefault(); document.getElementById(id).classList.add('drag-over') }
+    function onDragLeave(id) { document.getElementById(id).classList.remove('drag-over') }
+    function onDrop(e, id, preview) {
+      e.preventDefault(); document.getElementById(id).classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) showPreview(file, preview, id);
+    }
+    function onFileSelect(input, preview, zone) {
+      if (input.files[0]) showPreview(input.files[0], preview, zone);
+    }
+    function showPreview(file, previewId, zoneId) {
+      const p = document.getElementById(previewId);
+      const placeholder = document.getElementById(previewId.replace('preview', 'placeholder'));
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.getElementById('img-' + previewId.split('-')[1]);
+          if (img) img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+      p.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+    }
+
+    function filterDocs(btn, cat) {
+      document.querySelectorAll('.tab-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('#docs-grid .doc-card').forEach(card => {
+        const show = cat === 'all' || card.dataset.cat === cat;
+        card.style.display = show ? '' : 'none';
+      });
+    }
+
+    function viewDoc(name) {
+      document.getElementById('view-title').textContent = name;
+      document.getElementById('view-modal').classList.remove('hidden');
+    }
+    function openDeleteModal(name) {
+      document.getElementById('delete-doc-name').textContent = name;
+      document.getElementById('delete-modal').classList.remove('hidden');
+    }
+
+    // Close modals on overlay click
+    document.getElementById('add-modal').addEventListener('click', function (e) { if (e.target === this) closeModal() });
+    document.getElementById('delete-modal').addEventListener('click', function (e) { if (e.target === this) this.classList.add('hidden') });
+    document.getElementById('view-modal').addEventListener('click', function (e) { if (e.target === this) this.classList.add('hidden') });
+  </script>
 </body>
+
 </html>
