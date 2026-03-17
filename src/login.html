@@ -239,7 +239,7 @@
         <div class="auth-form flex-col gap-4 form-register" id="form-register">
           <!-- Step header -->
           <div class="mb-1">
-            <h1 class="font-bricolage text-[23px] font-extrabold text-textMain tracking-tight mb-[3px]" id="m-step-title">Créer un compte ✨</h1>
+            <h1 class="font-bricolage text-[23px] font-extrabold text-textMain tracking-tight mb-[3px]" id="m-step-title">Créer un compte</h1>
             <p class="text-[13px] text-textMuted font-medium italic" id="m-step-subtitle">Rejoignez la communauté DocMaster</p>
           </div>
 
@@ -417,7 +417,7 @@
                   <i class="fa-solid fa-link absolute left-3.5 text-[#c4bab0] text-[13px] pointer-events-none group-focus-within:text-primary"></i>
                   <input type="text" id="m-referral" placeholder="Code ou lien de parrainage" class="field-input field-input-mobile" />
                 </div>
-                <p class="text-[11.5px] text-textMuted">✨ Votre parrain recevra une récompense et vous bénéficierez de <span class="font-semibold text-primary">3 déclarations gratuites</span>.</p>
+                <p class="text-[11.5px] text-textMuted">Votre parrain recevra une récompense et vous bénéficierez de <span class="font-semibold text-primary">3 déclarations gratuites</span>.</p>
               </div>
             </div>
 
@@ -723,7 +723,7 @@
                     <i class="fa-solid fa-link absolute left-3.5 text-[#c4bab0] text-[13px] pointer-events-none group-focus-within:text-primary"></i>
                     <input type="text" id="d-referral" placeholder="Code ou lien de parrainage" class="field-input field-input-desktop" />
                   </div>
-                  <p class="text-[11.5px] text-textMuted">✨ Votre parrain recevra une récompense et vous bénéficierez de <span class="font-semibold text-primary">3 déclarations gratuites</span>.</p>
+                  <p class="text-[11.5px] text-textMuted">Votre parrain recevra une récompense et vous bénéficierez de <span class="font-semibold text-primary">3 déclarations gratuites</span>.</p>
                 </div>
               </div>
 
@@ -742,10 +742,10 @@
        STEP CONFIG
     ════════════════════════════════════════ */
     const STEP_META = {
-      1: { title: 'Créer un compte ✨', subtitle: 'Vos informations personnelles', dtitle: 'Créer un compte', dsubtitle: 'Vos informations personnelles' },
-      2: { title: 'Sécurisez votre compte 🔐', subtitle: 'Confirmez votre mot de passe', dtitle: 'Validation du mot de passe', dsubtitle: 'Confirmez votre mot de passe' },
-      3: { title: 'Vérification 📱', subtitle: 'Entrez le code reçu par SMS', dtitle: 'Confirmation par code PIN', dsubtitle: 'Entrez le code reçu par SMS' },
-      4: { title: 'Votre pseudo 🎭', subtitle: 'Choisissez comment vous appeler', dtitle: 'Attribution du pseudo', dsubtitle: 'Comment la communauté vous appellera' },
+      1: { title: 'Créer un compte', subtitle: 'Vos informations personnelles', dtitle: 'Créer un compte', dsubtitle: 'Vos informations personnelles' },
+      2: { title: 'Sécurisez votre compte', subtitle: 'Confirmez votre mot de passe', dtitle: 'Validation du mot de passe', dsubtitle: 'Confirmez votre mot de passe' },
+      3: { title: 'Vérification', subtitle: 'Entrez le code reçu par SMS', dtitle: 'Confirmation par code PIN', dsubtitle: 'Entrez le code reçu par SMS' },
+      4: { title: 'Votre pseudo', subtitle: 'Choisissez comment vous appeler', dtitle: 'Attribution du pseudo', dsubtitle: 'Comment la communauté vous appellera' },
     };
 
     let currentStep = { m: 1, d: 1 };
@@ -972,8 +972,8 @@
       const referralInput = document.getElementById(prefix + '-referral');
       const referral = referralInput ? referralInput.value.trim() : '';
       const msg = referral
-        ? '🎉 Compte créé avec succès ! Bienvenue, @' + pseudo.value + '\n🤝 Code parrainage appliqué : ' + referral
-        : '🎉 Compte créé avec succès ! Bienvenue sur DocMaster, @' + pseudo.value;
+        ? 'Compte créé avec succès ! Bienvenue, @' + pseudo.value + '\nCode parrainage appliqué : ' + referral
+        : 'Compte créé avec succès ! Bienvenue sur DocMaster, @' + pseudo.value;
       alert(msg);
     }
 

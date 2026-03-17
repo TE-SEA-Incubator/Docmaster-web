@@ -56,7 +56,7 @@ const SIDEBAR_NAV = {
       label: "Abonnement",
     },
     {
-      href: "parrainage.html",
+      href: "parrainage.html?v=20260317",
       icon: "fa-users-gear",
       label: "Parrainage",
     },
@@ -81,7 +81,9 @@ function _sbCurrentPage() {
 
 function _sbIsActive(href) {
   if (href === "#") return false;
-  return href.split("/").pop() === _sbCurrentPage();
+  const current = _sbCurrentPage();
+  const normalized = href.split("/").pop().split("?")[0].split("#")[0];
+  return normalized === current;
 }
 
 // ── Génération d'un lien nav ─────────────────────────────────────────────────
@@ -168,18 +170,37 @@ function _sbRender() {
 
 // ── Helpers mobile open/close (exposés globalement dès le chargement) ────────
 function openSb() {
-  const sb = document.getElementById("sidebar");
-  const ov = document.getElementById("overlay");
-  if (sb) sb.classList.add("open");
-  if (ov) ov.classList.add("show");
+  _sbSetState(true);
 }
 
 function closeSb() {
+  _sbSetState(false);
+}
+
+function toggleSb() {
+  const sb = document.getElementById("sidebar");
+  if (!sb) return;
+  const isOpen = sb.classList.contains("open") && !sb.classList.contains("closed");
+  _sbSetState(!isOpen);
+}
+
+function _sbSetState(isOpen) {
   const sb = document.getElementById("sidebar");
   const ov = document.getElementById("overlay");
-  if (sb) sb.classList.remove("open");
-  if (ov) ov.classList.remove("show");
+  if (!sb) return;
+
+  sb.classList.toggle("open", isOpen);
+  sb.classList.toggle("closed", !isOpen);
+
+  if (ov) {
+    if (window.innerWidth < 900 && isOpen) ov.classList.add("show");
+    else ov.classList.remove("show");
+  }
 }
+
+window.openSb = openSb;
+window.closeSb = closeSb;
+window.toggleSb = toggleSb;
 
 // ── Injection dans le DOM + listeners (après que le DOM est prêt) ─────────────
 document.addEventListener("DOMContentLoaded", function () {
@@ -188,6 +209,31 @@ document.addEventListener("DOMContentLoaded", function () {
   if (root) {
     root.outerHTML = _sbRender();
   }
+
+  const style = document.createElement("style");
+  style.id = "sb-desktop-slide-style";
+  style.textContent = `
+    @media (min-width: 900px) {
+      .sidebar {
+        transition: transform .28s cubic-bezier(.4,0,.2,1), width .28s cubic-bezier(.4,0,.2,1) !important;
+      }
+      .sidebar.open {
+        width: var(--sidebar,260px) !important;
+        transform: translateX(0) !important;
+      }
+      .sidebar.closed {
+        width: 0 !important;
+        min-width: 0 !important;
+        transform: translateX(-100%) !important;
+        overflow: hidden !important;
+      }
+    }
+  `;
+  if (!document.getElementById("sb-desktop-slide-style")) {
+    document.head.appendChild(style);
+  }
+
+  _sbSetState(window.innerWidth >= 900);
 
   // 2. Hydratation depuis la session auth (auth.js a déjà lu le localStorage
   //    mais les éléments n'existaient pas encore — on les remplit ici)
@@ -227,5 +273,16 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
       if (typeof logout === "function") logout();
     });
+  });
+
+  window.addEventListener("resize", function () {
+    if (window.innerWidth >= 900) {
+      const sb = document.getElementById("sidebar");
+      if (sb && !sb.classList.contains("open") && !sb.classList.contains("closed")) {
+        _sbSetState(true);
+      }
+    } else {
+      closeSb();
+    }
   });
 });

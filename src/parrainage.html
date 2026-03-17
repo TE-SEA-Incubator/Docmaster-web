@@ -9,8 +9,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="./js/auth.js"></script>
 <script src="./js/sidebar.js"></script>
-     <link href="css/output.css" rel="stylesheet" />
-
+<link href="css/output.css" rel="stylesheet" />
 <link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
 
 <script>
@@ -28,7 +27,9 @@ tailwind.config = {
   }
 }
 </script>
+
 <style>
+/* ── Layout ── */
 :root{--sidebar:260px}
 html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:50;overflow-y:auto}
@@ -49,20 +50,70 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
 .sb-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:55%;background:#F5A64B;border-radius:0 3px 3px 0}
 .custom-scroll::-webkit-scrollbar{width:4px}
 .custom-scroll::-webkit-scrollbar-thumb{background:#DDD5C8;border-radius:10px}
+
+/* ── Utilitaires ── */
 .copy-btn:active{transform:scale(.95)}
 .shimmer{background:linear-gradient(90deg,#f5a64b10 0%,#f5a64b30 50%,#f5a64b10 100%);background-size:200%;animation:shimmer 2s infinite}
 @keyframes shimmer{0%{background-position:200%}100%{background-position:-200%}}
 .step-line::after{content:'';position:absolute;top:50%;left:100%;width:100%;height:2px;background:linear-gradient(90deg,#EAE3D8,transparent);transform:translateY(-50%)}
+
+/* ── Bottom Sheet ── */
+.sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:100;pointer-events:none;transition:background .32s ease,backdrop-filter .32s;backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px)}
+.sheet-backdrop.active{background:rgba(0,0,0,.48);pointer-events:all;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;z-index:110;background:#fff;border-radius:24px 24px 0 0;max-height:82vh;display:flex;flex-direction:column;transform:translateY(110%);transition:transform .4s cubic-bezier(.32,0,.15,1);box-shadow:0 -8px 40px rgba(0,0,0,.13)}
+.bottom-sheet.open{transform:translateY(0)}
+.sheet-handle{width:40px;height:4px;border-radius:99px;background:#EAE3D8;margin:12px auto 4px;flex-shrink:0}
+.sheet-body{overflow-y:auto;flex:1;padding-bottom:env(safe-area-inset-bottom,16px)}
+.sheet-body::-webkit-scrollbar{width:3px}
+.sheet-body::-webkit-scrollbar-thumb{background:#EAE3D8;border-radius:8px}
+
+/* ── Carte déclencheur ── */
+.trigger-card{transition:all .2s;cursor:pointer}
+.trigger-card:hover{border-color:#F5A64B!important;transform:translateY(-1px);box-shadow:0 4px 20px rgba(245,166,75,.15)}
+.trigger-card:active{transform:translateY(0);box-shadow:none}
+
+/* ── Amis ── */
+.friend-row{transition:background .15s}
+.friend-row:hover{background:#FAF7F2}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(245,166,75,.4)}70%{box-shadow:0 0 0 8px rgba(245,166,75,0)}100%{box-shadow:0 0 0 0 rgba(245,166,75,0)}}
+.avatar-active{animation:pulseRing 2s infinite}
+.avatar-stack>div{transition:transform .15s}
+.avatar-stack:hover>div{transform:translateX(4px)!important}
+.avatar-stack:hover>div:nth-child(1){transform:translateX(0)!important}
+.status-dot{width:8px;height:8px;border-radius:50%;border:2px solid #fff}
+.status-dot.active{background:#2D5A42}
+.status-dot.inactive{background:#D1D5DB}
+
+/* ── Drag ── */
+.drag-zone{cursor:grab;user-select:none}
+.drag-zone:active{cursor:grabbing}
+
+/* ── Search + Filter ── */
+.search-input{transition:border .15s,box-shadow .15s}
+.search-input:focus{outline:none;border-color:#F5A64B!important;box-shadow:0 0 0 3px rgba(245,166,75,.12)}
+.filter-pill{transition:all .15s;cursor:pointer}
+.filter-pill.active{background:#F5A64B;color:#fff;border-color:#F5A64B}
+
+/* ── Misc ── */
+.stat-badge{background:#F4EFE6}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
-<!-- Sidebar composant (généré par sidebar.js) -->
+
+<!-- Sidebar (généré par sidebar.js) -->
 <div id="sidebar-root"></div>
-<!-- MAIN -->
+
+<!-- ══════════════════════════════════════
+     MAIN WRAPPER
+══════════════════════════════════════ -->
 <div class="main-wrapper" id="mainWrapper">
+
   <!-- Topbar -->
   <header class="sticky top-0 z-30 h-[58px] bg-white border-b border-borderMain flex items-center px-4 gap-3 flex-shrink-0">
-    <button class="w-9 h-9 flex items-center justify-center rounded-[9px] bg-surface2 border border-borderMain text-textMain text-base cursor-pointer hover:border-primary hover:text-primary transition-all md:hidden" onclick="openSb()"><i class="fa-solid fa-bars"></i></button>
+    <button class="w-9 h-9 flex items-center justify-center rounded-[9px] bg-surface2 border border-borderMain text-textMain text-base cursor-pointer hover:border-primary hover:text-primary transition-all" onclick="toggleSb()">
+      <i class="fa-solid fa-bars"></i>
+    </button>
     <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Parrainage</span>
     <div class="ml-auto flex items-center gap-2">
       <div class="relative w-9 h-9 rounded-[9px] bg-surface2 border border-borderMain flex items-center justify-center text-sm text-textMain cursor-pointer hover:border-primary hover:text-primary transition-all">
@@ -76,13 +127,13 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
     </div>
   </header>
 
-  <!-- Content -->
+  <!-- ── CONTENU PRINCIPAL ── -->
   <div class="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-10">
 
     <!-- Greeting -->
     <div class="flex items-start justify-between gap-3 flex-wrap">
       <div>
-        <h1 class="font-bricolage text-xl sm:text-2xl font-extrabold text-textMain tracking-tight leading-tight">Bonjour, <span id="helloName">Jean-Marc</span> </h1>
+        <h1 class="font-bricolage text-xl sm:text-2xl font-extrabold text-textMain tracking-tight leading-tight">Bonjour, <span id="helloName">Jean-Marc</span></h1>
         <p class="text-[12.5px] sm:text-[13.5px] text-textMuted font-medium mt-0.5 italic">Suivez votre programme de parrainage</p>
       </div>
       <div class="text-[11.5px] text-textMuted font-medium bg-white border border-borderMain px-3 py-1.5 rounded-[9px] flex items-center gap-2 whitespace-nowrap">
@@ -91,8 +142,8 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       </div>
     </div>
 
-    <!-- Hero Banner -->
-    <div class="relative bg-green-dark rounded-[20px] sm:rounded-[24px] overflow-hidden p-6 sm:p-8">
+    <!-- ── Hero Banner ── -->
+    <div class="relative bg-green-dark rounded-[20px] sm:rounded-[24px] overflow-hidden p-6 sm:p-8 min-h-[180px]">
       <div class="absolute inset-0 pointer-events-none">
         <div class="absolute w-64 h-64 rounded-full bg-primary/8 -top-16 -right-16"></div>
         <div class="absolute w-40 h-40 rounded-full bg-primary/5 bottom-0 left-8"></div>
@@ -103,14 +154,17 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
             <i class="fa-solid fa-gift text-primary text-[10px]"></i>
             <span class="text-[11px] font-bold text-primary uppercase tracking-wide">Programme de parrainage</span>
           </div>
-          <h1 class="font-bricolage text-2xl sm:text-3xl font-extrabold text-white leading-tight mb-2">Parrainez et gagnez<br class="hidden sm:block"> ensemble 🎉</h1>
-          <p class="text-white/60 text-[14px] leading-relaxed">Invitez vos proches sur DocMaster. Pour chaque parrainage validé, vous et votre filleul recevez des avantages exclusifs.</p>
+          <h1 class="font-bricolage text-2xl sm:text-3xl font-extrabold text-white leading-tight mb-2">
+            Parrainez et gagnez<br class="hidden sm:block"> ensemble
+            <i class="fa-solid fa-sparkles text-primary text-xl align-middle ml-1" aria-hidden="true"></i>
+          </h1>
+          <p class="text-white/80 text-[14px] leading-relaxed max-w-[560px]">Invitez vos proches sur DocMaster. Pour chaque parrainage validé, vous et votre filleul recevez des avantages exclusifs.</p>
         </div>
         <div class="bg-white/8 border border-white/10 rounded-[18px] p-5 flex-shrink-0 text-center min-w-[160px]">
           <div class="text-[42px] font-bricolage font-extrabold text-primary leading-none">7</div>
           <div class="text-white/60 text-[12px] font-medium mt-1">Filleuls actifs</div>
-          <div class="mt-3 flex items-center justify-center gap-1">
-            <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[9px] font-bold text-white -ml-1 first:ml-0 border-2 border-green-dark">A</div>
+          <div class="mt-3 flex items-center justify-center">
+            <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[9px] font-bold text-white border-2 border-green-dark">A</div>
             <div class="w-6 h-6 rounded-full bg-blue-400 flex items-center justify-center text-[9px] font-bold text-white -ml-1 border-2 border-green-dark">B</div>
             <div class="w-6 h-6 rounded-full bg-purple-400 flex items-center justify-center text-[9px] font-bold text-white -ml-1 border-2 border-green-dark">C</div>
             <div class="w-6 h-6 rounded-full bg-green-mid flex items-center justify-center text-[9px] font-bold text-white -ml-1 border-2 border-green-dark">+4</div>
@@ -119,7 +173,7 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       </div>
     </div>
 
-    <!-- Code + Stats row -->
+    <!-- ── Code + Stats ── -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
       <!-- Mon code -->
@@ -127,15 +181,15 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
         <p class="text-[11px] font-bold text-textMuted uppercase tracking-widest mb-3">Mon code de parrainage</p>
         <div class="flex items-center gap-2 bg-bgMain border border-borderMain rounded-[12px] px-4 py-3 mb-3">
           <span class="font-bricolage text-2xl font-extrabold text-textMain tracking-widest flex-1" id="ref-code">DOC-JM2024</span>
-          <button onclick="copyCode()" data-loading-text="Copie..." class="copy-btn flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-[12px] font-bold rounded-[8px] transition-all hover:bg-primary-dark" id="copy-btn">
+          <button onclick="copyCode()" class="copy-btn flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-[12px] font-bold rounded-[8px] transition-all hover:bg-primary-dark" id="copy-btn">
             <i class="fa-regular fa-copy text-[11px]"></i> Copier
           </button>
         </div>
         <div class="flex gap-2">
-          <button onclick="shareCode('whatsapp')" data-loading-text="Partage..." class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#25D366]/10 border border-[#25D366]/20 text-[#1a9e4e] text-[12.5px] font-bold rounded-[10px] hover:bg-[#25D366]/20 transition-colors">
+          <button onclick="shareCode('whatsapp')" class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#25D366]/10 border border-[#25D366]/20 text-[#1a9e4e] text-[12.5px] font-bold rounded-[10px] hover:bg-[#25D366]/20 transition-colors">
             <i class="fa-brands fa-whatsapp text-base"></i> WhatsApp
           </button>
-          <button onclick="shareCode('sms')" data-loading-text="Partage..." class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-50 border border-blue-100 text-blue-700 text-[12.5px] font-bold rounded-[10px] hover:bg-blue-100 transition-colors">
+          <button onclick="shareCode('sms')" class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-50 border border-blue-100 text-blue-700 text-[12.5px] font-bold rounded-[10px] hover:bg-blue-100 transition-colors">
             <i class="fa-solid fa-message text-base"></i> SMS
           </button>
           <button onclick="shareCode('copy-link')" class="flex items-center justify-center w-10 py-2.5 bg-surface2 border border-borderMain text-textMuted rounded-[10px] hover:border-primary hover:text-primary transition-colors">
@@ -144,7 +198,7 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
         </div>
       </div>
 
-      <!-- Stat: Total gagné -->
+      <!-- Gains cumulés -->
       <div class="bg-white border border-borderMain rounded-[18px] p-5 flex flex-col gap-3">
         <div class="flex items-center justify-between">
           <div class="w-10 h-10 rounded-[11px] bg-primary/10 flex items-center justify-center">
@@ -162,7 +216,7 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
         <div class="text-[11.5px] text-textMuted">Prochain palier : <span class="font-bold text-textMain">5 000 XAF</span></div>
       </div>
 
-      <!-- Stat: avantages offerts -->
+      <!-- Slots bonus -->
       <div class="bg-white border border-borderMain rounded-[18px] p-5 flex flex-col gap-3">
         <div class="flex items-center justify-between">
           <div class="w-10 h-10 rounded-[11px] bg-green-light flex items-center justify-center">
@@ -181,14 +235,14 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       </div>
     </div>
 
-    <!-- Comment ça marche -->
+    <!-- ── Comment ça marche ── -->
     <div class="bg-white border border-borderMain rounded-[20px] p-5 sm:p-6">
       <h2 class="font-bricolage text-lg font-bold text-textMain mb-5 flex items-center gap-2">
         <i class="fa-solid fa-circle-question text-primary text-base"></i>
         Comment ça marche ?
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-0 relative">
-        <!-- Step 1 -->
+        <!-- Étape 1 -->
         <div class="flex sm:flex-col items-start sm:items-center gap-4 sm:gap-3 sm:text-center relative sm:px-4">
           <div class="w-12 h-12 rounded-2xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-share-nodes text-primary text-lg"></i>
@@ -201,7 +255,7 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
             <div class="text-[12.5px] text-textMuted leading-snug">Envoyez votre code à un ami via WhatsApp, SMS ou lien direct.</div>
           </div>
         </div>
-        <!-- Step 2 -->
+        <!-- Étape 2 -->
         <div class="flex sm:flex-col items-start sm:items-center gap-4 sm:gap-3 sm:text-center relative sm:px-4">
           <div class="w-12 h-12 rounded-2xl bg-green-light border-2 border-green-dark/20 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-user-plus text-green-mid text-lg"></i>
@@ -214,7 +268,7 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
             <div class="text-[12.5px] text-textMuted leading-snug">Votre filleul crée son compte avec votre code et effectue son 1er enregistrement.</div>
           </div>
         </div>
-        <!-- Step 3 -->
+        <!-- Étape 3 -->
         <div class="flex sm:flex-col items-start sm:items-center gap-4 sm:gap-3 sm:text-center sm:px-4">
           <div class="w-12 h-12 rounded-2xl bg-amber-50 border-2 border-amber-200 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-trophy text-amber-500 text-lg"></i>
@@ -228,10 +282,13 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       </div>
     </div>
 
-    <!-- Récompenses -->
+    <!-- ── Récompenses ── -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Vos récompenses -->
       <div class="bg-white border border-borderMain rounded-[18px] p-5">
-        <h3 class="font-bricolage text-base font-bold text-textMain mb-4 flex items-center gap-2"><i class="fa-solid fa-medal text-primary text-sm"></i>Vos récompenses</h3>
+        <h3 class="font-bricolage text-base font-bold text-textMain mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-medal text-primary text-sm"></i>Vos récompenses
+        </h3>
         <div class="space-y-3">
           <div class="flex items-center justify-between py-2.5 border-b border-borderMain">
             <div class="flex items-center gap-3">
@@ -260,7 +317,9 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       <!-- Cadeau filleul -->
       <div class="bg-green-dark rounded-[18px] p-5 relative overflow-hidden">
         <div class="absolute w-40 h-40 rounded-full bg-primary/8 -bottom-10 -right-10 pointer-events-none"></div>
-        <h3 class="font-bricolage text-base font-bold text-white mb-1 flex items-center gap-2 relative z-10"><i class="fa-solid fa-gift text-primary text-sm"></i>Cadeau pour votre filleul</h3>
+        <h3 class="font-bricolage text-base font-bold text-white mb-1 flex items-center gap-2 relative z-10">
+          <i class="fa-solid fa-gift text-primary text-sm"></i>Cadeau pour votre filleul
+        </h3>
         <p class="text-white/50 text-[12px] mb-4 relative z-10">Ce que reçoit chaque personne que vous parrainez</p>
         <div class="space-y-3 relative z-10">
           <div class="flex items-center gap-3">
@@ -279,70 +338,79 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       </div>
     </div>
 
-    <!-- Historique des filleuls -->
-    <div class="bg-white border border-borderMain rounded-[20px] overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-borderMain">
-        <h2 class="font-bricolage text-base font-bold text-textMain flex items-center gap-2">
-          <i class="fa-solid fa-users text-primary text-sm"></i>Mes filleuls (7)
-        </h2>
-        <span class="text-[11.5px] font-semibold text-primary cursor-pointer hover:underline">Tout voir →</span>
-      </div>
-      <div class="divide-y divide-borderMain">
-        <!-- items -->
-        <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors cursor-default" onclick="void(0)">
-          <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-bricolage text-[13px] font-bold text-blue-700 flex-shrink-0">AM</div>
-          <div class="flex-1 min-w-0">
-            <div class="text-[13.5px] font-semibold text-textMain">Alice Mbang</div>
-            <div class="text-[11.5px] text-textMuted italic">Inscrite le 12 jan. 2024</div>
+    <!-- ══════════════════════════════════
+         CERCLE D'AMIS — CARTE DÉCLENCHEUR
+    ═══════════════════════════════════ -->
+    <div class="trigger-card bg-white border border-borderMain rounded-[20px] overflow-hidden" onclick="openSheet()">
+      <div class="px-5 pt-5 pb-4">
+
+        <!-- Titre + badge actifs -->
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-[10px] bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-users text-primary text-sm"></i>
+            </div>
+            <div>
+              <h2 class="font-bricolage text-[15px] font-bold text-textMain leading-none">Cercle d'amis</h2>
+              <p class="text-[11px] text-textMuted font-medium mt-0.5">Vos filleuls parrainés</p>
+            </div>
           </div>
-          <div class="text-right flex-shrink-0">
-            <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-700">Validé</span>
-            <div class="text-[11px] text-primary font-bold mt-1">+500 XAF</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors cursor-default">
-          <div class="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center font-bricolage text-[13px] font-bold text-purple-700 flex-shrink-0">PN</div>
-          <div class="flex-1 min-w-0">
-            <div class="text-[13.5px] font-semibold text-textMain">Paul Nkeng</div>
-            <div class="text-[11.5px] text-textMuted italic">Inscrit le 28 jan. 2024</div>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-700">Validé</span>
-            <div class="text-[11px] text-primary font-bold mt-1">+500 XAF</div>
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 bg-green-light border border-green-dark/10 rounded-full px-3 py-1">
+              <i class="fa-solid fa-circle text-green-mid text-[7px]"></i>
+              <span class="text-[12px] font-bold text-green-mid" id="active-count">0 actifs</span>
+            </div>
+            <div class="w-8 h-8 rounded-[9px] bg-surface2 border border-borderMain flex items-center justify-center text-textMuted">
+              <i class="fa-solid fa-chevron-up text-[11px]"></i>
+            </div>
           </div>
         </div>
-        <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors cursor-default">
-          <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center font-bricolage text-[13px] font-bold text-amber-700 flex-shrink-0">FB</div>
-          <div class="flex-1 min-w-0">
-            <div class="text-[13.5px] font-semibold text-textMain">Fatima Bello</div>
-            <div class="text-[11.5px] text-textMuted italic">Inscrite le 3 fév. 2024</div>
+
+        <!-- Mini stats -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="stat-badge rounded-[11px] p-3 text-center">
+            <div class="font-bricolage text-xl font-extrabold text-textMain" id="stat-total">0</div>
+            <div class="text-[10.5px] text-textMuted font-medium mt-0.5">Total</div>
           </div>
-          <div class="text-right flex-shrink-0">
-            <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">En attente</span>
-            <div class="text-[11px] text-textMuted font-medium mt-1">1ère déclaration requise</div>
+          <div class="stat-badge rounded-[11px] p-3 text-center">
+            <div class="font-bricolage text-xl font-extrabold text-primary" id="stat-cash">0</div>
+            <div class="text-[10.5px] text-textMuted font-medium mt-0.5">XAF gagnés</div>
+          </div>
+          <div class="stat-badge rounded-[11px] p-3 text-center">
+            <div class="font-bricolage text-xl font-extrabold text-green-mid" id="stat-slots">+0</div>
+            <div class="text-[10.5px] text-textMuted font-medium mt-0.5">Slots bonus</div>
           </div>
         </div>
-        <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors cursor-default">
-          <div class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center font-bricolage text-[13px] font-bold text-green-700 flex-shrink-0">KE</div>
-          <div class="flex-1 min-w-0">
-            <div class="text-[13.5px] font-semibold text-textMain">Kevin Essomba</div>
-            <div class="text-[11.5px] text-textMuted italic">Inscrit le 15 fév. 2024</div>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <span class="text-[10.5px] font-bold px-2.5 py-1 rounded-full bg-green-100 text-green-700">Validé</span>
-            <div class="text-[11px] text-primary font-bold mt-1">+500 XAF</div>
+
+        <!-- Avatars empilés + CTA -->
+        <div class="flex items-center justify-between">
+          <div class="avatar-stack flex -space-x-2.5" id="avatar-preview"></div>
+          <div class="flex items-center gap-1.5 text-[12px] font-semibold text-primary">
+            <span>Voir tous</span>
+            <i class="fa-solid fa-arrow-up-from-line text-[10px]"></i>
           </div>
         </div>
       </div>
+
+      <!-- Dernière activité -->
+      <div class="bg-bgMain border-t border-borderMain px-5 py-3 flex items-center gap-2.5" id="last-activity"></div>
     </div>
 
-    <!-- Progression vers le palier suivant -->
+    <!-- ── Progression vers le palier Pro ── -->
     <div class="bg-white border border-borderMain rounded-[20px] p-5 sm:p-6">
-      <h2 class="font-bricolage text-base font-bold text-textMain mb-1 flex items-center gap-2"><i class="fa-solid fa-chart-line text-primary text-sm"></i>Progression vers le palier Pro</h2>
+      <h2 class="font-bricolage text-base font-bold text-textMain mb-1 flex items-center gap-2">
+        <i class="fa-solid fa-chart-line text-primary text-sm"></i>Progression vers le palier Pro
+      </h2>
       <p class="text-[12.5px] text-textMuted mb-4 italic">Encore <strong class="text-textMain">3 filleuls</strong> pour débloquer 1 mois de plan Pro offert</p>
       <div class="flex items-center gap-3 mb-5">
         <div class="flex -space-x-2">
-          <div v-for="i in 7" class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold" :class="['bg-primary text-white','bg-blue-400 text-white','bg-purple-400 text-white','bg-green-mid text-white','bg-amber-400 text-white','bg-red-300 text-white','bg-pink-300 text-white'][i-1]">{{ ['A','P','F','K','S','L','R'][i-1] }}</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-primary text-white">A</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-blue-400 text-white">P</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-purple-400 text-white">F</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-green-mid text-white">K</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-amber-400 text-white">S</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-red-300 text-white">L</div>
+          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-pink-300 text-white">R</div>
         </div>
         <div class="flex-1 h-2.5 bg-bgMain rounded-full overflow-hidden border border-borderMain">
           <div class="h-full bg-gradient-to-r from-primary to-primary-dark rounded-full transition-all duration-700" style="width:70%"></div>
@@ -365,10 +433,11 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       </div>
     </div>
 
-  </div><!-- /main-wrapper -->
+  </div><!-- /main-content -->
+</div><!-- /main-wrapper -->
 
-<!-- ══ BOTTOM NAV (mobile only) ══ -->
-<nav class="bottom-nav fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-borderMain px-2 py-2 justify-around flex md:hidden">
+<!-- ══ BOTTOM NAV (mobile) ══ -->
+<nav class="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-borderMain px-2 py-2 justify-around flex md:hidden">
   <a href="dashboard.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
     <i class="fa-solid fa-house text-base"></i>
     <span class="text-[10px] font-medium">Accueil</span>
@@ -392,31 +461,366 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
   </a>
 </nav>
 
+<!-- ══════════════════════════════════════
+     BOTTOM SHEET — CERCLE D'AMIS
+══════════════════════════════════════ -->
+
+<!-- Backdrop -->
+<div class="sheet-backdrop" id="backdrop" onclick="closeSheet()"></div>
+
+<!-- Sheet -->
+<div class="bottom-sheet" id="bottomSheet">
+
+  <!-- Zone drag + header -->
+  <div class="drag-zone flex-shrink-0" id="dragHandle">
+    <div class="sheet-handle"></div>
+
+    <div class="px-5 pb-4 pt-2">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="font-bricolage text-[17px] font-bold text-textMain">Cercle d'amis parrainés</h3>
+          <p class="text-[12px] text-textMuted mt-0.5">
+            <span id="sheet-count">0</span> filleuls ·
+            <span class="text-primary font-semibold" id="sheet-active">0 avec abonnement</span>
+          </p>
+        </div>
+        <button onclick="closeSheet()" class="w-9 h-9 rounded-full bg-surface2 border border-borderMain flex items-center justify-center text-textMuted hover:border-primary hover:text-primary transition-all">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Recherche -->
+      <div class="relative mt-3">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-textMuted text-[12px]"></i>
+        <input id="search-input" type="text" placeholder="Rechercher un filleul…"
+          class="search-input w-full pl-9 pr-4 py-2.5 bg-bgMain border border-borderMain rounded-[11px] text-[13px] text-textMain font-medium placeholder:text-textMuted"
+          oninput="filterFriends()" />
+      </div>
+
+      <!-- Filtres -->
+      <div class="flex gap-2 mt-3 overflow-x-auto pb-1">
+        <button class="filter-pill active flex-shrink-0 text-[11.5px] font-bold px-3 py-1.5 rounded-full border border-borderMain bg-bgMain text-textMuted" onclick="setFilter('all',this)">Tous</button>
+        <button class="filter-pill flex-shrink-0 text-[11.5px] font-bold px-3 py-1.5 rounded-full border border-borderMain bg-bgMain text-textMuted" onclick="setFilter('active',this)">
+          <i class="fa-solid fa-circle text-green-mid text-[7px] mr-1"></i>Abonnés
+        </button>
+        <button class="filter-pill flex-shrink-0 text-[11.5px] font-bold px-3 py-1.5 rounded-full border border-borderMain bg-bgMain text-textMuted" onclick="setFilter('inactive',this)">
+          <i class="fa-solid fa-circle text-gray-300 text-[7px] mr-1"></i>Sans abonnement
+        </button>
+        <button class="filter-pill flex-shrink-0 text-[11.5px] font-bold px-3 py-1.5 rounded-full border border-borderMain bg-bgMain text-textMuted" onclick="setFilter('recent',this)">
+          <i class="fa-regular fa-clock mr-1 text-[10px]"></i>Récents
+        </button>
+      </div>
+    </div>
+
+    <div class="h-px bg-borderMain mx-5"></div>
+  </div>
+
+  <!-- Corps scrollable -->
+  <div class="sheet-body">
+
+    <!-- Résumé récompenses -->
+    <div class="px-5 py-3.5 border-b border-borderMain">
+      <div class="flex items-center gap-4 overflow-x-auto">
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="w-7 h-7 rounded-[7px] bg-primary/10 flex items-center justify-center">
+            <i class="fa-solid fa-coins text-primary text-[10px]"></i>
+          </div>
+          <div>
+            <div class="font-bricolage text-[13px] font-extrabold text-textMain" id="sheet-cash">0 XAF</div>
+            <div class="text-[10px] text-textMuted">Cash total</div>
+          </div>
+        </div>
+        <div class="w-px h-8 bg-borderMain flex-shrink-0"></div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="w-7 h-7 rounded-[7px] bg-green-light flex items-center justify-center">
+            <i class="fa-solid fa-file-circle-plus text-green-mid text-[10px]"></i>
+          </div>
+          <div>
+            <div class="font-bricolage text-[13px] font-extrabold text-textMain" id="sheet-slots">+0 slots</div>
+            <div class="text-[10px] text-textMuted">Bonus</div>
+          </div>
+        </div>
+        <div class="w-px h-8 bg-borderMain flex-shrink-0"></div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="w-7 h-7 rounded-[7px] bg-amber-50 flex items-center justify-center">
+            <i class="fa-solid fa-trophy text-amber-500 text-[10px]"></i>
+          </div>
+          <div>
+            <div class="font-bricolage text-[13px] font-extrabold text-textMain" id="sheet-progress">0 / 10</div>
+            <div class="text-[10px] text-textMuted">Vers Pro</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barre de progression -->
+    <div class="px-5 py-3 border-b border-borderMain">
+      <div class="flex items-center gap-2 mb-1.5">
+        <span class="text-[11.5px] text-textMuted font-medium flex-1">Progression vers le palier Pro</span>
+        <span class="font-bricolage text-[12px] font-bold text-textMain" id="sheet-progress-count">0 / 10</span>
+      </div>
+      <div class="h-2 bg-bgMain rounded-full overflow-hidden border border-borderMain">
+        <div class="h-full bg-gradient-to-r from-primary to-primary-dark rounded-full shimmer" id="sheet-progress-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Liste des filleuls -->
+    <div id="friends-list-sheet"></div>
+
+    <!-- État vide -->
+    <div id="empty-state" class="hidden flex-col items-center justify-center py-12 text-center px-5">
+      <div class="w-14 h-14 rounded-2xl bg-bgMain border border-borderMain flex items-center justify-center mb-3">
+        <i class="fa-solid fa-user-slash text-textMuted text-xl"></i>
+      </div>
+      <p class="text-[14px] font-semibold text-textMain mb-1">Aucun résultat</p>
+      <p class="text-[12px] text-textMuted">Essayez un autre filtre ou recherche</p>
+    </div>
+
+    <!-- CTA -->
+    <div class="px-5 pt-4 pb-6">
+      <button onclick="closeSheet();copyInviteLink()"
+        class="w-full flex items-center justify-center gap-2.5 py-3.5 bg-green-dark text-white text-[13.5px] font-bold rounded-[14px] hover:bg-green-mid transition-colors">
+        <i class="fa-solid fa-user-plus text-sm"></i>
+        Inviter un nouvel ami
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] pointer-events-none opacity-0 transition-all duration-300 translate-y-2">
+  <div class="bg-green-dark text-white text-[13px] font-semibold px-4 py-2.5 rounded-full flex items-center gap-2 shadow-lg whitespace-nowrap">
+    <i class="fa-solid fa-check text-primary text-xs"></i>
+    <span id="toast-msg">Lien copié !</span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════ -->
 <script>
-function openSb() {
+/* ── Sidebar ── */
+function openSb(){
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('overlay').classList.add('show');
 }
-function closeSb() {
+function closeSb(){
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
 }
+
+/* ── Code parrainage ── */
 function copyCode(){
-  const code=document.getElementById('ref-code').textContent;
-  const btn=document.getElementById('copy-btn');
-  navigator.clipboard.writeText(code.trim()).then(()=>{
-    btn.innerHTML='<i class="fa-solid fa-check text-[11px]"></i> Copié !';
-    btn.classList.add('bg-green-600');btn.classList.remove('bg-primary','hover:bg-primary-dark');
-    setTimeout(()=>{btn.innerHTML='<i class="fa-regular fa-copy text-[11px]"></i> Copier';btn.classList.remove('bg-green-600');btn.classList.add('bg-primary','hover:bg-primary-dark')},2000);
+  const code = document.getElementById('ref-code').textContent;
+  const btn  = document.getElementById('copy-btn');
+  navigator.clipboard.writeText(code.trim()).then(() => {
+    btn.innerHTML = '<i class="fa-solid fa-check text-[11px]"></i> Copié !';
+    btn.classList.add('bg-green-600');
+    btn.classList.remove('bg-primary','hover:bg-primary-dark');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fa-regular fa-copy text-[11px]"></i> Copier';
+      btn.classList.remove('bg-green-600');
+      btn.classList.add('bg-primary','hover:bg-primary-dark');
+    }, 2000);
   });
 }
 function shareCode(method){
-  const code='DOC-JM2024';
-  const msg=`Rejoins DocMaster avec mon code *${code}* et reçois 1 mois offert + 3 analyses gratuites ! https://docmaster.cm/ref/${code}`;
-  if(method==='whatsapp') window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
-  else if(method==='sms') window.open('sms:?body='+encodeURIComponent(msg));
+  const code = 'DOC-JM2024';
+  const msg  = `Rejoins DocMaster avec mon code *${code}* et reçois 1 mois offert + 3 analyses gratuites ! https://docmaster.cm/ref/${code}`;
+  if(method === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  else if(method === 'sms') window.open('sms:?body=' + encodeURIComponent(msg));
   else copyCode();
 }
+
+/* ── Données filleuls ── */
+const referredFriends = [
+  { name:'Alice Mbang',   joined:'2024-01-12', active:true,  initials:'AM', color:'bg-blue-100 text-blue-700',   reward:500, slots:2 },
+  { name:'Paul Nkeng',    joined:'2024-01-28', active:true,  initials:'PN', color:'bg-purple-100 text-purple-700', reward:500, slots:2 },
+  { name:'Fatima Bello',  joined:'2024-02-03', active:false, initials:'FB', color:'bg-amber-100 text-amber-700',  reward:0,   slots:0 },
+  { name:'Kevin Essomba', joined:'2024-02-15', active:true,  initials:'KE', color:'bg-green-100 text-green-700',  reward:500, slots:2 },
+  { name:'Sonia Etame',   joined:'2024-02-19', active:false, initials:'SE', color:'bg-rose-100 text-rose-700',    reward:0,   slots:0 },
+  { name:'Roland Ateba',  joined:'2024-03-01', active:true,  initials:'RA', color:'bg-teal-100 text-teal-700',    reward:500, slots:2 }
+];
+
+let currentFilter = 'all';
+let currentSearch = '';
+
+/* ── Dates ── */
+function formatDate(d){
+  return new Date(d).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+}
+function relativeDate(d){
+  const diff = Math.floor((Date.now() - new Date(d)) / (1000*60*60*24));
+  if(diff === 0) return "Aujourd'hui";
+  if(diff === 1) return 'Hier';
+  if(diff < 7)   return `Il y a ${diff} jours`;
+  if(diff < 30)  return `Il y a ${Math.floor(diff/7)} sem.`;
+  return formatDate(d);
+}
+
+/* ── Toast ── */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(8px)';
+  }, 2200);
+}
+
+/* ── Filtres ── */
+function getFiltered(){
+  let list = [...referredFriends];
+  if(currentFilter === 'active')   list = list.filter(f => f.active);
+  if(currentFilter === 'inactive') list = list.filter(f => !f.active);
+  if(currentFilter === 'recent')   list = list.sort((a,b) => new Date(b.joined) - new Date(a.joined)).slice(0,3);
+  if(currentSearch) list = list.filter(f => f.name.toLowerCase().includes(currentSearch.toLowerCase()));
+  return list;
+}
+function filterFriends(){
+  currentSearch = document.getElementById('search-input').value;
+  renderList();
+}
+function setFilter(val, btn){
+  currentFilter = val;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+/* ── Render carte déclencheur ── */
+function renderAvatarPreview(){
+  const preview       = document.getElementById('avatar-preview');
+  const activeFriends = referredFriends.filter(f => f.active);
+  const totalCash     = referredFriends.reduce((s,f) => s + f.reward, 0);
+  const totalSlots    = referredFriends.reduce((s,f) => s + f.slots,  0);
+  const count         = Math.min(referredFriends.length, 10);
+  const pct           = Math.round((count / 10) * 100);
+
+  document.getElementById('active-count').textContent        = `${activeFriends.length} actifs`;
+  document.getElementById('stat-total').textContent           = referredFriends.length;
+  document.getElementById('stat-cash').textContent            = totalCash.toLocaleString('fr-FR');
+  document.getElementById('stat-slots').textContent           = `+${totalSlots}`;
+  document.getElementById('sheet-count').textContent          = referredFriends.length;
+  document.getElementById('sheet-active').textContent         = `${activeFriends.length} avec abonnement`;
+  document.getElementById('sheet-cash').textContent           = `${totalCash.toLocaleString('fr-FR')} XAF`;
+  document.getElementById('sheet-slots').textContent          = `+${totalSlots} slots`;
+  document.getElementById('sheet-progress').textContent       = `${count} / 10`;
+  document.getElementById('sheet-progress-count').textContent = `${count} / 10`;
+  document.getElementById('sheet-progress-bar').style.width   = `${pct}%`;
+
+  preview.innerHTML = referredFriends.slice(0,5).map((f,i) => `
+    <div class="w-8 h-8 rounded-full border-2 border-white ${f.color}
+      flex items-center justify-center font-bricolage text-[11px] font-bold
+      ${f.active ? 'avatar-active' : ''}"
+      style="z-index:${10-i}" title="${f.name}">${f.initials}</div>
+  `).join('');
+  if(referredFriends.length > 5){
+    preview.innerHTML += `<div class="w-8 h-8 rounded-full border-2 border-white bg-bgMain
+      flex items-center justify-center text-[10px] font-bold text-textMuted">+${referredFriends.length-5}</div>`;
+  }
+
+  const latest = [...referredFriends].sort((a,b) => new Date(b.joined) - new Date(a.joined))[0];
+  document.getElementById('last-activity').innerHTML = `
+    <div class="w-6 h-6 rounded-full ${latest.color} flex items-center justify-center text-[9px] font-bold flex-shrink-0">${latest.initials}</div>
+    <span class="text-[12px] text-textMuted flex-1">
+      <span class="font-semibold text-textMain">${latest.name}</span> a rejoint ${relativeDate(latest.joined).toLowerCase()}
+    </span>
+    <i class="fa-solid fa-clock text-textMuted text-[10px]"></i>
+  `;
+}
+
+/* ── Render liste sheet ── */
+function renderList(){
+  const list  = getFiltered();
+  const root  = document.getElementById('friends-list-sheet');
+  const empty = document.getElementById('empty-state');
+
+  if(!list.length){
+    root.innerHTML = '';
+    empty.classList.remove('hidden');
+    empty.classList.add('flex');
+    return;
+  }
+  empty.classList.add('hidden');
+  empty.classList.remove('flex');
+
+  root.innerHTML = list.map((f,i) => `
+    <div class="friend-row flex items-center gap-3.5 px-5 py-4 border-b border-borderMain"
+         style="animation:fadeUp .25s ease both;animation-delay:${i*40}ms">
+      <div class="relative flex-shrink-0">
+        <div class="w-11 h-11 rounded-full ${f.color} flex items-center justify-center font-bricolage text-[13px] font-bold">${f.initials}</div>
+        <div class="status-dot ${f.active ? 'active' : 'inactive'} absolute -bottom-0.5 -right-0.5"></div>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-[13.5px] font-semibold text-textMain leading-tight truncate">${f.name}</div>
+        <div class="text-[11px] text-textMuted mt-0.5 flex items-center gap-1.5">
+          <i class="fa-regular fa-calendar text-[9px]"></i>${relativeDate(f.joined)}
+        </div>
+      </div>
+      <div class="flex flex-col items-end gap-1 flex-shrink-0">
+        ${f.active
+          ? '<span class="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 leading-tight">Abonné</span>'
+          : '<span class="text-[10.5px] font-semibold px-2 py-0.5 rounded-full bg-bgMain text-textMuted leading-tight">Sans abonnement</span>'
+        }
+        ${f.reward > 0
+          ? `<span class="text-[10px] font-semibold text-primary">+${f.reward} XAF · +${f.slots} slots</span>`
+          : '<span class="text-[10px] text-textMuted italic">En attente</span>'
+        }
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── Sheet open / close ── */
+function openSheet(){
+  document.getElementById('bottomSheet').classList.add('open');
+  document.getElementById('backdrop').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  renderList();
+}
+function closeSheet(){
+  document.getElementById('bottomSheet').classList.remove('open');
+  document.getElementById('backdrop').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+/* ── Drag to dismiss ── */
+let startY = 0, currentY = 0, dragging = false;
+const sheet      = document.getElementById('bottomSheet');
+const dragHandle = document.getElementById('dragHandle');
+
+dragHandle.addEventListener('touchstart', e => {
+  startY = e.touches[0].clientY; dragging = true;
+  sheet.style.transition = 'none';
+});
+dragHandle.addEventListener('touchmove', e => {
+  if(!dragging) return;
+  currentY = e.touches[0].clientY - startY;
+  if(currentY > 0) sheet.style.transform = `translateY(${currentY}px)`;
+});
+dragHandle.addEventListener('touchend', () => {
+  sheet.style.transition = 'transform .4s cubic-bezier(.32,0,.15,1)';
+  if(currentY > 120){ closeSheet(); sheet.style.transform = ''; }
+  else { sheet.style.transform = 'translateY(0)'; }
+  dragging = false; currentY = 0;
+});
+
+/* ── Invite ── */
+function copyInviteLink(){
+  navigator.clipboard.writeText('https://docmaster.cm/ref/DOC-JM2024')
+    .then(() => showToast('Lien copié !'))
+    .catch(() => showToast('Lien copié !'));
+}
+
+/* ── ESC ── */
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeSheet(); });
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', renderAvatarPreview);
 </script>
 </body>
 </html>
