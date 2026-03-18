@@ -1,320 +1,249 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DocMaster — Documents déclarés</title>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="./js/auth.js"></script>
-<script src="./js/sidebar.js"></script>
-     <link href="css/output.css" rel="stylesheet" />
-
-<link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
-          'green-dark': '#1E3A2F',
-          'green-mid': '#2D5A42',
-          'green-light': '#E8F5EE',
-          bgMain: '#F4EFE6',
-          surface: '#FFFFFF',
-          surface2: '#FAF7F2',
-          textMain: '#1A1A1A',
-          textMuted: '#9CA3AF',
-          borderMain: '#EAE3D8',
-          borderDark: '#DDD5C8',
-        },
-        fontFamily: {
-          poppins: ['Poppins', 'sans-serif'],
-          bricolage: ['"Bricolage Grotesque"', 'sans-serif'],
-        },
-        screens: {
-          'xs': '400px',
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocMaster — Mes déclarations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./js/auth.js"></script>
+  <script src="./js/sidebar.js"></script>
+  <link href="css/output.css" rel="stylesheet" />
+  <link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
+            'green-dark': '#1E3A2F',
+            'green-mid': '#2D5A42',
+            'green-light': '#E8F5EE',
+            bgMain: '#F4EFE6',
+            surface: '#FFFFFF',
+            surface2: '#FAF7F2',
+            textMain: '#1A1A1A',
+            textMuted: '#9CA3AF',
+            borderMain: '#EAE3D8',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            bricolage: ['"Bricolage Grotesque"', 'sans-serif'],
+          },
         }
       }
     }
-  }
-</script>
-<style>
-:root { --sidebar: 260px; }
-html { font-family: 'Poppins', sans-serif; background: #F4EFE6; }
-body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100vh; overflow-x: hidden; }
-.sidebar {
-  position: fixed; top: 0; left: 0; bottom: 0;
-  width: var(--sidebar);
-  transform: translateX(-100%);
-  transition: transform .28s cubic-bezier(.4,0,.2,1);
-  z-index: 50;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-.sidebar.open { transform: translateX(0); }
-@media (min-width: 900px) {
-  body { display: flex; height: 100vh; overflow: hidden; }
-  .sidebar { position: relative; transform: none !important; flex-shrink: 0; }
-  .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-  .main-content { flex: 1; overflow-y: auto; }
-}
-@media (max-width: 899px) {
-  .main-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
-  .main-content { flex: 1; }
-}
-.sb-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,.45); z-index: 40;
-  backdrop-filter: blur(3px); opacity: 0;
-  pointer-events: none; transition: opacity .28s;
-}
-.sb-overlay.show { display: block; opacity: 1; pointer-events: all; }
-.sidebar::after {
-  content: ''; position: absolute; width: 260px; height: 260px; border-radius: 50%;
-  background: rgba(245,166,75,.05); bottom: -80px; left: -60px; pointer-events: none;
-}
-.sb-item.active { background: rgba(245,166,75,.15); color: #fff; }
-.sb-item.active::before {
-  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 55%; background: #F5A64B; border-radius: 0 3px 3px 0;
-}
-.action-card::after {
-  content: ''; position: absolute; width: 100px; height: 100px; border-radius: 50%;
-  right: -20px; bottom: -30px; background: rgba(255,255,255,.07);
-}
-.donut-wrap svg { transform: rotate(-90deg); }
-.custom-scroll::-webkit-scrollbar { width: 4px; }
-.custom-scroll::-webkit-scrollbar-thumb { background: #EAE3D8; border-radius: 10px; }
-.bottom-nav { display: flex; }
-@media (min-width: 900px) { .bottom-nav { display: none; } }
-.search-bar-wrap { display: none; }
-@media (min-width: 640px) { .search-bar-wrap { display: flex; } }
-</style>
+  </script>
+  <style>
+    :root { --sidebar: 260px; }
+    html, body { font-family: 'Poppins', sans-serif; background: #F4EFE6; }
+    body { min-height: 100vh; overflow-x: hidden; }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar);
+      transform: translateX(-100%);
+      transition: transform .28s cubic-bezier(.4,0,.2,1);
+      z-index: 50;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sb-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 40;
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .28s;
+    }
+    .sb-overlay.show { display: block; opacity: 1; pointer-events: all; }
+    .main-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+    .main-content { flex: 1; }
+    @media (min-width: 900px) {
+      body { display: flex; height: 100vh; overflow: hidden; }
+      .sidebar { position: relative; transform: none !important; flex-shrink: 0; }
+      .main-wrapper { flex: 1; min-width: 0; height: 100vh; overflow: hidden; }
+      .main-content { overflow-y: auto; }
+    }
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #DDD5C8; border-radius: 10px; }
+  </style>
 </head>
 <body>
 
-<!-- Sidebar composant (généré par sidebar.js) -->
 <div id="sidebar-root"></div>
-<!-- ══ MAIN WRAPPER ══ -->
+
 <div class="main-wrapper" id="mainWrapper">
-  <!-- ── Topbar ── -->
   <header class="sticky top-0 z-30 h-[58px] bg-white border-b border-borderMain flex items-center px-4 gap-3 flex-shrink-0">
-    <button class="w-9 h-9 flex items-center justify:center rounded-[9px] bg-surface2 border:border-borderMain text-textMain text-base cursor-pointer hover:border-primary hover:text-primary transition-all" onclick="toggleSb()">
+    <button class="w-9 h-9 flex items-center justify-center rounded-[9px] bg-surface2 border border-borderMain text-textMain text-base cursor-pointer hover:border-primary hover:text-primary transition-all" onclick="toggleSb()">
       <i class="fa-solid fa-bars"></i>
     </button>
-    <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Documents déclarés</span>
-    <div class="search-bar-wrap flex-1 max-w-[360px] ml-3 items-center bg-surface2 border;border-borderMain rounded-[10px] overflow-hidden transition-colors focus-within;border-primary">
-      <i class="fa-solid fa-search px-3 text-textMuted text-xs flex-shrink-0"></i>
-      <input type="text" placeholder="Rechercher un document…" class="flex-1 py-2 pr-3 bg-transparent border:none outline:none font-poppins text-[13px] text-textMain placeholder:text-textMuted">
-    </div>
-    <div class="ml-auto flex items:center gap-2">
-      <div class="relative w-9 h-9 rounded-[9px] bg-surface2 border;border-borderMain flex items:center justify:center text-sm text-textMain cursor-pointer hover:border-primary hover:text-primary transition-all">
-        <i class="fa-regular fa-bell"></i>
-        <div class="absolute top-[7px] right-[7px] w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
-      </div>
-      <div class="flex items:center gap-2 pl-1.5 pr-3 py-1 bg-surface2 border:border-borderMain rounded-[10px] cursor-pointer hover;border-primary transition-colors">
-        <div class="w-[26px] h-[26px] rounded-[6px] bg-green-dark flex items:center justify:center font-bricolage text-[11px] font-extrabold text-primary" id="topInitial">JM</div>
-        <span class="text-[12.5px] font-semibold text-textMain hidden xs:block" id="topName">Jean-Marc</span>
-        <i class="fa-solid fa-chevron-down text-[8px] text-textMuted ml-0.5 hidden xs:block"></i>
-      </div>
+    <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Mes déclarations</span>
+    <div class="dm-quick-search hidden"></div>
+    <div class="dm-quick-actions hidden"></div>
+    <div class="ml-auto flex items-center gap-2">
+      <a href="declarer.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-red-600 text-[11.5px] font-bold text-white hover:bg-red-700 transition-colors">
+        <i class="fa-solid fa-triangle-exclamation text-[11px]"></i> Déclarer une perte
+      </a>
+      <a href="trouverdocument.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-blue-600 text-[11.5px] font-bold text-white hover:bg-blue-700 transition-colors">
+        <i class="fa-solid fa-file-circle-check text-[11px]"></i> Déclarer trouvé
+      </a>
     </div>
   </header>
-  <div class="sm:hidden px-4 py-2.5 bg-white border-b border-borderMain">
-    <div class="flex items:center bg-surface2 border;border-borderMain rounded-[10px] overflow-hidden focus-within;border-primary transition-colors">
-      <i class="fa-solid fa-search px-3 text-textMuted text-xs flex-shrink-0"></i>
-      <input type="text" placeholder="Rechercher un document, une personne…" class="flex-1 py-2.5 pr-3 bg-transparent border:none outline:none font-poppins text-[13px] text-textMain placeholder:text-textMuted">
-    </div>
-  </div>
-  <div class="main-content custom-scroll p-4 sm:p-6 flex:flex-col gap-4 sm:gap-5 pb-24 md:pb-6">
-    <!-- Wallet content -->`n<div class="w-full max-w-6xl bg-white rounded-2xl shadow-xl p-6">
 
-<!-- HEADER -->
+  <main class="main-content custom-scroll p-4 sm:p-6 pb-24 md:pb-8 flex flex-col gap-4">
+    <section class="bg-white border border-borderMain rounded-[18px] p-4 sm:p-5">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="font-bricolage text-xl sm:text-2xl font-extrabold text-textMain">Historique de vos déclarations</h1>
+          <p class="text-[12.5px] text-textMuted mt-1">Suivez l'état de vos pertes et de vos documents trouvés.</p>
+        </div>
+        <div class="flex gap-2 sm:hidden">
+          <a href="declarer.html" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[10px] bg-red-600 text-white text-[12px] font-bold">
+            <i class="fa-solid fa-triangle-exclamation text-[11px]"></i> Déclarer perte
+          </a>
+          <a href="trouverdocument.html" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[10px] bg-blue-600 text-white text-[12px] font-bold">
+            <i class="fa-solid fa-file-circle-check text-[11px]"></i> Déclarer trouvé
+          </a>
+        </div>
+      </div>
 
-<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <button class="filter-pill px-3 py-1.5 rounded-full border border-borderMain bg-bgMain text-textMuted text-[12px] font-semibold" data-filter="all">Toutes</button>
+        <button class="filter-pill px-3 py-1.5 rounded-full border border-borderMain bg-bgMain text-textMuted text-[12px] font-semibold" data-filter="perdu">Pertes</button>
+        <button class="filter-pill px-3 py-1.5 rounded-full border border-borderMain bg-bgMain text-textMuted text-[12px] font-semibold" data-filter="trouve">Trouvés</button>
+      </div>
+    </section>
 
-<h1 class="text-2xl font-bold flex items-center gap-3">
-<i class="fa-solid fa-folder text-black"></i>
-Documents Déclarés
-</h1>
+    <section id="declaration-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></section>
 
-<div class="flex items-center gap-3">
-
-<i class="fa-solid fa-filter"></i>
-
-<span class="font-medium">Filtrer :</span>
-
-<select id="filter"
-class="border rounded-lg px-4 py-2"
-onchange="renderDocuments()">
-
-<option value="all">Tous</option>
-<option value="perdu">Perdus</option>
-<option value="trouve">Trouvés</option>
-
-</select>
-
+    <section id="empty-state" class="hidden bg-white border border-borderMain rounded-[18px] p-8 text-center">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-bgMain border border-borderMain flex items-center justify-center mb-3">
+        <i class="fa-solid fa-folder-open text-textMuted text-xl"></i>
+      </div>
+      <p class="text-[15px] font-semibold text-textMain">Aucune déclaration pour ce filtre</p>
+      <p class="text-[12px] text-textMuted mt-1">Essayez un autre filtre ou créez une nouvelle déclaration.</p>
+    </section>
+  </main>
 </div>
-
-</div>
-
-
-<!-- LISTE -->
-
-<div id="documentsContainer" class="space-y-6"></div>
-
-</div>
-
 
 <script>
+  const declarations = [
+    { id: 'DEC-24012', type: 'perdu', title: 'Carte nationale d\'identité', owner: 'Jean Dupont', date: '2026-03-08', lieu: 'Yaoundé - Bastos', etat: 'en_cours' },
+    { id: 'DEC-24013', type: 'trouve', title: 'Permis de conduire', owner: 'Marie Essono', date: '2026-03-10', lieu: 'Douala - Bonapriso', etat: 'nouveau' },
+    { id: 'DEC-24014', type: 'perdu', title: 'Carte bancaire', owner: 'Paul Mvondo', date: '2026-03-12', lieu: 'Yaoundé - Mvan', etat: 'resolu' },
+    { id: 'DEC-24015', type: 'trouve', title: 'Passeport', owner: 'Clarisse Ndzi', date: '2026-03-14', lieu: 'Bafoussam - Marché A', etat: 'en_cours' }
+  ];
 
-/* PARAMETRES */
+  const state = { filter: 'all' };
 
-const documents = [
+  function getTypeLabel(type) {
+    return type === 'perdu' ? 'Perte' : 'Trouvé';
+  }
 
-{
-type:"Carte Nationale",
-owner:"Jean Dupont",
-date:"12/02/2025",
-status:"perdu"
-},
+  function getEtatMeta(etat) {
+    if (etat === 'nouveau') return { label: 'Nouveau', cls: 'bg-blue-50 text-blue-700 border-blue-100' };
+    if (etat === 'resolu') return { label: 'Résolu', cls: 'bg-green-50 text-green-700 border-green-100' };
+    return { label: 'En cours', cls: 'bg-amber-50 text-amber-700 border-amber-100' };
+  }
 
-{
-type:"Permis de conduire",
-owner:"Marie Durant",
-date:"08/02/2025",
-status:"trouve"
-}
+  function formatDate(value) {
+    return new Date(value).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
 
-]
+  function renderCards() {
+    const listRoot = document.getElementById('declaration-list');
+    const empty = document.getElementById('empty-state');
 
+    const list = declarations.filter(item => state.filter === 'all' || item.type === state.filter);
 
-/* RENDER */
+    if (!list.length) {
+      listRoot.innerHTML = '';
+      empty.classList.remove('hidden');
+      return;
+    }
 
-function renderDocuments(){
+    empty.classList.add('hidden');
 
-const filter = document.getElementById("filter").value
+    listRoot.innerHTML = list.map((item) => {
+      const etat = getEtatMeta(item.etat);
+      const typeBadgeClass = item.type === 'perdu'
+        ? 'bg-red-50 text-red-700 border-red-100'
+        : 'bg-green-50 text-green-700 border-green-100';
+      const typeIcon = item.type === 'perdu' ? 'fa-triangle-exclamation' : 'fa-file-circle-check';
 
-const container = document.getElementById("documentsContainer")
+      return `
+        <article class="bg-white border border-borderMain rounded-[18px] p-4 sm:p-5">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="min-w-0">
+              <p class="text-[11px] font-bold text-textMuted uppercase tracking-wide">${item.id}</p>
+              <h3 class="font-bricolage text-[18px] font-bold text-textMain leading-tight mt-0.5">${item.title}</h3>
+            </div>
+            <span class="px-2.5 py-1 rounded-full border text-[11px] font-bold ${typeBadgeClass}">
+              <i class="fa-solid ${typeIcon} mr-1"></i>${getTypeLabel(item.type)}
+            </span>
+          </div>
 
-container.innerHTML = ""
+          <div class="space-y-1.5 text-[12.5px] text-textMuted">
+            <p><i class="fa-regular fa-user mr-1.5"></i> ${item.owner}</p>
+            <p><i class="fa-regular fa-calendar mr-1.5"></i> ${formatDate(item.date)}</p>
+            <p><i class="fa-solid fa-location-dot mr-1.5"></i> ${item.lieu}</p>
+          </div>
 
-documents
-.filter(doc => filter==="all" || doc.status===filter)
-.forEach(doc => {
+          <div class="mt-4 flex items-center justify-between gap-3">
+            <span class="px-2.5 py-1 rounded-full border text-[11px] font-semibold ${etat.cls}">${etat.label}</span>
+            <button class="px-3 py-1.5 rounded-[9px] bg-surface2 border border-borderMain text-[12px] font-semibold text-textMuted hover:border-primary hover:text-primary transition-colors">Voir détails</button>
+          </div>
+        </article>
+      `;
+    }).join('');
+  }
 
-const statusColor = doc.status==="perdu"
-? "bg-red-500"
-: "bg-green-500"
+  function applyFilter(filter) {
+    state.filter = filter;
 
-const statusText = doc.status==="perdu"
-? "Perdu"
-: "Trouvé"
+    document.querySelectorAll('.filter-pill').forEach((btn) => {
+      const isActive = btn.dataset.filter === filter;
+      btn.classList.toggle('bg-primary', isActive);
+      btn.classList.toggle('text-white', isActive);
+      btn.classList.toggle('border-primary', isActive);
+      btn.classList.toggle('bg-bgMain', !isActive);
+      btn.classList.toggle('text-textMuted', !isActive);
+      btn.classList.toggle('border-borderMain', !isActive);
+    });
 
-const statusIcon = doc.status==="perdu"
-? "fa-magnifying-glass"
-: "fa-hand"
+    renderCards();
+  }
 
-const actionButton = doc.status==="perdu"
-? `<button class="bg-green-600 text-white px-5 py-2 rounded-lg font-semibold">
-J'ai récupéré mon document
-</button>`
-: `<button class="bg-yellow-500 px-5 py-2 rounded-lg font-semibold">
-J'ai remis au propriétaire
-</button>`
+  function initPage() {
+    const queryFilter = new URLSearchParams(window.location.search).get('type');
+    const initialFilter = ['perdu', 'trouve'].includes(queryFilter) ? queryFilter : 'all';
 
-container.innerHTML += `
+    document.querySelectorAll('.filter-pill').forEach((btn) => {
+      btn.addEventListener('click', () => applyFilter(btn.dataset.filter));
+    });
 
-<div class="bg-gradient-to-r from-orange-400 to-orange-600 text-white rounded-xl p-6 flex flex-col md:flex-row md:items-center md:justify-between">
+    applyFilter(initialFilter);
+  }
 
-<div class="flex gap-4">
-
-<div class="text-2xl mt-2">
-<i class="fa-solid ${statusIcon}"></i>
-</div>
-
-<div>
-
-<h2 class="font-bold text-lg mb-1">
-${doc.type}
-</h2>
-
-<p>
-<i class="fa-solid fa-user text-blue-900"></i>
-Propriétaire : ${doc.owner}
-</p>
-
-<p>
-<i class="fa-solid fa-calendar text-blue-900"></i>
-Ajouté le : ${doc.date}
-</p>
-
-<span class="${statusColor} px-4 py-1 rounded-lg inline-block mt-2 font-semibold">
-${statusText}
-</span>
-
-</div>
-
-</div>
-
-
-<div class="flex items-center gap-6 mt-4 md:mt-0">
-
-<button class="text-white text-xl">
-<i class="fa-solid fa-eye"></i>
-</button>
-
-<button class="text-white text-xl">
-<i class="fa-solid fa-trash"></i>
-</button>
-
-${actionButton}
-
-</div>
-
-</div>
-
-`
-
-})
-
-}
-
-
-/* INITIAL LOAD */
-
-renderDocuments()
-
-</script><script>
-/* PARAMETRES */
-const wallet = {
-  balance:150,
-  currency:"XAF",
-  stats:[
-    { icon:"fa-file", title:"Documents Retrouvés", value:"8 Documents", color:"text-orange-500" },
-    { icon:"fa-handshake", title:"Documents Remis", value:"5 Documents", color:"text-orange-500" },
-    { icon:"fa-coins", title:"Montant Gagné", value:"230 XAF", color:"text-orange-500" },
-    { icon:"fa-money-bill", title:"Montant Retiré", value:"80 XAF", color:"text-orange-500" }
-  ]
-};
-
-document.getElementById("balance").innerHTML = `<i class="fa-solid fa-sack-dollar"></i> ${wallet.balance}${wallet.currency}`;
-
-const container = document.getElementById("statsContainer");
-wallet.stats.forEach(stat=>{
-  container.innerHTML += `
-    <div class="bg-gray-100 rounded-xl p-5 flex items:center gap=4">
-      <i class="fa-solid ${stat.icon} text-2xl ${stat.color}"></i>
-      <div>
-        <p class="font-semibold text-lg">${stat.title}</p>
-        <p class="text-gray-600">${stat.value}</p>
-      </div>
-    </div>
-  `;
-});
-
-function withdraw(){ alert("Fonction de retrait à connecter avec paiement"); }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPage);
+  } else {
+    initPage();
+  }
 </script>
+
 </body>
 </html>

@@ -29,84 +29,140 @@ tailwind.config = {
 </script>
 
 <style>
-/* ── Layout ── */
-:root{--sidebar:260px}
-html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
-.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:50;overflow-y:auto}
-.sidebar.open{transform:translateX(0)}
-@media(min-width:900px){
-  body{display:flex;height:100vh;overflow:hidden}
-  .sidebar{position:relative;transform:none!important;flex-shrink:0}
-  .main-wrapper{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-  .main-content{flex:1;overflow-y:auto}
+/* ══ Layout ══ */
+:root { --sidebar: 260px }
+html, body { font-family: 'Poppins', sans-serif; background: #F4EFE6 }
+.sidebar { position:fixed;top:0;left:0;bottom:0;width:var(--sidebar);transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:50;overflow-y:auto }
+.sidebar.open { transform:translateX(0) }
+@media(min-width:900px) {
+  body { display:flex;height:100vh;overflow:hidden }
+  .sidebar { position:relative;transform:none!important;flex-shrink:0 }
+  .main-wrapper { flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0 }
+  .main-content { flex:1; overflow-y:auto; min-height:0 }
 }
-@media(max-width:899px){
-  .main-wrapper{display:flex;flex-direction:column;min-height:100vh}
+@media(max-width:899px) {
+  .main-wrapper { display:flex;flex-direction:column;min-height:100vh }
 }
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .28s}
 .sb-overlay.show{display:block;opacity:1;pointer-events:all}
 .sidebar::after{content:'';position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(245,166,75,.05);bottom:-80px;left:-60px;pointer-events:none}
-.sb-item.active{background:rgba(245,166,75,.15);color:#fff}
-.sb-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:55%;background:#F5A64B;border-radius:0 3px 3px 0}
-.custom-scroll::-webkit-scrollbar{width:4px}
-.custom-scroll::-webkit-scrollbar-thumb{background:#DDD5C8;border-radius:10px}
+.custom-scroll::-webkit-scrollbar { width:4px }
+.custom-scroll::-webkit-scrollbar-thumb { background:#DDD5C8;border-radius:10px }
 
-/* ── Utilitaires ── */
-.copy-btn:active{transform:scale(.95)}
-.shimmer{background:linear-gradient(90deg,#f5a64b10 0%,#f5a64b30 50%,#f5a64b10 100%);background-size:200%;animation:shimmer 2s infinite}
-@keyframes shimmer{0%{background-position:200%}100%{background-position:-200%}}
-.step-line::after{content:'';position:absolute;top:50%;left:100%;width:100%;height:2px;background:linear-gradient(90deg,#EAE3D8,transparent);transform:translateY(-50%)}
+/* ══ Utilitaires ══ */
+.copy-btn:active { transform:scale(.95) }
+.shimmer { background:linear-gradient(90deg,#f5a64b10 0%,#f5a64b30 50%,#f5a64b10 100%);background-size:200%;animation:shimmer 2s infinite }
+@keyframes shimmer { 0%{background-position:200%} 100%{background-position:-200%} }
 
-/* ── Bottom Sheet ── */
-.sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:100;pointer-events:none;transition:background .32s ease,backdrop-filter .32s;backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px)}
-.sheet-backdrop.active{background:rgba(0,0,0,.48);pointer-events:all;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.bottom-sheet{position:fixed;bottom:0;left:0;right:0;z-index:110;background:#fff;border-radius:24px 24px 0 0;max-height:82vh;display:flex;flex-direction:column;transform:translateY(110%);transition:transform .4s cubic-bezier(.32,0,.15,1);box-shadow:0 -8px 40px rgba(0,0,0,.13)}
-.bottom-sheet.open{transform:translateY(0)}
-.sheet-handle{width:40px;height:4px;border-radius:99px;background:#EAE3D8;margin:12px auto 4px;flex-shrink:0}
-.sheet-body{overflow-y:auto;flex:1;padding-bottom:env(safe-area-inset-bottom,16px)}
-.sheet-body::-webkit-scrollbar{width:3px}
-.sheet-body::-webkit-scrollbar-thumb{background:#EAE3D8;border-radius:8px}
+/* ══ Backdrop ══ */
+.sheet-backdrop {
+  position:fixed;inset:0;z-index:100;
+  /* CACHÉ PAR DÉFAUT — ne masque rien de la page */
+  display:none;
+  background:rgba(0,0,0,.52);
+  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+  opacity:0;
+  transition:opacity .3s ease;
+}
+.sheet-backdrop.active {
+  display:block;
+  opacity:1;
+}
 
-/* ── Carte déclencheur ── */
-.trigger-card{transition:all .2s;cursor:pointer}
-.trigger-card:hover{border-color:#F5A64B!important;transform:translateY(-1px);box-shadow:0 4px 20px rgba(245,166,75,.15)}
-.trigger-card:active{transform:translateY(0);box-shadow:none}
+/* ══════════════════════════════════
+   MOBILE — Bottom Sheet
+══════════════════════════════════ */
+.panel {
+  position:fixed;bottom:0;left:0;right:0;z-index:110;
+  background:#fff;
+  border-radius:24px 24px 0 0;
+  max-height:82vh;
+  display:none; /* caché par défaut */
+  flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .4s cubic-bezier(.32,0,.15,1);
+  box-shadow:0 -8px 40px rgba(0,0,0,.14);
+}
+.panel.open {
+  display:flex;
+  transform:translateY(0);
+}
 
-/* ── Amis ── */
-.friend-row{transition:background .15s}
-.friend-row:hover{background:#FAF7F2}
-@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(245,166,75,.4)}70%{box-shadow:0 0 0 8px rgba(245,166,75,0)}100%{box-shadow:0 0 0 0 rgba(245,166,75,0)}}
-.avatar-active{animation:pulseRing 2s infinite}
-.avatar-stack>div{transition:transform .15s}
-.avatar-stack:hover>div{transform:translateX(4px)!important}
-.avatar-stack:hover>div:nth-child(1){transform:translateX(0)!important}
-.status-dot{width:8px;height:8px;border-radius:50%;border:2px solid #fff}
-.status-dot.active{background:#2D5A42}
-.status-dot.inactive{background:#D1D5DB}
+/* ══════════════════════════════════
+   DESKTOP — Modal centré
+══════════════════════════════════ */
+@media(min-width:900px) {
+  .panel {
+    position:fixed;
+    top:50%;left:50%;
+    bottom:auto;right:auto;
+    width:620px;
+    max-width:calc(100vw - 48px);
+    max-height:82vh;
+    border-radius:20px;
+    /* Caché : déplacé hors écran + invisible */
+    transform:translate(-50%,-48%) scale(.96);
+    opacity:0;
+    display:flex !important; /* toujours flex, contrôlé par opacity+transform */
+    pointer-events:none;
+    transition:transform .3s cubic-bezier(.32,0,.15,1), opacity .3s ease;
+    box-shadow:0 32px 80px rgba(0,0,0,.24), 0 4px 16px rgba(0,0,0,.08);
+  }
+  .panel.open {
+    transform:translate(-50%,-50%) scale(1);
+    opacity:1;
+    pointer-events:all;
+    display:flex;
+  }
+  .sheet-handle { display:none }
+  .drag-zone { position:sticky;top:0;background:#fff;z-index:10;border-radius:20px 20px 0 0 }
+}
 
-/* ── Drag ── */
-.drag-zone{cursor:grab;user-select:none}
-.drag-zone:active{cursor:grabbing}
+.sheet-handle { width:40px;height:4px;border-radius:99px;background:#EAE3D8;margin:12px auto 4px;flex-shrink:0 }
+.panel-body { overflow-y:auto;flex:1;padding-bottom:env(safe-area-inset-bottom,16px) }
+.panel-body::-webkit-scrollbar { width:3px }
+.panel-body::-webkit-scrollbar-thumb { background:#EAE3D8;border-radius:8px }
 
-/* ── Search + Filter ── */
-.search-input{transition:border .15s,box-shadow .15s}
-.search-input:focus{outline:none;border-color:#F5A64B!important;box-shadow:0 0 0 3px rgba(245,166,75,.12)}
-.filter-pill{transition:all .15s;cursor:pointer}
-.filter-pill.active{background:#F5A64B;color:#fff;border-color:#F5A64B}
+/* ══ Drag (mobile) ══ */
+.drag-zone { cursor:default;user-select:none;flex-shrink:0 }
+@media(max-width:899px) { .drag-zone { cursor:grab } .drag-zone:active { cursor:grabbing } }
 
-/* ── Misc ── */
-.stat-badge{background:#F4EFE6}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* ══ Carte déclencheur ══ */
+.trigger-card { display:block !important; visibility:visible !important; opacity:1 !important; transition:all .2s;cursor:pointer }
+.trigger-card:hover { border-color:#F5A64B!important;transform:translateY(-1px);box-shadow:0 4px 20px rgba(245,166,75,.15) }
+.trigger-card:active { transform:translateY(0);box-shadow:none }
+#friends-trigger-card { display:block !important; visibility:visible !important; opacity:1 !important }
+@media(min-width:900px){ #friends-trigger-card { display:block !important } }
+
+/* ══ Amis ══ */
+.friend-row { transition:background .15s }
+.friend-row:hover { background:#FAF7F2 }
+@keyframes pulseRing { 0%{box-shadow:0 0 0 0 rgba(245,166,75,.4)} 70%{box-shadow:0 0 0 8px rgba(245,166,75,0)} 100%{box-shadow:0 0 0 0 rgba(245,166,75,0)} }
+.avatar-active { animation:pulseRing 2s infinite }
+.avatar-stack > div { transition:transform .15s }
+.avatar-stack:hover > div { transform:translateX(4px)!important }
+.avatar-stack:hover > div:nth-child(1) { transform:translateX(0)!important }
+.status-dot { width:8px;height:8px;border-radius:50%;border:2px solid #fff }
+.status-dot.active { background:#2D5A42 }
+.status-dot.inactive { background:#D1D5DB }
+
+/* ══ Filtres / Recherche ══ */
+.search-input { transition:border .15s,box-shadow .15s }
+.search-input:focus { outline:none;border-color:#F5A64B!important;box-shadow:0 0 0 3px rgba(245,166,75,.12) }
+.filter-pill { transition:all .15s;cursor:pointer }
+.filter-pill.active { background:#F5A64B;color:#fff;border-color:#F5A64B }
+.close-btn { transition:all .15s }
+.close-btn:hover { background:#FEF0DC;border-color:#F5A64B;color:#F5A64B }
+
+/* ══ Misc ══ */
+.stat-badge { background:#F4EFE6 }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body>
 
-<!-- Sidebar (généré par sidebar.js) -->
 <div id="sidebar-root"></div>
 
-<!-- ══════════════════════════════════════
-     MAIN WRAPPER
-══════════════════════════════════════ -->
 <div class="main-wrapper" id="mainWrapper">
 
   <!-- Topbar -->
@@ -127,7 +183,7 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
     </div>
   </header>
 
-  <!-- ── CONTENU PRINCIPAL ── -->
+  <!-- Contenu -->
   <div class="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-10">
 
     <!-- Greeting -->
@@ -142,7 +198,7 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       </div>
     </div>
 
-    <!-- ── Hero Banner ── -->
+    <!-- Hero Banner -->
     <div class="relative bg-green-dark rounded-[20px] sm:rounded-[24px] overflow-hidden p-6 sm:p-8 min-h-[180px]">
       <div class="absolute inset-0 pointer-events-none">
         <div class="absolute w-64 h-64 rounded-full bg-primary/8 -top-16 -right-16"></div>
@@ -173,10 +229,8 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       </div>
     </div>
 
-    <!-- ── Code + Stats ── -->
+    <!-- Code + Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-      <!-- Mon code -->
       <div class="sm:col-span-2 lg:col-span-1 bg-white border border-borderMain rounded-[18px] p-5">
         <p class="text-[11px] font-bold text-textMuted uppercase tracking-widest mb-3">Mon code de parrainage</p>
         <div class="flex items-center gap-2 bg-bgMain border border-borderMain rounded-[12px] px-4 py-3 mb-3">
@@ -197,31 +251,21 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
           </button>
         </div>
       </div>
-
-      <!-- Gains cumulés -->
       <div class="bg-white border border-borderMain rounded-[18px] p-5 flex flex-col gap-3">
         <div class="flex items-center justify-between">
-          <div class="w-10 h-10 rounded-[11px] bg-primary/10 flex items-center justify-center">
-            <i class="fa-solid fa-wallet text-primary text-base"></i>
-          </div>
+          <div class="w-10 h-10 rounded-[11px] bg-primary/10 flex items-center justify-center"><i class="fa-solid fa-wallet text-primary text-base"></i></div>
           <span class="text-[10px] font-bold py-1 px-2.5 rounded-full bg-green-light text-green-mid">Ce mois</span>
         </div>
         <div>
           <div class="font-bricolage text-3xl font-extrabold text-textMain">3 500 <span class="text-lg font-bold text-textMuted">XAF</span></div>
           <div class="text-[12.5px] text-textMuted font-medium">Gains cumulés</div>
         </div>
-        <div class="h-1.5 bg-bgMain rounded-full overflow-hidden">
-          <div class="h-full bg-primary rounded-full shimmer" style="width:58%"></div>
-        </div>
+        <div class="h-1.5 bg-bgMain rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full shimmer" style="width:58%"></div></div>
         <div class="text-[11.5px] text-textMuted">Prochain palier : <span class="font-bold text-textMain">5 000 XAF</span></div>
       </div>
-
-      <!-- Slots bonus -->
       <div class="bg-white border border-borderMain rounded-[18px] p-5 flex flex-col gap-3">
         <div class="flex items-center justify-between">
-          <div class="w-10 h-10 rounded-[11px] bg-green-light flex items-center justify-center">
-            <i class="fa-solid fa-file-circle-plus text-green-mid text-base"></i>
-          </div>
+          <div class="w-10 h-10 rounded-[11px] bg-green-light flex items-center justify-center"><i class="fa-solid fa-file-circle-plus text-green-mid text-base"></i></div>
           <span class="text-[10px] font-bold py-1 px-2.5 rounded-full bg-primary/10 text-primary-dark">Bonus actifs</span>
         </div>
         <div>
@@ -235,116 +279,67 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       </div>
     </div>
 
-    <!-- ── Comment ça marche ── -->
+    <!-- Comment ça marche -->
     <div class="bg-white border border-borderMain rounded-[20px] p-5 sm:p-6">
       <h2 class="font-bricolage text-lg font-bold text-textMain mb-5 flex items-center gap-2">
-        <i class="fa-solid fa-circle-question text-primary text-base"></i>
-        Comment ça marche ?
+        <i class="fa-solid fa-circle-question text-primary text-base"></i> Comment ça marche ?
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-0 relative">
-        <!-- Étape 1 -->
         <div class="flex sm:flex-col items-start sm:items-center gap-4 sm:gap-3 sm:text-center relative sm:px-4">
-          <div class="w-12 h-12 rounded-2xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-share-nodes text-primary text-lg"></i>
-          </div>
+          <div class="w-12 h-12 rounded-2xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-share-nodes text-primary text-lg"></i></div>
           <div class="sm:hidden absolute left-6 top-14 h-[calc(100%-56px)] w-px bg-borderMain"></div>
           <div class="hidden sm:block absolute top-6 left-[60%] w-[40%] h-px bg-gradient-to-r from-borderMain to-transparent"></div>
-          <div>
-            <div class="text-[11px] font-bold text-primary uppercase tracking-wide mb-0.5">Étape 1</div>
-            <div class="text-[14px] font-bold text-textMain mb-1">Partagez votre code</div>
-            <div class="text-[12.5px] text-textMuted leading-snug">Envoyez votre code à un ami via WhatsApp, SMS ou lien direct.</div>
-          </div>
+          <div><div class="text-[11px] font-bold text-primary uppercase tracking-wide mb-0.5">Étape 1</div><div class="text-[14px] font-bold text-textMain mb-1">Partagez votre code</div><div class="text-[12.5px] text-textMuted leading-snug">Envoyez votre code à un ami via WhatsApp, SMS ou lien direct.</div></div>
         </div>
-        <!-- Étape 2 -->
         <div class="flex sm:flex-col items-start sm:items-center gap-4 sm:gap-3 sm:text-center relative sm:px-4">
-          <div class="w-12 h-12 rounded-2xl bg-green-light border-2 border-green-dark/20 flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-user-plus text-green-mid text-lg"></i>
-          </div>
+          <div class="w-12 h-12 rounded-2xl bg-green-light border-2 border-green-dark/20 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-user-plus text-green-mid text-lg"></i></div>
           <div class="sm:hidden absolute left-6 top-14 h-[calc(100%-56px)] w-px bg-borderMain"></div>
           <div class="hidden sm:block absolute top-6 left-[60%] w-[40%] h-px bg-gradient-to-r from-borderMain to-transparent"></div>
-          <div>
-            <div class="text-[11px] font-bold text-green-mid uppercase tracking-wide mb-0.5">Étape 2</div>
-            <div class="text-[14px] font-bold text-textMain mb-1">Il s'inscrit & valide</div>
-            <div class="text-[12.5px] text-textMuted leading-snug">Votre filleul crée son compte avec votre code et effectue son 1er enregistrement.</div>
-          </div>
+          <div><div class="text-[11px] font-bold text-green-mid uppercase tracking-wide mb-0.5">Étape 2</div><div class="text-[14px] font-bold text-textMain mb-1">Il s'inscrit & valide</div><div class="text-[12.5px] text-textMuted leading-snug">Votre filleul crée son compte avec votre code et effectue son 1er enregistrement.</div></div>
         </div>
-        <!-- Étape 3 -->
         <div class="flex sm:flex-col items-start sm:items-center gap-4 sm:gap-3 sm:text-center sm:px-4">
-          <div class="w-12 h-12 rounded-2xl bg-amber-50 border-2 border-amber-200 flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-trophy text-amber-500 text-lg"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-bold text-amber-600 uppercase tracking-wide mb-0.5">Étape 3</div>
-            <div class="text-[14px] font-bold text-textMain mb-1">Vous gagnez tous les deux</div>
-            <div class="text-[12.5px] text-textMuted leading-snug">500 XAF pour vous + 1 mois gratuit pour votre filleul.</div>
-          </div>
+          <div class="w-12 h-12 rounded-2xl bg-amber-50 border-2 border-amber-200 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-trophy text-amber-500 text-lg"></i></div>
+          <div><div class="text-[11px] font-bold text-amber-600 uppercase tracking-wide mb-0.5">Étape 3</div><div class="text-[14px] font-bold text-textMain mb-1">Vous gagnez tous les deux</div><div class="text-[12.5px] text-textMuted leading-snug">500 XAF pour vous + 1 mois gratuit pour votre filleul.</div></div>
         </div>
       </div>
     </div>
 
-    <!-- ── Récompenses ── -->
+    <!-- Récompenses -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <!-- Vos récompenses -->
       <div class="bg-white border border-borderMain rounded-[18px] p-5">
-        <h3 class="font-bricolage text-base font-bold text-textMain mb-4 flex items-center gap-2">
-          <i class="fa-solid fa-medal text-primary text-sm"></i>Vos récompenses
-        </h3>
+        <h3 class="font-bricolage text-base font-bold text-textMain mb-4 flex items-center gap-2"><i class="fa-solid fa-medal text-primary text-sm"></i>Vos récompenses</h3>
         <div class="space-y-3">
           <div class="flex items-center justify-between py-2.5 border-b border-borderMain">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-[8px] bg-primary/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-coins text-primary text-xs"></i></div>
-              <div><div class="text-[13px] font-semibold text-textMain">Bonus en cash</div><div class="text-[11px] text-textMuted">Par parrainage validé</div></div>
-            </div>
+            <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-[8px] bg-primary/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-coins text-primary text-xs"></i></div><div><div class="text-[13px] font-semibold text-textMain">Bonus en cash</div><div class="text-[11px] text-textMuted">Par parrainage validé</div></div></div>
             <span class="font-bricolage text-[15px] font-bold text-primary">500 XAF</span>
           </div>
           <div class="flex items-center justify-between py-2.5 border-b border-borderMain">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-[8px] bg-green-light flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-file-circle-plus text-green-mid text-xs"></i></div>
-              <div><div class="text-[13px] font-semibold text-textMain">Signalement bonus</div><div class="text-[11px] text-textMuted">Par parrainage validé</div></div>
-            </div>
+            <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-[8px] bg-green-light flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-file-circle-plus text-green-mid text-xs"></i></div><div><div class="text-[13px] font-semibold text-textMain">Signalement bonus</div><div class="text-[11px] text-textMuted">Par parrainage validé</div></div></div>
             <span class="font-bricolage text-[15px] font-bold text-green-mid">+2 slots</span>
           </div>
           <div class="flex items-center justify-between py-2.5">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-[8px] bg-amber-50 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-crown text-amber-500 text-xs"></i></div>
-              <div><div class="text-[13px] font-semibold text-textMain">Upgrade de plan</div><div class="text-[11px] text-textMuted">À partir de 5 filleuls</div></div>
-            </div>
+            <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-[8px] bg-amber-50 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-crown text-amber-500 text-xs"></i></div><div><div class="text-[13px] font-semibold text-textMain">Upgrade de plan</div><div class="text-[11px] text-textMuted">À partir de 5 filleuls</div></div></div>
             <span class="font-bricolage text-[15px] font-bold text-amber-600">1 mois Pro</span>
           </div>
         </div>
       </div>
-
-      <!-- Cadeau filleul -->
       <div class="bg-green-dark rounded-[18px] p-5 relative overflow-hidden">
         <div class="absolute w-40 h-40 rounded-full bg-primary/8 -bottom-10 -right-10 pointer-events-none"></div>
-        <h3 class="font-bricolage text-base font-bold text-white mb-1 flex items-center gap-2 relative z-10">
-          <i class="fa-solid fa-gift text-primary text-sm"></i>Cadeau pour votre filleul
-        </h3>
+        <h3 class="font-bricolage text-base font-bold text-white mb-1 flex items-center gap-2 relative z-10"><i class="fa-solid fa-gift text-primary text-sm"></i>Cadeau pour votre filleul</h3>
         <p class="text-white/50 text-[12px] mb-4 relative z-10">Ce que reçoit chaque personne que vous parrainez</p>
         <div class="space-y-3 relative z-10">
-          <div class="flex items-center gap-3">
-            <div class="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-check text-primary text-[10px]"></i></div>
-            <span class="text-[13px] text-white/80">1 mois d'abonnement Standard offert</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-check text-primary text-[10px]"></i></div>
-            <span class="text-[13px] text-white/80">3 déclarations gratuites dès l'inscription</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-check text-primary text-[10px]"></i></div>
-            <span class="text-[13px] text-white/80">Accès prioritaire au support</span>
-          </div>
+          <div class="flex items-center gap-3"><div class="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-check text-primary text-[10px]"></i></div><span class="text-[13px] text-white/80">1 mois d'abonnement Standard offert</span></div>
+          <div class="flex items-center gap-3"><div class="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-check text-primary text-[10px]"></i></div><span class="text-[13px] text-white/80">3 déclarations gratuites dès l'inscription</span></div>
+          <div class="flex items-center gap-3"><div class="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-check text-primary text-[10px]"></i></div><span class="text-[13px] text-white/80">Accès prioritaire au support</span></div>
         </div>
       </div>
     </div>
 
     <!-- ══════════════════════════════════
          CERCLE D'AMIS — CARTE DÉCLENCHEUR
-    ═══════════════════════════════════ -->
-    <div class="trigger-card bg-white border border-borderMain rounded-[20px] overflow-hidden" onclick="openSheet()">
+    ══════════════════════════════════ -->
+    <div id="friends-trigger-card" class="trigger-card bg-white border border-borderMain rounded-[20px] overflow-hidden" onclick="openPanel()" role="button" tabindex="0" aria-label="Ouvrir le cercle d'amis">
       <div class="px-5 pt-5 pb-4">
-
-        <!-- Titre + badge actifs -->
         <div class="flex items-center justify-between gap-3 mb-4">
           <div class="flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-[10px] bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -361,7 +356,9 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
               <span class="text-[12px] font-bold text-green-mid" id="active-count">0 actifs</span>
             </div>
             <div class="w-8 h-8 rounded-[9px] bg-surface2 border border-borderMain flex items-center justify-center text-textMuted">
-              <i class="fa-solid fa-chevron-up text-[11px]"></i>
+              <!-- chevron haut = mobile / expand = desktop -->
+              <i class="fa-solid fa-chevron-up text-[11px] md:hidden"></i>
+              <i class="fa-solid fa-expand text-[10px] hidden md:block"></i>
             </div>
           </div>
         </div>
@@ -382,12 +379,14 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
           </div>
         </div>
 
-        <!-- Avatars empilés + CTA -->
+        <!-- Avatars + label -->
         <div class="flex items-center justify-between">
           <div class="avatar-stack flex -space-x-2.5" id="avatar-preview"></div>
           <div class="flex items-center gap-1.5 text-[12px] font-semibold text-primary">
-            <span>Voir tous</span>
-            <i class="fa-solid fa-arrow-up-from-line text-[10px]"></i>
+            <span class="md:hidden">Voir tous</span>
+            <span class="hidden md:inline">Ouvrir le détail</span>
+            <i class="fa-solid fa-arrow-up-from-line text-[10px] md:hidden"></i>
+            <i class="fa-solid fa-up-right-from-square text-[10px] hidden md:inline"></i>
           </div>
         </div>
       </div>
@@ -396,87 +395,40 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       <div class="bg-bgMain border-t border-borderMain px-5 py-3 flex items-center gap-2.5" id="last-activity"></div>
     </div>
 
-    <!-- ── Progression vers le palier Pro ── -->
-    <div class="bg-white border border-borderMain rounded-[20px] p-5 sm:p-6">
-      <h2 class="font-bricolage text-base font-bold text-textMain mb-1 flex items-center gap-2">
-        <i class="fa-solid fa-chart-line text-primary text-sm"></i>Progression vers le palier Pro
-      </h2>
-      <p class="text-[12.5px] text-textMuted mb-4 italic">Encore <strong class="text-textMain">3 filleuls</strong> pour débloquer 1 mois de plan Pro offert</p>
-      <div class="flex items-center gap-3 mb-5">
-        <div class="flex -space-x-2">
-          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-primary text-white">A</div>
-          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-blue-400 text-white">P</div>
-          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-purple-400 text-white">F</div>
-          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-green-mid text-white">K</div>
-          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-amber-400 text-white">S</div>
-          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-red-300 text-white">L</div>
-          <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-bold bg-pink-300 text-white">R</div>
-        </div>
-        <div class="flex-1 h-2.5 bg-bgMain rounded-full overflow-hidden border border-borderMain">
-          <div class="h-full bg-gradient-to-r from-primary to-primary-dark rounded-full transition-all duration-700" style="width:70%"></div>
-        </div>
-        <span class="font-bricolage text-[13px] font-bold text-textMain flex-shrink-0">7 / 10</span>
-      </div>
-      <div class="grid grid-cols-3 gap-3">
-        <div class="text-center p-3 rounded-[12px] bg-bgMain border border-borderMain">
-          <div class="font-bricolage text-xl font-bold text-primary">5</div>
-          <div class="text-[11px] text-textMuted font-medium">Filleuls Standard</div>
-        </div>
-        <div class="text-center p-3 rounded-[12px] bg-bgMain border border-borderMain">
-          <div class="font-bricolage text-xl font-bold text-primary">10</div>
-          <div class="text-[11px] text-textMuted font-medium">→ 1 mois Pro</div>
-        </div>
-        <div class="text-center p-3 rounded-[12px] bg-bgMain border border-borderMain">
-          <div class="font-bricolage text-xl font-bold text-primary">20</div>
-          <div class="text-[11px] text-textMuted font-medium">→ 3 mois Pro</div>
-        </div>
-      </div>
-    </div>
+    <!-- Progression -->
+   
 
   </div><!-- /main-content -->
 </div><!-- /main-wrapper -->
 
-<!-- ══ BOTTOM NAV (mobile) ══ -->
+<!-- Bottom nav mobile -->
 <nav class="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-borderMain px-2 py-2 justify-around flex md:hidden">
-  <a href="dashboard.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
-    <i class="fa-solid fa-house text-base"></i>
-    <span class="text-[10px] font-medium">Accueil</span>
-  </a>
-  <a href="Mesdocument.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
-    <i class="fa-solid fa-plus-circle text-base"></i>
-    <span class="text-[10px] font-medium">Ajouter</span>
-  </a>
-  <a href="rechercher.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
-    <i class="fa-solid fa-magnifying-glass text-base"></i>
-    <span class="text-[10px] font-medium">Rechercher</span>
-  </a>
-  <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted relative">
-    <i class="fa-solid fa-envelope text-base"></i>
-    <span class="text-[10px] font-medium">Messages</span>
-    <div class="absolute top-1 right-2 w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
-  </a>
-  <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-primary" onclick="openSb()">
-    <i class="fa-solid fa-bars text-base"></i>
-    <span class="text-[10px] font-semibold">Plus</span>
-  </a>
+  <a href="dashboard.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted"><i class="fa-solid fa-house text-base"></i><span class="text-[10px] font-medium">Accueil</span></a>
+  <a href="Mesdocument.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted"><i class="fa-solid fa-plus-circle text-base"></i><span class="text-[10px] font-medium">Ajouter</span></a>
+  <a href="rechercher.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted"><i class="fa-solid fa-magnifying-glass text-base"></i><span class="text-[10px] font-medium">Rechercher</span></a>
+  <a href="mesGains.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted"><i class="fa-solid fa-wallet text-base"></i><span class="text-[10px] font-medium">Mes Gains</span></a>
+  <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-primary" onclick="openSb()"><i class="fa-solid fa-bars text-base"></i><span class="text-[10px] font-semibold">Plus</span></a>
 </nav>
 
+
 <!-- ══════════════════════════════════════
-     BOTTOM SHEET — CERCLE D'AMIS
+     BACKDROP (commun mobile + desktop)
 ══════════════════════════════════════ -->
+<div class="sheet-backdrop" id="backdrop" onclick="closePanel()"></div>
 
-<!-- Backdrop -->
-<div class="sheet-backdrop" id="backdrop" onclick="closeSheet()"></div>
 
-<!-- Sheet -->
-<div class="bottom-sheet" id="bottomSheet">
+<!-- ══════════════════════════════════════
+     PANNEAU — bottom sheet (mobile) / modal (desktop)
+     Toujours dans le DOM, caché par CSS
+══════════════════════════════════════ -->
+<div class="panel" id="mainPanel">
 
-  <!-- Zone drag + header -->
-  <div class="drag-zone flex-shrink-0" id="dragHandle">
+  <!-- Header / drag zone -->
+  <div class="drag-zone" id="dragHandle">
     <div class="sheet-handle"></div>
 
-    <div class="px-5 pb-4 pt-2">
-      <div class="flex items-center justify-between">
+    <div class="px-5 pb-4 pt-3">
+      <div class="flex items-center justify-between gap-3">
         <div>
           <h3 class="font-bricolage text-[17px] font-bold text-textMain">Cercle d'amis parrainés</h3>
           <p class="text-[12px] text-textMuted mt-0.5">
@@ -484,7 +436,7 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
             <span class="text-primary font-semibold" id="sheet-active">0 avec abonnement</span>
           </p>
         </div>
-        <button onclick="closeSheet()" class="w-9 h-9 rounded-full bg-surface2 border border-borderMain flex items-center justify-center text-textMuted hover:border-primary hover:text-primary transition-all">
+        <button onclick="closePanel()" class="close-btn w-9 h-9 rounded-full bg-surface2 border border-borderMain flex items-center justify-center text-textMuted">
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
@@ -511,44 +463,28 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
         </button>
       </div>
     </div>
-
     <div class="h-px bg-borderMain mx-5"></div>
   </div>
 
   <!-- Corps scrollable -->
-  <div class="sheet-body">
+  <div class="panel-body">
 
-    <!-- Résumé récompenses -->
+    <!-- Résumé gains -->
     <div class="px-5 py-3.5 border-b border-borderMain">
       <div class="flex items-center gap-4 overflow-x-auto">
         <div class="flex items-center gap-2 flex-shrink-0">
-          <div class="w-7 h-7 rounded-[7px] bg-primary/10 flex items-center justify-center">
-            <i class="fa-solid fa-coins text-primary text-[10px]"></i>
-          </div>
-          <div>
-            <div class="font-bricolage text-[13px] font-extrabold text-textMain" id="sheet-cash">0 XAF</div>
-            <div class="text-[10px] text-textMuted">Cash total</div>
-          </div>
+          <div class="w-7 h-7 rounded-[7px] bg-primary/10 flex items-center justify-center"><i class="fa-solid fa-coins text-primary text-[10px]"></i></div>
+          <div><div class="font-bricolage text-[13px] font-extrabold text-textMain" id="sheet-cash">0 XAF</div><div class="text-[10px] text-textMuted">Cash total</div></div>
         </div>
         <div class="w-px h-8 bg-borderMain flex-shrink-0"></div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <div class="w-7 h-7 rounded-[7px] bg-green-light flex items-center justify-center">
-            <i class="fa-solid fa-file-circle-plus text-green-mid text-[10px]"></i>
-          </div>
-          <div>
-            <div class="font-bricolage text-[13px] font-extrabold text-textMain" id="sheet-slots">+0 slots</div>
-            <div class="text-[10px] text-textMuted">Bonus</div>
-          </div>
+          <div class="w-7 h-7 rounded-[7px] bg-green-light flex items-center justify-center"><i class="fa-solid fa-file-circle-plus text-green-mid text-[10px]"></i></div>
+          <div><div class="font-bricolage text-[13px] font-extrabold text-textMain" id="sheet-slots">+0 slots</div><div class="text-[10px] text-textMuted">Bonus</div></div>
         </div>
         <div class="w-px h-8 bg-borderMain flex-shrink-0"></div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <div class="w-7 h-7 rounded-[7px] bg-amber-50 flex items-center justify-center">
-            <i class="fa-solid fa-trophy text-amber-500 text-[10px]"></i>
-          </div>
-          <div>
-            <div class="font-bricolage text-[13px] font-extrabold text-textMain" id="sheet-progress">0 / 10</div>
-            <div class="text-[10px] text-textMuted">Vers Pro</div>
-          </div>
+          <div class="w-7 h-7 rounded-[7px] bg-amber-50 flex items-center justify-center"><i class="fa-solid fa-trophy text-amber-500 text-[10px]"></i></div>
+          <div><div class="font-bricolage text-[13px] font-extrabold text-textMain" id="sheet-progress">0 / 10</div><div class="text-[10px] text-textMuted">Vers Pro</div></div>
         </div>
       </div>
     </div>
@@ -564,7 +500,7 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
       </div>
     </div>
 
-    <!-- Liste des filleuls -->
+    <!-- Liste filleuls -->
     <div id="friends-list-sheet"></div>
 
     <!-- État vide -->
@@ -578,17 +514,17 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
 
     <!-- CTA -->
     <div class="px-5 pt-4 pb-6">
-      <button onclick="closeSheet();copyInviteLink()"
+      <button onclick="closePanel();copyInviteLink()"
         class="w-full flex items-center justify-center gap-2.5 py-3.5 bg-green-dark text-white text-[13.5px] font-bold rounded-[14px] hover:bg-green-mid transition-colors">
-        <i class="fa-solid fa-user-plus text-sm"></i>
-        Inviter un nouvel ami
+        <i class="fa-solid fa-user-plus text-sm"></i> Inviter un nouvel ami
       </button>
     </div>
   </div>
 </div>
 
+
 <!-- Toast -->
-<div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] pointer-events-none opacity-0 transition-all duration-300 translate-y-2">
+<div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[300] pointer-events-none opacity-0 transition-all duration-300 translate-y-2">
   <div class="bg-green-dark text-white text-[13px] font-semibold px-4 py-2.5 rounded-full flex items-center gap-2 shadow-lg whitespace-nowrap">
     <i class="fa-solid fa-check text-primary text-xs"></i>
     <span id="toast-msg">Lien copié !</span>
@@ -596,19 +532,10 @@ html,body{font-family:'Poppins',sans-serif;background:#F4EFE6}
 </div>
 
 
-<!-- ══════════════════════════════════════
-     SCRIPTS
-══════════════════════════════════════ -->
 <script>
 /* ── Sidebar ── */
-function openSb(){
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-}
-function closeSb(){
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-}
+function openSb(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+function closeSb(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 
 /* ── Code parrainage ── */
 function copyCode(){
@@ -616,89 +543,66 @@ function copyCode(){
   const btn  = document.getElementById('copy-btn');
   navigator.clipboard.writeText(code.trim()).then(() => {
     btn.innerHTML = '<i class="fa-solid fa-check text-[11px]"></i> Copié !';
-    btn.classList.add('bg-green-600');
-    btn.classList.remove('bg-primary','hover:bg-primary-dark');
-    setTimeout(() => {
-      btn.innerHTML = '<i class="fa-regular fa-copy text-[11px]"></i> Copier';
-      btn.classList.remove('bg-green-600');
-      btn.classList.add('bg-primary','hover:bg-primary-dark');
-    }, 2000);
+    btn.classList.add('bg-green-600'); btn.classList.remove('bg-primary','hover:bg-primary-dark');
+    setTimeout(() => { btn.innerHTML='<i class="fa-regular fa-copy text-[11px]"></i> Copier'; btn.classList.remove('bg-green-600'); btn.classList.add('bg-primary','hover:bg-primary-dark'); }, 2000);
   });
 }
 function shareCode(method){
   const code = 'DOC-JM2024';
   const msg  = `Rejoins DocMaster avec mon code *${code}* et reçois 1 mois offert + 3 analyses gratuites ! https://docmaster.cm/ref/${code}`;
-  if(method === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
-  else if(method === 'sms') window.open('sms:?body=' + encodeURIComponent(msg));
+  if(method==='whatsapp') window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  else if(method==='sms') window.open('sms:?body='+encodeURIComponent(msg));
   else copyCode();
 }
 
 /* ── Données filleuls ── */
 const referredFriends = [
-  { name:'Alice Mbang',   joined:'2024-01-12', active:true,  initials:'AM', color:'bg-blue-100 text-blue-700',   reward:500, slots:2 },
+  { name:'Alice Mbang',   joined:'2024-01-12', active:true,  initials:'AM', color:'bg-blue-100 text-blue-700',    reward:500, slots:2 },
   { name:'Paul Nkeng',    joined:'2024-01-28', active:true,  initials:'PN', color:'bg-purple-100 text-purple-700', reward:500, slots:2 },
-  { name:'Fatima Bello',  joined:'2024-02-03', active:false, initials:'FB', color:'bg-amber-100 text-amber-700',  reward:0,   slots:0 },
-  { name:'Kevin Essomba', joined:'2024-02-15', active:true,  initials:'KE', color:'bg-green-100 text-green-700',  reward:500, slots:2 },
-  { name:'Sonia Etame',   joined:'2024-02-19', active:false, initials:'SE', color:'bg-rose-100 text-rose-700',    reward:0,   slots:0 },
-  { name:'Roland Ateba',  joined:'2024-03-01', active:true,  initials:'RA', color:'bg-teal-100 text-teal-700',    reward:500, slots:2 }
+  { name:'Fatima Bello',  joined:'2024-02-03', active:false, initials:'FB', color:'bg-amber-100 text-amber-700',   reward:0,   slots:0 },
+  { name:'Kevin Essomba', joined:'2024-02-15', active:true,  initials:'KE', color:'bg-green-100 text-green-700',   reward:500, slots:2 },
+  { name:'Sonia Etame',   joined:'2024-02-19', active:false, initials:'SE', color:'bg-rose-100 text-rose-700',     reward:0,   slots:0 },
+  { name:'Roland Ateba',  joined:'2024-03-01', active:true,  initials:'RA', color:'bg-teal-100 text-teal-700',     reward:500, slots:2 }
 ];
+let currentFilter='all', currentSearch='';
 
-let currentFilter = 'all';
-let currentSearch = '';
-
-/* ── Dates ── */
-function formatDate(d){
-  return new Date(d).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
-}
+function formatDate(d){ return new Date(d).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}); }
 function relativeDate(d){
-  const diff = Math.floor((Date.now() - new Date(d)) / (1000*60*60*24));
-  if(diff === 0) return "Aujourd'hui";
-  if(diff === 1) return 'Hier';
-  if(diff < 7)   return `Il y a ${diff} jours`;
-  if(diff < 30)  return `Il y a ${Math.floor(diff/7)} sem.`;
+  const diff=Math.floor((Date.now()-new Date(d))/(1000*60*60*24));
+  if(diff===0) return"Aujourd'hui"; if(diff===1) return'Hier';
+  if(diff<7) return`Il y a ${diff} jours`; if(diff<30) return`Il y a ${Math.floor(diff/7)} sem.`;
   return formatDate(d);
 }
 
-/* ── Toast ── */
 function showToast(msg){
-  const t = document.getElementById('toast');
-  document.getElementById('toast-msg').textContent = msg;
-  t.style.opacity = '1';
-  t.style.transform = 'translateX(-50%) translateY(0)';
-  setTimeout(() => {
-    t.style.opacity = '0';
-    t.style.transform = 'translateX(-50%) translateY(8px)';
-  }, 2200);
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)';
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(8px)'; },2200);
 }
 
-/* ── Filtres ── */
 function getFiltered(){
-  let list = [...referredFriends];
-  if(currentFilter === 'active')   list = list.filter(f => f.active);
-  if(currentFilter === 'inactive') list = list.filter(f => !f.active);
-  if(currentFilter === 'recent')   list = list.sort((a,b) => new Date(b.joined) - new Date(a.joined)).slice(0,3);
-  if(currentSearch) list = list.filter(f => f.name.toLowerCase().includes(currentSearch.toLowerCase()));
+  let list=[...referredFriends];
+  if(currentFilter==='active')   list=list.filter(f=>f.active);
+  if(currentFilter==='inactive') list=list.filter(f=>!f.active);
+  if(currentFilter==='recent')   list=list.sort((a,b)=>new Date(b.joined)-new Date(a.joined)).slice(0,3);
+  if(currentSearch) list=list.filter(f=>f.name.toLowerCase().includes(currentSearch.toLowerCase()));
   return list;
 }
-function filterFriends(){
-  currentSearch = document.getElementById('search-input').value;
-  renderList();
-}
-function setFilter(val, btn){
-  currentFilter = val;
-  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  renderList();
+function filterFriends(){ currentSearch=document.getElementById('search-input').value; renderList(); }
+function setFilter(val,btn){
+  currentFilter=val;
+  document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active'); renderList();
 }
 
-/* ── Render carte déclencheur ── */
 function renderAvatarPreview(){
   const preview       = document.getElementById('avatar-preview');
-  const activeFriends = referredFriends.filter(f => f.active);
-  const totalCash     = referredFriends.reduce((s,f) => s + f.reward, 0);
-  const totalSlots    = referredFriends.reduce((s,f) => s + f.slots,  0);
-  const count         = Math.min(referredFriends.length, 10);
-  const pct           = Math.round((count / 10) * 100);
+  const activeFriends = referredFriends.filter(f=>f.active);
+  const totalCash     = referredFriends.reduce((s,f)=>s+f.reward,0);
+  const totalSlots    = referredFriends.reduce((s,f)=>s+f.slots,0);
+  const count         = Math.min(referredFriends.length,10);
+  const pct           = Math.round((count/10)*100);
 
   document.getElementById('active-count').textContent        = `${activeFriends.length} actifs`;
   document.getElementById('stat-total').textContent           = referredFriends.length;
@@ -712,115 +616,163 @@ function renderAvatarPreview(){
   document.getElementById('sheet-progress-count').textContent = `${count} / 10`;
   document.getElementById('sheet-progress-bar').style.width   = `${pct}%`;
 
-  preview.innerHTML = referredFriends.slice(0,5).map((f,i) => `
-    <div class="w-8 h-8 rounded-full border-2 border-white ${f.color}
-      flex items-center justify-center font-bricolage text-[11px] font-bold
-      ${f.active ? 'avatar-active' : ''}"
-      style="z-index:${10-i}" title="${f.name}">${f.initials}</div>
+  preview.innerHTML=referredFriends.slice(0,5).map((f,i)=>`
+    <div class="w-8 h-8 rounded-full border-2 border-white ${f.color} flex items-center justify-center font-bricolage text-[11px] font-bold ${f.active?'avatar-active':''}" style="z-index:${10-i}" title="${f.name}">${f.initials}</div>
   `).join('');
-  if(referredFriends.length > 5){
-    preview.innerHTML += `<div class="w-8 h-8 rounded-full border-2 border-white bg-bgMain
-      flex items-center justify-center text-[10px] font-bold text-textMuted">+${referredFriends.length-5}</div>`;
-  }
+  if(referredFriends.length>5) preview.innerHTML+=`<div class="w-8 h-8 rounded-full border-2 border-white bg-bgMain flex items-center justify-center text-[10px] font-bold text-textMuted">+${referredFriends.length-5}</div>`;
 
-  const latest = [...referredFriends].sort((a,b) => new Date(b.joined) - new Date(a.joined))[0];
-  document.getElementById('last-activity').innerHTML = `
+  const latest=[...referredFriends].sort((a,b)=>new Date(b.joined)-new Date(a.joined))[0];
+  document.getElementById('last-activity').innerHTML=`
     <div class="w-6 h-6 rounded-full ${latest.color} flex items-center justify-center text-[9px] font-bold flex-shrink-0">${latest.initials}</div>
-    <span class="text-[12px] text-textMuted flex-1">
-      <span class="font-semibold text-textMain">${latest.name}</span> a rejoint ${relativeDate(latest.joined).toLowerCase()}
-    </span>
+    <span class="text-[12px] text-textMuted flex-1"><span class="font-semibold text-textMain">${latest.name}</span> a rejoint ${relativeDate(latest.joined).toLowerCase()}</span>
     <i class="fa-solid fa-clock text-textMuted text-[10px]"></i>
   `;
 }
 
-/* ── Render liste sheet ── */
 function renderList(){
-  const list  = getFiltered();
-  const root  = document.getElementById('friends-list-sheet');
-  const empty = document.getElementById('empty-state');
-
-  if(!list.length){
-    root.innerHTML = '';
-    empty.classList.remove('hidden');
-    empty.classList.add('flex');
-    return;
-  }
-  empty.classList.add('hidden');
-  empty.classList.remove('flex');
-
-  root.innerHTML = list.map((f,i) => `
-    <div class="friend-row flex items-center gap-3.5 px-5 py-4 border-b border-borderMain"
-         style="animation:fadeUp .25s ease both;animation-delay:${i*40}ms">
+  const list=getFiltered();
+  const root=document.getElementById('friends-list-sheet');
+  const empty=document.getElementById('empty-state');
+  if(!list.length){ root.innerHTML=''; empty.classList.remove('hidden'); empty.classList.add('flex'); return; }
+  empty.classList.add('hidden'); empty.classList.remove('flex');
+  root.innerHTML=list.map((f,i)=>`
+    <div class="friend-row flex items-center gap-3.5 px-5 py-4 border-b border-borderMain" style="animation:fadeUp .25s ease both;animation-delay:${i*40}ms">
       <div class="relative flex-shrink-0">
         <div class="w-11 h-11 rounded-full ${f.color} flex items-center justify-center font-bricolage text-[13px] font-bold">${f.initials}</div>
-        <div class="status-dot ${f.active ? 'active' : 'inactive'} absolute -bottom-0.5 -right-0.5"></div>
+        <div class="status-dot ${f.active?'active':'inactive'} absolute -bottom-0.5 -right-0.5"></div>
       </div>
       <div class="flex-1 min-w-0">
         <div class="text-[13.5px] font-semibold text-textMain leading-tight truncate">${f.name}</div>
-        <div class="text-[11px] text-textMuted mt-0.5 flex items-center gap-1.5">
-          <i class="fa-regular fa-calendar text-[9px]"></i>${relativeDate(f.joined)}
-        </div>
+        <div class="text-[11px] text-textMuted mt-0.5 flex items-center gap-1.5"><i class="fa-regular fa-calendar text-[9px]"></i>${relativeDate(f.joined)}</div>
       </div>
       <div class="flex flex-col items-end gap-1 flex-shrink-0">
         ${f.active
-          ? '<span class="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 leading-tight">Abonné</span>'
-          : '<span class="text-[10.5px] font-semibold px-2 py-0.5 rounded-full bg-bgMain text-textMuted leading-tight">Sans abonnement</span>'
+          ?'<span class="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 leading-tight">Abonné</span>'
+          :'<span class="text-[10.5px] font-semibold px-2 py-0.5 rounded-full bg-bgMain text-textMuted leading-tight">Sans abonnement</span>'
         }
-        ${f.reward > 0
-          ? `<span class="text-[10px] font-semibold text-primary">+${f.reward} XAF · +${f.slots} slots</span>`
-          : '<span class="text-[10px] text-textMuted italic">En attente</span>'
+        ${f.reward>0
+          ?`<span class="text-[10px] font-semibold text-primary">+${f.reward} XAF · +${f.slots} slots</span>`
+          :'<span class="text-[10px] text-textMuted italic">En attente</span>'
         }
       </div>
     </div>
   `).join('');
 }
 
-/* ── Sheet open / close ── */
-function openSheet(){
-  document.getElementById('bottomSheet').classList.add('open');
-  document.getElementById('backdrop').classList.add('active');
-  document.body.style.overflow = 'hidden';
+/* ── Open / Close panel ── */
+const panel   = document.getElementById('mainPanel');
+const backdrop= document.getElementById('backdrop');
+
+function openPanel(){
+  panel.style.transform='';
+  if (window.innerWidth >= 900) {
+    panel.style.display='flex';
+  }
+  panel.classList.add('open');
+  backdrop.classList.add('active');
+  document.body.style.overflow='hidden';
   renderList();
 }
-function closeSheet(){
-  document.getElementById('bottomSheet').classList.remove('open');
-  document.getElementById('backdrop').classList.remove('active');
-  document.body.style.overflow = '';
+function closePanel(){
+  panel.classList.remove('open');
+  backdrop.classList.remove('active');
+  panel.style.transform='';
+  if (window.innerWidth >= 900) {
+    panel.style.display='flex';
+  }
+  document.body.style.overflow='';
 }
 
-/* ── Drag to dismiss ── */
-let startY = 0, currentY = 0, dragging = false;
-const sheet      = document.getElementById('bottomSheet');
-const dragHandle = document.getElementById('dragHandle');
+/* ── Drag to dismiss (mobile uniquement) ── */
+let startY=0, currentY=0, dragging=false;
+const dragHandle=document.getElementById('dragHandle');
 
-dragHandle.addEventListener('touchstart', e => {
-  startY = e.touches[0].clientY; dragging = true;
-  sheet.style.transition = 'none';
+dragHandle.addEventListener('touchstart',e=>{
+  if(window.innerWidth>=900) return;
+  startY=e.touches[0].clientY; dragging=true; panel.style.transition='none';
 });
-dragHandle.addEventListener('touchmove', e => {
-  if(!dragging) return;
-  currentY = e.touches[0].clientY - startY;
-  if(currentY > 0) sheet.style.transform = `translateY(${currentY}px)`;
+dragHandle.addEventListener('touchmove',e=>{
+  if(!dragging||window.innerWidth>=900) return;
+  currentY=e.touches[0].clientY-startY;
+  if(currentY>0) panel.style.transform=`translateY(${currentY}px)`;
 });
-dragHandle.addEventListener('touchend', () => {
-  sheet.style.transition = 'transform .4s cubic-bezier(.32,0,.15,1)';
-  if(currentY > 120){ closeSheet(); sheet.style.transform = ''; }
-  else { sheet.style.transform = 'translateY(0)'; }
-  dragging = false; currentY = 0;
+dragHandle.addEventListener('touchend',()=>{
+  if(window.innerWidth>=900) return;
+  panel.style.transition='transform .4s cubic-bezier(.32,0,.15,1)';
+  if(currentY>120){ closePanel(); panel.style.transform=''; }
+  else { panel.style.transform='translateY(0)'; }
+  dragging=false; currentY=0;
 });
 
 /* ── Invite ── */
 function copyInviteLink(){
   navigator.clipboard.writeText('https://docmaster.cm/ref/DOC-JM2024')
-    .then(() => showToast('Lien copié !'))
-    .catch(() => showToast('Lien copié !'));
+    .then(()=>showToast('Lien copié !')).catch(()=>showToast('Lien copié !'));
 }
 
-/* ── ESC ── */
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeSheet(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePanel(); });
 
-/* ── Init ── */
-document.addEventListener('DOMContentLoaded', renderAvatarPreview);
+function ensureFriendsTriggerVisible() {
+  const card = document.getElementById('friends-trigger-card');
+  if (!card) return;
+  card.classList.remove('hidden', 'md:hidden', 'lg:hidden');
+  card.removeAttribute('hidden');
+  card.style.setProperty('display', 'block', 'important');
+  card.style.setProperty('visibility', 'visible', 'important');
+  card.style.setProperty('opacity', '1', 'important');
+}
+
+function ensureFriendsTriggerPlacement() {
+  const card = document.getElementById('friends-trigger-card');
+  if (!card) return;
+
+  const progressionTitle = Array.from(document.querySelectorAll('h2')).find((el) =>
+    (el.textContent || '').includes('Progression vers le palier Pro')
+  );
+  const progressionCard = progressionTitle ? progressionTitle.closest('div.bg-white') : null;
+
+  if (progressionCard && progressionCard.parentNode && card.nextElementSibling !== progressionCard) {
+    progressionCard.parentNode.insertBefore(card, progressionCard);
+  }
+}
+
+const triggerCard = document.querySelector('.trigger-card');
+if (triggerCard) {
+  ensureFriendsTriggerVisible();
+  ensureFriendsTriggerPlacement();
+  triggerCard.style.display = 'block';
+  triggerCard.style.visibility = 'visible';
+  triggerCard.style.opacity = '1';
+  triggerCard.addEventListener('click', openPanel);
+  triggerCard.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openPanel();
+    }
+  });
+}
+
+window.addEventListener('resize', function () {
+  ensureFriendsTriggerVisible();
+  ensureFriendsTriggerPlacement();
+  if (window.innerWidth >= 900 && panel.classList.contains('open')) {
+    panel.style.transform = '';
+    panel.style.display = 'flex';
+  }
+});
+
+function initParrainageCircle() {
+  ensureFriendsTriggerVisible();
+  ensureFriendsTriggerPlacement();
+  renderAvatarPreview();
+  renderList();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initParrainageCircle);
+} else {
+  initParrainageCircle();
+}
 </script>
 </body>
 </html>

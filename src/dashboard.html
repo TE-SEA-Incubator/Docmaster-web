@@ -137,11 +137,7 @@ body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100v
 
     <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Tableau de bord</span>
 
-    <!-- Search (hidden on mobile, visible sm+) -->
-    <div class="search-bar-wrap flex-1 max-w-[360px] ml-3 items-center bg-surface2 border border-borderMain rounded-[10px] overflow-hidden transition-colors focus-within:border-primary">
-      <i class="fa-solid fa-search px-3 text-textMuted text-xs flex-shrink-0"></i>
-      <input type="text" placeholder="Rechercher un document…" class="flex-1 py-2 pr-3 bg-transparent border-none outline-none font-poppins text-[13px] text-textMain placeholder:text-textMuted">
-    </div>
+    
 
     <div class="ml-auto flex items-center gap-2">
       <!-- Notif bell -->
@@ -218,7 +214,16 @@ body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100v
       </div>
 
       <!-- Stat 2 -->
-      
+      <div onclick="window.location.href='Mesappareils.html'" class="col-span-1 bg-white border border-borderMain rounded-[16px] sm:rounded-[18px] p-4 flex flex-col gap-2.5 hover:border-primary/50 transition-all cursor-pointer">
+        <div class="flex items-center justify-between">
+          <div class="w-9 h-9 rounded-[10px] bg-blue-50 flex items-center justify-center text-base flex-shrink-0">
+            <i class="fa-solid fa-mobile-screen-button text-blue-600"></i>
+          </div>
+          <span class="text-[10px] font-bold py-0.5 px-2 rounded-[7px] bg-blue-100 text-blue-700">Mes appareils</span>
+        </div>
+        <div class="font-bricolage text-[24px] sm:text-[28px] font-extrabold text-textMain leading-none" id="statDevicesCount">0</div>
+        <div class="text-[11px] sm:text-[12.5px] text-textMuted font-medium leading-tight">Appareils enregistrés</div>
+      </div>
     </div>
 
     <!-- Main grid: 1 col mobile → 2 col desktop -->
@@ -492,10 +497,9 @@ body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100v
       <i class="fa-solid fa-magnifying-glass text-base"></i>
       <span class="text-[10px] font-medium">Rechercher</span>
     </a>
-    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted relative">
-      <i class="fa-solid fa-envelope text-base"></i>
-      <span class="text-[10px] font-medium">Messages</span>
-      <div class="absolute top-1 right-2 w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
+    <a href="mesGains.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
+      <i class="fa-solid fa-wallet text-base"></i>
+      <span class="text-[10px] font-medium">Mes Gains</span>
     </a>
     <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted" onclick="openSb()">
       <i class="fa-solid fa-bars text-base"></i>
@@ -552,6 +556,29 @@ document.querySelectorAll('.sb-item').forEach(item => {
 const dateOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
 document.getElementById('currentDay').innerText = new Intl.DateTimeFormat('fr-FR', dateOptions).format(new Date());
 
+function getDeviceStorageKeyForDashboard() {
+  if (typeof getCurrentUser === 'function') {
+    const user = getCurrentUser();
+    if (user && user.email) {
+      return `dm_devices_${user.email.toLowerCase()}`;
+    }
+  }
+  return 'dm_devices';
+}
+
+function updateDashboardTopStats() {
+  const statDevices = document.getElementById('statDevicesCount');
+  if (!statDevices) return;
+
+  try {
+    const raw = localStorage.getItem(getDeviceStorageKeyForDashboard()) || '[]';
+    const list = JSON.parse(raw);
+    statDevices.innerText = Array.isArray(list) ? list.length : 0;
+  } catch (_) {
+    statDevices.innerText = '0';
+  }
+}
+
 // notification modal functions
 function openNotifModal() {
   document.getElementById('notifModal').classList.remove('hidden');
@@ -590,6 +617,8 @@ function addNotification(title, message, time) {
 addNotification('Document retrouvé', 'Votre document "Carte ID" a été retrouvé.', 'Il y a 2 heures');
 addNotification('Validation', 'Vous avez confirmé la récupération d’un document.', 'Il y a 1 jour');
 addNotification('Paiement reçu', 'Vous avez perçu 30€ pour un document remis.', 'Il y a 3 jours');
+
+updateDashboardTopStats();
 
 
 </script>

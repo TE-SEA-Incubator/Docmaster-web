@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocMaster — Mes déclarations trouvées</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./js/auth.js"></script>
+  <script src="./js/sidebar.js"></script>
+  <link href="css/output.css" rel="stylesheet" />
+  <link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
+            'green-dark': '#1E3A2F',
+            bgMain: '#F4EFE6',
+            surface2: '#FAF7F2',
+            textMain: '#1A1A1A',
+            textMuted: '#9CA3AF',
+            borderMain: '#EAE3D8',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            bricolage: ['"Bricolage Grotesque"', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root { --sidebar: 260px; }
+    html, body { font-family: 'Poppins', sans-serif; background: #F4EFE6; }
+    body { min-height: 100vh; overflow-x: hidden; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar); transform: translateX(-100%); transition: transform .28s cubic-bezier(.4,0,.2,1); z-index: 50; overflow-y: auto; overflow-x: hidden; }
+    .sidebar.open { transform: translateX(0); }
+    .sb-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .28s; }
+    .sb-overlay.show { display: block; opacity: 1; pointer-events: all; }
+    .main-wrapper { min-height: 100vh; display: flex; flex-direction: column; width: 100%; }
+    .main-content { flex: 1; }
+    @media (min-width: 900px) { body { display: flex; height: 100vh; overflow: hidden; } .sidebar { position: relative; transform: none !important; flex-shrink: 0; } .main-wrapper { flex: 1; min-width: 0; height: 100vh; overflow: hidden; } .main-content { overflow-y: auto; } }
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #DDD5C8; border-radius: 10px; }
+  </style>
+</head>
+<body>
+<div id="sidebar-root"></div>
+<div class="main-wrapper" id="mainWrapper">
+  <header class="sticky top-0 z-30 h-[58px] bg-white border-b border-borderMain flex items-center px-4 gap-3 flex-shrink-0">
+    <button class="w-9 h-9 flex items-center justify-center rounded-[9px] bg-surface2 border border-borderMain text-textMain text-base cursor-pointer hover:border-primary hover:text-primary transition-all" onclick="toggleSb()"><i class="fa-solid fa-bars"></i></button>
+    <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Mes déclarations trouvées</span>
+    <div class="dm-quick-search hidden"></div><div class="dm-quick-actions hidden"></div>
+    <div class="ml-auto flex items-center gap-2">
+      <a href="trouverdocument.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-blue-600 text-[11.5px] font-bold text-white hover:bg-blue-700 transition-colors"><i class="fa-solid fa-file-circle-check text-[11px]"></i> Déclarer trouvé</a>
+      <a href="trouverdocument.html" aria-label="Déclarer trouvé" class="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-[10px] bg-blue-600 text-white hover:bg-blue-700 transition-colors"><i class="fa-solid fa-plus text-[12px]"></i></a>
+    </div>
+  </header>
+
+  <main class="main-content custom-scroll p-4 sm:p-6 pb-24 md:pb-8 flex flex-col gap-4">
+    <section class="bg-white border border-borderMain rounded-[18px] p-4 sm:p-5">
+      <h1 class="font-bricolage text-xl sm:text-2xl font-extrabold text-textMain">Historique de vos documents trouvés</h1>
+      <p class="text-[12.5px] text-textMuted mt-1">Retrouvez uniquement vos déclarations de documents retrouvés.</p>
+    </section>
+    <section id="declaration-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></section>
+  </main>
+</div>
+
+<script>
+const declarations = [
+  { id: 'DEC-24013', title: 'Permis de conduire', owner: 'Marie Essono', date: '2026-03-10', lieu: 'Douala - Bonapriso', etat: 'nouveau' },
+  { id: 'DEC-24015', title: 'Passeport', owner: 'Clarisse Ndzi', date: '2026-03-14', lieu: 'Bafoussam - Marché A', etat: 'en_cours' }
+];
+function etatMeta(etat){ if(etat==='nouveau') return {label:'Nouveau', cls:'bg-blue-50 text-blue-700 border-blue-100'}; return {label:'En cours', cls:'bg-amber-50 text-amber-700 border-amber-100'}; }
+function formatDate(value){ return new Date(value).toLocaleDateString('fr-FR',{ day:'numeric', month:'short', year:'numeric' }); }
+function render(){
+  const root = document.getElementById('declaration-list');
+  root.innerHTML = declarations.map((item)=>{
+    const etat = etatMeta(item.etat);
+    return `<article class="bg-white border border-borderMain rounded-[18px] p-4 sm:p-5"><div class="flex items-start justify-between gap-3 mb-3"><div class="min-w-0"><p class="text-[11px] font-bold text-textMuted uppercase tracking-wide">${item.id}</p><h3 class="font-bricolage text-[18px] font-bold text-textMain leading-tight mt-0.5">${item.title}</h3></div><span class="px-2.5 py-1 rounded-full border text-[11px] font-bold bg-green-50 text-green-700 border-green-100"><i class="fa-solid fa-file-circle-check mr-1"></i>Trouvé</span></div><div class="space-y-1.5 text-[12.5px] text-textMuted"><p><i class="fa-regular fa-user mr-1.5"></i> ${item.owner}</p><p><i class="fa-regular fa-calendar mr-1.5"></i> ${formatDate(item.date)}</p><p><i class="fa-solid fa-location-dot mr-1.5"></i> ${item.lieu}</p></div><div class="mt-4 flex items-center justify-between gap-3"><span class="px-2.5 py-1 rounded-full border text-[11px] font-semibold ${etat.cls}">${etat.label}</span><button class="px-3 py-1.5 rounded-[9px] bg-surface2 border border-borderMain text-[12px] font-semibold text-textMuted">Voir détails</button></div></article>`;
+  }).join('');
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
+</script>
+</body>
+</html>

@@ -1,375 +1,181 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DocMaster – Déclarer un document perdu</title>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="./js/sidebar.js"></script>
+  <script src="./js/pdfGenerator.js"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
-            green: { dark: '#1E3A2F', mid: '#2D5A42', light: '#E8F5EE' },
-            bgMain: '#F2EBD9',
-            textMain: '#1A1A1A',
-            textMuted: '#6B7280',
-            borderMain: '#E0D5C4',
+            primary:{ DEFAULT:'#F5A64B', dark:'#D98A30', light:'#FEF0DC' },
+            green:{ dark:'#1E3A2F', mid:'#2D5A42', light:'#E8F5EE' },
+            bgMain:'#F2EBD9', textMain:'#1A1A1A', textMuted:'#6B7280', borderMain:'#E0D5C4',
           },
-          fontFamily: {
-            poppins: ['Poppins', 'sans-serif'],
-            bricolage: ['"Bricolage Grotesque"', 'sans-serif'],
-          },
-          borderRadius: {
-            'v8': '8px', 'v12': '12px', 'v14': '14px', 'v16': '16px', 'v20': '20px', 'v24': '24px',
-          }
+          fontFamily:{ poppins:['Poppins','sans-serif'], bricolage:['"Bricolage Grotesque"','sans-serif'] },
         }
       }
     }
   </script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{font-family:'Poppins',sans-serif;background:#F2EBD9;height:100vh;overflow:hidden;color:#1A1A1A}
 
-    /* ════════════════════════════════
-       ROOT — aucun scroll sur la page
-    ════════════════════════════════ */
-    html, body {
-      font-family: 'Poppins', sans-serif;
-      background: #F2EBD9;
-      height: 100vh;
-      overflow: hidden;       /* ← bloque TOUT scroll page */
-      color: #1A1A1A;
-    }
+    /* ── Sidebar ── */
+    .sidebar{width:260px;height:100vh;background:#1E3A2F;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:40;transform:translateX(0);transition:transform .3s ease}
+    .sidebar.closed{transform:translateX(-100%)} .sidebar.open{transform:translateX(0)}
+    .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:30} .sb-overlay.show{display:block}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:10px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.6);text-decoration:none;transition:all .2s;cursor:pointer}
+    .nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9)} .nav-item.active{background:rgba(245,166,75,.15);color:#F5A64B;font-weight:600}
+    .nav-item .nav-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;background:rgba(255,255,255,.06);flex-shrink:0}
+    .nav-item.active .nav-icon{background:rgba(245,166,75,.2)}
 
-    /* ════════════════════════════════
-       SIDEBAR
-    ════════════════════════════════ */
-    .sidebar {
-      width: 260px;
-      height: 100vh;
-      background: #1E3A2F;
-      display: flex;
-      flex-direction: column;
-      position: fixed;
-      left: 0; top: 0; bottom: 0;
-      z-index: 40;
-      transform: translateX(0);
-      transition: transform 0.3s ease;
-    }
-    .sidebar.closed { transform: translateX(-100%); }
-    .sidebar.open { transform: translateX(0); }
-    .sb-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 30;
-    }
-    .sb-overlay.show { display: block; }
+    /* ── Layout ── */
+    .main-wrap{margin-left:260px;height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .3s ease}
+    .main-wrap.expanded{margin-left:0}
+    .topbar{flex-shrink:0;background:white;border-bottom:1px solid #E0D5C4;padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;z-index:20}
+    #pageBody{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding:16px 28px 0}
+    #alertBanner{flex-shrink:0;margin-bottom:14px}
+    #formGrid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 288px;gap:20px;overflow:hidden}
+    #formLeft{min-height:0;overflow-y:auto;padding-bottom:20px;display:flex;flex-direction:column;gap:14px}
+    #formRight{min-height:0;overflow-y:auto;padding-bottom:20px;display:flex;flex-direction:column;gap:16px}
+    #formLeft::-webkit-scrollbar,#formRight::-webkit-scrollbar{width:4px}
+    #formLeft::-webkit-scrollbar-thumb,#formRight::-webkit-scrollbar-thumb{background:#D0C6B8;border-radius:99px}
 
-    .nav-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 11px 16px; border-radius: 10px;
-      font-size: 13.5px; font-weight: 500;
-      color: rgba(255,255,255,0.6);
-      text-decoration: none;
-      transition: all 0.2s; cursor: pointer;
-    }
-    .nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
-    .nav-item.active { background: rgba(245,166,75,0.15); color: #F5A64B; font-weight: 600; }
-    .nav-item .nav-icon {
-      width: 32px; height: 32px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; background: rgba(255,255,255,0.06);
-      flex-shrink: 0; transition: background 0.2s;
-    }
-    .nav-item.active .nav-icon { background: rgba(245,166,75,0.2); }
-    .nav-item:hover .nav-icon { background: rgba(255,255,255,0.1); }
+    /* ── Fields ── */
+    .field-group{display:flex;flex-direction:column;gap:6px}
+    .field-label{font-size:11.5px;font-weight:700;color:#6B7280;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+    .field-input{width:100%;padding:12px 14px 12px 42px;background:#F9F6F1;border:1.5px solid #E0D5C4;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13.5px;color:#1A1A1A;outline:none;transition:all .2s}
+    .field-input::placeholder{color:#C4BAB0}
+    .field-input:focus{border-color:#F5A64B;background:white;box-shadow:0 0 0 4px rgba(245,166,75,.12)}
+    .field-input.no-icon{padding-left:14px}
+    .field-wrapper{position:relative;display:flex;align-items:center}
+    .field-icon{position:absolute;left:14px;color:#D98A30;font-size:13px;pointer-events:none;transition:color .2s}
+    .field-wrapper:focus-within .field-icon{color:#F5A64B}
+    select.field-input{appearance:none;cursor:pointer}
+    textarea.field-input{padding:12px 14px;resize:vertical;min-height:80px;line-height:1.6}
+    .opt-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;background:#F2EBD9;border:1px solid #E0D5C4;border-radius:99px;font-size:10px;font-weight:600;color:#9CA3AF;margin-left:4px;vertical-align:middle;letter-spacing:.01em;text-transform:none}
 
-    /* ════════════════════════════════
-       SHELL PRINCIPAL
-       Colonne à droite de la sidebar
-    ════════════════════════════════ */
-    .main-wrap {
-      margin-left: 260px;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;          /* ← pas de scroll ici non plus */
-      transition: margin-left 0.3s ease;
-    }
-    .main-wrap.expanded { margin-left: 0; }
+    /* ── Doc type cards ── */
+    .doc-type-card{display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 10px;border-radius:14px;border:2px solid #E0D5C4;background:white;cursor:pointer;transition:all .22s;text-align:center;font-family:'Poppins',sans-serif;position:relative}
+    .doc-type-card:hover{border-color:#F5A64B;background:#FEF8F0;transform:translateY(-2px)}
+    .doc-type-card.selected{border-color:#F5A64B;background:#FEF0DC;box-shadow:0 4px 16px rgba(245,166,75,.2)}
+    .doc-type-card .card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;background:#F2EBD9;transition:background .2s,color .2s;color:#D98A30}
+    .doc-type-card.selected .card-icon{background:rgba(245,166,75,.2)}
+    .doc-type-card.selected .card-icon{color:#1E3A2F}
+    .doc-type-card .card-label{font-size:11px;font-weight:600;color:#374151;line-height:1.3}
+    .doc-type-card.selected .card-label{color:#D98A30}
+    .doc-check{position:absolute;top:7px;right:7px;width:18px;height:18px;border-radius:50%;background:#E0D5C4;display:flex;align-items:center;justify-content:center;transition:all .2s}
+    .doc-type-card.selected .doc-check{background:#F5A64B}
+    .doc-check i{font-size:8px;color:white;opacity:0;transition:opacity .2s}
+    .doc-type-card.selected .doc-check i{opacity:1}
 
-    /* ════════════════════════════════
-       TOPBAR — hauteur fixe
-    ════════════════════════════════ */
-    .topbar {
-      flex-shrink: 0;            /* ← ne rétrécit jamais */
-      background: white;
-      border-bottom: 1px solid #E0D5C4;
-      padding: 0 32px;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      z-index: 20;
-    }
+    /* ── Selection info ── */
+    #selectionInfo{margin-top:10px;padding:8px 12px;background:#F9F6F1;border-radius:10px;border:1px solid #EDE7DB;display:none;align-items:center;gap:8px;font-size:12px;color:#6B7280}
+    .count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:#F5A64B;color:white;font-weight:700;font-size:11px;font-family:'Bricolage Grotesque',sans-serif}
+    #selectionTags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+    .sel-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:#1E3A2F;color:white;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s}
+    .sel-tag:hover{background:#2D5A42} .sel-tag i{font-size:9px;opacity:.7}
 
-    /* ════════════════════════════════
-       BODY DE PAGE
-       Prend TOUT l'espace restant,
-       scroll interne uniquement ici
-    ════════════════════════════════ */
-    #pageBody {
-      flex: 1;
-      min-height: 0;             /* ← indispensable avec flex */
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      padding: 16px 28px 0;
+    /* ── Doc sub-navigator (step 2) ── */
+    .doc-nav-tab{
+      display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;
+      border:2px solid #E0D5C4;background:white;cursor:pointer;transition:all .2s;
+      font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#6B7280;
+      white-space:nowrap;flex-shrink:0;
     }
+    .doc-nav-tab:hover{border-color:#F5A64B;color:#D98A30}
+    .doc-nav-tab.active{border-color:#F5A64B;background:#FEF0DC;color:#D98A30}
+    .doc-nav-tab.done{border-color:#22c55e;background:#f0fdf4;color:#16a34a}
+    .doc-nav-tab .tab-num{width:20px;height:20px;border-radius:50%;background:#E0D5C4;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;transition:background .2s}
+    .doc-nav-tab.active .tab-num{background:#F5A64B;color:white}
+    .doc-nav-tab.done .tab-num{background:#22c55e;color:white}
 
-    /* Bannière alerte */
-    #alertBanner {
-      flex-shrink: 0;
-      margin-bottom: 14px;
-    }
+    /* ── Doc sub-wizard progress bar ── */
+    #docSubProgress{height:3px;background:#E0D5C4;border-radius:99px;margin-bottom:16px;overflow:hidden}
+    #docSubProgressBar{height:100%;background:linear-gradient(90deg,#F5A64B,#D98A30);border-radius:99px;transition:width .4s ease}
 
-    /* ════════════════════════════════
-       GRILLE : formulaire + sidebar
-    ════════════════════════════════ */
-    #formGrid {
-      flex: 1;
-      min-height: 0;
-      display: grid;
-      grid-template-columns: 1fr 288px;
-      gap: 20px;
-      overflow: hidden;          /* ← chaque colonne gère son propre scroll */
-    }
+    /* ── Field panel animate ── */
+    @keyframes slideRight{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes slideLeft{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+    .slide-right{animation:slideRight .28s ease both}
+    .slide-left{animation:slideLeft .28s ease both}
 
-    /* ── Colonne gauche : scroll interne ── */
-    #formLeft {
-      min-height: 0;
-      overflow-y: auto;
-      padding-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
+    /* ── Upload ── */
+    .upload-zone{border:2px dashed #D0C6B8;border-radius:14px;background:#F9F6F1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px 16px;cursor:pointer;transition:all .22s;text-align:center}
+    .upload-zone:hover,.upload-zone.dragover{border-color:#F5A64B;background:#FEF8F0}
+    .upload-zone.has-file{border-color:#1E3A2F;background:#E8F5EE;border-style:solid}
 
-    /* ── Colonne droite : scroll interne ── */
-    #formRight {
-      min-height: 0;
-      overflow-y: auto;
-      padding-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+    /* ── Section ── */
+    .section-badge{display:inline-flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;background:rgba(245,166,75,.12);border-radius:20px;margin-bottom:12px}
+    .section-badge-num{width:24px;height:24px;border-radius:50%;background:#F5A64B;color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif}
+    .section-badge-text{font-size:11px;font-weight:700;color:#D98A30;text-transform:uppercase;letter-spacing:.05em}
+    .section-card{background:white;border-radius:18px;padding:22px 24px;border:1px solid #EDE7DB;box-shadow:0 2px 12px rgba(0,0,0,.04);flex-shrink:0}
 
-    /* Scrollbar discrète */
-    #formLeft::-webkit-scrollbar,
-    #formRight::-webkit-scrollbar { width: 4px; }
-    #formLeft::-webkit-scrollbar-track,
-    #formRight::-webkit-scrollbar-track { background: transparent; }
-    #formLeft::-webkit-scrollbar-thumb,
-    #formRight::-webkit-scrollbar-thumb { background: #D0C6B8; border-radius: 99px; }
+    /* ── Wizard ── */
+    .form-step{display:none} .form-step.active{display:block}
+    #stepActions{display:none} #stepActions.active{display:block}
 
-    /* ════════════════════════════════
-       COMPOSANTS FORM
-    ════════════════════════════════ */
-    .field-group { display: flex; flex-direction: column; gap: 6px; }
-    .field-label {
-      font-size: 11.5px; font-weight: 700; color: #6B7280;
-      letter-spacing: 0.06em; text-transform: uppercase;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .field-input {
-      width: 100%; padding: 12px 14px 12px 42px;
-      background: #F9F6F1; border: 1.5px solid #E0D5C4; border-radius: 12px;
-      font-family: 'Poppins', sans-serif; font-size: 13.5px; color: #1A1A1A;
-      outline: none; transition: all 0.2s;
-    }
-    .field-input::placeholder { color: #C4BAB0; }
-    .field-input:focus { border-color: #F5A64B; background: white; box-shadow: 0 0 0 4px rgba(245,166,75,0.12); }
-    .field-input.no-icon { padding-left: 14px; }
-    .field-wrapper { position: relative; display: flex; align-items: center; }
-    .field-icon { position: absolute; left: 14px; color: #C4BAB0; font-size: 13px; pointer-events: none; transition: color 0.2s; }
-    .field-wrapper:focus-within .field-icon { color: #F5A64B; }
-    select.field-input { appearance: none; cursor: pointer; }
-    textarea.field-input { padding: 12px 14px; resize: vertical; min-height: 80px; line-height: 1.6; }
+    /* ── Urgency ── */
+    .urgency-btn{flex:1;padding:10px 12px;border-radius:10px;border:1.5px solid #E0D5C4;background:white;font-family:'Poppins',sans-serif;font-size:12.5px;font-weight:600;color:#6B7280;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+    .urgency-btn:hover{border-color:#F5A64B}
+    .urgency-btn.sel-low{border-color:#22c55e;background:#f0fdf4;color:#16a34a}
+    .urgency-btn.sel-medium{border-color:#f59e0b;background:#fffbeb;color:#d97706}
+    .urgency-btn.sel-high{border-color:#ef4444;background:#fef2f2;color:#dc2626}
 
-    /* Doc type cards */
-    .doc-type-card {
-      display: flex; flex-direction: column; align-items: center; gap: 7px;
-      padding: 14px 10px; border-radius: 14px; border: 2px solid #E0D5C4;
-      background: white; cursor: pointer; transition: all 0.22s;
-      text-align: center; font-family: 'Poppins', sans-serif;
-    }
-    .doc-type-card:hover { border-color: #F5A64B; background: #FEF8F0; transform: translateY(-2px); }
-    .doc-type-card.selected { border-color: #F5A64B; background: #FEF0DC; box-shadow: 0 4px 16px rgba(245,166,75,0.2); }
-    .doc-type-card .card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: #F2EBD9; transition: background 0.2s; }
-    .doc-type-card.selected .card-icon { background: rgba(245,166,75,0.2); }
-    .doc-type-card .card-label { font-size: 11px; font-weight: 600; color: #374151; line-height: 1.3; }
-    .doc-type-card.selected .card-label { color: #D98A30; }
+    /* ── Submit ── */
+    .submit-btn{width:100%;padding:15px 24px;background:#1E3A2F;color:white;border:none;border-radius:14px;font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(30,58,47,.3)}
+    .submit-btn:hover{background:#2D5A42;transform:translateY(-1px)} .submit-btn:active{transform:scale(.99)}
 
-    /* Upload zone */
-    .upload-zone {
-      border: 2px dashed #D0C6B8; border-radius: 14px; background: #F9F6F1;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 8px; padding: 24px 16px; cursor: pointer; transition: all 0.22s; text-align: center;
-    }
-    .upload-zone:hover, .upload-zone.dragover { border-color: #F5A64B; background: #FEF8F0; }
-    .upload-zone.has-file { border-color: #1E3A2F; background: #E8F5EE; border-style: solid; }
+    /* ── Progress sidebar ── */
+    .progress-step{display:flex;align-items:flex-start;gap:10px;padding:8px 0}
+    .progress-dot{width:26px;height:26px;border-radius:50%;border:2px solid #E0D5C4;background:white;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#9CA3AF;flex-shrink:0;transition:all .3s}
+    .progress-dot.done{background:#F5A64B;border-color:#F5A64B;color:white}
+    .progress-dot.current{background:#1E3A2F;border-color:#1E3A2F;color:white;box-shadow:0 0 0 3px rgba(30,58,47,.15)}
+    .progress-vline{width:2px;height:22px;background:#E0D5C4;margin-left:12px;transition:background .3s}
+    .progress-vline.done{background:#F5A64B}
 
-    /* Section badge */
-    .section-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 4px 12px 4px 4px;
-      background: rgba(245,166,75,0.12); border-radius: 20px; margin-bottom: 12px;
-    }
-    .section-badge-num {
-      width: 24px; height: 24px; border-radius: 50%;
-      background: #F5A64B; color: white; font-size: 11px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Bricolage Grotesque', sans-serif;
-    }
-    .section-badge-text { font-size: 11px; font-weight: 700; color: #D98A30; text-transform: uppercase; letter-spacing: 0.05em; }
+    /* ── Place tags ── */
+    .place-tag{padding:5px 11px;border-radius:20px;border:1.5px solid #E0D5C4;background:white;font-family:'Poppins',sans-serif;font-size:11.5px;font-weight:600;color:#374151;cursor:pointer;transition:all .2s;white-space:nowrap}
+    .place-tag:hover{border-color:#F5A64B;background:#FEF0DC;color:#D98A30}
+    .place-tag.active{border-color:#F5A64B;background:#F5A64B;color:white}
 
-    /* Section card */
-    .section-card {
-      background: white; border-radius: 18px; padding: 22px 24px;
-      border: 1px solid #EDE7DB; box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-      flex-shrink: 0;
-    }
+    /* ── Success ── */
+    .success-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center}
+    .success-overlay.show{display:flex;animation:fadeIn .3s ease}
+    .success-card{background:white;border-radius:24px;padding:44px 40px;max-width:420px;width:90%;text-align:center;animation:popUp .4s cubic-bezier(.34,1.56,.64,1)}
+    .success-icon{width:80px;height:80px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px}
+    .ref-badge{display:inline-block;padding:8px 20px;background:#F2EBD9;border-radius:8px;font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:#1E3A2F;letter-spacing:.08em;margin:12px 0}
 
-    /* Wizard steps */
-    .form-step { display: none; }
-    .form-step.active { display: block; }
-    #stepActions { display: none; }
-    #stepActions.active { display: block; }
+    #wizardControls{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;background:white;border:1px solid #EDE7DB;border-radius:14px;padding:10px 14px}
 
-    /* Urgency */
-    .urgency-btn {
-      flex: 1; padding: 10px 12px; border-radius: 10px;
-      border: 1.5px solid #E0D5C4; background: white;
-      font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 600;
-      color: #6B7280; cursor: pointer; transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center; gap: 7px;
+    @media(max-width:768px){
+      .sidebar{transform:translateX(-100%)} .sidebar.open{transform:translateX(0)}
+      .main-wrap{margin-left:0} #pageBody{padding:12px 14px 0}
+      #formGrid{grid-template-columns:1fr} #formRight{display:none!important}
+      .section-card{padding:18px 16px}
     }
-    .urgency-btn:hover { border-color: #F5A64B; }
-    .urgency-btn.sel-low  { border-color: #22c55e; background: #f0fdf4; color: #16a34a; }
-    .urgency-btn.sel-medium { border-color: #f59e0b; background: #fffbeb; color: #d97706; }
-    .urgency-btn.sel-high { border-color: #ef4444; background: #fef2f2; color: #dc2626; }
-
-    /* Submit button */
-    .submit-btn {
-      width: 100%; padding: 15px 24px;
-      background: #1E3A2F; color: white; border: none; border-radius: 14px;
-      font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px; font-weight: 800;
-      cursor: pointer; transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      box-shadow: 0 6px 20px rgba(30,58,47,0.3);
-    }
-    .submit-btn:hover { background: #2D5A42; transform: translateY(-1px); }
-    .submit-btn:active { transform: scale(0.99); }
-
-    /* Progress sidebar */
-    .progress-step { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; }
-    .progress-dot {
-      width: 26px; height: 26px; border-radius: 50%;
-      border: 2px solid #E0D5C4; background: white;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 700; color: #9CA3AF;
-      flex-shrink: 0; transition: all 0.3s;
-    }
-    .progress-dot.done   { background: #F5A64B; border-color: #F5A64B; color: white; }
-    .progress-dot.current { background: #1E3A2F; border-color: #1E3A2F; color: white; box-shadow: 0 0 0 3px rgba(30,58,47,0.15); }
-    .progress-vline { width: 2px; height: 22px; background: #E0D5C4; margin-left: 12px; transition: background 0.3s; }
-    .progress-vline.done { background: #F5A64B; }
-
-    /* Place tags */
-    .place-tag {
-      padding: 5px 11px; border-radius: 20px;
-      border: 1.5px solid #E0D5C4; background: white;
-      font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 600;
-      color: #374151; cursor: pointer; transition: all 0.2s; white-space: nowrap;
-    }
-    .place-tag:hover { border-color: #F5A64B; background: #FEF0DC; color: #D98A30; }
-    .place-tag.active { border-color: #F5A64B; background: #F5A64B; color: white; }
-
-    /* Success overlay */
-    .success-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
-      z-index: 100; align-items: center; justify-content: center;
-    }
-    .success-overlay.show { display: flex; animation: fadeIn 0.3s ease; }
-    .success-card {
-      background: white; border-radius: 24px; padding: 44px 40px;
-      max-width: 420px; width: 90%; text-align: center;
-      animation: popUp 0.4s cubic-bezier(0.34,1.56,0.64,1);
-    }
-    .success-icon {
-      width: 80px; height: 80px; border-radius: 50%;
-      background: #E8F5EE; display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 20px; font-size: 36px;
-    }
-    .ref-badge {
-      display: inline-block; padding: 8px 20px; background: #F2EBD9;
-      border-radius: 8px; font-family: 'Bricolage Grotesque', sans-serif;
-      font-size: 18px; font-weight: 800; color: #1E3A2F;
-      letter-spacing: 0.08em; margin: 12px 0;
-    }
-
-    /* Wizard nav bar */
-    #wizardControls {
-      flex-shrink: 0;
-      display: flex; align-items: center; justify-content: space-between; gap: 10px;
-      background: white; border: 1px solid #EDE7DB; border-radius: 14px;
-      padding: 10px 14px;
-    }
-
-    /* ════════════════════════════════
-       RESPONSIVE MOBILE
-    ════════════════════════════════ */
-    @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.open { transform: translateX(0); }
-      .main-wrap { margin-left: 0; }
-      .main-wrap.expanded { margin-left: 0; }
-      #pageBody { padding: 12px 14px 0; }
-      #formGrid { grid-template-columns: 1fr; }
-      #formRight { display: none !important; }
-      #menuBtn { display: flex !important; }
-      .section-card { padding: 18px 16px; }
-    }
-
-    @keyframes fadeIn { from{opacity:0}to{opacity:1} }
-    @keyframes popUp  { from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)} }
-    @keyframes slideUp { from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)} }
-    .animate-in { animation: slideUp 0.35s ease both; }
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes popUp{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+    .animate-in{animation:slideUp .35s ease both}
     .d1{animation-delay:.04s} .d2{animation-delay:.08s} .d3{animation-delay:.12s} .d4{animation-delay:.16s}
   </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════
-     SIDEBAR
-══════════════════════════════════════════ -->
 <div id="sidebar-root"></div>
 
-
-<!-- ══════════════════════════════════════════
-     MAIN WRAP  (tout à droite de la sidebar)
-══════════════════════════════════════════ -->
 <div class="main-wrap">
 
-  <!-- TOP BAR -->
+  <!-- TOPBAR -->
   <header class="topbar">
     <div style="display:flex;align-items:center;gap:14px;">
       <button id="menuBtn" onclick="toggleSb()" style="display:flex;background:none;border:none;color:#374151;font-size:18px;cursor:pointer;padding:4px;"><i class="fa-solid fa-bars"></i></button>
@@ -383,128 +189,104 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-      <button style="width:36px;height:36px;border-radius:10px;border:1.5px solid #E0D5C4;background:white;color:#6B7280;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.borderColor='#F5A64B';this.style.color='#F5A64B'" onmouseout="this.style.borderColor='#E0D5C4';this.style.color='#6B7280'">
-        <i class="fa-solid fa-bell"></i>
-      </button>
+      <button style="width:36px;height:36px;border-radius:10px;border:1.5px solid #E0D5C4;background:white;color:#6B7280;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.borderColor='#F5A64B';this.style.color='#F5A64B'" onmouseout="this.style.borderColor='#E0D5C4';this.style.color='#6B7280'"><i class="fa-solid fa-bell"></i></button>
       <div style="width:36px;height:36px;border-radius:10px;background:#1E3A2F;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:800;color:#F5A64B;cursor:pointer;">JD</div>
     </div>
   </header>
 
-  <!-- ════════ PAGE BODY ════════ -->
   <div id="pageBody">
 
     <!-- Alerte -->
-    <div id="alertBanner" class="animate-in" style="background:linear-gradient(135deg,#FEF0DC,#FFF8F0);border:1.5px solid rgba(245,166,75,0.3);border-radius:12px;padding:9px 14px;display:flex;align-items:center;gap:10px;">
-      <div style="width:34px;height:34px;border-radius:9px;background:rgba(245,166,75,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fa-solid fa-lightbulb" style="color:#F5A64B;font-size:15px;"></i>
-      </div>
-      <div style="flex:1;">
-        <p style="font-size:12.5px;font-weight:700;color:#1A1A1A;">Conseil : plus votre déclaration est précise, plus vous avez de chances de retrouver votre document.</p>
-      </div>
-      <button onclick="document.getElementById('alertBanner').style.display='none'" style="color:#C4BAB0;background:none;border:none;cursor:pointer;font-size:15px;flex-shrink:0;"><i class="fa-solid fa-xmark"></i></button>
+    <div id="alertBanner" class="animate-in" style="background:linear-gradient(135deg,#FEF0DC,#FFF8F0);border:1.5px solid rgba(245,166,75,.3);border-radius:12px;padding:9px 14px;display:flex;align-items:center;gap:10px;">
+      <div style="width:34px;height:34px;border-radius:9px;background:rgba(245,166,75,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fa-solid fa-lightbulb" style="color:#F5A64B;font-size:15px;"></i></div>
+      <div style="flex:1;"><p style="font-size:12.5px;font-weight:700;color:#1A1A1A;">Sélectionnez un ou plusieurs documents perdus. Vous remplirez les détails de chacun séparément. Les champs <span style="background:#F2EBD9;border:1px solid #E0D5C4;border-radius:99px;padding:1px 7px;font-size:10.5px;color:#9CA3AF;font-weight:600;">Optionnel</span> ne sont pas obligatoires.</p></div>
+      <button onclick="this.parentElement.style.display='none'" style="color:#C4BAB0;background:none;border:none;cursor:pointer;font-size:15px;flex-shrink:0;"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <!-- ════════ GRILLE PRINCIPALE ════════ -->
     <div id="formGrid">
 
-      <!-- ─── COLONNE GAUCHE : formulaire ─── -->
+      <!-- ══════════════════════════════
+           COLONNE GAUCHE
+      ══════════════════════════════ -->
       <div id="formLeft">
 
-        <!-- ÉTAPE 1 : Type de document -->
+        <!-- ── ÉTAPE 1 : Sélection ── -->
         <div class="section-card animate-in d1 form-step active" data-step="1">
-          <div class="section-badge">
-            <div class="section-badge-num">1</div>
-            <span class="section-badge-text">Type de document</span>
-          </div>
-          <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1A1A1A;margin-bottom:4px;">Quel document avez-vous perdu ?</h2>
-          <p style="font-size:12.5px;color:#6B7280;margin-bottom:16px;">Sélectionnez la catégorie correspondante.</p>
+          <div class="section-badge"><div class="section-badge-num">1</div><span class="section-badge-text">Type de document</span></div>
+          <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1A1A1A;margin-bottom:4px;">Quel(s) document(s) avez-vous perdu(s) ?</h2>
+          <p style="font-size:12.5px;color:#6B7280;margin-bottom:16px;">Sélectionnez un ou plusieurs types. Vous remplirez les détails de chacun.</p>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="docTypeGrid">
-            <div class="doc-type-card selected" onclick="selectDocType(this,'cni')"><div class="card-icon"><i class="fa-solid fa-id-card"></i></div><span class="card-label">Carte nationale d'identité</span></div>
-            <div class="doc-type-card" onclick="selectDocType(this,'passeport')"><div class="card-icon"><i class="fa-solid fa-passport"></i></div><span class="card-label">Passeport</span></div>
-            <div class="doc-type-card" onclick="selectDocType(this,'permis')"><div class="card-icon"><i class="fa-solid fa-car-side"></i></div><span class="card-label">Permis de conduire</span></div>
-            <div class="doc-type-card" onclick="selectDocType(this,'acte')"><div class="card-icon"><i class="fa-solid fa-file-lines"></i></div><span class="card-label">Acte de naissance</span></div>
-            <div class="doc-type-card" onclick="selectDocType(this,'carte-vit')"><div class="card-icon"><i class="fa-regular fa-credit-card"></i></div><span class="card-label">Carte bancaire</span></div>
-            <div class="doc-type-card" onclick="selectDocType(this,'titre')"><div class="card-icon"><i class="fa-solid fa-house"></i></div><span class="card-label">Titre foncier</span></div>
-            <div class="doc-type-card" onclick="selectDocType(this,'diplome')"><div class="card-icon"><i class="fa-solid fa-graduation-cap"></i></div><span class="card-label">Diplôme</span></div>
-            <div class="doc-type-card" onclick="selectDocType(this,'autre')"><div class="card-icon"><i class="fa-solid fa-folder"></i></div><span class="card-label">Autre document</span></div>
+            <div class="doc-type-card" onclick="toggleDocType(this,'cni')"><div class="doc-check"><i class="fa-solid fa-check"></i></div><div class="card-icon"><i class="fa-solid fa-id-card"></i></div><span class="card-label">Carte nationale d'identité</span></div>
+            <div class="doc-type-card" onclick="toggleDocType(this,'passeport')"><div class="doc-check"><i class="fa-solid fa-check"></i></div><div class="card-icon"><i class="fa-solid fa-passport"></i></div><span class="card-label">Passeport</span></div>
+            <div class="doc-type-card" onclick="toggleDocType(this,'permis')"><div class="doc-check"><i class="fa-solid fa-check"></i></div><div class="card-icon"><i class="fa-solid fa-car-side"></i></div><span class="card-label">Permis de conduire</span></div>
+            <div class="doc-type-card" onclick="toggleDocType(this,'acte')"><div class="doc-check"><i class="fa-solid fa-check"></i></div><div class="card-icon"><i class="fa-solid fa-file-lines"></i></div><span class="card-label">Acte de naissance</span></div>
+            <div class="doc-type-card" onclick="toggleDocType(this,'banque')"><div class="doc-check"><i class="fa-solid fa-check"></i></div><div class="card-icon"><i class="fa-regular fa-credit-card"></i></div><span class="card-label">Carte bancaire</span></div>
+            <div class="doc-type-card" onclick="toggleDocType(this,'titre')"><div class="doc-check"><i class="fa-solid fa-check"></i></div><div class="card-icon"><i class="fa-solid fa-house"></i></div><span class="card-label">Titre foncier</span></div>
+            <div class="doc-type-card" onclick="toggleDocType(this,'diplome')"><div class="doc-check"><i class="fa-solid fa-check"></i></div><div class="card-icon"><i class="fa-solid fa-graduation-cap"></i></div><span class="card-label">Diplôme</span></div>
+            <div class="doc-type-card" onclick="toggleDocType(this,'autre')"><div class="doc-check"><i class="fa-solid fa-check"></i></div><div class="card-icon"><i class="fa-solid fa-folder"></i></div><span class="card-label">Autre document</span></div>
           </div>
-          <div id="autreTypeField" style="margin-top:14px;display:none;">
-            <div class="field-group">
-              <label class="field-label"><i class="fa-solid fa-pen" style="color:#F5A64B;font-size:10px;"></i> Préciser le type</label>
-              <div class="field-wrapper"><i class="fa-regular fa-file field-icon"></i><input type="text" class="field-input" placeholder="Ex: Carte grise, Carte d'étudiant…" /></div>
-            </div>
-          </div>
+          <div id="selectionInfo"><span class="count-badge" id="selCount">0</span><span id="selText">document(s) sélectionné(s)</span></div>
+          <div id="selectionTags"></div>
         </div>
 
-        <!-- ÉTAPE 2 : Infos document -->
+        <!-- ── ÉTAPE 2 : Détails par document ── -->
         <div class="section-card animate-in d2 form-step" data-step="2">
-          <div class="section-badge"><div class="section-badge-num">2</div><span class="section-badge-text">Informations du document</span></div>
-          <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1A1A1A;margin-bottom:4px;">Détails du document</h2>
-          <p style="font-size:12.5px;color:#6B7280;margin-bottom:16px;">Ces informations permettent de l'identifier avec précision.</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div class="field-group">
-              <label class="field-label"><i class="fa-solid fa-user" style="color:#F5A64B;font-size:10px;"></i> Nom du titulaire</label>
-              <div class="field-wrapper"><i class="fa-regular fa-user field-icon"></i><input type="text" class="field-input" placeholder="Nom complet sur le document" /></div>
+          <div class="section-badge"><div class="section-badge-num">2</div><span class="section-badge-text">Informations</span></div>
+
+          <!-- Header dynamique -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <h2 id="step2Title" style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1A1A1A;">Détails du document</h2>
+              <p id="step2Sub" style="font-size:12.5px;color:#6B7280;margin-top:2px;">Renseignez les informations connues.</p>
             </div>
-            <div class="field-group">
-              <label class="field-label"><i class="fa-solid fa-hashtag" style="color:#F5A64B;font-size:10px;"></i> Numéro du document</label>
-              <div class="field-wrapper"><i class="fa-solid fa-barcode field-icon"></i><input type="text" class="field-input" placeholder="Ex: CMR1234567" id="docNumInput" oninput="updateDocNum(this.value)" /></div>
-            </div>
-            <div class="field-group">
-              <label class="field-label"><i class="fa-solid fa-calendar" style="color:#F5A64B;font-size:10px;"></i> Date d'expiration</label>
-              <div class="field-wrapper"><i class="fa-regular fa-calendar field-icon"></i><input type="date" class="field-input" /></div>
-            </div>
-            <div class="field-group">
-              <label class="field-label"><i class="fa-solid fa-flag" style="color:#F5A64B;font-size:10px;"></i> Pays émetteur</label>
-              <div class="field-wrapper">
-                <i class="fa-solid fa-earth-africa field-icon"></i>
-                <select class="field-input">
-                  <option value="">Sélectionner un pays</option>
-                  <option value="cm" selected>Cameroun</option>
-                  <option value="sn">Sénégal</option>
-                  <option value="ci">Côte d'Ivoire</option>
-                  <option value="ml">Mali</option>
-                  <option value="ga">Gabon</option>
-                  <option value="cd">RD Congo</option>
-                  <option value="fr">France</option>
-                  <option value="other">Autre…</option>
-                </select>
-                <i class="fa-solid fa-chevron-down" style="position:absolute;right:14px;color:#C4BAB0;font-size:11px;pointer-events:none;"></i>
+            <!-- Badge doc actuel -->
+            <div id="currentDocBadge" style="display:flex;align-items:center;gap:7px;padding:7px 12px;background:#FEF0DC;border:1.5px solid rgba(245,166,75,.3);border-radius:12px;flex-shrink:0;">
+              <span id="currentDocIcon" style="font-size:16px;"></span>
+              <div>
+                <p id="currentDocName" style="font-size:12px;font-weight:700;color:#D98A30;line-height:1.1;"></p>
+                <p id="currentDocCounter" style="font-size:10px;color:#9CA3AF;"></p>
               </div>
             </div>
           </div>
-          <div class="field-group" style="margin-top:14px;">
-            <label class="field-label"><i class="fa-solid fa-align-left" style="color:#F5A64B;font-size:10px;"></i> Description physique</label>
-            <div class="field-wrapper"><textarea class="field-input no-icon" placeholder="Couleur, état, particularités, dommages, annotations…" style="min-height:80px;"></textarea></div>
+
+          <!-- Barre progression sub-docs -->
+          <div id="docSubProgress" style="display:none;"><div id="docSubProgressBar" style="width:0%"></div></div>
+
+          <!-- Onglets navigation (si plusieurs docs) -->
+          <div id="docTabs" style="display:none;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;">
+            <div style="display:flex;gap:8px;" id="docTabsInner"></div>
           </div>
+
+          <!-- Zone champs dynamiques -->
+          <div id="dynamicFields"></div>
         </div>
 
-        <!-- ÉTAPE 3 : Lieu & date -->
+        <!-- ── ÉTAPE 3 : Lieu & date ── -->
         <div class="section-card animate-in d3 form-step" data-step="3">
           <div class="section-badge"><div class="section-badge-num">3</div><span class="section-badge-text">Lieu &amp; date de perte</span></div>
           <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1A1A1A;margin-bottom:4px;">Où et quand ?</h2>
-          <p style="font-size:12.5px;color:#6B7280;margin-bottom:16px;">Cruciales pour orienter les recherches.</p>
+          <p style="font-size:12.5px;color:#6B7280;margin-bottom:16px;">Ces informations s'appliquent à tous vos documents perdus.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
             <div class="field-group">
               <label class="field-label"><i class="fa-solid fa-calendar-days" style="color:#F5A64B;font-size:10px;"></i> Date de perte</label>
-              <div class="field-wrapper"><i class="fa-regular fa-calendar-minus field-icon"></i><input type="date" class="field-input" id="lossDate" /></div>
+              <div class="field-wrapper"><i class="fa-regular fa-calendar-minus field-icon"></i><input type="date" class="field-input" id="lossDate"/></div>
             </div>
             <div class="field-group">
-              <label class="field-label"><i class="fa-solid fa-clock" style="color:#F5A64B;font-size:10px;"></i> Heure approximative</label>
-              <div class="field-wrapper"><i class="fa-regular fa-clock field-icon"></i><input type="time" class="field-input" /></div>
+              <label class="field-label"><i class="fa-solid fa-clock" style="color:#F5A64B;font-size:10px;"></i> Heure approximative <span class="opt-badge">Optionnel</span></label>
+              <div class="field-wrapper"><i class="fa-regular fa-clock field-icon"></i><input type="time" class="field-input"/></div>
             </div>
             <div class="field-group">
               <label class="field-label"><i class="fa-solid fa-city" style="color:#F5A64B;font-size:10px;"></i> Ville</label>
-              <div class="field-wrapper"><i class="fa-solid fa-city field-icon"></i><input type="text" class="field-input" placeholder="Ex: Yaoundé, Douala…" /></div>
+              <div class="field-wrapper"><i class="fa-solid fa-city field-icon"></i><input type="text" class="field-input" placeholder="Ex: Yaoundé, Douala…"/></div>
             </div>
             <div class="field-group">
-              <label class="field-label"><i class="fa-solid fa-map-pin" style="color:#F5A64B;font-size:10px;"></i> Quartier</label>
-              <div class="field-wrapper"><i class="fa-solid fa-location-dot field-icon"></i><input type="text" class="field-input" placeholder="Ex: Bastos, Akwa…" /></div>
+              <label class="field-label"><i class="fa-solid fa-map-pin" style="color:#F5A64B;font-size:10px;"></i> Quartier <span class="opt-badge">Optionnel</span></label>
+              <div class="field-wrapper"><i class="fa-solid fa-location-dot field-icon"></i><input type="text" class="field-input" placeholder="Ex: Bastos, Akwa…"/></div>
             </div>
           </div>
           <div class="field-group" style="margin-top:14px;">
-            <label class="field-label"><i class="fa-solid fa-map-location-dot" style="color:#F5A64B;font-size:10px;"></i> Lieu précis</label>
-            <div class="field-wrapper"><i class="fa-solid fa-map-marker-alt field-icon"></i><input type="text" class="field-input" placeholder="Ex: Marché central, Aéroport de Nsimalen, Bus ligne 2…" /></div>
+            <label class="field-label"><i class="fa-solid fa-map-location-dot" style="color:#F5A64B;font-size:10px;"></i> Lieu précis <span class="opt-badge">Optionnel</span></label>
+            <div class="field-wrapper"><i class="fa-solid fa-map-marker-alt field-icon"></i><input type="text" class="field-input" placeholder="Ex: Marché central, Aéroport de Nsimalen…"/></div>
           </div>
           <div style="margin-top:10px;">
             <p style="font-size:11px;font-weight:600;color:#9CA3AF;margin-bottom:7px;">Suggestions rapides :</p>
@@ -520,15 +302,18 @@
             </div>
           </div>
           <div class="field-group" style="margin-top:14px;">
-            <label class="field-label"><i class="fa-solid fa-comment-dots" style="color:#F5A64B;font-size:10px;"></i> Circonstances</label>
-            <div class="field-wrapper"><textarea class="field-input no-icon" placeholder="Vol, oubli, chute de sac, etc.…" style="min-height:72px;"></textarea></div>
+            <label class="field-label"><i class="fa-solid fa-comment-dots" style="color:#F5A64B;font-size:10px;"></i> Circonstances <span class="opt-badge">Optionnel</span></label>
+            <div class="field-wrapper"><textarea class="field-input no-icon" placeholder="Vol, oubli, chute de sac…" style="min-height:72px;"></textarea></div>
           </div>
         </div>
 
-        <!-- ÉTAPE 4 : Photos -->
+        <!-- ── ÉTAPE 4 : Photos ── -->
         <div class="section-card animate-in d4 form-step" data-step="4">
-          <div class="section-badge"><div class="section-badge-num">4</div><span class="section-badge-text">Photo du document</span></div>
-          <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1A1A1A;margin-bottom:4px;">Ajouter une photo <span style="font-size:12px;font-weight:500;color:#9CA3AF;">(optionnel)</span></h2>
+          <div class="section-badge"><div class="section-badge-num">4</div><span class="section-badge-text">Photo</span></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1A1A1A;">Ajouter une photo</h2>
+            <span class="opt-badge" style="font-size:11px;padding:3px 10px;">Optionnel</span>
+          </div>
           <p style="font-size:12.5px;color:#6B7280;margin-bottom:14px;">Une photo augmente significativement les chances de retrouver le document.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div>
@@ -536,24 +321,24 @@
               <div class="upload-zone" id="uploadRecto" onclick="document.getElementById('fileRecto').click()" ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,this,'previewRecto')">
                 <div style="width:42px;height:42px;border-radius:10px;background:#F2EBD9;display:flex;align-items:center;justify-content:center;" id="uploadRectoIcon"><i class="fa-solid fa-cloud-arrow-up" style="color:#C4BAB0;font-size:20px;"></i></div>
                 <div id="uploadRectoText"><p style="font-size:12.5px;font-weight:600;color:#374151;">Glisser-déposer</p><p style="font-size:11px;color:#9CA3AF;">ou cliquer pour parcourir</p></div>
-                <img id="previewRecto" src="" alt="" style="display:none;max-height:100px;border-radius:8px;object-fit:cover;" />
+                <img id="previewRecto" src="" alt="" style="display:none;max-height:100px;border-radius:8px;object-fit:cover;"/>
               </div>
-              <input type="file" id="fileRecto" accept="image/*" style="display:none;" onchange="previewFile(this,'previewRecto','uploadRecto','uploadRectoText','uploadRectoIcon')" />
+              <input type="file" id="fileRecto" accept="image/*" style="display:none;" onchange="previewFile(this,'previewRecto','uploadRecto','uploadRectoText','uploadRectoIcon')"/>
             </div>
             <div>
               <p style="font-size:11.5px;font-weight:700;color:#374151;margin-bottom:7px;display:flex;align-items:center;gap:5px;"><i class="fa-solid fa-rotate-right" style="color:#F5A64B;"></i> Verso</p>
               <div class="upload-zone" id="uploadVerso" onclick="document.getElementById('fileVerso').click()" ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,this,'previewVerso')">
                 <div style="width:42px;height:42px;border-radius:10px;background:#F2EBD9;display:flex;align-items:center;justify-content:center;" id="uploadVersoIcon"><i class="fa-solid fa-cloud-arrow-up" style="color:#C4BAB0;font-size:20px;"></i></div>
                 <div id="uploadVersoText"><p style="font-size:12.5px;font-weight:600;color:#374151;">Glisser-déposer</p><p style="font-size:11px;color:#9CA3AF;">ou cliquer pour parcourir</p></div>
-                <img id="previewVerso" src="" alt="" style="display:none;max-height:100px;border-radius:8px;object-fit:cover;" />
+                <img id="previewVerso" src="" alt="" style="display:none;max-height:100px;border-radius:8px;object-fit:cover;"/>
               </div>
-              <input type="file" id="fileVerso" accept="image/*" style="display:none;" onchange="previewFile(this,'previewVerso','uploadVerso','uploadVersoText','uploadVersoIcon')" />
+              <input type="file" id="fileVerso" accept="image/*" style="display:none;" onchange="previewFile(this,'previewVerso','uploadVerso','uploadVersoText','uploadVersoIcon')"/>
             </div>
           </div>
           <p style="font-size:11px;color:#9CA3AF;margin-top:8px;display:flex;align-items:center;gap:5px;"><i class="fa-solid fa-shield-halved" style="color:#F5A64B;"></i> Données sensibles floutées automatiquement. JPG, PNG, WebP · Max 5 Mo</p>
         </div>
 
-        <!-- ÉTAPE 5 : Contact & urgence -->
+        <!-- ── ÉTAPE 5 : Contact ── -->
         <div class="section-card animate-in d4 form-step" data-step="5">
           <div class="section-badge"><div class="section-badge-num">5</div><span class="section-badge-text">Contact &amp; urgence</span></div>
           <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1A1A1A;margin-bottom:4px;">Comment vous contacter ?</h2>
@@ -561,14 +346,13 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
             <div class="field-group">
               <label class="field-label"><i class="fa-solid fa-phone" style="color:#F5A64B;font-size:10px;"></i> Téléphone</label>
-              <div class="field-wrapper"><i class="fa-solid fa-phone field-icon"></i><input type="tel" class="field-input" placeholder="+237 6XX XXX XXX" value="+237 " /></div>
+              <div class="field-wrapper"><i class="fa-solid fa-phone field-icon"></i><input type="tel" class="field-input" placeholder="+237 6XX XXX XXX" value="+237 "/></div>
             </div>
             <div class="field-group">
-              <label class="field-label"><i class="fa-solid fa-envelope" style="color:#F5A64B;font-size:10px;"></i> E-mail</label>
-              <div class="field-wrapper"><i class="fa-regular fa-envelope field-icon"></i><input type="email" class="field-input" placeholder="jean@exemple.com" /></div>
+              <label class="field-label"><i class="fa-solid fa-envelope" style="color:#F5A64B;font-size:10px;"></i> E-mail <span class="opt-badge">Optionnel</span></label>
+              <div class="field-wrapper"><i class="fa-regular fa-envelope field-icon"></i><input type="email" class="field-input" placeholder="jean@exemple.com"/></div>
             </div>
           </div>
-          <!-- Urgence -->
           <div style="margin-top:16px;">
             <label class="field-label" style="margin-bottom:8px;"><i class="fa-solid fa-gauge" style="color:#F5A64B;font-size:10px;"></i> Niveau d'urgence</label>
             <div style="display:flex;gap:8px;">
@@ -578,48 +362,37 @@
             </div>
             <p style="font-size:11px;color:#9CA3AF;margin-top:7px;" id="urgencyDesc">Document important mais situation gérable sous quelques jours.</p>
           </div>
-          <!-- Récompense -->
           <div style="margin-top:16px;padding:14px;background:#F9F6F1;border-radius:12px;border:1.5px solid #EDE7DB;">
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <i class="fa-solid fa-coins" style="color:#F5A64B;font-size:15px;"></i>
                 <div>
-                  <p style="font-size:12.5px;font-weight:700;color:#1A1A1A;">Proposer une récompense</p>
+                  <p style="font-size:12.5px;font-weight:700;color:#1A1A1A;">Proposer une récompense <span class="opt-badge">Optionnel</span></p>
                   <p style="font-size:11px;color:#9CA3AF;">Augmente les chances de retour</p>
                 </div>
               </div>
               <label style="position:relative;display:inline-block;width:42px;height:22px;cursor:pointer;">
                 <input type="checkbox" id="rewardToggle" onchange="toggleReward(this.checked)" style="opacity:0;width:0;height:0;">
-                <span id="rewardSlider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#E0D5C4;border-radius:22px;transition:0.3s;"><span id="rewardThumb" style="position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span></span>
+                <span id="rewardSlider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#E0D5C4;border-radius:22px;transition:.3s;"><span id="rewardThumb" style="position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span></span>
               </label>
             </div>
             <div id="rewardField" style="display:none;margin-top:10px;">
-              <div class="field-wrapper">
-                <i class="fa-solid fa-franc-sign field-icon" style="left:12px;font-size:12px;"></i>
-                <input type="number" class="field-input" placeholder="Montant en FCFA" style="padding-left:34px;" min="0" step="500" />
-                <span style="position:absolute;right:14px;font-size:11.5px;font-weight:600;color:#9CA3AF;">FCFA</span>
-              </div>
+              <div class="field-wrapper"><i class="fa-solid fa-franc-sign field-icon" style="left:12px;font-size:12px;"></i><input type="number" class="field-input" placeholder="Montant en FCFA" style="padding-left:34px;" min="0" step="500"/><span style="position:absolute;right:14px;font-size:11.5px;font-weight:600;color:#9CA3AF;">FCFA</span></div>
             </div>
           </div>
         </div>
 
-        <!-- BOUTON SOUMETTRE (visible à l'étape 5) -->
+        <!-- Soumettre -->
         <div id="stepActions" class="animate-in d4" style="flex-shrink:0;">
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:14px;">
-            <div style="flex-shrink:0;margin-top:1px;">
-              <div id="checkboxUI" onclick="toggleCheckbox()" style="width:19px;height:19px;border:2px solid #E0D5C4;border-radius:5px;background:white;display:flex;align-items:center;justify-content:center;transition:all 0.2s;cursor:pointer;">
-                <i class="fa-solid fa-check" style="font-size:9px;color:white;display:none;" id="checkIcon"></i>
-              </div>
-            </div>
-            <p style="font-size:12px;color:#6B7280;line-height:1.6;">Je certifie que les informations fournies sont exactes et j'accepte les <a href="#" style="color:#F5A64B;font-weight:600;text-decoration:none;">Conditions d'utilisation</a> de DocMaster.</p>
+            <div style="flex-shrink:0;margin-top:1px;"><div id="checkboxUI" onclick="toggleCheckbox()" style="width:19px;height:19px;border:2px solid #E0D5C4;border-radius:5px;background:white;display:flex;align-items:center;justify-content:center;transition:all .2s;cursor:pointer;"><i class="fa-solid fa-check" style="font-size:9px;color:white;display:none;" id="checkIcon"></i></div></div>
+            <p style="font-size:12px;color:#6B7280;line-height:1.6;">Je certifie que les informations fournies sont exactes et j'accepte les <a href="#" style="color:#F5A64B;font-weight:600;text-decoration:none;">Conditions d'utilisation</a>.</p>
           </label>
-          <button type="button" class="submit-btn" onclick="submitDeclaration()">
-            <i class="fa-solid fa-paper-plane"></i> Soumettre ma déclaration
-          </button>
-          <p style="font-size:11px;color:#9CA3AF;text-align:center;margin-top:8px;"><i class="fa-solid fa-shield-halved" style="color:#F5A64B;margin-right:4px;"></i>Vos données sont protégées et ne seront jamais vendues.</p>
+          <button type="button" class="submit-btn" onclick="submitDeclaration()"><i class="fa-solid fa-paper-plane"></i> Soumettre ma déclaration</button>
+          <p style="font-size:11px;color:#9CA3AF;text-align:center;margin-top:8px;"><i class="fa-solid fa-shield-halved" style="color:#F5A64B;margin-right:4px;"></i>Vos données sont protégées.</p>
         </div>
 
-        <!-- BARRE NAVIGATION WIZARD -->
+        <!-- Wizard nav -->
         <div id="wizardControls">
           <button type="button" id="prevStepBtn" onclick="goToPrevStep()" style="padding:9px 16px;border:1.5px solid #E0D5C4;background:white;border-radius:10px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;color:#374151;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-arrow-left" style="font-size:11px;"></i> Précédent</button>
           <p id="stepCounter" style="font-size:12px;font-weight:700;color:#6B7280;">Étape 1 / 5</p>
@@ -629,45 +402,34 @@
       </div><!-- /formLeft -->
 
 
-      <!-- ─── COLONNE DROITE : résumé ─── -->
+      <!-- ══════════════════════════════
+           COLONNE DROITE
+      ══════════════════════════════ -->
       <div id="formRight">
 
-        <!-- Progression -->
-        <div style="background:white;border-radius:18px;padding:20px;border:1px solid #EDE7DB;box-shadow:0 2px 12px rgba(0,0,0,0.04);flex-shrink:0;">
+        <!-- Progression wizard -->
+        <div style="background:white;border-radius:18px;padding:20px;border:1px solid #EDE7DB;box-shadow:0 2px 12px rgba(0,0,0,.04);flex-shrink:0;">
           <h3 style="font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800;color:#1A1A1A;margin-bottom:12px;">Progression</h3>
-          <div style="background:#F2EBD9;border-radius:99px;height:5px;margin-bottom:14px;overflow:hidden;">
-            <div id="progressBar" style="height:100%;background:linear-gradient(90deg,#F5A64B,#D98A30);border-radius:99px;width:20%;transition:width 0.5s ease;"></div>
-          </div>
+          <div style="background:#F2EBD9;border-radius:99px;height:5px;margin-bottom:14px;overflow:hidden;"><div id="progressBar" style="height:100%;background:linear-gradient(90deg,#F5A64B,#D98A30);border-radius:99px;width:20%;transition:width .5s ease;"></div></div>
           <div>
-            <div class="progress-step"><div class="progress-dot done" id="ps1"><i class="fa-solid fa-check" style="font-size:9px;"></i></div><div><p style="font-size:12px;font-weight:700;color:#1A1A1A;">Type de document</p><p style="font-size:10.5px;color:#22c55e;font-weight:600;">✓ Complété</p></div></div>
+            <div class="progress-step"><div class="progress-dot current" id="ps1">1</div><div><p style="font-size:12px;font-weight:700;color:#1A1A1A;">Type de document</p><p style="font-size:10.5px;color:#9CA3AF;" id="ps1sub">En cours</p></div></div>
             <div class="progress-vline" id="pl1"></div>
-            <div class="progress-step"><div class="progress-dot current" id="ps2">2</div><div><p style="font-size:12px;font-weight:700;color:#1A1A1A;">Informations</p><p style="font-size:10.5px;color:#9CA3AF;">En cours</p></div></div>
+            <div class="progress-step"><div class="progress-dot" id="ps2">2</div><div><p style="font-size:12px;font-weight:600;color:#6B7280;">Informations</p><p style="font-size:10.5px;color:#C4BAB0;" id="ps2sub">En attente</p></div></div>
             <div class="progress-vline" id="pl2"></div>
             <div class="progress-step"><div class="progress-dot" id="ps3">3</div><div><p style="font-size:12px;font-weight:600;color:#6B7280;">Lieu &amp; date</p><p style="font-size:10.5px;color:#C4BAB0;">En attente</p></div></div>
             <div class="progress-vline" id="pl3"></div>
-            <div class="progress-step"><div class="progress-dot" id="ps4">4</div><div><p style="font-size:12px;font-weight:600;color:#6B7280;">Photos</p><p style="font-size:10.5px;color:#C4BAB0;">En attente</p></div></div>
+            <div class="progress-step"><div class="progress-dot" id="ps4">4</div><div><p style="font-size:12px;font-weight:600;color:#6B7280;">Photos <span style="font-size:10px;color:#C4BAB0;font-style:italic;">(opt.)</span></p><p style="font-size:10.5px;color:#C4BAB0;">En attente</p></div></div>
             <div class="progress-vline" id="pl4"></div>
             <div class="progress-step"><div class="progress-dot" id="ps5">5</div><div><p style="font-size:12px;font-weight:600;color:#6B7280;">Contact</p><p style="font-size:10.5px;color:#C4BAB0;">En attente</p></div></div>
           </div>
         </div>
 
-        <!-- Récap -->
+        <!-- Récap docs -->
         <div style="background:linear-gradient(135deg,#1E3A2F,#2D5A42);border-radius:18px;padding:20px;flex-shrink:0;">
           <h3 style="font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800;color:white;margin-bottom:3px;">Récapitulatif</h3>
-          <p style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:14px;">Votre déclaration en cours</p>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;align-items:center;gap:9px;padding:9px 11px;background:rgba(255,255,255,0.07);border-radius:10px;">
-              <span style="font-size:18px;" id="recapEmoji"><i class="fa-solid fa-id-card" style="color:#F5A64B;"></i></span>
-              <div><p style="font-size:11.5px;font-weight:700;color:white;" id="recapDocType">Carte nationale d'identité</p><p style="font-size:10px;color:rgba(255,255,255,0.4);">Type sélectionné</p></div>
-            </div>
-            <div style="display:flex;align-items:center;gap:9px;padding:9px 11px;background:rgba(255,255,255,0.07);border-radius:10px;">
-              <i class="fa-solid fa-barcode" style="color:#F5A64B;width:18px;text-align:center;font-size:13px;"></i>
-              <div><p style="font-size:11.5px;font-weight:700;color:white;" id="recapNum">Non renseigné</p><p style="font-size:10px;color:rgba(255,255,255,0.4);">Numéro du document</p></div>
-            </div>
-            <div style="display:flex;align-items:center;gap:9px;padding:9px 11px;background:rgba(255,255,255,0.07);border-radius:10px;">
-              <i class="fa-solid fa-calendar" style="color:#F5A64B;width:18px;text-align:center;font-size:13px;"></i>
-              <div><p style="font-size:11.5px;font-weight:700;color:white;" id="recapDate">Non renseigné</p><p style="font-size:10px;color:rgba(255,255,255,0.4);">Date de perte</p></div>
-            </div>
+          <p style="font-size:11px;color:rgba(255,255,255,.45);margin-bottom:14px;">Documents déclarés</p>
+          <div id="recapDocList" style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:11px;color:rgba(255,255,255,.4);font-style:italic;">Aucun sélectionné</span>
           </div>
         </div>
 
@@ -675,30 +437,31 @@
         <div style="background:white;border-radius:18px;padding:18px;border:1px solid #EDE7DB;flex-shrink:0;">
           <h3 style="font-family:'Bricolage Grotesque',sans-serif;font-size:13.5px;font-weight:800;color:#1A1A1A;margin-bottom:10px;display:flex;align-items:center;gap:7px;"><i class="fa-solid fa-circle-info" style="color:#F5A64B;"></i> Conseils utiles</h3>
           <div style="display:flex;flex-direction:column;gap:7px;">
-            <div style="display:flex;align-items:flex-start;gap:7px;"><i class="fa-solid fa-check" style="color:#22c55e;font-size:10px;margin-top:3px;flex-shrink:0;"></i><p style="font-size:11.5px;color:#374151;line-height:1.5;">Déclarez la perte auprès de la police / gendarmerie.</p></div>
+            <div style="display:flex;align-items:flex-start;gap:7px;"><i class="fa-solid fa-check" style="color:#22c55e;font-size:10px;margin-top:3px;flex-shrink:0;"></i><p style="font-size:11.5px;color:#374151;line-height:1.5;">Déclarez la perte auprès de la police.</p></div>
             <div style="display:flex;align-items:flex-start;gap:7px;"><i class="fa-solid fa-check" style="color:#22c55e;font-size:10px;margin-top:3px;flex-shrink:0;"></i><p style="font-size:11.5px;color:#374151;line-height:1.5;">Contactez l'autorité émettrice pour bloquer le document.</p></div>
-            <div style="display:flex;align-items:flex-start;gap:7px;"><i class="fa-solid fa-check" style="color:#22c55e;font-size:10px;margin-top:3px;flex-shrink:0;"></i><p style="font-size:11.5px;color:#374151;line-height:1.5;">Gardez une copie numérique de vos documents importants.</p></div>
-            <div style="display:flex;align-items:flex-start;gap:7px;"><i class="fa-solid fa-check" style="color:#22c55e;font-size:10px;margin-top:3px;flex-shrink:0;"></i><p style="font-size:11.5px;color:#374151;line-height:1.5;">Vérifiez les objets trouvés en mairie et commissariat.</p></div>
+            <div style="display:flex;align-items:flex-start;gap:7px;"><i class="fa-solid fa-check" style="color:#22c55e;font-size:10px;margin-top:3px;flex-shrink:0;"></i><p style="font-size:11.5px;color:#374151;line-height:1.5;">Gardez une copie numérique de vos documents.</p></div>
+            <div style="display:flex;align-items:flex-start;gap:7px;"><i class="fa-solid fa-check" style="color:#22c55e;font-size:10px;margin-top:3px;flex-shrink:0;"></i><p style="font-size:11.5px;color:#374151;line-height:1.5;">Vérifiez les objets trouvés en mairie.</p></div>
           </div>
         </div>
 
-      </div><!-- /formRight -->
+      </div>
+    </div>
+  </div>
+</div>
 
-    </div><!-- /formGrid -->
-  </div><!-- /pageBody -->
-</div><!-- /main-wrap -->
-
-
-<!-- ══ SUCCESS OVERLAY ══ -->
+<!-- SUCCESS -->
 <div class="success-overlay" id="successOverlay">
   <div class="success-card">
-    <div class="success-icon"><i class="fa-solid fa-check"></i></div>
+    <div class="success-icon"><i class="fa-solid fa-check" style="color:#2D5A42;"></i></div>
     <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:23px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">Déclaration enregistrée !</h2>
     <p style="font-size:13px;color:#6B7280;line-height:1.6;margin-bottom:14px;">Votre déclaration a été publiée. Vous serez notifié dès qu'un match est trouvé.</p>
     <div class="ref-badge" id="refNumber">DOC-2024-XXXX</div>
-    <p style="font-size:11px;color:#9CA3AF;margin-bottom:20px;">Conservez ce numéro de référence.</p>
+    <p style="font-size:11px;color:#9CA3AF;margin-bottom:16px;">Conservez ce numéro de référence.</p>
+    <button id="downloadPdfBtn" onclick="downloadDeclarationPdf()" style="width:100%;margin-bottom:10px;padding:13px 16px;background:#F5A64B;border:none;border-radius:12px;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(245,166,75,.35);transition:background .2s;" onmouseover="this.style.background='#D98A30'" onmouseout="this.style.background='#F5A64B'">
+      <i class="fa-solid fa-file-arrow-down"></i> Télécharger la déclaration PDF
+    </button>
     <div style="display:flex;gap:10px;">
-      <button onclick="closeSuccess()" style="flex:1;padding:12px;border:1.5px solid #E0D5C4;background:white;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;color:#374151;cursor:pointer;" onmouseover="this.style.background='#F9F6F1'" onmouseout="this.style.background='white'">Nouvelle déclaration</button>
+      <button onclick="resetForm()" style="flex:1;padding:12px;border:1.5px solid #E0D5C4;background:white;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;color:#374151;cursor:pointer;" onmouseover="this.style.background='#F9F6F1'" onmouseout="this.style.background='white'">Nouvelle déclaration</button>
       <button onclick="window.location.href='docDeclares.html'" style="flex:1;padding:12px;background:#1E3A2F;border:none;border-radius:12px;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800;color:white;cursor:pointer;" onmouseover="this.style.background='#2D5A42'" onmouseout="this.style.background='#1E3A2F'">Mes déclarations</button>
     </div>
   </div>
@@ -706,195 +469,457 @@
 
 
 <script>
-  /* ════ SIDEBAR (MOBILE + DESKTOP) ════ */
-  function setSidebarState(isOpen) {
-    const sb = document.getElementById('sidebar');
-    const ov = document.getElementById('overlay');
-    const wrap = document.querySelector('.main-wrap');
-    if (!sb) return;
+/* ════════════════════════════════════════
+   MÉTADONNÉES PAR TYPE DE DOCUMENT
+   Chaque type a : label, icon, champs[]
+   Chaque champ  : id, label, type, placeholder, icon, optional, options?
+════════════════════════════════════════ */
+const DOC_META = {
+  cni: {
+    label:"Carte d'identité", icon:'fa-id-card', color:'#3B82F6',
+    fields:[
+      { id:'titulaire', label:'Nom du titulaire', type:'text', placeholder:'Nom complet sur le document', icon:'fa-user', optional:false },
+      { id:'numero',    label:'Numéro du document', type:'text', placeholder:'Ex: CMR1234567', icon:'fa-barcode', optional:true },
+      { id:'expiration',label:"Date d'expiration", type:'date', placeholder:'', icon:'fa-calendar', optional:true },
+      { id:'pays',      label:'Pays émetteur', type:'select', icon:'fa-earth-africa', optional:false,
+        options:['Cameroun','Sénégal','Côte d\'Ivoire','Mali','Gabon','RD Congo','France','Autre…'] },
+      { id:'desc',      label:'Description physique', type:'textarea', placeholder:'Couleur, état, particularités…', icon:'', optional:true },
+    ]
+  },
+  passeport: {
+    label:'Passeport', icon:'fa-passport', color:'#8B5CF6',
+    fields:[
+      { id:'titulaire', label:'Nom du titulaire', type:'text', placeholder:'Nom complet', icon:'fa-user', optional:false },
+      { id:'numero',    label:'Numéro de passeport', type:'text', placeholder:'Ex: P1234567', icon:'fa-barcode', optional:true },
+      { id:'expiration',label:"Date d'expiration", type:'date', placeholder:'', icon:'fa-calendar', optional:true },
+      { id:'pays',      label:'Pays émetteur', type:'select', icon:'fa-earth-africa', optional:false,
+        options:['Cameroun','Sénégal','Côte d\'Ivoire','Mali','Gabon','RD Congo','France','Autre…'] },
+      { id:'desc',      label:'Description physique', type:'textarea', placeholder:'Couleur, état, particularités…', icon:'', optional:true },
+    ]
+  },
+  permis: {
+    label:'Permis de conduire', icon:'fa-car-side', color:'#F59E0B',
+    fields:[
+      { id:'titulaire', label:'Nom du titulaire', type:'text', placeholder:'Nom complet', icon:'fa-user', optional:false },
+      { id:'numero',    label:'Numéro du permis', type:'text', placeholder:'Ex: PC-23-0012345', icon:'fa-barcode', optional:true },
+      { id:'categorie', label:'Catégorie', type:'select', icon:'fa-layer-group', optional:true,
+        options:['A (Moto)','B (Voiture)','C (Poids lourd)','D (Bus)','BE','CE','Autre'] },
+      { id:'expiration',label:"Date d'expiration", type:'date', placeholder:'', icon:'fa-calendar', optional:true },
+      { id:'pays',      label:'Pays émetteur', type:'select', icon:'fa-earth-africa', optional:false,
+        options:['Cameroun','Sénégal','Côte d\'Ivoire','Mali','Gabon','France','Autre…'] },
+      { id:'desc',      label:'Description physique', type:'textarea', placeholder:'Couleur, état…', icon:'', optional:true },
+    ]
+  },
+  acte: {
+    label:'Acte de naissance', icon:'fa-file-lines', color:'#10B981',
+    fields:[
+      { id:'titulaire', label:'Nom de la personne concernée', type:'text', placeholder:'Nom complet', icon:'fa-user', optional:false },
+      { id:'numero',    label:'Numéro de l\'acte', type:'text', placeholder:'Ex: 2024-YDE-000123', icon:'fa-hashtag', optional:true },
+      { id:'dateEtab',  label:'Date d\'établissement', type:'date', placeholder:'', icon:'fa-calendar', optional:true },
+      { id:'commune',   label:'Commune / Mairie émettrice', type:'text', placeholder:'Ex: Mairie de Yaoundé 1er', icon:'fa-building', optional:false },
+      { id:'desc',      label:'Observations', type:'textarea', placeholder:'Annotations, état du document…', icon:'', optional:true },
+    ]
+  },
+  banque: {
+    label:'Carte bancaire', icon:'fa-credit-card', color:'#EF4444',
+    fields:[
+      { id:'titulaire', label:'Nom du titulaire', type:'text', placeholder:'Nom sur la carte', icon:'fa-user', optional:false },
+      { id:'derniers',  label:'4 derniers chiffres', type:'text', placeholder:'Ex: 4521', icon:'fa-hashtag', optional:true },
+      { id:'banque',    label:'Banque émettrice', type:'text', placeholder:'Ex: Afriland First Bank, UBA…', icon:'fa-building-columns', optional:false },
+      { id:'expiration',label:"Date d'expiration", type:'month', placeholder:'MM/AA', icon:'fa-calendar', optional:true },
+      { id:'desc',      label:'Description', type:'textarea', placeholder:'Couleur, type Visa/Mastercard…', icon:'', optional:true },
+    ]
+  },
+  titre: {
+    label:'Titre foncier', icon:'fa-house', color:'#6366F1',
+    fields:[
+      { id:'titulaire', label:'Nom du propriétaire', type:'text', placeholder:'Nom complet', icon:'fa-user', optional:false },
+      { id:'numero',    label:'Numéro de parcelle', type:'text', placeholder:'Ex: TF/2345/B', icon:'fa-hashtag', optional:true },
+      { id:'localisation', label:'Localisation du bien', type:'text', placeholder:'Ex: Bastos, Yaoundé', icon:'fa-map-pin', optional:false },
+      { id:'superficie',label:'Superficie (m²)', type:'number', placeholder:'Ex: 500', icon:'fa-ruler-combined', optional:true },
+      { id:'desc',      label:'Description', type:'textarea', placeholder:'État, particularités du document…', icon:'', optional:true },
+    ]
+  },
+  diplome: {
+    label:'Diplôme', icon:'fa-graduation-cap', color:'#EC4899',
+    fields:[
+      { id:'titulaire', label:'Nom du diplômé', type:'text', placeholder:'Nom complet', icon:'fa-user', optional:false },
+      { id:'etablissement', label:'Établissement', type:'text', placeholder:'Ex: Université de Yaoundé 1', icon:'fa-school', optional:false },
+      { id:'specialite',label:'Spécialité / Filière', type:'text', placeholder:'Ex: Droit privé, Médecine…', icon:'fa-book', optional:true },
+      { id:'annee',     label:'Année d\'obtention', type:'number', placeholder:'Ex: 2022', icon:'fa-calendar', optional:true },
+      { id:'desc',      label:'Description', type:'textarea', placeholder:'État, couleur, mentions…', icon:'', optional:true },
+    ]
+  },
+  autre: {
+    label:'Autre document', icon:'fa-folder', color:'#9CA3AF',
+    fields:[
+      { id:'typePrec',  label:'Type précis du document', type:'text', placeholder:'Ex: Carte grise, Carte d\'étudiant…', icon:'fa-file', optional:false },
+      { id:'titulaire', label:'Nom du titulaire', type:'text', placeholder:'Nom complet', icon:'fa-user', optional:false },
+      { id:'numero',    label:'Numéro ou référence', type:'text', placeholder:'Numéro si disponible', icon:'fa-barcode', optional:true },
+      { id:'desc',      label:'Description', type:'textarea', placeholder:'Couleur, état, particularités…', icon:'', optional:true },
+    ]
+  },
+};
 
-    sb.classList.toggle('open', isOpen);
-    sb.classList.toggle('closed', !isOpen);
+/* ════ ÉTAT ════ */
+const selectedDocs  = [];   // ordre d'ajout
+let   activeDocIdx  = 0;    // index dans selectedDocs (pour l'étape 2)
+let   currentStep   = 1;
+const totalSteps    = 5;
 
-    if (ov) {
-      if (window.innerWidth < 769 && isOpen) ov.classList.add('show');
-      else ov.classList.remove('show');
-    }
-
-    if (wrap) {
-      if (window.innerWidth < 769) wrap.classList.add('expanded');
-      else wrap.classList.toggle('expanded', !isOpen);
-    }
-  }
-
-  function openSb() { setSidebarState(true); }
-  function closeSb() { setSidebarState(false); }
-  function toggleSb() {
-    const sb = document.getElementById('sidebar');
-    if (!sb) return;
-    const isOpen = sb.classList.contains('open') && !sb.classList.contains('closed');
-    setSidebarState(!isOpen);
-  }
-
-  /* ════ WIZARD ════ */
-  let currentStep = 1;
-  const totalSteps = 5;
-
-  function updateProgressUI() {
-    for (let i = 1; i <= totalSteps; i++) {
-      const dot = document.getElementById(`ps${i}`);
-      if (!dot) continue;
-      dot.className = 'progress-dot';
-      if (i < currentStep)      { dot.classList.add('done');    dot.innerHTML = '<i class="fa-solid fa-check" style="font-size:9px;"></i>'; }
-      else if (i === currentStep){ dot.classList.add('current'); dot.textContent = String(i); }
-      else                       { dot.textContent = String(i); }
-      if (i < totalSteps) {
-        const line = document.getElementById(`pl${i}`);
-        if (line) line.className = i < currentStep ? 'progress-vline done' : 'progress-vline';
-      }
-    }
-    const bar = document.getElementById('progressBar');
-    if (bar) bar.style.width = `${(currentStep / totalSteps) * 100}%`;
-    document.getElementById('stepCounter').textContent = `Étape ${currentStep} / ${totalSteps}`;
-
-    const prev = document.getElementById('prevStepBtn');
-    const next = document.getElementById('nextStepBtn');
-    const actions = document.getElementById('stepActions');
-    prev.disabled = currentStep === 1;
-    prev.style.opacity = currentStep === 1 ? '0.45' : '1';
-    prev.style.cursor  = currentStep === 1 ? 'not-allowed' : 'pointer';
-    next.style.display = currentStep === totalSteps ? 'none' : 'flex';
-    actions.classList.toggle('active', currentStep === totalSteps);
-  }
-
-  function showStep(step) {
-    currentStep = Math.max(1, Math.min(totalSteps, step));
-    document.querySelectorAll('.form-step').forEach(s => s.classList.toggle('active', Number(s.dataset.step) === currentStep));
-    updateProgressUI();
-    // Scroll la colonne gauche vers le haut à chaque changement d'étape
-    document.getElementById('formLeft').scrollTop = 0;
-  }
-
-  function goToNextStep() { if (currentStep < totalSteps) showStep(currentStep + 1); }
-  function goToPrevStep() { if (currentStep > 1)          showStep(currentStep - 1); }
-
-  /* ════ DOC TYPE ════ */
-  const docMeta = {
-    cni:        { label:"Carte nationale d'identité", icon:'fa-id-card' },
-    passeport:  { label:'Passeport',                   icon:'fa-passport' },
-    permis:     { label:'Permis de conduire',          icon:'fa-car-side' },
-    acte:       { label:'Acte de naissance',           icon:'fa-file-lines' },
-    'carte-vit':{ label:'Carte bancaire',              icon:'fa-credit-card' },
-    titre:      { label:'Titre foncier',               icon:'fa-house' },
-    diplome:    { label:'Diplôme',                     icon:'fa-graduation-cap' },
-    autre:      { label:'Autre document',              icon:'fa-folder' },
-  };
-  function selectDocType(card, type) {
-    document.querySelectorAll('.doc-type-card').forEach(c => c.classList.remove('selected'));
+/* ════ MULTI-SELECT ════ */
+function toggleDocType(card, type){
+  const idx = selectedDocs.indexOf(type);
+  if(idx > -1){
+    selectedDocs.splice(idx,1);
+    card.classList.remove('selected');
+  } else {
+    selectedDocs.push(type);
     card.classList.add('selected');
-    document.getElementById('autreTypeField').style.display = type === 'autre' ? 'block' : 'none';
-    const m = docMeta[type] || { label:'Document', icon:'fa-folder' };
-    document.getElementById('recapEmoji').innerHTML   = `<i class="fa-solid ${m.icon}" style="color:#F5A64B;"></i>`;
-    document.getElementById('recapDocType').textContent = m.label;
   }
+  renderSelectionUI();
+  updateRecapSidebar();
+}
 
-  /* ════ LIVE RECAP ════ */
-  function updateDocNum(v) { document.getElementById('recapNum').textContent = v.trim() || 'Non renseigné'; }
-  document.getElementById('lossDate').addEventListener('input', function() {
-    document.getElementById('recapDate').textContent = this.value
-      ? new Date(this.value).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})
-      : 'Non renseigné';
+function renderSelectionUI(){
+  const info  = document.getElementById('selectionInfo');
+  const tags  = document.getElementById('selectionTags');
+  const count = selectedDocs.length;
+  if(count === 0){ info.style.display='none'; tags.innerHTML=''; return; }
+  info.style.display='flex';
+  document.getElementById('selCount').textContent = count;
+  document.getElementById('selText').textContent  = count > 1 ? 'documents sélectionnés' : 'document sélectionné';
+  tags.innerHTML = selectedDocs.map(type => {
+    const m = DOC_META[type];
+    return `<span class="sel-tag" onclick="removeDoc('${type}')">
+      <i class="fa-solid ${m.icon}"></i> ${m.label} <i class="fa-solid fa-xmark"></i>
+    </span>`;
+  }).join('');
+}
+
+function removeDoc(type){
+  const idx = selectedDocs.indexOf(type);
+  if(idx > -1) selectedDocs.splice(idx,1);
+  document.querySelectorAll('.doc-type-card').forEach(c=>{
+    if(c.getAttribute('onclick').includes(`'${type}'`)) c.classList.remove('selected');
   });
+  renderSelectionUI();
+  updateRecapSidebar();
+}
 
-  /* ════ PLACE TAGS ════ */
-  function selectPlace(btn) {
-    document.querySelectorAll('.place-tag').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+/* ════ SIDEBAR RECAP ════ */
+function updateRecapSidebar(){
+  const el = document.getElementById('recapDocList');
+  if(selectedDocs.length === 0){
+    el.innerHTML='<span style="font-size:11px;color:rgba(255,255,255,.4);font-style:italic;">Aucun sélectionné</span>';
+    return;
+  }
+  el.innerHTML = selectedDocs.map(type => {
+    const m = DOC_META[type];
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,.08);border-radius:10px;">
+      <i class="fa-solid ${m.icon}" style="color:#F5A64B;font-size:13px;width:16px;text-align:center;"></i>
+      <span style="font-size:11.5px;font-weight:600;color:white;">${m.label}</span>
+    </div>`;
+  }).join('');
+}
+
+/* ════ STEP 2 — CHAMPS DYNAMIQUES ════ */
+function buildStep2(direction){
+  if(selectedDocs.length === 0) return;
+  const type  = selectedDocs[activeDocIdx];
+  const meta  = DOC_META[type];
+  const total = selectedDocs.length;
+
+  // Header
+  document.getElementById('step2Title').textContent   = `Détails : ${meta.label}`;
+  document.getElementById('step2Sub').textContent     = total > 1
+    ? `Renseignez les infos de ce document. Vous passerez au suivant après.`
+    : `Renseignez les informations connues.`;
+  document.getElementById('currentDocIcon').innerHTML  = `<i class="fa-solid ${meta.icon}" style="color:${meta.color};font-size:16px;"></i>`;
+  document.getElementById('currentDocName').textContent = meta.label;
+  document.getElementById('currentDocCounter').textContent = total > 1 ? `Document ${activeDocIdx+1} / ${total}` : '';
+
+  // Barre sub-progression
+  const subProg = document.getElementById('docSubProgress');
+  if(total > 1){
+    subProg.style.display='block';
+    document.getElementById('docSubProgressBar').style.width = `${((activeDocIdx+1)/total)*100}%`;
+  } else {
+    subProg.style.display='none';
   }
 
-  /* ════ URGENCY ════ */
-  const urgTexts = { low:'Situation non urgente, quelques semaines acceptables.', medium:'Document important, situation gérable sous quelques jours.', high:'URGENT - Ce document est indispensable dès maintenant !' };
-  function setUrgency(level, btn) {
-    document.querySelectorAll('.urgency-btn').forEach(b => b.className = 'urgency-btn');
-    btn.classList.add('sel-' + level);
-    document.getElementById('urgencyDesc').textContent = urgTexts[level];
+  // Onglets (si plusieurs)
+  const tabs = document.getElementById('docTabs');
+  if(total > 1){
+    tabs.style.display='block';
+    document.getElementById('docTabsInner').innerHTML = selectedDocs.map((t,i) => {
+      const m2 = DOC_META[t];
+      const cls = i < activeDocIdx ? 'done' : (i === activeDocIdx ? 'active' : '');
+      const icon = i < activeDocIdx ? 'fa-check' : `fa-solid ${m2.icon}`;
+      return `<button type="button" class="doc-nav-tab ${cls}" onclick="jumpToDoc(${i})">
+        <span class="tab-num">${i < activeDocIdx ? '<i class="fa-solid fa-check" style="font-size:8px;"></i>' : (i+1)}</span>
+        <i class="fa-solid ${m2.icon}" style="font-size:11px;"></i>
+        ${m2.label}
+      </button>`;
+    }).join('');
+  } else {
+    tabs.style.display='none';
   }
 
-  /* ════ REWARD TOGGLE ════ */
-  function toggleReward(on) {
-    document.getElementById('rewardField').style.display        = on ? 'block' : 'none';
-    document.getElementById('rewardSlider').style.background    = on ? '#F5A64B' : '#E0D5C4';
-    document.getElementById('rewardThumb').style.transform      = on ? 'translateX(20px)' : 'translateX(0)';
-  }
+  // Champs dynamiques
+  const container = document.getElementById('dynamicFields');
+  const animClass = direction === 'left' ? 'slide-left' : 'slide-right';
+  container.innerHTML = `<div class="${animClass}">` + buildFieldsHTML(type) + '</div>';
+}
 
-  /* ════ CHECKBOX ════ */
-  let checked = false;
-  function toggleCheckbox() {
-    checked = !checked;
-    const ui   = document.getElementById('checkboxUI');
-    const icon = document.getElementById('checkIcon');
-    ui.style.background  = checked ? '#1E3A2F' : 'white';
-    ui.style.borderColor = checked ? '#1E3A2F' : '#E0D5C4';
-    icon.style.display   = checked ? 'block' : 'none';
-  }
-
-  /* ════ PHOTO UPLOAD ════ */
-  function previewFile(input, previewId, zoneId, textId, iconId) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      document.getElementById(previewId).src          = e.target.result;
-      document.getElementById(previewId).style.display = 'block';
-      document.getElementById(textId).style.display    = 'none';
-      document.getElementById(iconId).style.display    = 'none';
-      document.getElementById(zoneId).classList.add('has-file');
-    };
-    reader.readAsDataURL(file);
-  }
-  function dragOver(e, z)  { e.preventDefault(); z.classList.add('dragover'); }
-  function dragLeave(z)    { z.classList.remove('dragover'); }
-  function dropFile(e, z, previewId) {
-    e.preventDefault(); z.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = ev => { document.getElementById(previewId).src = ev.target.result; document.getElementById(previewId).style.display = 'block'; z.classList.add('has-file'); };
-    reader.readAsDataURL(file);
-  }
-
-  /* ════ SUBMIT ════ */
-  function submitDeclaration() {
-    if (!checked) {
-      const ui = document.getElementById('checkboxUI');
-      ui.style.borderColor = '#ef4444';
-      setTimeout(() => ui.style.borderColor = '#E0D5C4', 2000);
-      return;
+function buildFieldsHTML(type){
+  const fields = DOC_META[type].fields;
+  const grid2  = ['titulaire','numero','expiration','pays','derniers','banque','dateEtab','categorie','annee','superficie','localisation'].includes;
+  // Group fields: 2 columns when short, full width for textarea
+  let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">';
+  let inGrid = true;
+  fields.forEach(f => {
+    if(f.type === 'textarea'){
+      if(inGrid){ html += '</div>'; inGrid=false; }
+      html += buildField(f, 'margin-top:14px;');
+    } else {
+      if(!inGrid){ html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">'; inGrid=true; }
+      html += buildField(f,'');
     }
-    const ref = 'DOC-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random()*9000);
-    document.getElementById('refNumber').textContent = ref;
-    document.getElementById('successOverlay').classList.add('show');
-  }
-  function closeSuccess() { document.getElementById('successOverlay').classList.remove('show'); }
-
-  /* ════ RESPONSIVE ════ */
-  function checkWidth() {
-    const btn = document.getElementById('menuBtn');
-    if (btn) btn.style.display = 'flex';
-    if (window.innerWidth < 769) closeSb();
-    else openSb();
-  }
-  window.addEventListener('resize', checkWidth);
-
-  /* ════ INIT ════ */
-  document.addEventListener('DOMContentLoaded', function () {
-    checkWidth();
-
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('lossDate').value = today;
-    document.getElementById('recapDate').textContent = new Date(today).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-    showStep(1);
   });
+  if(inGrid) html += '</div>';
+  return html;
+}
+
+function buildField(f, extra){
+  const optBadge = f.optional ? `<span class="opt-badge">Optionnel</span>` : '';
+  const iconHtml = f.icon ? `<i class="fa-solid ${f.icon} field-icon"></i>` : '';
+  const noIcon   = !f.icon ? ' no-icon' : '';
+
+  if(f.type === 'select'){
+    const opts = (f.options || []).map(o => `<option value="${o}">${o}</option>`).join('');
+    return `<div class="field-group" style="${extra}">
+      <label class="field-label"><i class="fa-solid ${f.icon}" style="color:#F5A64B;font-size:10px;"></i> ${f.label} ${optBadge}</label>
+      <div class="field-wrapper">
+        ${iconHtml}
+        <select class="field-input"><option value="">Sélectionner…</option>${opts}</select>
+        <i class="fa-solid fa-chevron-down" style="position:absolute;right:14px;color:#C4BAB0;font-size:11px;pointer-events:none;"></i>
+      </div>
+    </div>`;
+  }
+  if(f.type === 'textarea'){
+    return `<div class="field-group" style="${extra}">
+      <label class="field-label">${f.icon ? `<i class="fa-solid ${f.icon}" style="color:#F5A64B;font-size:10px;"></i>` : ''} ${f.label} ${optBadge}</label>
+      <div class="field-wrapper"><textarea class="field-input no-icon" placeholder="${f.placeholder}" style="min-height:80px;"></textarea></div>
+    </div>`;
+  }
+  return `<div class="field-group" style="${extra}">
+    <label class="field-label">${f.icon ? `<i class="fa-solid ${f.icon}" style="color:#F5A64B;font-size:10px;"></i>` : ''} ${f.label} ${optBadge}</label>
+    <div class="field-wrapper">${iconHtml}<input type="${f.type}" class="field-input${noIcon}" placeholder="${f.placeholder||''}"/></div>
+  </div>`;
+}
+
+function jumpToDoc(idx){
+  const dir = idx > activeDocIdx ? 'right' : 'left';
+  activeDocIdx = idx;
+  buildStep2(dir);
+}
+
+/* ════ WIZARD ════ */
+function updateProgressUI(){
+  for(let i=1;i<=totalSteps;i++){
+    const dot=document.getElementById(`ps${i}`);
+    if(!dot) continue;
+    dot.className='progress-dot';
+    if(i<currentStep)       { dot.classList.add('done');    dot.innerHTML='<i class="fa-solid fa-check" style="font-size:9px;"></i>'; }
+    else if(i===currentStep){ dot.classList.add('current'); dot.textContent=String(i); }
+    else                    { dot.textContent=String(i); }
+    if(i<totalSteps){ const l=document.getElementById(`pl${i}`); if(l) l.className=i<currentStep?'progress-vline done':'progress-vline'; }
+  }
+  document.getElementById('progressBar').style.width=`${(currentStep/totalSteps)*100}%`;
+  document.getElementById('stepCounter').textContent=`Étape ${currentStep} / ${totalSteps}`;
+  const prev=document.getElementById('prevStepBtn'),next=document.getElementById('nextStepBtn'),actions=document.getElementById('stepActions');
+  prev.disabled=currentStep===1; prev.style.opacity=currentStep===1?'0.45':'1'; prev.style.cursor=currentStep===1?'not-allowed':'pointer';
+  next.style.display=currentStep===totalSteps?'none':'flex';
+  actions.classList.toggle('active',currentStep===totalSteps);
+}
+
+function showStep(step){
+  currentStep=Math.max(1,Math.min(totalSteps,step));
+  document.querySelectorAll('.form-step').forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===currentStep));
+  updateProgressUI();
+  document.getElementById('formLeft').scrollTop=0;
+  if(currentStep===2){ activeDocIdx=0; buildStep2('right'); }
+}
+
+function goToNextStep(){
+  if(currentStep===1){
+    if(selectedDocs.length===0){ shakeStep1(); return; }
+  }
+  if(currentStep < totalSteps) showStep(currentStep+1);
+}
+function goToPrevStep(){
+  if(currentStep===2 && activeDocIdx > 0){ jumpToDoc(activeDocIdx-1); return; }
+  if(currentStep>1) showStep(currentStep-1);
+}
+
+function shakeStep1(){
+  const grid=document.getElementById('docTypeGrid');
+  grid.style.animation='shake .4s ease';
+  setTimeout(()=>grid.style.animation='',500);
+  const info=document.getElementById('selectionInfo');
+  info.style.display='flex'; info.style.background='#FEF0DC'; info.style.borderColor='#F5A64B';
+  document.getElementById('selCount').textContent='0';
+  document.getElementById('selText').innerHTML='<span style="color:#D98A30;font-weight:700;">Sélectionnez au moins un document pour continuer</span>';
+  setTimeout(()=>{ if(selectedDocs.length===0){ info.style.display='none'; info.style.background=''; info.style.borderColor=''; } },3000);
+}
+
+/* ════ LIEU ════ */
+function selectPlace(btn){ document.querySelectorAll('.place-tag').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+
+/* ════ URGENCY ════ */
+const urgTexts={low:'Situation non urgente, quelques semaines acceptables.',medium:'Document important, situation gérable sous quelques jours.',high:'URGENT — Ce document est indispensable dès maintenant !'};
+function setUrgency(level,btn){ document.querySelectorAll('.urgency-btn').forEach(b=>b.className='urgency-btn'); btn.classList.add('sel-'+level); document.getElementById('urgencyDesc').textContent=urgTexts[level]; }
+
+/* ════ REWARD ════ */
+function toggleReward(on){ document.getElementById('rewardField').style.display=on?'block':'none'; document.getElementById('rewardSlider').style.background=on?'#F5A64B':'#E0D5C4'; document.getElementById('rewardThumb').style.transform=on?'translateX(20px)':'translateX(0)'; }
+
+/* ════ CHECKBOX ════ */
+let checked=false;
+function toggleCheckbox(){ checked=!checked; const ui=document.getElementById('checkboxUI'),icon=document.getElementById('checkIcon'); ui.style.background=checked?'#1E3A2F':'white'; ui.style.borderColor=checked?'#1E3A2F':'#E0D5C4'; icon.style.display=checked?'block':'none'; }
+
+/* ════ PHOTO ════ */
+function previewFile(input,previewId,zoneId,textId,iconId){ const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{document.getElementById(previewId).src=e.target.result;document.getElementById(previewId).style.display='block';document.getElementById(textId).style.display='none';document.getElementById(iconId).style.display='none';document.getElementById(zoneId).classList.add('has-file');};reader.readAsDataURL(file); }
+function dragOver(e,z){e.preventDefault();z.classList.add('dragover')} function dragLeave(z){z.classList.remove('dragover')}
+function dropFile(e,z,previewId){e.preventDefault();z.classList.remove('dragover');const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return;const reader=new FileReader();reader.onload=ev=>{document.getElementById(previewId).src=ev.target.result;document.getElementById(previewId).style.display='block';z.classList.add('has-file');};reader.readAsDataURL(file);}
+
+/* ════ SUBMIT ════ */
+// Stockage global de la dernière déclaration pour le PDF
+var lastDeclarationData = null;
+
+function collectDeclarationData(ref) {
+  // ── Documents + champs remplis
+  var docs = [];
+  selectedDocs.forEach(function(key) {
+    var meta = DOC_META[key];
+    if (!meta) return;
+    var fields = [];
+    var panel = document.getElementById('docPanel_' + key);
+    if (panel) {
+      (meta.fields || []).forEach(function(f) {
+        var el = panel.querySelector('[data-field-id="' + f.id + '"]') ||
+                 panel.querySelector('input[placeholder="' + (f.placeholder || '') + '"]');
+        // Fallback : parcourir tous les inputs/selects/textareas du panel
+        var val = '';
+        var inputs = panel.querySelectorAll('input,select,textarea');
+        inputs.forEach(function(inp, idx) {
+          if (meta.fields[idx] && meta.fields[idx].id === f.id) val = inp.value.trim();
+        });
+        fields.push({ label: f.label, value: val });
+      });
+    } else {
+      // Panel pas encore construit : on retourne juste le type
+      fields.push({ label: 'Type', value: meta.label });
+    }
+    docs.push({ label: meta.label, fields: fields });
+  });
+
+  // ── Lieu : place-tag active ou champ texte
+  var lieuEl = document.querySelector('.place-tag.active');
+  var lieu = lieuEl ? lieuEl.textContent.trim() : '';
+  var lieuInput = document.getElementById('lossPlace');
+  if (!lieu && lieuInput) lieu = lieuInput.value.trim();
+
+  // ── Circonstances
+  var circEl = document.getElementById('lossDesc') || document.getElementById('lossCirc');
+  var circonstances = circEl ? circEl.value.trim() : '';
+
+  // ── Date de perte
+  var datePerte = '';
+  var lossDateEl = document.getElementById('lossDate');
+  if (lossDateEl) datePerte = lossDateEl.value;
+
+  // ── Contact
+  var phoneEl = document.querySelector('input[type="tel"]');
+  var emailEl = document.querySelector('input[type="email"]');
+  var phone = phoneEl ? phoneEl.value.trim() : '';
+  var email = emailEl ? emailEl.value.trim() : '';
+
+  // ── Urgence
+  var urgEl = document.querySelector('.urgency-btn.sel-low,.urgency-btn.sel-medium,.urgency-btn.sel-high');
+  var urgence = urgEl ? urgEl.textContent.trim() : 'Modérée';
+
+  // ── Récompense
+  var recompense = '';
+  var rewardEl = document.getElementById('rewardToggle');
+  if (rewardEl && rewardEl.checked) {
+    var rewardAmtEl = document.querySelector('#rewardField input[type="number"]');
+    if (rewardAmtEl) recompense = rewardAmtEl.value;
+  }
+
+  return {
+    ref: ref,
+    date: new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' }),
+    datePerte: datePerte,
+    documents: docs,
+    lieu: lieu || 'Non précisé',
+    circonstances: circonstances,
+    contact: { phone: phone, email: email },
+    urgence: urgence,
+    recompense: recompense,
+  };
+}
+
+function submitDeclaration() {
+  if (!checked) {
+    var ui = document.getElementById('checkboxUI');
+    ui.style.borderColor = '#ef4444';
+    setTimeout(function() { ui.style.borderColor = '#E0D5C4'; }, 2000);
+    return;
+  }
+  var ref = 'DOC-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000);
+  lastDeclarationData = collectDeclarationData(ref);
+  document.getElementById('refNumber').textContent = ref;
+  document.getElementById('successOverlay').classList.add('show');
+}
+
+function downloadDeclarationPdf() {
+  var btn = document.getElementById('downloadPdfBtn');
+  if (!lastDeclarationData) return;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Génération en cours…'; }
+  generateDeclarationPdf(lastDeclarationData)
+    .then(function() {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-file-arrow-down"></i> Télécharger la déclaration PDF'; }
+    })
+    .catch(function(err) {
+      console.error('Erreur PDF :', err);
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Erreur – réessayer'; }
+      alert('Impossible de générer le PDF.\n' + err.message);
+    });
+}
+
+function resetForm(){
+  document.getElementById('successOverlay').classList.remove('show');
+  selectedDocs.length=0;
+  document.querySelectorAll('.doc-type-card').forEach(c=>c.classList.remove('selected'));
+  renderSelectionUI(); updateRecapSidebar();
+  checked=false; document.getElementById('checkboxUI').style.background='white'; document.getElementById('checkboxUI').style.borderColor='#E0D5C4'; document.getElementById('checkIcon').style.display='none';
+  showStep(1);
+}
+
+/* ════ SIDEBAR ════ */
+function setSidebarState(isOpen){ const sb=document.getElementById('sidebar'),ov=document.getElementById('overlay'),wrap=document.querySelector('.main-wrap');if(!sb)return;sb.classList.toggle('open',isOpen);sb.classList.toggle('closed',!isOpen);if(ov){if(window.innerWidth<769&&isOpen)ov.classList.add('show');else ov.classList.remove('show');}if(wrap){if(window.innerWidth<769)wrap.classList.add('expanded');else wrap.classList.toggle('expanded',!isOpen);} }
+function openSb(){setSidebarState(true)} function closeSb(){setSidebarState(false)} function toggleSb(){const sb=document.getElementById('sidebar');if(!sb)return;setSidebarState(!sb.classList.contains('open')||sb.classList.contains('closed'));}
+
+/* ════ INIT ════ */
+function checkWidth(){ const btn=document.getElementById('menuBtn');if(btn)btn.style.display='flex';if(window.innerWidth<769)closeSb();else openSb(); }
+window.addEventListener('resize',checkWidth);
+document.addEventListener('DOMContentLoaded',function(){
+  checkWidth();
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('lossDate').value=today;
+  showStep(1);
+});
 </script>
 </body>
 </html>

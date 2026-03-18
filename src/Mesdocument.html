@@ -380,37 +380,6 @@
       color: #F5A64B
     }
 
-    /* Floating action */
-    .fab {
-      position: fixed;
-      bottom: 24px;
-      right: 20px;
-      z-index: 30;
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: #F5A64B;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      box-shadow: 0 6px 24px rgba(245, 166, 75, .4);
-      transition: transform .2s, box-shadow .2s
-    }
-
-    .fab:hover {
-      transform: scale(1.08);
-      box-shadow: 0 8px 32px rgba(245, 166, 75, .5)
-    }
-
-    @media(min-width:900px) {
-      .fab {
-        display: none
-      }
-    }
   </style>
 </head>
 
@@ -710,35 +679,6 @@
 
     </div>
   </div><!-- /main-wrapper -->
-
-  <!-- ══ BOTTOM NAV (mobile only) ══ -->
-  <nav
-    class="bottom-nav fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-borderMain px-2 py-2 justify-around flex md:hidden">
-    <a href="dashboard.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
-      <i class="fa-solid fa-house text-base"></i>
-      <span class="text-[10px] font-medium">Accueil</span>
-    </a>
-    <a href="Mesdocument.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-primary">
-      <i class="fa-solid fa-plus-circle text-base"></i>
-      <span class="text-[10px] font-semibold">Ajouter</span>
-    </a>
-    <a href="rechercher.html" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted">
-      <i class="fa-solid fa-magnifying-glass text-base"></i>
-      <span class="text-[10px] font-medium">Rechercher</span>
-    </a>
-    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted relative">
-      <i class="fa-solid fa-envelope text-base"></i>
-      <span class="text-[10px] font-medium">Messages</span>
-      <div class="absolute top-1 right-2 w-[7px] h-[7px] rounded-full bg-primary border-2 border-white"></div>
-    </a>
-    <a href="#" class="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-textMuted" onclick="openSb()">
-      <i class="fa-solid fa-bars text-base"></i>
-      <span class="text-[10px] font-medium">Plus</span>
-    </a>
-  </nav>
-
-  <!-- Mobile FAB -->
-  <button class="fab" onclick="openModal()" data-loading-text="Ouverture..."><i class="fa-solid fa-plus"></i></button>
 
   <!-- ════════════════════════════════════
      MODAL — Enregistrer un document
