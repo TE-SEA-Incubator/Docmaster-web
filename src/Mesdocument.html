@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 
 <head>
@@ -327,8 +327,12 @@
     }
 
     .doc-card:hover {
-      border-color: #F5A64B;
-      box-shadow: 0 4px 20px rgba(245, 166, 75, .12)
+      border-color: #ef4444;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, .12)
+    }
+    .doc-card.is-lost {
+      border-color: #ef4444 !important;
+      background: #fff1f2;
     }
 
     .doc-card .card-thumb {
@@ -518,6 +522,9 @@
               <span class="flex items-center gap-1 text-green-mid font-semibold"><i
                   class="fa-solid fa-shield-check text-[10px]"></i>Sécurisé</span>
             </div>
+            <button onclick="confirmLost('cni', this)" class="mt-3 w-full py-2 bg-red-500 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-red-500/20">
+              <i class="fa-solid fa-triangle-exclamation"></i> Déclarer comme perdu
+            </button>
           </div>
         </div>
 
@@ -551,6 +558,9 @@
               <span class="flex items-center gap-1 text-green-mid font-semibold"><i
                   class="fa-solid fa-shield-check text-[10px]"></i>Sécurisé</span>
             </div>
+            <button onclick="confirmLost('passport', this)" class="mt-3 w-full py-2 bg-red-500 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-red-500/20">
+              <i class="fa-solid fa-triangle-exclamation"></i> Déclarer comme perdu
+            </button>
           </div>
         </div>
 
@@ -585,6 +595,9 @@
               <span class="flex items-center gap-1 text-amber-500 font-semibold"><i
                   class="fa-solid fa-triangle-exclamation text-[10px]"></i>Bientôt expiré</span>
             </div>
+            <button onclick="confirmLost('permis', this)" class="mt-3 w-full py-2 bg-red-500 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-red-500/20">
+              <i class="fa-solid fa-triangle-exclamation"></i> Déclarer comme perdu
+            </button>
           </div>
         </div>
 
@@ -619,6 +632,9 @@
               <span class="flex items-center gap-1 text-green-mid font-semibold"><i
                   class="fa-solid fa-shield-check text-[10px]"></i>Sécurisé</span>
             </div>
+            <button onclick="confirmLost('diplome', this)" class="mt-3 w-full py-2 bg-red-500 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-red-500/20">
+              <i class="fa-solid fa-triangle-exclamation"></i> Déclarer comme perdu
+            </button>
           </div>
         </div>
 
@@ -650,6 +666,9 @@
               <span class="flex items-center gap-1 text-amber-600 font-semibold"><i
                   class="fa-solid fa-clock text-[10px]"></i>Vérification en cours…</span>
             </div>
+            <button onclick="confirmLost('naissance', this)" class="mt-3 w-full py-2 bg-red-500 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-red-500/20">
+              <i class="fa-solid fa-triangle-exclamation"></i> Déclarer comme perdu
+            </button>
           </div>
         </div>
 
@@ -680,9 +699,50 @@
     </div>
   </div><!-- /main-wrapper -->
 
-  <!-- ════════════════════════════════════
-     MODAL — Enregistrer un document
-════════════════════════════════════ -->
+  <!-- CONFIRMATION MODAL -->
+  <div class="modal-overlay hidden" id="confirmLostModal" style="background:rgba(30,58,47,.85); backdrop-filter:blur(8px); z-index:200;">
+    <div class="modal-box animate-in" style="max-width:400px; text-align:center;">
+      <div style="width:60px;height:60px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;font-size:24px;"></i>
+      </div>
+      <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">Confirmer la perte ?</h2>
+      <p style="font-size:13px;color:#6B7280;line-height:1.6;margin-bottom:12px;">Êtes-vous sûr de vouloir déclarer ce document comme perdu ? Veuillez saisir votre mot de passe.</p>
+      
+      <!-- COST WARNING -->
+      <div style="background:#fff7ed; border-radius:12px; padding:12px; margin-bottom:20px; text-align:left; border:1px solid #ffedd5;">
+        <p style="font-size:11.5px; color:#9a3412; line-height:1.5; font-weight:500;">
+          <i class="fa-solid fa-circle-info" style="margin-right:4px;"></i>
+          Note: Si votre document est retrouvé, des frais de <strong>5 000 FCFA</strong> seront appliqués pour la récupération (paiement requis avant retrait).
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-1 mb-6 text-left">
+        <label class="form-label">Mot de passe</label>
+        <div class="relative">
+          <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-textMuted text-xs"></i>
+          <input type="password" id="confirmPassword" class="form-input !pl-9" placeholder="Votre mot de passe">
+        </div>
+        <p id="passwordError" class="hidden text-[11px] text-red-500 font-semibold mt-1">Mot de passe incorrect</p>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeConfirmLost()" style="flex:1;padding:12px;border:1.5px solid #EAE3D8;background:white;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;color:#374151;cursor:pointer;">Annuler</button>
+        <button id="finalSubmitBtn" onclick="validateAndSubmitLost()" style="flex:1;padding:12px;background:#ef4444;color:white;border:none;border-radius:12px;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(239,68,68,.25);">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESS MODAL -->
+  <div class="modal-overlay hidden" id="successOverlay" style="background:rgba(30,58,47,.85); backdrop-filter:blur(8px); z-index:300;">
+    <div class="modal-box animate-in" style="max-width:400px; text-align:center; padding:32px; border-radius:24px;">
+      <div style="width:70px;height:70px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:32px;">
+        <i class="fa-solid fa-check" style="color:#10B981;"></i>
+      </div>
+      <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">Déclaration enregistrée !</h2>
+      <p style="font-size:13px;color:#6B7280;line-height:1.6;margin-bottom:24px;">Votre document a été marqué comme perdu. Nous vous préviendrons dès qu'il sera retrouvé.</p>
+      <button onclick="document.getElementById('successOverlay').classList.add('hidden')" style="width:100%;padding:14px;background:#1E3A2F;color:white;border:none;border-radius:14px;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:800;cursor:pointer;">D'accord</button>
+    </div>
+  </div>
   <div class="modal-overlay hidden" id="add-modal">
     <div class="modal-box" id="modal-box">
 
@@ -967,6 +1027,117 @@
     let fileCount = 0;
 
     const typeLabels = { cni: 'CNI', passport: 'Passeport', permis: 'Permis de conduire', diplome: 'Diplôme', naissance: 'Acte de naissance', autre: 'Autre document' };
+
+    let pendingDocType = null;
+    let pendingBtn = null;
+
+    function confirmLost(type, btn) {
+      pendingDocType = type;
+      pendingBtn = btn;
+      
+      // Highlight the card
+      const card = btn.closest('.doc-card');
+      if(card) card.classList.add('is-lost');
+      
+      document.getElementById('confirmLostModal').classList.remove('hidden');
+      document.getElementById('confirmPassword').value = '';
+      document.getElementById('passwordError').classList.add('hidden');
+      document.getElementById('confirmPassword').focus();
+    }
+
+    function closeConfirmLost() {
+      if(pendingBtn) {
+        const card = pendingBtn.closest('.doc-card');
+        if(card) card.classList.remove('is-lost');
+      }
+      document.getElementById('confirmLostModal').classList.add('hidden');
+      pendingDocType = null;
+    }
+
+    function validateAndSubmitLost() {
+      const pass = document.getElementById('confirmPassword').value;
+      const btn = document.getElementById('finalSubmitBtn');
+      
+      if(pass.length < 4) {
+        document.getElementById('passwordError').classList.remove('hidden');
+        return;
+      }
+      
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      
+      setTimeout(() => {
+        // Save status
+        const lostDocs = JSON.parse(localStorage.getItem('dm_lost_docs') || '[]');
+        if(!lostDocs.includes(pendingDocType)) lostDocs.push(pendingDocType);
+        localStorage.setItem('dm_lost_docs', JSON.stringify(lostDocs));
+        
+        closeConfirmLost();
+        btn.disabled = false;
+        btn.innerHTML = 'Confirmer';
+        
+        updateDocsUI();
+        
+        // Show success overlay instead of redirecting
+        document.getElementById('successOverlay').querySelector('h2').textContent = 'Déclaration enregistrée !';
+        document.getElementById('successOverlay').querySelector('p').textContent = 'Votre document a été marqué comme perdu.';
+        document.getElementById('successOverlay').classList.remove('hidden');
+      }, 1000);
+    }
+
+    function confirmFoundDoc(type, btn) {
+      const lostDocs = JSON.parse(localStorage.getItem('dm_lost_docs') || '[]');
+      const newLostDocs = lostDocs.filter(d => d !== type);
+      localStorage.setItem('dm_lost_docs', JSON.stringify(newLostDocs));
+      
+      updateDocsUI();
+      
+      document.getElementById('successOverlay').querySelector('h2').textContent = 'Document Retrouvé !';
+      document.getElementById('successOverlay').querySelector('p').textContent = 'Félicitations ! Votre document est de nouveau marqué comme actif.';
+      document.getElementById('successOverlay').classList.remove('hidden');
+    }
+
+    function updateDocsUI() {
+      const lostDocs = JSON.parse(localStorage.getItem('dm_lost_docs') || '[]');
+      
+      document.querySelectorAll('.doc-card').forEach(card => {
+        const btn = card.querySelector('button[onclick*="confirmLost"]');
+        const foundBtn = card.querySelector('button[onclick*="confirmFoundDoc"]');
+        
+        // Try to identify doc type from the card data or button
+        let type = '';
+        if(btn) {
+           const match = btn.getAttribute('onclick').match(/'([^']+)'/);
+           if(match) type = match[1];
+        } else if(foundBtn) {
+           const match = foundBtn.getAttribute('onclick').match(/'([^']+)'/);
+           if(match) type = match[1];
+        }
+        
+        if(!type) return;
+        
+        const isLost = lostDocs.includes(type);
+        card.classList.toggle('is-lost', isLost);
+        
+        // Update button
+        if(isLost) {
+          if(btn) {
+            btn.outerHTML = `<button onclick="confirmFoundDoc('${type}', this)" class="mt-3 w-full py-2 bg-green-600 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-green-600/20">
+              <i class="fa-solid fa-check-circle"></i> Déclarer comme retrouvé
+            </button>`;
+          }
+        } else {
+          if(foundBtn) {
+            foundBtn.outerHTML = `<button onclick="confirmLost('${type}', this)" class="mt-3 w-full py-2 bg-red-500 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-red-500/20">
+              <i class="fa-solid fa-triangle-exclamation"></i> Déclarer comme perdu
+            </button>`;
+          }
+        }
+      });
+    }
+
+    // Initial UI update
+    document.addEventListener('DOMContentLoaded', updateDocsUI);
 
     function openModal() {
       resetModal();

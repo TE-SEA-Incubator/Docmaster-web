@@ -52,7 +52,15 @@
 
     /* ── Device cards ── */
     .device-card{background:white;border-radius:18px;border:1.5px solid #EDE7DB;padding:0;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.05);transition:all .25s;cursor:pointer;position:relative}
-    .device-card:hover{border-color:#F5A64B;box-shadow:0 8px 28px rgba(245,166,75,.18);transform:translateY(-3px)}
+    .device-card:hover {
+      border-color: #ef4444;
+      box-shadow: 0 8px 28px rgba(239, 68, 68, .18);
+      transform: translateY(-3px)
+    }
+    .device-card.is-lost {
+      border-color: #ef4444 !important;
+      background: #fff1f2;
+    }
     .device-card-header{padding:20px 20px 14px;display:flex;align-items:flex-start;gap:14px}
     .device-avatar{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
     .device-card-body{padding:0 20px 16px}
@@ -230,6 +238,51 @@
 
   </div><!-- /page-body -->
 </div><!-- /main-wrap -->
+
+<!-- CONFIRMATION MODAL -->
+<div class="modal-bg" id="confirmLostModal" style="background:rgba(30,58,47,.85); backdrop-filter:blur(8px); z-index:200;">
+  <div class="modal animate-in" style="max-width:400px; text-align:center; padding:32px;">
+    <div style="width:60px;height:60px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+      <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;font-size:24px;"></i>
+    </div>
+    <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">Confirmer la perte ?</h2>
+    <p style="font-size:13px;color:#6B7280;line-height:1.6;margin-bottom:12px;">Voulez-vous déclarer cet appareil comme perdu ? Saisissez votre mot de passe.</p>
+    
+    <!-- COST WARNING -->
+    <div style="background:#fff7ed; border-radius:12px; padding:12px; margin-bottom:20px; text-align:left; border:1px solid #ffedd5;">
+      <p style="font-size:11.5px; color:#9a3412; line-height:1.5; font-weight:500;">
+        <i class="fa-solid fa-circle-info" style="margin-right:4px;"></i>
+        Note: Des frais de récupération de <strong>5 000 FCFA</strong> s'appliquent si l'appareil est retrouvé (payables avant la remise).
+      </p>
+    </div>
+
+    <div class="field-group" style="margin-bottom:24px; text-align:left;">
+      <label class="field-label">Mot de passe</label>
+      <div class="field-wrapper">
+        <i class="fa-solid fa-lock field-icon"></i>
+        <input type="password" id="confirmPassword" class="field-input" placeholder="Votre mot de passe">
+      </div>
+      <p id="passwordError" style="display:none;font-size:11px;color:#ef4444;margin-top:4px;font-weight:600;">Mot de passe incorrect</p>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeConfirmLost()" style="flex:1;padding:12px;border:1.5px solid #E0D5C4;background:white;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;color:#374151;cursor:pointer;">Annuler</button>
+      <button id="finalSubmitBtn" onclick="validateAndSubmitLost()" style="flex:1;padding:12px;background:#ef4444;color:white;border:none;border-radius:12px;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(239,68,68,.25);">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-bg" id="successOverlay" style="background:rgba(30,58,47,.85); backdrop-filter:blur(8px); z-index:300;">
+  <div class="modal animate-in" style="max-width:400px; text-align:center; padding:32px; border-radius:24px;">
+    <div style="width:70px;height:70px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:32px;">
+      <i class="fa-solid fa-check" style="color:#10B981;"></i>
+    </div>
+    <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">Appareil déclaré perdu !</h2>
+    <p style="font-size:13px;color:#6B7280;line-height:1.6;margin-bottom:24px;">L'appareil a été marqué comme perdu dans votre inventaire. Nous vous tiendrons informé.</p>
+    <button onclick="document.getElementById('successOverlay').classList.remove('show')" style="width:100%;padding:14px;background:#1E3A2F;color:white;border:none;border-radius:14px;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:800;cursor:pointer;">D'accord</button>
+  </div>
+</div>
 
 
 <!-- ══════════════════════════════════════════════════
@@ -506,25 +559,42 @@ function deviceCardHTML(d, i) {
   const factureTag = (d.files && d.files.length) ?
     `<span class="tag" style="background:#E8F5EE;color:#1E3A2F;"><i class="fa-solid fa-file-invoice" style="font-size:9px;"></i> ${d.files.length} facture${d.files.length>1?'s':''}</span>` : '';
 
+  const isLost = d.status === 'lost';
+  const cardClass = isLost ? 'device-card card-appear is-lost' : 'device-card card-appear';
+
   return `
-  <div class="device-card card-appear" style="animation-delay:${delay}s;" onclick="openDetail('${d.id}')">
+  <div class="${cardClass}" style="animation-delay:${delay}s;" onclick="openDetail('${d.id}')">
     <div class="device-card-header">
-      <div class="device-avatar" style="background:${meta.bg};color:${meta.color};">
+      <div class="device-avatar" style="background:${isLost ? '#fee2e2' : meta.bg};color:${isLost ? '#ef4444' : meta.color};">
         ${d.photo ? `<img src="${d.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;"/>` : `<i class="fa-solid ${meta.icon}"></i>`}
       </div>
       <div style="flex:1;min-width:0;">
         <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:14.5px;font-weight:800;color:#1A1A1A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(d.nom)}</p>
         <p style="font-size:11.5px;color:#6B7280;margin-top:1px;">${esc(d.marque||'')} ${esc(d.modele||'')}</p>
       </div>
-      <div style="width:7px;height:7px;border-radius:50%;background:${expWarn ? '#ef4444' : '#22c55e'};flex-shrink:0;margin-top:4px;" title="${expWarn ? 'Garantie expirée' : 'Actif'}"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:${isLost ? '#ef4444' : '#22c55e'};flex-shrink:0;margin-top:4px;"></div>
     </div>
     <div class="device-card-body">
       ${d.serial ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><i class="fa-solid fa-barcode" style="color:#C4BAB0;font-size:11px;width:14px;"></i><span style="font-size:11.5px;color:#6B7280;font-family:monospace;letter-spacing:.02em;">${esc(d.serial)}</span></div>` : ''}
       ${d.dateAchat ? `<div style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-calendar" style="color:#C4BAB0;font-size:11px;width:14px;"></i><span style="font-size:11.5px;color:#6B7280;">Acheté le ${formatDate(d.dateAchat)}</span></div>` : ''}
     </div>
     <div class="device-card-footer">
-      <div style="display:flex;gap:5px;flex-wrap:wrap;">${garantieTag}${assureTag}${factureTag}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        ${isLost ? '<span class="tag" style="background:#ef4444;color:white;"><i class="fa-solid fa-bell"></i> Signalé Perdu</span>' : ''}
+        ${garantieTag}${assureTag}${factureTag}
+      </div>
       ${d.prix ? `<span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:#1A1A1A;">${Number(d.prix).toLocaleString('fr')} FCFA</span>` : ''}
+    </div>
+    <div style="padding:0 20px 16px">
+      ${isLost ? `
+        <button onclick="event.stopPropagation(); confirmFoundAppareil('${d.id}', this)" class="w-full py-2 bg-green-600 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-green-600/20">
+          <i class="fa-solid fa-check-circle"></i> Déclarer comme retrouvé
+        </button>
+      ` : `
+        <button onclick="event.stopPropagation(); confirmLostAppareil('${d.id}', this)" class="w-full py-2 bg-red-500 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-red-500/20">
+          <i class="fa-solid fa-triangle-exclamation"></i> Déclarer comme perdu
+        </button>
+      `}
     </div>
   </div>`;
 }
@@ -873,6 +943,77 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   renderAll();
 });
+
+let pendingDeviceId = null;
+let pendingBtn = null;
+
+function confirmLostAppareil(id, btn) {
+  pendingDeviceId = id;
+  pendingBtn = btn;
+  
+  // Highlight the card
+  const card = btn.closest('.device-card');
+  if(card) card.classList.add('is-lost');
+  
+  document.getElementById('confirmLostModal').classList.add('show');
+  document.getElementById('confirmPassword').value = '';
+  document.getElementById('passwordError').style.display = 'none';
+  document.getElementById('confirmPassword').focus();
+}
+
+function closeConfirmLost() {
+  if(pendingBtn) {
+    const card = pendingBtn.closest('.device-card');
+    if(card) card.classList.remove('is-lost');
+  }
+  document.getElementById('confirmLostModal').classList.remove('show');
+  pendingDeviceId = null;
+}
+
+function validateAndSubmitLost() {
+  const pass = document.getElementById('confirmPassword').value;
+  const btn = document.getElementById('finalSubmitBtn');
+  
+  if(pass.length < 4) {
+    document.getElementById('passwordError').style.display = 'block';
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+  
+  setTimeout(() => {
+    // Update status in data
+    const idx = devices.findIndex(x => x.id === pendingDeviceId);
+    if(idx > -1) devices[idx].status = 'lost';
+    save();
+    
+    closeConfirmLost();
+    btn.disabled = false;
+    btn.innerHTML = 'Confirmer';
+    
+    renderAll();
+    
+    // Show success overlay instead of redirecting
+    document.getElementById('successOverlay').querySelector('h2').textContent = 'Appareil déclaré perdu !';
+    document.getElementById('successOverlay').querySelector('p').textContent = 'L\'appareil a été marqué comme perdu dans votre inventaire.';
+    document.getElementById('successOverlay').classList.add('show');
+  }, 1000);
+}
+
+function confirmFoundAppareil(id, btn) {
+  const idx = devices.findIndex(x => x.id === id);
+  if(idx > -1) {
+    devices[idx].status = 'active';
+    save();
+    renderAll();
+    
+    // Toast or Modal? Let's use a themed modal for "Retrouvé"
+    document.getElementById('successOverlay').querySelector('h2').textContent = 'Appareil Retrouvé !';
+    document.getElementById('successOverlay').querySelector('p').textContent = 'Génial ! Votre appareil est de nouveau marqué comme actif.';
+    document.getElementById('successOverlay').classList.add('show');
+  }
+}
 </script>
 </body>
 </html>

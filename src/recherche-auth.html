@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocMaster — Rechercher un document</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/sidebar.js"></script>
+<link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
+<link href="css/output.css" rel="stylesheet" />
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
+          'green-dark': '#1E3A2F',
+          'green-mid': '#2D5A42',
+          'green-light': '#E8F5EE',
+          bgMain: '#F4EFE6',
+          surface: '#FFFFFF',
+          surface2: '#FAF7F2',
+          textMain: '#1A1A1A',
+          textMuted: '#9CA3AF',
+          borderMain: '#EAE3D8',
+          borderDark: '#DDD5C8',
+        },
+        fontFamily: {
+          poppins: ['Poppins', 'sans-serif'],
+          bricolage: ['"Bricolage Grotesque"', 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<style>
+:root { --sidebar: 260px; }
+html { font-family: 'Poppins', sans-serif; background: #F4EFE6; }
+body { font-family: 'Poppins', sans-serif; background: #F4EFE6; min-height: 100vh; overflow-x: hidden; }
+
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar);
+  transform: translateX(-100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  z-index: 50;
+  overflow-y: auto;
+}
+.sidebar.open { transform: translateX(0); }
+
+@media (min-width: 900px) {
+  body { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { position: relative; transform: none !important; flex-shrink: 0; }
+  .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+  .main-content { flex: 1; overflow-y: auto; }
+}
+
+@media (max-width: 899px) {
+  .main-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
+  .main-content { flex: 1; }
+}
+
+.sb-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 40;
+  backdrop-filter: blur(3px); opacity: 0;
+  pointer-events: none; transition: opacity .28s;
+}
+.sb-overlay.show { display: block; opacity: 1; pointer-events: all; }
+
+.custom-scroll::-webkit-scrollbar { width: 4px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #EAE3D8; border-radius: 10px; }
+
+/* Blurring effect for hidden info */
+.blurred-info {
+  filter: blur(5px);
+  user-select: none;
+  pointer-events: none;
+}
+
+.mask-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  border-radius: inherit;
+  transition: all 0.3s ease;
+}
+
+.hidden-state .blurred-info {
+  filter: blur(6px);
+}
+
+.visible-state .mask-overlay {
+  opacity: 0;
+  pointer-events: none;
+  display: none;
+}
+
+.visible-state .blurred-info {
+  filter: none;
+}
+
+</style>
+</head>
+<body class="hidden-state">
+
+<!-- Sidebar root -->
+<div id="sidebar-root"></div>
+
+<div class="main-wrapper" id="mainWrapper">
+
+  <!-- Topbar -->
+  <header class="sticky top-0 z-30 h-[58px] bg-white border-b border-borderMain flex items-center px-4 gap-3 flex-shrink-0">
+    <button class="w-9 h-9 flex items-center justify-center rounded-[9px] bg-surface2 border border-borderMain text-textMain text-base cursor-pointer hover:border-primary hover:text-primary transition-all" onclick="toggleSb()">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Rechercher</span>
+
+    <div class="ml-auto flex items-center gap-2">
+      <div class="flex items-center gap-2 pl-1.5 pr-3 py-1 bg-surface2 border border-borderMain rounded-[10px] cursor-pointer hover:border-primary transition-colors">
+        <div class="w-[26px] h-[26px] rounded-[6px] bg-green-dark flex items-center justify-center font-bricolage text-[11px] font-extrabold text-primary" id="topInitial">JM</div>
+        <span class="text-[12.5px] font-semibold text-textMain hidden xs:block" id="topName">Jean-Marc</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <div class="main-content custom-scroll p-4 sm:p-6 pb-24 md:pb-6">
+    
+    <!-- State Toggle Simulation -->
+    <div class="mb-8 p-5 bg-white border-2 border-primary/20 rounded-2xl shadow-sm">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="font-bricolage text-[15px] font-bold text-textMain">Avez-vous déclaré votre perte ?</h2>
+          <p class="text-[11.5px] text-textMuted font-medium mt-1">Simulez l'état de votre compte pour voir comment les données s'affichent.</p>
+        </div>
+        <div class="flex bg-surface2 p-1 rounded-xl border border-borderMain self-start sm:self-center">
+            <button onclick="setLossState(false)" id="btnStateNo" class="px-5 py-2 rounded-lg text-xs font-bold transition-all bg-white text-textMain shadow-sm border border-borderMain">NON (Information masquée)</button>
+            <button onclick="setLossState(true)" id="btnStateYes" class="px-5 py-2 rounded-lg text-xs font-bold transition-all text-textMuted hover:text-textMain">OUI (Tout afficher)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="max-w-4xl mx-auto mb-8">
+        <div class="flex flex-col gap-4">
+            <div class="relative flex items-center bg-white border border-borderMain rounded-2xl shadow-sm overflow-hidden focus-within:border-primary transition-all focus-within:ring-4 focus-within:ring-primary/10">
+                <i class="fa-solid fa-magnifying-glass px-5 text-textMuted text-lg flex-shrink-0"></i>
+                <input type="text" id="searchInput" placeholder="Rechercher par nom, type de document, numéro..." class="flex-1 py-5 pr-5 bg-transparent border-none outline-none font-poppins text-[15px] text-textMain placeholder:text-textMuted">
+                <button class="bg-primary text-white font-bricolage font-bold px-8 py-3 mr-3 rounded-xl hover:bg-primary-dark transition-all transform active:scale-95 shadow-lg shadow-primary/20">Rechercher</button>
+            </div>
+            
+            <div class="flex flex-wrap gap-2">
+                <span class="text-[11px] font-bold text-textMuted uppercase py-1 px-1">Filtres rapides :</span>
+                <button class="px-4 py-1.5 bg-white border border-borderMain rounded-full text-[12px] font-medium text-textMain hover:border-primary transition-all">CNI</button>
+                <button class="px-4 py-1.5 bg-white border border-borderMain rounded-full text-[12px] font-medium text-textMain hover:border-primary transition-all">Passeport</button>
+                <button class="px-4 py-1.5 bg-white border border-borderMain rounded-full text-[12px] font-medium text-textMain hover:border-primary transition-all">Permis</button>
+                <button class="px-4 py-1.5 bg-white border border-borderMain rounded-full text-[12px] font-medium text-textMain hover:border-primary transition-all">Diplôme</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="resultsGrid">
+        <!-- Results will be injected here -->
+    </div>
+
+  </div><!-- /content -->
+
+</div><!-- /main-wrapper -->
+
+<script>
+    // Mock Data
+    const mockDocuments = [
+        {
+            type: 'Carte d\'Identité Nationale',
+            owner: 'MBANG Alice',
+            num: '110258742',
+            location: 'Marché Central, Yaoundé',
+            date: 'Il y a 2 jours',
+            icon: 'fa-id-card',
+            color: 'bg-green-light',
+            iconColor: 'text-green-mid',
+            image: '../assets/images.jpg'
+        },
+        {
+            type: 'Passeport',
+            owner: 'KOFFI Emmanuel',
+            num: 'PASS-CM-2024-X',
+            location: 'Mvan, Yaoundé',
+            date: 'Il y a 5 heures',
+            icon: 'fa-passport',
+            color: 'bg-blue-50',
+            iconColor: 'text-blue-500',
+            image: '../assets/images/téléchargement (1).jpg'
+        },
+        {
+            type: 'Permis de conduire',
+            owner: 'TCHAKOUNTE David',
+            num: 'PC-2022-88741',
+            location: 'Essos, Yaoundé',
+            date: 'Il y a 1 jour',
+            icon: 'fa-car',
+            color: 'bg-amber-50',
+            iconColor: 'text-amber-500',
+            image: '../assets/images/téléchargement (1).jpg'
+        },
+        {
+            type: 'Diplôme du BAC',
+            owner: 'NGONO Berthe',
+            num: 'DIP-2023-00451',
+            location: 'Bonanjo, Douala',
+            date: 'Il y a 3 jours',
+            icon: 'fa-graduation-cap',
+            color: 'bg-purple-50',
+            iconColor: 'text-purple-600',
+            image: '../assets/images/téléchargement (1).jpg'
+        },
+        {
+            type: 'Carte Bancaire',
+            owner: 'KAMGA Pierre',
+            num: 'XXXX-XXXX-XXXX-4512',
+            location: 'Avenue de Gaulle, Douala',
+            date: 'Il y a 12 heures',
+            icon: 'fa-credit-card',
+            color: 'bg-red-50',
+            iconColor: 'text-red-500',
+            image: '../assets/images/téléchargement (1).jpg'
+        }
+    ];
+
+    let lossDeclared = false;
+
+    function setLossState(isDeclared) {
+        lossDeclared = isDeclared;
+        const body = document.body;
+        const btnNo = document.getElementById('btnStateNo');
+        const btnYes = document.getElementById('btnStateYes');
+
+        if (isDeclared) {
+            body.classList.remove('hidden-state');
+            body.classList.add('visible-state');
+            btnYes.className = "px-5 py-2 rounded-lg text-xs font-bold transition-all bg-white text-textMain shadow-sm border border-borderMain";
+            btnNo.className = "px-5 py-2 rounded-lg text-xs font-bold transition-all text-textMuted hover:text-textMain";
+        } else {
+            body.classList.remove('visible-state');
+            body.classList.add('hidden-state');
+            btnNo.className = "px-5 py-2 rounded-lg text-xs font-bold transition-all bg-white text-textMain shadow-sm border border-borderMain";
+            btnYes.className = "px-5 py-2 rounded-lg text-xs font-bold transition-all text-textMuted hover:text-textMain";
+        }
+        renderResults();
+    }
+
+    function renderResults() {
+        const grid = document.getElementById('resultsGrid');
+        grid.innerHTML = '';
+
+        mockDocuments.forEach(doc => {
+            const card = document.createElement('div');
+            card.className = "bg-white border border-borderMain rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all relative flex flex-col";
+            
+            card.innerHTML = `
+                <!-- Photo Area -->
+                <div class="relative h-40 bg-gray-100 overflow-hidden">
+                    <img src="${doc.image}" class="w-full h-full object-cover blurred-info" alt="Photo du document">
+                    <div class="absolute top-3 left-3 w-10 h-10 ${doc.color} rounded-lg flex items-center justify-center ${doc.iconColor} text-lg shadow-sm">
+                        <i class="fa-solid ${doc.icon}"></i>
+                    </div>
+                    <div class="absolute top-3 right-3">
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md text-white border border-white/20">${doc.date}</span>
+                    </div>
+
+                    ${!lossDeclared ? `
+                    <div class="mask-overlay">
+                        <div class="flex flex-col items-center gap-2 px-4 text-center">
+                            <i class="fa-solid fa-eye-slash text-white text-lg"></i>
+                            <span class="text-[11px] font-bold text-white drop-shadow-md">Photo masquée</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <div class="p-5 flex flex-col gap-4">
+                    <div>
+                        <h3 class="font-bricolage text-[16px] font-bold text-textMain">${doc.type}</h3>
+                        <div class="mt-3 flex flex-col gap-2 relative">
+                            <!-- Restricted Info -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-bold text-textMuted uppercase w-20">Propriétaire :</span>
+                                <span class="text-[13px] font-semibold text-textMain blurred-info">${doc.owner}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-bold text-textMuted uppercase w-20">Numéro :</span>
+                                <span class="text-[13px] font-mono font-bold text-primary blurred-info">${doc.num}</span>
+                            </div>
+
+                            ${!lossDeclared ? `
+                            <div class="mask-overlay !bg-white/60">
+                                <div class="flex flex-col items-center gap-2 px-4 text-center">
+                                    <i class="fa-solid fa-lock text-primary text-sm"></i>
+                                    <span class="text-[11px] font-bold text-textMain leading-tight">Déclarez une perte pour voir les détails</span>
+                                    <button onclick="window.location.href='declarer.html'" class="mt-1 px-3 py-1.5 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary-dark transition-all">Déclarer →</button>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="mt-auto pt-4 border-t border-borderMain flex items-center justify-between text-[11.5px]">
+                        <div class="flex items-center gap-1.5 text-textMuted">
+                            <i class="fa-solid fa-location-dot text-primary"></i>
+                            <span class="font-medium">${doc.location}</span>
+                        </div>
+                        <button class="text-primary font-bold hover:underline">Voir l'annonce</button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // Initial render
+    document.addEventListener('DOMContentLoaded', () => {
+        renderResults();
+    });
+</script>
+</body>
+</html>

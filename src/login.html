@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/src/js/auth.js"></script>
+    <script src="./js/auth.js"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -950,7 +950,6 @@
       }
     }
 
-    /* ── Submit ── */
     /* ── Parrainage toggle ── */
     function toggleReferral(prefix) {
       const field   = document.getElementById(prefix + '-referral-field');
@@ -962,19 +961,6 @@
         const input = document.getElementById(prefix + '-referral');
         if (input) setTimeout(() => input.focus(), 50);
       }
-    }
-
-    function submitRegister(prefix) {
-      const pseudo = document.getElementById(prefix + '-pseudo');
-      if (!pseudo || pseudo.value.length < 3 || !/^[a-zA-Z0-9_]+$/.test(pseudo.value)) {
-        shake(prefix + '-step-4'); return;
-      }
-      const referralInput = document.getElementById(prefix + '-referral');
-      const referral = referralInput ? referralInput.value.trim() : '';
-      const msg = referral
-        ? 'Compte créé avec succès ! Bienvenue, @' + pseudo.value + '\nCode parrainage appliqué : ' + referral
-        : 'Compte créé avec succès ! Bienvenue sur DocMaster, @' + pseudo.value;
-      alert(msg);
     }
 
     /* ── Resend PIN ── */

@@ -217,18 +217,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const cardClasses = isFeatured
         ? "plan-card featured bg-green-dark rounded-[20px] p-5 flex flex-col relative overflow-hidden"
         : "plan-card bg-white border border-borderMain rounded-[20px] p-5 flex flex-col";
+      const featuredCardStyle = isFeatured ? 'style="background:#1E3A2F;"' : "";
 
       const textClass = isFeatured ? "text-white" : "text-textMain";
       const mutedTextClass = isFeatured ? "text-white/50" : "text-textMuted";
       const btnClass = isFeatured 
         ? "w-full py-2.5 rounded-[12px] bg-primary text-white text-[13.5px] font-bold hover:bg-primary-dark transition-all active:scale-[.98] relative z-10 shadow-lg shadow-primary/20"
         : "w-full py-2.5 rounded-[12px] bg-white border border-borderMain text-textMain text-[13.5px] font-bold hover:border-primary hover:text-primary transition-all active:scale-[.98]";
+      const featuredButtonStyle = isFeatured ? 'style="background:#F5A64B;"' : "";
 
       return `
-          <div class="${cardClasses}">
+          <div class="${cardClasses}" ${featuredCardStyle}>
               ${isFeatured ? '<div class="absolute w-40 h-40 rounded-full bg-primary/8 -bottom-10 -right-10 pointer-events-none"></div>' : ''}
               <div class="mb-4 relative z-10">
-                  <div class="w-10 h-10 rounded-[12px] ${isFeatured ? 'bg-primary/15' : 'bg-primary/10'} flex items-center justify-center mb-3">
+                  <div class="w-10 h-10 rounded-[12px] ${isFeatured ? 'bg-primary/15' : 'bg-primary/10'} flex items-center justify-center mb-3" ${isFeatured ? 'style="background:rgba(245,166,75,.15);"' : ''}>
                       <i class="fa-solid ${isFeatured ? 'fa-rocket text-primary' : 'fa-star text-primary'} text-base"></i>
                   </div>
                   <div class="font-bricolage text-lg font-bold ${textClass}">${plan.nom}</div>
@@ -248,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
                       </div>
                   `).join('')}
               </div>
-              <button onclick="souscrire(${index})" class="${btnClass}">
+                <button onclick="souscrire(${index})" class="${btnClass}" ${featuredButtonStyle}>
                   ${plan.prix === 0 ? 'Plan actuel' : 'Passer au ' + plan.nom}
               </button>
           </div>

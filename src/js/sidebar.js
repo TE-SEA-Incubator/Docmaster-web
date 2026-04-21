@@ -18,9 +18,9 @@ const SIDEBAR_NAV = {
       label: "Tableau de bord",
     },
     {
-      href: "mesDeclarationsPerte.html",
-      icon: "fa-triangle-exclamation",
-      label: "Mes déclarations de perte",
+      href: "docDeclares.html",
+      icon: "fa-list-check",
+      label: "Mes déclarations",
     },
     {
       href: "Mesdocument.html",
@@ -33,22 +33,18 @@ const SIDEBAR_NAV = {
       label: "Mes appareils",
     },
     {
-      href: "mesDeclarationsTrouvees.html",
-      icon: "fa-file-circle-check",
-      label: "Mes déclarations trouvées",
-    },
-    {
-      href: "rechercher.html",
+      href: "recherche-auth.html",
       icon: "fa-magnifying-glass",
       label: "Rechercher",
     },
+
+  ],
+  compte: [
     {
       href: "mesGains.html",
       icon: "fa-wallet",
       label: "Mes Gains",
     },
-  ],
-  compte: [
     {
       href: "Abonnement.html",
       icon: "fa-crown",
@@ -83,8 +79,8 @@ function _sbIsActive(href) {
   const current = _sbCurrentPage();
   const normalized = href.split("/").pop().split("?")[0].split("#")[0];
   if (normalized !== current) {
-    if (current === 'declarer.html' && normalized === 'mesDeclarationsPerte.html') return true;
-    if (current === 'trouverdocument.html' && normalized === 'mesDeclarationsTrouvees.html') return true;
+    if (current === 'declarer.html' && normalized === 'docDeclares.html') return true;
+    if (current === 'trouverdocument.html' && normalized === 'docDeclares.html') return true;
     return false;
   }
 
@@ -483,26 +479,26 @@ document.addEventListener("DOMContentLoaded", function () {
   // 2. Hydratation depuis la session auth (auth.js a déjà lu le localStorage
   //    mais les éléments n'existaient pas encore — on les remplit ici)
   try {
-        const AUTH_KEY = "docmaster_user_session";
-        const raw = localStorage.getItem(AUTH_KEY);
-        if (raw) {
-          const user = JSON.parse(raw);
+    const AUTH_KEY = "docmaster_user_session";
+    const raw = localStorage.getItem(AUTH_KEY);
+    if (raw) {
+      const user = JSON.parse(raw);
 
-          const initialEl = document.getElementById("userInitial");
-          const nameEl    = document.getElementById("userName");
-          if (initialEl && user.initial) initialEl.textContent = user.initial;
-          if (nameEl    && user.name)    nameEl.textContent    = user.name;
+      const initialEl = document.getElementById("userInitial");
+      const nameEl = document.getElementById("userName");
+      if (initialEl && user.initial) initialEl.textContent = user.initial;
+      if (nameEl && user.name) nameEl.textContent = user.name;
 
-          // Aussi mettre à jour les éléments topbar présents sur certaines pages
-          ["topInitial"].forEach(function (id) {
-            const el = document.getElementById(id);
-            if (el && user.initial) el.textContent = user.initial;
-          });
-          ["topName", "helloName"].forEach(function (id) {
-            const el = document.getElementById(id);
-            if (el && user.name) el.textContent = user.name;
-          });
-        }
+      // Aussi mettre à jour les éléments topbar présents sur certaines pages
+      ["topInitial"].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el && user.initial) el.textContent = user.initial;
+      });
+      ["topName", "helloName"].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el && user.name) el.textContent = user.name;
+      });
+    }
   } catch (e) { /* session absente ou invalide */ }
 
   // 3. Fermeture automatique sur mobile après clic sur un lien
