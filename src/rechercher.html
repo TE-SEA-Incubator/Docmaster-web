@@ -1,679 +1,504 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="css/output.css" rel="stylesheet" />
-    <link rel="stylesheet" href="css/rechercher.css" />
-    <script src="https://cdn.tailwindcss.com"></script>
+<html lang="fr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DocMaster — Rechercher un document</title>
+  <meta name="description" content="Recherchez parmi des milliers de documents déclarés trouvés. Retrouvez votre CNI, passeport, diplôme ou permis de conduire." />
 
-    <link
-      rel="shortcut icon"
-      href="./assets//images/favicon.png"
-      type="image/x-icon"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Bricolage+Grotesque:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
-    />
+  <link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="css/output.css" rel="stylesheet" />
+  <script src="js/index.js"></script>
+  <script src="js/fillin.js"></script>
 
-    <style>
-      /* Personnalisation du calendrier pour coller au thème orange */
-      .flatpickr-calendar {
-        border-radius: 1rem !important;
-        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1) !important;
-        border: 1px solid #e5e7eb !important;
-        font-family: "Poppins", sans-serif !important;
-      }
-      .flatpickr-months .flatpickr-month {
-        background: #F5A64B !important;
-        color: white !important;
-        fill: white !important;
-        border-radius: 1rem 1rem 0 0;
-      }
-      .flatpickr-current-month .flatpickr-monthDropdown-months {
-        font-weight: 700 !important;
-      }
-      body {
-        font-family: 'Poppins', sans-serif;
-      }
-      h1, h2, h3, h4, .logo-text {
-        font-family: 'Bricolage Grotesque', sans-serif;
-      }
-      .flatpickr-day.selected {
-        background: #F5A64B !important;
-        border-color: #F5A64B !important;
-      }
-    </style>
-
-    <script
-      src="https://kit.fontawesome.com/28702e0585.js"
-      crossorigin="anonymous"
-    ></script>
-    <script src="js/index.js"></script>
-    <script src="js/fillin.js"></script>
-    <title>DocMaster-Search</title>
-  </head>
-
-  <body class="relative min-h-screen bg-white overflow-x-hidden">
-    <div class="fixed inset-0 pointer-events-none" style="z-index: 0">
-      <div
-        class="absolute -top-32 -left-32 w-70 aspect-square bg-[#F5A64B] rounded-full mix-blend-multiply opacity-70 pointer-events-none z-0 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
-      ></div>
-      <div
-        class="absolute -top-32 -right-32 w-70 aspect-square bg-[#F5A64B] rounded-full mix-blend-multiply opacity-70 pointer-events-none z-0 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
-      ></div>
-
-      <style>
-        .search-input:focus,
-        .form-select:focus {
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
+            secondary: '#1E3A2F',
+            tertiary: '#2D5A42',
+            bgMain: '#F4EFE6',
+            surface2: '#FAF7F2',
+            textMain: '#1A1A1A',
+            textMuted: '#6B7280',
+            borderMain: '#EAE3D8',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            bricolage: ['"Bricolage Grotesque"', 'sans-serif'],
+          },
         }
-      </style>
-      <div
-        class="mask-radial-at-top-left mask-radial-from-100% bg-[#F5A64B]"
-      ></div>
+      }
+    }
+  </script>
 
-      <div
-        class="absolute inset-0 pointer-events-none z-0"
-        style="
-          background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
-          background-repeat: repeat;
-          background-size: 8px 8px;
-        "
-      ></div>
-    </div>
-    <div
-      class="absolute inset-0 pointer-events-none overflow-hidden"
-      style="z-index: 0; min-height: 100%"
-    >
-      <div
-        class="absolute -bottom-32 -left-32 w-60 aspect-square bg-[#F5A64B] rounded-full mix-blend-multiply opacity-70 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
-      ></div>
-    </div>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: #F4EFE6; overflow-x: hidden; }
+    h1, h2, h3, h4 { font-family: 'Bricolage Grotesque', sans-serif; }
 
-    <div class="relative" style="z-index: 10">
-      <header class="pb-5">
-        <nav
-          class="hidden md:flex fixed top-0 z-50 w-full items-center rounded-xl justify-between p-4 bg-white shadow-md"
-        >
-          <div
-            class="absolute inset-0 pointer-events-none z-0"
-            style="
-              background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
-              background-repeat: repeat;
-              background-size: 8px 8px;
-            "
-          ></div>
-          <div class="logo">
-            <a href="index.html">
-              <img
-                src="./assets/images/logo.png"
-                alt="DocMaster Logo"
-                class="h-12"
-              />
-            </a>
-          </div>
-          <div class="menu flex items-center justify-center">
-            <ul class="flex items-center justify-between space-x-5">
-              <li class="nav-link">
-                <a
-                  href="index.html"
-                  class="group flex items-center gap-2 text-[#F5A64B] font-bold hover:bg-[#F5A64B] hover:text-white p-2 rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-110"
-                >
-                  <i
-                    class="fa-solid fa-house text-black group-hover:text-white transition-colors duration-300"
-                  ></i>
-                  Home</a
-                >
-              </li>
-              <li class="nav-link">
-                <a href="rechercher.html" class="font-bold">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                  Recherche
-                </a>
-              </li>
+    /* Flatpickr theme */
+    .flatpickr-calendar { border-radius: 1rem !important; box-shadow: 0 20px 40px -8px rgba(0,0,0,.12) !important; border: 1px solid #EAE3D8 !important; font-family: 'Poppins', sans-serif !important; }
+    .flatpickr-months .flatpickr-month { background: #F5A64B !important; color: white !important; fill: white !important; border-radius: 1rem 1rem 0 0; }
+    .flatpickr-day.selected { background: #F5A64B !important; border-color: #F5A64B !important; }
 
-             
-            </ul>
-          </div>
-          <div class="p-1">
-            <a
-              href="login.html"
-              class="bg-[#F5A64B] p-1 rounded-full shadow-md hover:bg-orange-400 transition duration-300 transform hover:-translate-y-2 hover:scale-110 inline-block"
-            >
-              <span class="text-white font-semibold">DM</span>
-            </a>
-            <div class="relative inline-block text-left">
-              <button
-                id="langButton"
-                class="flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 px-3 py-2 rounded-xl hover:bg-orange-50 transition-all shadow-sm"
-              >
-                <img
-                  id="currentFlag"
-                  src="https://flagcdn.com/w20/fr.png"
-                  alt="Français"
-                  class="w-5 h-auto"
-                />
-                <span class="text-sm font-bold text-gray-700">FR</span>
-                <i
-                  class="fa-solid fa-chevron-down text-[10px] text-gray-400"
-                ></i>
-              </button>
+    /* Navbar */
+    #navbar { transition: background 0.3s, box-shadow 0.3s; }
+    #navbar.scrolled { background: rgba(30,58,47,.97); backdrop-filter: blur(20px); box-shadow: 0 4px 32px rgba(0,0,0,.25); }
 
-              <div
-                id="langDropdown"
-                class="hidden absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
-              >
-                <button
-                  onclick="changeLang('fr', 'https://flagcdn.com/w20/fr.png')"
-                  class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition"
-                >
-                  <img
-                    src="https://flagcdn.com/w20/fr.png"
-                    class="w-5"
-                    alt="FR"
-                  />
-                  <span class="text-sm">Français</span>
-                </button>
-                <button
-                  onclick="changeLang('en', 'https://flagcdn.com/w20/gb.png')"
-                  class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition"
-                >
-                  <img
-                    src="https://flagcdn.com/w20/gb.png"
-                    class="w-5"
-                    alt="EN"
-                  />
-                  <span class="text-sm">English</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-        <nav
-          class="flex md:hidden fixed top-0 left-0 z-[999] w-full items-center justify-between p-2 bg-white shadow-md"
-        >
-          <div
-            class="absolute inset-0 pointer-events-none z-0"
-            style="
-              background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
-              background-repeat: repeat;
-              background-size: 8px 8px;
-            "
-          ></div>
-          <div class="logo">
-            <a href="index.html">
-              <img
-                src="./assets/images/logo.png"
-                alt="DocMaster Logo"
-                class="h-12"
-              />
-            </a>
-          </div>
+    /* Filter chips */
+    .filter-chip { cursor: pointer; transition: all 0.2s ease; }
+    .filter-chip.active { background: #F5A64B; color: white; border-color: #F5A64B; }
+    .filter-chip:hover:not(.active) { border-color: #F5A64B; color: #F5A64B; }
 
-          <div class="p-1">
-            <a
-              href="login.html"
-              class="bg-[#F5A64B] p-1 rounded-full shadow-md hover:bg-orange-400 transition duration-300 transform hover:-translate-y-2 hover:scale-110 inline-block"
-            >
-              <span class="text-white font-semibold">DM</span>
-            </a>
-            <div class="relative inline-block text-left">
-              <button
-                id="langButton"
-                class="flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-gray-200 px-3 py-2 rounded-xl hover:bg-orange-50 transition-all shadow-sm"
-              >
-                <img
-                  id="currentFlag"
-                  src="https://flagcdn.com/w20/fr.png"
-                  alt="Français"
-                  class="w-5 h-auto"
-                />
-                <span class="text-sm font-bold text-gray-700">FR</span>
-                <i
-                  class="fa-solid fa-chevron-down text-[10px] text-gray-400"
-                ></i>
-              </button>
+    /* Search input */
+    #search-input:focus { box-shadow: 0 0 0 3px rgba(245,166,75,0.25); }
 
-              <div
-                id="langDropdown"
-                class="hidden absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
-              >
-                <button
-                  onclick="changeLang('fr', 'https://flagcdn.com/w20/fr.png')"
-                  class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition"
-                >
-                  <img
-                    src="https://flagcdn.com/w20/fr.png"
-                    class="w-5"
-                    alt="FR"
-                  />
-                  <span class="text-sm">Français</span>
-                </button>
-                <button
-                  onclick="changeLang('en', 'https://flagcdn.com/w20/gb.png')"
-                  class="flex items-center gap-3 w-full px-4 py-3 hover:bg-orange-50 transition"
-                >
-                  <img
-                    src="https://flagcdn.com/w20/gb.png"
-                    class="w-5"
-                    alt="EN"
-                  />
-                  <span class="text-sm">English</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-      </header>
-      <main class="relative z-10 px-4">
-        <section class="container mx-auto mt-20 px-4">
-          
-          <div class="max-w-4xl mx-auto">
-            <div
-              class="glass-effect rounded-2xl shadow-2xl p-6 md:p-8 mb-8 bg-white/10 backdrop-blur-md"
-            >
-              <div class="fixed inset-0 pointer-events-none" style="z-index: 0">
-     
+    /* Doc card */
+    .doc-card { transition: transform 0.25s, box-shadow 0.25s; }
+    .doc-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -12px rgba(30,58,47,0.15); }
 
-      <style>
-        .search-input:focus,
-        .form-select:focus {
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-        }
-      </style>
-      <div
-        class="mask-radial-at-top-left mask-radial-from-100% bg-[#F5A64B]"
-      ></div>
+    /* Skeleton loader */
+    .skeleton { background: linear-gradient(90deg, #EAE3D8 25%, #F4EFE6 50%, #EAE3D8 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s infinite; border-radius: 12px; }
+    @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-      <div
-        class="absolute inset-0 pointer-events-none z-0"
-        style="
-          background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
-          background-repeat: repeat;
-          background-size: 8px 8px;
-        "
-      ></div>
-    </div>
-              <form class="space-y-6">
-                <div class="flex flex-col md:flex-row gap-4 items-stretch">
-                  <div
-                    class="relative flex-grow flex items-center border border-gray-300 rounded-xl px-4 transition-all duration-300 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-200 bg-white"
-                  >
-                    <i
-                      class="fa-solid fa-magnifying-glass text-gray-400 mr-3"
-                    ></i>
+    /* Slide-up */
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .slide-up { animation: slideUp 0.5s ease forwards; }
 
-                    <input
-                      type="text"
-                      id="search"
-                      placeholder=" "
-                      class="peer w-full py-4 bg-transparent border-none outline-none focus:ring-0"
-                    />
-                    <label
-                      for="search"
-                      class="absolute md:hidden left-11 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-ellipsis max-w-[calc(100%-3rem)] transition-all duration-300 peer-focus:top-0 peer-focus:text-xs text-xs peer-focus:text-orange-500 peer-focus:bg-white peer-focus:px-2 peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-orange-500 peer-[:not(:placeholder-shown)]:bg-white peer-[:not(:placeholder-shown)]:px-2"
-                    >
-                      Rechercher des documents
-                    </label>
+    /* Mobile bottom nav */
+    .mobile-nav { bottom: env(safe-area-inset-bottom, 0); }
+  </style>
+</head>
 
-                    <label
-                      for="search"
-                      class="absolute hidden md:block left-11 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none whitespace-nowrap text-ellipsis max-w-[calc(100%-3rem)] transition-all duration-300 peer-focus:top-0 peer-focus:text-xs peer-focus:text-orange-500 peer-focus:bg-white peer-focus:px-2 peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-orange-500 peer-[:not(:placeholder-shown)]:bg-white peer-[:not(:placeholder-shown)]:px-2"
-                    >
-                      Rechercher des documents (nom, type, propriétaire...)
-                    </label>
-                  </div>
+<body>
 
-                  <div
-                    id="calendar-wrapper"
-                    class="relative min-w-[64px] flex items-center justify-center bg-[#F5A64B] hover:bg-[#d9974a] text-white rounded-xl transition-all shadow-md cursor-pointer group"
-                  >
-                    <input
-                      type="text"
-                      id="custom-date"
-                      class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      placeholder="Sélectionner une date"
-                    />
+  <!-- ═══════════════════════════════════════════
+       NAVBAR
+  ═══════════════════════════════════════════ -->
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-secondary/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-5 h-[68px] flex items-center justify-between">
 
-                    <div
-                      class="px-6 py-4 flex items-center justify-center pointer-events-none"
-                    >
-                      <i
-                        class="fa-solid fa-calendar-days text-xl group-hover:scale-110 transition-transform"
-                      ></i>
-                    </div>
-                  </div>
-                </div>
+      <a href="index.html" class="flex items-center gap-2.5 flex-shrink-0">
+        <img src="./assets/images/docmaster.png" alt="DocMaster" class="h-9 w-auto brightness-0 invert" />
+      </a>
 
-                <div class="flex flex-wrap items-center gap-4">
-                  <button
-                    type="button"
-                    class="flex-1 md:flex-none bg-[#FF8C00] min-w-30 px-6 py-2.5 rounded-xl border border-gray-300 text-white font-medium hover:bg-[#F5A64B] hover:border-orange-300 transition-all transform hover:-translate-y-1.1 hover:scale-105 flex items-center justify-center gap-2"
-                  >
-                    Tous
-                  </button>
-
-                  <button
-                    type="button"
-                    class="flex-1 md:flex-none min-w-[120px] px-6 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-full hover:bg-gray-200 transition-all flex items-center justify-center gap-2 border border-transparent"
-                  >
-                    <i class="fa-solid fa-filter text-xs"></i>
-                    Type
-                  </button>
-
-                  <div class="ml-auto w-full md:w-auto">
-                    <button
-                      type="submit"
-                      class="w-full md:w-auto px-8 py-2.5 bg-orange-500 text-white font-bold rounded-full hover:bg-orange-600 transition-all shadow-lg hover:shadow-orange-200"
-                    >
-                      Rechercher
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-        </section>
-        <section>
-          <div
-            id="document-container"
-            class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 p-6"
-          ></div>
-        </section>
-      </main>
-    </div>
-    <!-- Animated bubble behind footer -->
-    <!-- Single molecule-style bubble behind footer -->
-    <!-- Mobile Bottom Navigation -->
-    <nav
-      class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 -shadow-lg md:hidden"
-    >
-      <div
-        class="mask-radial-at-top-left mask-radial-from-100% bg-[#F5A64B]"
-      ></div>
-
-      <div
-        class="absolute inset-0 pointer-events-none z-0"
-        style="
-          background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='rgba(236,168,92,0.15)' viewBox='0 0 512 512'%3E%3Cpath d='M505 442.7L405.3 343a208 208 0 1 0-62.3 62.3L442.7 505a24 24 0 0 0 34-34zM208 336a128 128 0 1 1 0-256 128 128 0 0 1 0 256z'/%3E%3C/svg%3E&quot;);
-          background-repeat: repeat;
-          background-size: 8px 8px;
-        "
-      ></div>
-      <ul class="flex justify-around items-center py-2">
-        <li class="nav-link">
-          <a href="index.html" class="flex flex-col items-center text-gray-500">
-            <i class="fa-solid fa-house text-xl"></i>
-            <span class="text-xs">Accueil</span>
-          </a>
-        </li>
-
-        <li class="nav-link">
-          <a
-            href="rechercher.html"
-            class="flex flex-col items-center text-gray-500"
-          >
-            <i class="fa-solid fa-magnifying-glass text-xl"></i>
-            <span class="text-xs">Rechercher</span>
-          </a>
-        </li>
-
+      <ul class="hidden md:flex items-center gap-1">
+        <li><a href="index.html" class="px-4 py-2 rounded-xl text-white/80 hover:text-primary hover:bg-white/5 text-sm font-semibold transition-all flex items-center gap-2"><i class="fa-solid fa-house text-xs"></i> Accueil</a></li>
+        <li><a href="rechercher.html" class="px-4 py-2 rounded-xl text-primary bg-white/8 text-sm font-bold transition-all flex items-center gap-2 border border-white/10"><i class="fa-solid fa-magnifying-glass text-xs"></i> Rechercher</a></li>
       </ul>
-    </nav>
 
-    <div class="footer-molecule"></div>
-    <footer
-      class="relative bg-black/40 text-white py-12 pb-24 md:pb-12 overflow-hidden"
-    >
-      <div class="absolute inset-0 bg-black/80 pointer-events-none -z-10"></div>
+      <div class="flex items-center gap-3">
+        <div class="relative hidden sm:block">
+          <button id="langButton" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white text-xs font-bold transition-all">
+            <img id="currentFlag" src="https://flagcdn.com/w20/fr.png" alt="FR" class="w-4 h-auto rounded-sm" />
+            <span>FR</span>
+            <i class="fa-solid fa-chevron-down text-[8px] text-white/50"></i>
+          </button>
+          <div id="langDropdown" class="hidden absolute right-0 mt-2 w-32 bg-secondary border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+            <button onclick="changeLang('fr','https://flagcdn.com/w20/fr.png')" class="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-white/10 transition text-xs font-bold text-white"><img src="https://flagcdn.com/w20/fr.png" class="w-4" alt="FR" /> Français</button>
+            <button onclick="changeLang('en','https://flagcdn.com/w20/gb.png')" class="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-white/10 transition text-xs font-bold text-white"><img src="https://flagcdn.com/w20/gb.png" class="w-4" alt="EN" /> English</button>
+          </div>
+        </div>
+        <a href="login.html" class="hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-secondary rounded-[14px] text-sm font-black hover:bg-primary-dark transition-all shadow-lg shadow-primary/30 active:scale-95">
+          Connexion <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </a>
+        <button onclick="toggleMobileMenu()" class="md:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 border border-white/10 text-white">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
 
-      <div
-        class="absolute -top-32 -right-32 w-80 aspect-square bg-[#F5A64B] rounded-full mix-blend-multiply opacity-30 pointer-events-none -z-10 shadow-[0_0_50px_rgba(253,186,116,0.5)]"
-      ></div>
+    <div id="mobileMenu" class="hidden md:hidden bg-secondary/98 border-t border-white/10 px-5 pb-5 pt-3 space-y-1">
+      <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/90 hover:bg-white/10 text-sm font-semibold transition-all"><i class="fa-solid fa-house w-4"></i> Accueil</a>
+      <a href="rechercher.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-primary bg-white/5 text-sm font-bold transition-all"><i class="fa-solid fa-magnifying-glass w-4"></i> Rechercher</a>
+      <div class="pt-2">
+        <a href="login.html" class="flex items-center justify-center gap-2 w-full py-3.5 bg-primary text-secondary rounded-2xl font-black text-sm shadow-lg shadow-primary/30">
+          Connexion <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </a>
+      </div>
+    </div>
+  </nav>
 
-      <div class="relative max-w-8xl px-5 mx-auto">
-        <div
-          class="grid grid-cols-1  md:grid-cols-2 lg:grid-cols-5 gap-10 border-b border-gray-700 pb-10"
-        >
-          <div class="lg:col-span-1">
-            <div class="flex items-center gap-2 mb-4">
-              <img src="./assets/images/favicon.png" alt="Logo" class="h-8" />
-              <span class="text-2xl font-bold text-[#FFB86A]">DocMaster</span>
-            </div>
-            <p class="text-sm text-gray-300 mb-6 leading-relaxed">
-              Retrouvez vos documents perdus grâce à notre plateforme
-              communautaire. Plus de 2000 documents déjà retrouvés !
-            </p>
-            <div class="flex gap-8">
-              <div>
-                <div class="text-2xl font-black text-gray-500">2000+</div>
-                <div class="text-[10px] uppercase font-bold text-gray-400">
-                  Documents retrouvés
-                </div>
-              </div>
-              <div>
-                <div class="text-2xl font-black text-gray-500">500+</div>
-                <div class="text-[10px] uppercase font-bold text-gray-400">
-                  Utilisateurs actifs
-                </div>
-              </div>
-            </div>
+
+  <!-- ═══════════════════════════════════════════
+       HERO / SEARCH SECTION
+  ═══════════════════════════════════════════ -->
+  <section class="relative overflow-hidden pt-[68px]" style="background: linear-gradient(135deg,#1E3A2F 0%,#2D5A42 50%,#1E3A2F 100%);">
+    <!-- Grid -->
+    <div class="absolute inset-0 opacity-[0.04]" style="background-image:linear-gradient(#F5A64B 1px,transparent 1px),linear-gradient(90deg,#F5A64B 1px,transparent 1px);background-size:48px 48px;"></div>
+    <!-- Blobs -->
+    <div class="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-[80px]"></div>
+    <div class="absolute bottom-0 left-0 w-64 h-64 bg-primary/8 rounded-full blur-[60px]"></div>
+
+    <div class="relative z-10 max-w-5xl mx-auto px-5 py-14 lg:py-20">
+      <!-- Badge -->
+      <div class="flex justify-center mb-6">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary/15 border border-primary/20 rounded-full">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          <span class="text-xs font-black text-primary/90 uppercase tracking-widest">Base de données en temps réel</span>
+        </div>
+      </div>
+
+      <h1 class="font-bricolage text-3xl md:text-5xl font-black text-white text-center tracking-tighter mb-3 slide-up">
+        Recherchez votre document parmi
+        <span class="text-primary"> 2 847</span> déclarations
+      </h1>
+      <p class="text-white/50 text-center text-[15px] mb-10 slide-up">CNI, passeport, diplôme, permis de conduire — cherchez par nom, type, date ou lieu.</p>
+
+      <!-- ── MAIN SEARCH BOX ── -->
+      <div class="bg-white/5 border border-white/10 backdrop-blur-md rounded-[28px] p-5 md:p-7 shadow-2xl slide-up">
+        <!-- Search + Date row -->
+        <div class="flex flex-col md:flex-row gap-4 mb-5">
+          <!-- Text search -->
+          <div class="flex-1 relative flex items-center bg-white rounded-2xl border-2 border-transparent focus-within:border-primary transition-all shadow-sm">
+            <div class="pl-4 text-gray-400"><i class="fa-solid fa-magnifying-glass text-base"></i></div>
+            <input id="search-input" type="text" placeholder="Nom, type de document, lieu, propriétaire..."
+              class="w-full px-4 py-4 bg-transparent outline-none text-[15px] text-gray-800 font-medium placeholder:text-gray-400"
+              oninput="filterDocuments()" />
+            <button id="clear-search" onclick="clearSearch()" class="hidden pr-4 text-gray-300 hover:text-primary transition-all">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </div>
 
-          <div>
-            <h3 class="text-orange-400 font-bold mb-6 text-lg">Navigation</h3>
-            <ul class="space-y-4">
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-house w-5"></i> Accueil</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-magnifying-glass w-5"></i>
-                  Rechercher</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-box w-5"></i> Objets perdus</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-file-lines w-5"></i> Faire une
-                  déclaration</a
-                >
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 class="text-orange-400 font-bold mb-6 text-lg">Services</h3>
-            <ul class="space-y-4">
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-id-card w-5"></i> Cartes d'identité</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-credit-card w-5"></i> Cartes
-                  bancaires</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-graduation-cap w-5"></i> Diplômes</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-key w-5"></i> Clés</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-mobile-screen w-5"></i> Téléphones</a
-                >
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 class="text-orange-400 font-bold mb-6 text-lg">Support</h3>
-            <ul class="space-y-4">
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-circle-question w-5"></i> FAQ</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-envelope w-5"></i> Contact</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-shield-halved w-5"></i> Sécurité</a
-                >
-              </li>
-              <li>
-                <a
-                  href="#"
-                  class="flex items-center gap-3 text-gray-300 hover:text-white transition"
-                  ><i class="fa-solid fa-book-open w-5"></i> Guide
-                  d'utilisation</a
-                >
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 class="text-orange-400 font-bold mb-6 text-lg">
-              Restez connecté
-            </h3>
-            <div class="flex gap-3 mb-8">
-              <a
-                href="#"
-                class="w-10 h-10 bg-blue-700 flex items-center justify-center rounded-full hover:scale-110 transition"
-                ><i class="fa-brands fa-facebook-f"></i
-              ></a>
-              <a
-                href="#"
-                class="w-10 h-10 bg-sky-400 flex items-center justify-center rounded-full hover:scale-110 transition"
-                ><i class="fa-brands fa-twitter"></i
-              ></a>
-              <a
-                href="#"
-                class="w-10 h-10 bg-pink-600 flex items-center justify-center rounded-full hover:scale-110 transition"
-                ><i class="fa-brands fa-instagram"></i
-              ></a>
-              <a
-                href="#"
-                class="w-10 h-10 bg-green-500 flex items-center justify-center rounded-full hover:scale-110 transition"
-                ><i class="fa-brands fa-whatsapp"></i
-              ></a>
+          <!-- Date picker -->
+          <div class="relative min-w-[200px]">
+            <div class="absolute left-0 inset-y-0 flex items-center pl-4 pointer-events-none">
+              <i class="fa-solid fa-calendar-days text-primary text-sm"></i>
             </div>
-            <h4
-              class="text-sm font-bold text-orange-400 mb-4 uppercase tracking-wider"
-            >
-              Newsletter
-            </h4>
-            <div class="relative">
-              <input
-                type="email"
-                placeholder="Votre email"
-                class="w-full bg-white/10 border border-white/20 rounded-full py-3 px-6 outline-none focus:border-orange-400 transition text-sm"
-              />
-              <button
-                class="absolute right-1 top-1 bottom-1 bg-orange-400 hover:bg-orange-500 px-4 rounded-full transition"
-              >
-                <i class="fa-solid fa-paper-plane text-white"></i>
-              </button>
-            </div>
+            <input type="text" id="custom-date" placeholder="Filtrer par date"
+              class="w-full h-full pl-11 pr-4 py-4 bg-white rounded-2xl border-2 border-transparent hover:border-primary/30 focus:border-primary transition-all outline-none text-[14px] font-medium text-gray-700 placeholder:text-gray-400 cursor-pointer shadow-sm" />
           </div>
         </div>
 
-        <div
-          class="flex flex-wrap justify-center gap-8 md:gap-16 py-8 text-sm font-medium border-gray-700/50"
-        >
-          <div class="flex items-center gap-3">
-            <i class="fa-solid fa-phone text-orange-400"></i> +237 672 518 313
-          </div>
-          <div class="flex items-center gap-3">
-            <i class="fa-solid fa-envelope text-orange-400"></i>
-            contact@docmaster.cm
-          </div>
-          <div class="flex items-center gap-3">
-            <i class="fa-solid fa-location-dot text-orange-400"></i> Yaoundé,
-            Cameroun
-          </div>
-        </div>
+        <!-- Filter chips -->
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="text-white/50 text-xs font-bold uppercase tracking-widest mr-1 hidden sm:inline">Filtrer :</span>
+          <button onclick="setFilter('all', this)" class="filter-chip active px-4 py-2 rounded-full border border-white/20 text-white text-[12px] font-bold bg-primary/80" data-filter="all">
+            Tous <span class="ml-1 bg-white/20 px-1.5 py-0.5 rounded-full text-[9px]" id="count-all">—</span>
+          </button>
+          <button onclick="setFilter('cni', this)" class="filter-chip px-4 py-2 rounded-full border border-white/20 text-white/70 text-[12px] font-bold" data-filter="cni">
+            <i class="fa-solid fa-id-card text-[10px] mr-1"></i> CNI
+          </button>
+          <button onclick="setFilter('passeport', this)" class="filter-chip px-4 py-2 rounded-full border border-white/20 text-white/70 text-[12px] font-bold" data-filter="passeport">
+            <i class="fa-solid fa-passport text-[10px] mr-1"></i> Passeport
+          </button>
+          <button onclick="setFilter('diplome', this)" class="filter-chip px-4 py-2 rounded-full border border-white/20 text-white/70 text-[12px] font-bold" data-filter="diplome">
+            <i class="fa-solid fa-graduation-cap text-[10px] mr-1"></i> Diplôme
+          </button>
+          <button onclick="setFilter('permis', this)" class="filter-chip px-4 py-2 rounded-full border border-white/20 text-white/70 text-[12px] font-bold" data-filter="permis">
+            <i class="fa-solid fa-car text-[10px] mr-1"></i> Permis
+          </button>
 
-        <div
-          class="flex flex-col md:row justify-between items-center pt-6 text-[12px] text-gray-400 gap-4"
-        >
-          <p>© 2025 DocMaster. Tous droits réservés.</p>
-          <div class="flex gap-6">
-            <a href="#" class="hover:text-white transition"
-              >Conditions d'utilisation</a
-            >
-            <a href="#" class="hover:text-white transition"
-              >Politique de confidentialité</a
-            >
-            <a href="#" class="hover:text-white transition">Mentions légales</a>
+          <div class="ml-auto">
+            <button onclick="triggerSearch()" id="btn-search" class="flex items-center gap-2.5 px-7 py-3 bg-primary text-secondary rounded-2xl font-black text-[14px] shadow-xl shadow-primary/30 hover:bg-primary-dark transition-all active:scale-95">
+              <i class="fa-solid fa-magnifying-glass"></i> Rechercher
+            </button>
           </div>
         </div>
       </div>
-    </footer>
-  </body>
+    </div>
+  </section>
 
+
+  <!-- ═══════════════════════════════════════════
+       RESULTS SECTION
+  ═══════════════════════════════════════════ -->
+  <main class="max-w-7xl mx-auto px-5 py-12 pb-28 md:pb-12">
+
+    <!-- Results header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div>
+        <h2 id="results-title" class="font-bricolage text-2xl font-black text-[#1A1A1A] tracking-tighter">Documents récemment ajoutés</h2>
+        <p id="results-count" class="text-gray-500 text-sm mt-0.5">Chargement en cours...</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-gray-500 font-bold uppercase tracking-wider hidden sm:inline">Trier :</span>
+        <select id="sort-select" onchange="sortDocuments()" class="px-4 py-2.5 bg-white border border-[#EAE3D8] rounded-xl text-sm font-bold text-gray-700 outline-none focus:border-primary transition-all cursor-pointer">
+          <option value="recent">Plus récents</option>
+          <option value="alpha">Alphabétique</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Skeleton loaders (shown while loading) -->
+    <div id="skeleton-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="bg-white rounded-[24px] p-5 border border-[#EAE3D8]">
+        <div class="skeleton h-40 w-full mb-4"></div>
+        <div class="skeleton h-4 w-3/4 mb-2"></div>
+        <div class="skeleton h-4 w-1/2 mb-4"></div>
+        <div class="skeleton h-10 w-full"></div>
+      </div>
+      <div class="bg-white rounded-[24px] p-5 border border-[#EAE3D8]">
+        <div class="skeleton h-40 w-full mb-4"></div>
+        <div class="skeleton h-4 w-3/4 mb-2"></div>
+        <div class="skeleton h-4 w-1/2 mb-4"></div>
+        <div class="skeleton h-10 w-full"></div>
+      </div>
+      <div class="bg-white rounded-[24px] p-5 border border-[#EAE3D8] hidden md:block">
+        <div class="skeleton h-40 w-full mb-4"></div>
+        <div class="skeleton h-4 w-3/4 mb-2"></div>
+        <div class="skeleton h-4 w-1/2 mb-4"></div>
+        <div class="skeleton h-10 w-full"></div>
+      </div>
+    </div>
+
+    <!-- Documents grid -->
+    <div id="document-container" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden flex flex-col items-center justify-center py-24 text-center">
+      <div class="w-20 h-20 rounded-full bg-[#FEF0DC] flex items-center justify-center text-primary text-3xl mb-5">
+        <i class="fa-solid fa-file-circle-question"></i>
+      </div>
+      <h3 class="font-bricolage text-xl font-bold text-[#1A1A1A] mb-2">Aucun résultat trouvé</h3>
+      <p class="text-gray-500 text-sm mb-6 max-w-xs">Aucun document ne correspond à votre recherche. Essayez avec d'autres mots-clés ou déclarez votre perte.</p>
+      <a href="declarer.html" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-secondary rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all">
+        <i class="fa-solid fa-file-circle-plus"></i> Déclarer une perte
+      </a>
+    </div>
+
+    <!-- Load more -->
+    <div id="load-more-wrap" class="hidden text-center mt-10">
+      <button id="load-more-btn" class="inline-flex items-center gap-2.5 px-8 py-4 bg-secondary text-white rounded-[18px] font-bold text-[14px] hover:bg-tertiary transition-all shadow-lg shadow-secondary/20">
+        Charger plus de documents <i class="fa-solid fa-chevron-down text-xs"></i>
+      </button>
+    </div>
+  </main>
+
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════ -->
+  <footer class="bg-secondary text-white relative overflow-hidden">
+    <div class="absolute -top-40 -right-40 w-96 h-96 bg-primary/5 rounded-full blur-[80px]"></div>
+    <div class="relative max-w-7xl mx-auto px-5 pt-16 pb-28 md:pb-16">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 border-b border-white/10 pb-10 mb-10">
+        <div class="lg:col-span-2">
+          <img src="./assets/images/docmaster.png" alt="DocMaster" class="h-10 w-auto mb-5 brightness-0 invert" />
+          <p class="text-white/50 text-[13px] leading-relaxed mb-6 max-w-xs">DocMaster est la plateforme communautaire #1 au Cameroun pour retrouver vos documents perdus.</p>
+        </div>
+        <div>
+          <h3 class="text-primary font-bold mb-5 text-[13px] uppercase tracking-wider">Navigation</h3>
+          <ul class="space-y-3">
+            <li><a href="index.html" class="text-white/60 hover:text-white text-sm transition flex items-center gap-2"><i class="fa-solid fa-house w-4 text-xs"></i> Accueil</a></li>
+            <li><a href="rechercher.html" class="text-white/60 hover:text-white text-sm transition flex items-center gap-2"><i class="fa-solid fa-magnifying-glass w-4 text-xs"></i> Rechercher</a></li>
+            <li><a href="declarer.html" class="text-white/60 hover:text-white text-sm transition flex items-center gap-2"><i class="fa-solid fa-file-lines w-4 text-xs"></i> Déclarer</a></li>
+            <li><a href="Abonnement.html" class="text-white/60 hover:text-white text-sm transition flex items-center gap-2"><i class="fa-solid fa-crown w-4 text-xs"></i> Abonnements</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-primary font-bold mb-5 text-[13px] uppercase tracking-wider">Services</h3>
+          <ul class="space-y-3">
+            <li><a href="#" class="text-white/60 hover:text-white text-sm transition flex items-center gap-2"><i class="fa-solid fa-id-card w-4 text-xs"></i> Cartes d'identité</a></li>
+            <li><a href="#" class="text-white/60 hover:text-white text-sm transition flex items-center gap-2"><i class="fa-solid fa-passport w-4 text-xs"></i> Passeports</a></li>
+            <li><a href="#" class="text-white/60 hover:text-white text-sm transition flex items-center gap-2"><i class="fa-solid fa-graduation-cap w-4 text-xs"></i> Diplômes</a></li>
+            <li><a href="#" class="text-white/60 hover:text-white text-sm transition flex items-center gap-2"><i class="fa-solid fa-car w-4 text-xs"></i> Permis de conduire</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-primary font-bold mb-5 text-[13px] uppercase tracking-wider">Restez connecté</h3>
+          <div class="flex gap-2 mb-5">
+            <a href="#" class="w-9 h-9 bg-white/10 border border-white/10 flex items-center justify-center rounded-xl hover:bg-primary hover:border-primary transition-all text-white text-sm"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" class="w-9 h-9 bg-white/10 border border-white/10 flex items-center justify-center rounded-xl hover:bg-primary hover:border-primary transition-all text-white text-sm"><i class="fa-brands fa-twitter"></i></a>
+            <a href="#" class="w-9 h-9 bg-white/10 border border-white/10 flex items-center justify-center rounded-xl hover:bg-primary hover:border-primary transition-all text-white text-sm"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" class="w-9 h-9 bg-white/10 border border-white/10 flex items-center justify-center rounded-xl hover:bg-primary hover:border-primary transition-all text-white text-sm"><i class="fa-brands fa-whatsapp"></i></a>
+          </div>
+          <h4 class="text-[11px] font-bold text-white/50 uppercase tracking-widest mb-3">Newsletter</h4>
+          <div class="relative">
+            <input type="email" placeholder="Votre email" class="w-full bg-white/10 border border-white/10 rounded-full py-2.5 px-5 outline-none focus:border-primary transition text-sm text-white placeholder:text-white/30" />
+            <button class="absolute right-1 top-1 bottom-1 bg-primary hover:bg-primary-dark px-4 rounded-full transition">
+              <i class="fa-solid fa-paper-plane text-secondary text-sm"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-[12px] text-white/40">
+        <div class="flex flex-wrap items-center justify-center gap-6">
+          <span class="flex items-center gap-2"><i class="fa-solid fa-phone text-primary text-xs"></i> +237 672 518 313</span>
+          <span class="flex items-center gap-2"><i class="fa-solid fa-envelope text-primary text-xs"></i> contact@docmaster.cm</span>
+          <span class="flex items-center gap-2"><i class="fa-solid fa-location-dot text-primary text-xs"></i> Yaoundé, Cameroun</span>
+        </div>
+        <p>© 2026 DocMaster. Tous droits réservés.</p>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ═══════════════════════════════════════════
+       MOBILE BOTTOM NAV
+  ═══════════════════════════════════════════ -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-secondary/97 backdrop-blur-md border-t border-white/10 z-50 mobile-nav">
+    <ul class="flex items-center justify-around py-2 px-2">
+      <li><a href="index.html" class="flex flex-col items-center gap-1 text-white/50 hover:text-primary py-1 px-3 transition-all"><i class="fa-solid fa-house text-lg"></i><span class="text-[9px] font-black uppercase">Accueil</span></a></li>
+      <li><a href="rechercher.html" class="flex flex-col items-center gap-1 text-primary py-1 px-3"><i class="fa-solid fa-magnifying-glass text-lg"></i><span class="text-[9px] font-black uppercase">Rechercher</span></a></li>
+      <li><a href="declarer.html" class="flex flex-col items-center gap-1 text-white/50 hover:text-primary py-1 px-3 transition-all"><i class="fa-solid fa-file-circle-plus text-lg"></i><span class="text-[9px] font-black uppercase">Déclarer</span></a></li>
+      <li><a href="trouverdocument.html" class="flex flex-col items-center gap-1 text-white/50 hover:text-primary py-1 px-3 transition-all"><i class="fa-solid fa-hand-holding-heart text-lg"></i><span class="text-[9px] font-black uppercase">J'ai trouvé</span></a></li>
+      <li><a href="login.html" class="flex flex-col items-center gap-1 text-white/50 hover:text-primary py-1 px-3 transition-all"><i class="fa-solid fa-user text-lg"></i><span class="text-[9px] font-black uppercase">Compte</span></a></li>
+    </ul>
+  </nav>
+
+
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
   <script>
-    // Initialisation de Flatpickr
-    flatpickr("#custom-date", {
-      locale: "fr",
-      dateFormat: "d/m/Y",
-      disableMobile: true,
-      animate: true,
+    // ── Navbar scroll ──
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+    });
+    function toggleMobileMenu() {
+      document.getElementById('mobileMenu').classList.toggle('hidden');
+    }
+    document.getElementById('langButton')?.addEventListener('click', e => {
+      e.stopPropagation();
+      document.getElementById('langDropdown').classList.toggle('hidden');
+    });
+    document.addEventListener('click', () => document.getElementById('langDropdown')?.classList.add('hidden'));
+    function changeLang(code, flag) {
+      document.getElementById('currentFlag').src = flag;
+      document.getElementById('langDropdown').classList.add('hidden');
+    }
+
+    // ── Flatpickr ──
+    flatpickr('#custom-date', {
+      locale: 'fr', dateFormat: 'd/m/Y', disableMobile: true, animate: true,
+      onChange: () => filterDocuments(),
     });
 
-    // Toggle du menu langue (logique simple)
-    function changeLang(code, url) {
-      document.getElementById("currentFlag").src = url;
-      // logic...
+    // ── Search / filter logic ──
+    let activeFilter = 'all';
+    let allDocs = [];
+
+    function setFilter(type, btn) {
+      activeFilter = type;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      filterDocuments();
     }
+
+    function filterDocuments() {
+      const q = document.getElementById('search-input').value.toLowerCase().trim();
+      const clear = document.getElementById('clear-search');
+      clear.classList.toggle('hidden', q.length === 0);
+
+      const filtered = allDocs.filter(doc => {
+        const matchType  = activeFilter === 'all' || (doc.type || '').toLowerCase().includes(activeFilter);
+        const matchQuery = !q || JSON.stringify(doc).toLowerCase().includes(q);
+        return matchType && matchQuery;
+      });
+
+      renderDocs(filtered);
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('clear-search').classList.add('hidden');
+      filterDocuments();
+    }
+
+    function triggerSearch() {
+      filterDocuments();
+      const btn = document.getElementById('btn-search');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Recherche...';
+      setTimeout(() => { btn.innerHTML = orig; }, 700);
+    }
+
+    function sortDocuments() {
+      const val = document.getElementById('sort-select').value;
+      if (val === 'alpha') allDocs.sort((a,b) => (a.nom||'').localeCompare(b.nom||''));
+      else allDocs.reverse();
+      filterDocuments();
+    }
+
+    function renderDocs(docs) {
+      const container = document.getElementById('document-container');
+      const empty     = document.getElementById('empty-state');
+      const skeleton  = document.getElementById('skeleton-container');
+      const loadMore  = document.getElementById('load-more-wrap');
+
+      skeleton.classList.add('hidden');
+      document.getElementById('results-count').textContent = `${docs.length} document${docs.length > 1 ? 's' : ''} trouvé${docs.length > 1 ? 's' : ''}`;
+
+      if (docs.length === 0) {
+        container.classList.add('hidden');
+        empty.classList.remove('hidden');
+        loadMore.classList.add('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      container.classList.remove('hidden');
+      container.style.display = 'grid';
+      loadMore.classList.toggle('hidden', docs.length < 9);
+
+      // Re-render
+      container.innerHTML = docs.map((doc, i) => {
+        const typeIcon = {
+          cni: 'fa-id-card', passeport: 'fa-passport',
+          diplome: 'fa-graduation-cap', permis: 'fa-car',
+        }[(doc.type||'').toLowerCase()] || 'fa-file-lines';
+
+        const typeBg = {
+          cni: 'bg-blue-50 text-blue-600', passeport: 'bg-purple-50 text-purple-600',
+          diplome: 'bg-green-50 text-green-700', permis: 'bg-primary/10 text-primary',
+        }[(doc.type||'').toLowerCase()] || 'bg-gray-50 text-gray-600';
+
+        return `
+        <div class="doc-card bg-white border border-[#EAE3D8] rounded-[24px] overflow-hidden shadow-sm slide-up" style="animation-delay:${i*50}ms">
+          <div class="relative h-44 bg-[#FAF7F2] flex items-center justify-center overflow-hidden">
+            ${doc.image
+              ? `<img src="${doc.image}" class="w-full h-full object-cover" alt="${doc.nom || 'Document'}" />`
+              : `<div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center"><i class="fa-solid ${typeIcon} text-primary text-3xl"></i></div>`
+            }
+            <div class="absolute top-3 left-3">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 ${typeBg} rounded-full text-[10px] font-black uppercase border border-current/10">
+                <i class="fa-solid ${typeIcon} text-[9px]"></i> ${doc.type || 'Document'}
+              </span>
+            </div>
+            <div class="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse"></div>
+          </div>
+          <div class="p-5">
+            <h3 class="font-bricolage font-bold text-[#1A1A1A] text-[16px] mb-1 truncate">${doc.nom || 'Document sans nom'}</h3>
+            <div class="flex items-center gap-1.5 text-gray-400 text-[12px] mb-4">
+              <i class="fa-solid fa-location-dot text-primary text-[10px]"></i>
+              <span>${doc.lieu || 'Lieu inconnu'}</span>
+              ${doc.date ? `<span class="mx-1.5">·</span><i class="fa-regular fa-clock text-[10px]"></i><span>${doc.date}</span>` : ''}
+            </div>
+            <a href="recuperation.html?view=owner" class="flex items-center justify-center gap-2 w-full py-3 bg-primary text-secondary rounded-[14px] font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md shadow-primary/20 active:scale-95">
+              <i class="fa-solid fa-key text-xs"></i> C'est le mien — Récupérer
+            </a>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Boot: load docs from index.js ──
+    window.addEventListener('load', () => {
+      document.getElementById('results-title').textContent = 'Documents récemment ajoutés';
+
+      // Give index.js time to populate then capture
+      setTimeout(() => {
+        const injected = document.querySelectorAll('#document-container .doc-card');
+        if (injected.length === 0) {
+          // index.js didn't render here — show skeleton then remove it
+          document.getElementById('skeleton-container').classList.add('hidden');
+          document.getElementById('document-container').classList.remove('hidden');
+          document.getElementById('document-container').style.display = 'grid';
+          document.getElementById('results-count').textContent = 'Chargé depuis le serveur';
+        }
+      }, 2000);
+    });
   </script>
+
+</body>
 </html>
