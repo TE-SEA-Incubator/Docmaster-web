@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/auth.service.ts';
+import { generateToken } from '../config/jwt.ts';
 
 export class AuthController {
   private userService = new UserService();
@@ -9,7 +10,7 @@ export class AuthController {
    */
   async register(req: Request, res: Response): Promise<void> {
     try {
-      const { nom, prenom, email, mot_de_passe, telephone, pays, ville, code_parrainage } = req.body;
+      const { nom, prenom, email, mot_de_passe, telephone, pays, ville, code_parrainage, is_verified } = req.body;
 
       // Validate required fields
       if (!nom || !prenom || !email || !mot_de_passe) {
@@ -35,13 +36,19 @@ export class AuthController {
         pays,
         ville,
         parrain_id,
+        is_verified,
       });
 
       // Return user without password
       const { mot_de_passe: _, ...userWithoutPassword } = user;
+      
+      // Generate token for auto-login
+      const token = generateToken(user.id, user.email, user.role);
+
       res.status(201).json({
         message: 'User registered successfully',
         user: userWithoutPassword,
+        token,
         code_invitation: user.code_invitation,
       });
     } catch (error: any) {
@@ -189,6 +196,71 @@ export class AuthController {
       res.status(200).json(userWithoutPassword);
     } catch (error: any) {
       res.status(500).json({ error: error.message || 'Failed to fetch profile' });
+    }
+  }
+
+  /**
+   * Get all users (Admin)
+   */
+  async getAdminUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const users = await this.userService.getAllUsersForAdmin();
+      res.status(200).json(users);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to fetch users' });
+    }
+  }
+
+  /**
+   * Send verification PIN to email
+   */
+  async sendVerificationPin(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        res.status(400).json({ error: 'Email required' });
+        return;
+      }
+
+      await this.userService.sendVerificationPin(email);
+      res.status(200).json({ message: 'Verification code sent to email' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to send code' });
+    }
+  }
+
+  /**
+   * Verify email PIN
+   */
+  async verifyEmailPin(req: Request, res: Response): Promise<void> {
+    try {
+      const { email, pin } = req.body;
+      if (!email || !pin) {
+        res.status(400).json({ error: 'Email and PIN required' });
+        return;
+      }
+
+      const isValid = await this.userService.verifyEmailPin(email, pin);
+      if (isValid) {
+        res.status(200).json({ message: 'Email verified successfully', success: true });
+      } else {
+        res.status(400).json({ error: 'Invalid or expired verification code', success: false });
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Verification failed' });
+    }
+  }
+
+  /**
+   * Get user earnings and points statistics
+   */
+  async getEarningsStats(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user.id;
+      const stats = await this.userService.getEarningsStats(userId);
+      res.status(200).json({ success: true, data: stats });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message || 'Failed to fetch earnings stats' });
     }
   }
 }

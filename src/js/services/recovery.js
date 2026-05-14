@@ -39,9 +39,10 @@ function renderRecoveryData(doc) {
 }
 
 function renderOwnerData(doc) {
+    // 1. Image & Date
     const docImage = document.getElementById('docImage');
-    if (docImage && doc.photo_recto) {
-        docImage.src = doc.photo_recto.startsWith('http') ? doc.photo_recto : '/' + doc.photo_recto.replace(/^\//, '');
+    if (docImage && doc.counterPartPhotoRecto) {
+        docImage.src = doc.counterPartPhotoRecto.startsWith('http') ? doc.counterPartPhotoRecto : '/' + doc.counterPartPhotoRecto.replace(/^\//, '');
     }
 
     const docMatchDate = document.getElementById('docMatchDate');
@@ -49,11 +50,56 @@ function renderOwnerData(doc) {
         docMatchDate.textContent = `Signalé le ${new Date(doc.created_at).toLocaleDateString('fr-FR')}`;
     }
 
-    const docLocation = document.getElementById('docLocation');
-    if (docLocation) {
-        docLocation.textContent = doc.ville || 'Position en attente';
+    // 2. Finder Information (Dynamic from DB)
+    if (doc.counterPart) {
+        const cp = doc.counterPart;
+        window.FINDER_NAME = `${cp.prenom || ''} ${cp.nom || ''}`.trim();
+        window.FINDER_PHONE = cp.telephone || '+237...';
+        
+        // Update UI Text (Blur placeholders)
+        const nameEl = document.getElementById('finderName');
+        if (nameEl) {
+            nameEl.setAttribute('data-real', window.FINDER_NAME);
+            if (nameEl.classList.contains('revealed')) nameEl.textContent = window.FINDER_NAME;
+        }
+
+        const contactEl = document.getElementById('finderContactBlur');
+        if (contactEl) {
+            contactEl.setAttribute('data-real', window.FINDER_PHONE);
+            const span = contactEl.querySelector('span');
+            if (span && contactEl.classList.contains('revealed')) span.textContent = window.FINDER_PHONE;
+        }
+
+        const avatarEl = document.getElementById('finderAvatar');
+        if (avatarEl && cp.prenom) {
+            avatarEl.textContent = (cp.prenom[0] + (cp.nom ? cp.nom[0] : '')).toUpperCase();
+        }
     }
 
+    // 3. Location & Map initialization
+    if (doc.counterPartDeclaration && doc.counterPartDeclaration.found_location) {
+        const loc = doc.counterPartDeclaration.found_location;
+        window.FINDER_LAT = loc.lat || 3.8615;
+        window.FINDER_LNG = loc.long || 11.5174;
+        window.FINDER_CITY = loc.city || doc.ville || 'Yaoundé';
+
+        const docLocation = document.getElementById('docLocation');
+        if (docLocation) docLocation.textContent = window.FINDER_CITY;
+
+        const locEl = document.getElementById('finderLocBlur');
+        if (locEl) {
+            locEl.setAttribute('data-real', window.FINDER_CITY);
+            const span = locEl.querySelector('span');
+            if (span && locEl.classList.contains('revealed')) span.textContent = window.FINDER_CITY;
+        }
+
+        // Initialize Map with real coordinates
+        if (typeof window.initFinderMap === 'function') {
+            setTimeout(() => window.initFinderMap(window.FINDER_LAT, window.FINDER_LNG, window.FINDER_PHONE), 500);
+        }
+    }
+
+    // 4. Progress & Actions
     const progText = document.getElementById('ownerProgressionText');
     const actions = document.getElementById('ownerActions');
 

@@ -4,27 +4,45 @@
  * ═════════════════════════════════════════════════════════════════
  */
 
+import { apiSendVerificationPin } from '../services/api.js';
+
 /**
  * Switch between login and register tabs
  */
-export function switchTab(tab) {
-  const forms = document.querySelectorAll('.auth-form');
-  const tabButtons = document.querySelectorAll('[id^="tab-"]');
-  const slider = document.getElementById('toggle-slider');
+export function switchTab(tab, prefix = '') {
+  const isLogin = tab === 'login';
+  
+  // Forms
+  const forms = [
+    document.getElementById(prefix + 'form-login'),
+    document.getElementById(prefix + 'form-register')
+  ];
+  
+  forms.forEach(f => { if(f) f.classList.remove('visible'); });
+  const activeForm = document.getElementById(prefix + 'form-' + tab);
+  if (activeForm) activeForm.classList.add('visible');
 
-  forms.forEach(form => form.classList.remove('visible'));
-  tabButtons.forEach(btn => btn.classList.remove('text-white'));
+  // Tabs
+  const loginBtn = document.getElementById(prefix + 'tab-login');
+  const registerBtn = document.getElementById(prefix + 'tab-register');
+  
+  if (loginBtn) {
+    loginBtn.classList.toggle('text-white', isLogin);
+    loginBtn.classList.toggle('text-textMuted', !isLogin);
+    const icon = loginBtn.querySelector('i');
+    if (icon) icon.classList.toggle('text-primary', !isLogin);
+  }
+  if (registerBtn) {
+    registerBtn.classList.toggle('text-white', !isLogin);
+    registerBtn.classList.toggle('text-textMuted', isLogin);
+    const icon = registerBtn.querySelector('i');
+    if (icon) icon.classList.toggle('text-primary', isLogin);
+  }
 
-  if (tab === 'login') {
-    document.getElementById('form-login')?.classList.add('visible');
-    document.getElementById('dform-login')?.classList.add('visible');
-    document.getElementById('tab-login').classList.add('text-white');
-    if (slider) slider.style.transform = 'translateX(0)';
-  } else {
-    document.getElementById('form-register')?.classList.add('visible');
-    document.getElementById('dform-register')?.classList.add('visible');
-    document.getElementById('tab-register').classList.add('text-white');
-    if (slider) slider.style.transform = 'translateX(calc(100% + 6px))';
+  // Slider
+  const slider = document.getElementById(prefix + 'toggle-slider');
+  if (slider) {
+    slider.style.left = isLogin ? '1.5px' : 'calc(50% + 1.5px)';
   }
 }
 
@@ -89,21 +107,29 @@ export function checkPseudo(input, prefix) {
   ];
 
   suggestionsDiv.innerHTML = suggestions
-    .map(s => `<button type="button" class="pseudo-chip" onclick="selectPseudo('${s}', '${prefix}')">${s}</button>`)
+    .map(s => `<button type="button" class="pseudo-chip" onclick="selectPseudo('${prefix}', '${s}', this)">${s}</button>`)
     .join('');
 }
 
 /**
- * Select a pseudo suggestion
+ * Generate suggestions based on name
  */
-export function selectPseudo(pseudo, prefix) {
-  const pseudoInput = document.getElementById(`${prefix}-pseudo`);
-  if (pseudoInput) {
-    pseudoInput.value = pseudo;
-    document.querySelectorAll('.pseudo-chip').forEach(chip => chip.classList.remove('selected'));
-    event?.target?.classList.add('selected');
-  }
+export function generateSuggestions(prefix, nom, prenom) {
+  const container = document.getElementById(prefix + '-suggestions');
+  if (!container) return;
+  const suggs = [
+    `${prenom}_${nom}`,
+    `${prenom}.${nom}`,
+    `${prenom}${Math.floor(Math.random() * 90 + 10)}`,
+    `${nom}_${prenom.charAt(0)}`,
+    `${prenom}_dm`,
+  ];
+  container.innerHTML = suggs.map(s =>
+    `<button type="button" class="pseudo-chip" onclick="selectPseudo('${prefix}','${s}',this)">${s}</button>`
+  ).join('');
 }
+
+
 
 /**
  * Toggle referral field
@@ -119,9 +145,41 @@ export function toggleReferral(prefix) {
 /**
  * Resend PIN code
  */
-export function resendPin(event) {
+export async function resendPin(event) {
   event?.preventDefault();
-  showAlert('Un nouveau code a été envoyé à votre adresse email.');
+  const prefix = event?.target?.dataset?.prefix || 'm';
+  const emailInput = document.getElementById(`${prefix}-email`);
+  const email = emailInput?.value.trim();
+  
+  if (!email) {
+    showAlert('Veuillez d\'abord entrer votre adresse email.', 'error');
+    return;
+  }
+
+  const btn = event?.target;
+  if (btn && btn.tagName === 'BUTTON') {
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = 'Envoi...';
+    
+    const result = await apiSendVerificationPin(email);
+    
+    btn.disabled = false;
+    btn.innerText = originalText;
+    
+    if (result.success) {
+      showAlert('Un nouveau code a été envoyé à votre adresse email.', 'success');
+    } else {
+      showAlert(result.message, 'error');
+    }
+  } else {
+    const result = await apiSendVerificationPin(email);
+    if (result.success) {
+      showAlert('Un nouveau code a été envoyé à votre adresse email.', 'success');
+    } else {
+      showAlert(result.message, 'error');
+    }
+  }
 }
 
 /**

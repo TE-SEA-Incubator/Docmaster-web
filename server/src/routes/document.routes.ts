@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { 
   registerMyDocument, 
   getMyDocuments,
-  deleteDocument
+  deleteDocument,
+  reportDocumentLost
 } from '../controllers/document.controller.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
 import { upload } from '../utils/upload.utils.ts';
@@ -26,5 +27,6 @@ router.get('/', authMiddleware, getMyDocuments);
  * Protected document deletion
  */
 router.delete('/:id', authMiddleware, deleteDocument);
+router.patch('/:id/lost', authMiddleware, reportDocumentLost);
 
 export default router;

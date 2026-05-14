@@ -9,11 +9,28 @@ import {
   MaxLength,
   IsEmail,
   Matches,
-  IsIn
+  IsIn,
+  IsObject,
+  ValidateNested
 } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 export type DeclarationType = 'LOST' | 'FOUND';
 export type ReasonTypeType = 'DUPLICATE' | 'INCORRECT_DATA' | 'NO_LONGER_NEEDED' | 'PRIVACY' | 'OTHER';
+
+export class LocationDTO {
+  @IsString()
+  @IsNotEmpty({ message: 'La ville de la localisation est requise' })
+  city!: string;
+
+  @IsNumber()
+  @IsNotEmpty({ message: 'La latitude est requise' })
+  lat!: number;
+
+  @IsNumber()
+  @IsNotEmpty({ message: 'La longitude est requise' })
+  long!: number;
+}
 
 /**
  * DTO for creating a new declaration (LOST or FOUND)
@@ -109,6 +126,13 @@ export class CreateDeclarationDTO {
   @IsOptional()
   @MaxLength(100)
   transactions_id?: string;
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LocationDTO)
+  @Transform(({ value }) => typeof value === 'string' ? JSON.parse(value) : value)
+  found_location?: LocationDTO;
 }
 
 /**
@@ -170,6 +194,13 @@ export class UpdateDeclarationDTO {
   @IsOptional()
   @IsEmail()
   email_contact?: string;
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LocationDTO)
+  @Transform(({ value }) => typeof value === 'string' ? JSON.parse(value) : value)
+  found_location?: LocationDTO;
 }
 
 /**

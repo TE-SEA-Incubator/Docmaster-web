@@ -5,12 +5,16 @@
  */
 
 import { getSession, checkAuth } from '../services/auth.js';
-import { getTransactionHistory, getMyDeclarations, getMyReferrals } from '../services/api.js';
+import { getTransactionHistory, getSettings, getUserEarningsStats } from '../services/api.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Ensure user is authenticated
     checkAuth();
     const user = getSession();
+    let APP_SETTINGS = {
+        min_withdrawal_amount: 500,
+        points_per_declaration: 5
+    };
     if (!user) return;
 
     console.log("💰 Initializing Gains page for:", user.email);
@@ -20,11 +24,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateBalanceUI(user);
 
     // 3. Fetch detailed data
+    // Load settings
     try {
-        const [txResult, declResult, refResult] = await Promise.all([
+        const settingsResponse = await getSettings();
+        if (settingsResponse.success) {
+            APP_SETTINGS = { ...APP_SETTINGS, ...settingsResponse.data };
+            updateMinAmountUI(APP_SETTINGS.min_withdrawal_amount);
+        }
+    } catch (error) {
+        console.error('Error loading settings:', error);
+    }
+
+    try {
+        const [txResult, statsResult] = await Promise.all([
             getTransactionHistory(),
-            getMyDeclarations(),
-            getMyReferrals()
+            getUserEarningsStats()
         ]);
 
         if (txResult.success) {
@@ -32,10 +46,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateStatsFromTransactions(txResult.data, user);
         }
 
-        if (declResult.success) {
-            updateStatsFromDeclarations(declResult.data);
-            // Points breakdown from declarations
-            updatePointsBreakdown(declResult.data, refResult.success ? refResult.data : []);
+        if (statsResult.success) {
+            updateFidelityUI(statsResult.data);
         }
 
         renderPaymentMethods();
@@ -174,75 +186,54 @@ function updateStatsFromTransactions(transactions, user) {
 }
 
 /**
- * Update Stats from Declarations
+ * Update Fidelity and Points Breakdown Section from real backend data
  */
-function updateStatsFromDeclarations(declarations) {
-    const totalFound = declarations.filter(d => d.declaration_type === 'FOUND').length;
-    const totalReturned = declarations.filter(d => d.status === 'RETURNED').length;
+function updateFidelityUI(data) {
+    const { stats, points_breakdown, total_points } = data;
 
-    // Update UI (Index mapping: 0 = total found, 1 = total returned)
-    const stats = document.querySelectorAll('.stat-card .text-2xl');
-    if (stats.length >= 2) {
-        stats[0].textContent = totalFound;
-        stats[1].textContent = totalReturned;
+    // 1. Update general stats cards
+    const statValues = document.querySelectorAll('.stat-card .text-2xl');
+    if (statValues.length >= 2) {
+        statValues[0].textContent = stats.total_found;
+        statValues[1].textContent = stats.total_returned;
     }
-}
 
-/**
- * Update Points Breakdown Section
- */
-function updatePointsBreakdown(declarations, referrals) {
-    // 1. Calculate Points from Declarations (Static reward for creating a declaration)
-    const PTS_PER_DECL = 50; 
-    const totalDecls = declarations.length;
-    const declPoints = totalDecls * PTS_PER_DECL;
-
-    // 2. Calculate Points from Returns (Dynamic based on DocumentType reward)
-    const returnedDecls = declarations.filter(d => d.status === 'RETURNED');
-    const returnPoints = returnedDecls.reduce((sum, d) => {
-        return sum + (d.docTypeInfo?.points_recompense || 0);
-    }, 0);
-
-    // 3. Calculate Points from Referrals (Dynamic based on each referral's reward)
-    // referralData.referrals is the array from getMyReferrals
-    const referralList = referrals.referrals || [];
-    const totalRefs = referralList.length;
-    const refPoints = referralList.reduce((sum, ref) => sum + (ref.points_gagnes || 0), 0);
-
+    // 2. Update Points Breakdown
     const pointsContainers = document.querySelectorAll('.bg-white.border.border-borderMain.rounded-\\[18px\\].p-5 .flex.flex-col.gap-2 > div');
     
     if (pointsContainers.length >= 3) {
-        // 1. Documents déclarés
+        // Documents déclarés
+        const declData = points_breakdown.declarations;
         const declRow = pointsContainers[0];
-        declRow.querySelector('.text-textMuted').innerHTML = `Documents déclarés <span class="text-textMain font-semibold">(+${PTS_PER_DECL} pts × ${totalDecls})</span>`;
-        declRow.querySelector('.font-bold.text-textMain').textContent = `${declPoints} pts`;
-        declRow.querySelector('.prog-fill').style.width = `${Math.min(declPoints / 5, 100)}%`;
+        declRow.querySelector('.text-textMuted').innerHTML = `Documents déclarés <span class="text-textMain font-semibold">(+${declData.pts_per_unit} pts × ${declData.count})</span>`;
+        declRow.querySelector('.font-bold.text-textMain').textContent = `${declData.points} pts`;
+        declRow.querySelector('.prog-fill').style.width = `${Math.min(declData.points / 5, 100)}%`;
 
-        // 2. Documents remis
+        // Documents remis
+        const returnData = points_breakdown.returns;
         const returnRow = pointsContainers[1];
-        // For the label, we'll show the count. Since points varies per doc, we don't show "+X pts x Y" but just total
-        returnRow.querySelector('.text-textMuted').innerHTML = `Documents remis <span class="text-textMain font-semibold">(${returnedDecls.length} documents)</span>`;
-        returnRow.querySelector('.font-bold.text-textMain').textContent = `${returnPoints} pts`;
-        returnRow.querySelector('.prog-fill').style.width = `${Math.min(returnPoints / 5, 100)}%`;
+        returnRow.querySelector('.text-textMuted').innerHTML = `Documents remis <span class="text-textMain font-semibold">(${returnData.count} documents)</span>`;
+        returnRow.querySelector('.font-bold.text-textMain').textContent = `${returnData.points} pts`;
+        returnRow.querySelector('.prog-fill').style.width = `${Math.min(returnData.points / 5, 100)}%`;
 
-        // 3. Parrainage
+        // Parrainage
+        const refData = points_breakdown.referrals;
         const refRow = pointsContainers[2];
-        refRow.querySelector('.text-textMuted').innerHTML = `Parrainage <span class="text-textMain font-semibold">(${totalRefs} personnes)</span>`;
-        refRow.querySelector('.font-bold.text-textMain').textContent = `${refPoints} pts`;
-        refRow.querySelector('.prog-fill').style.width = `${Math.min(refPoints / 2, 100)}%`;
+        refRow.querySelector('.text-textMuted').innerHTML = `Parrainage <span class="text-textMain font-semibold">(${refData.count} personnes)</span>`;
+        refRow.querySelector('.font-bold.text-textMain').textContent = `${refData.points} pts`;
+        refRow.querySelector('.prog-fill').style.width = `${Math.min(refData.points / 2, 100)}%`;
     }
 
-    // Update level info
-    const totalPoints = declPoints + returnPoints + refPoints;
+    // 3. Update Points Display and Level info
+    const pointsDisplay = document.querySelector('.font-bricolage.text-primary');
+    if (pointsDisplay) pointsDisplay.textContent = `${total_points} pts`;
+
     const nextLevelPoints = 500;
-    const pointsToNext = Math.max(nextLevelPoints - totalPoints, 0);
+    const pointsToNext = Math.max(nextLevelPoints - total_points, 0);
     
     const levelLabel = document.querySelector('.text-\\[12\\.5px\\].font-bold.text-textMain');
-    const pointsToNextLabel = document.querySelector('.text-\\[11px\\].text-textMuted.mt-1'); // Adjusted selector
-    const nextLevelValue = document.querySelector('.text-\\[13px\\].font-bold.text-primary');
-
     if (levelLabel) {
-        levelLabel.textContent = totalPoints >= 500 ? "Niveau Or" : "Niveau Argent";
+        levelLabel.textContent = total_points >= 500 ? "Niveau Or" : "Niveau Argent";
     }
     
     // Find the status text for "points to reach Gold"
@@ -283,12 +274,48 @@ function renderPaymentMethods() {
     });
 }
 
+/**
+ * Update UI with Min Withdrawal Amount
+ */
+function updateMinAmountUI(minAmount) {
+    if (!minAmount) return;
+    
+    // 1. Progress text (150 / 500 XAF)
+    const progressText = document.querySelector('.wallet-card .text-white.font-bold');
+    if (progressText) {
+        const currentVal = progressText.textContent.split('/')[0].trim();
+        progressText.textContent = `${currentVal} / ${minAmount} XAF`;
+        
+        // Update progress bar
+        const session = getSession();
+        const balance = session?.wallet_balance || 0;
+        const progressFill = document.querySelector('.wallet-card .prog-fill');
+        if (progressFill) {
+            const percent = Math.min((balance / minAmount) * 100, 100);
+            progressFill.style.width = `${percent}%`;
+        }
+    }
+
+    // 2. Labels
+    const labels = [
+        document.querySelector('.wallet-card p.text-\\[11px\\]'),
+        document.querySelector('.bg-white.border.border-borderMain.rounded-\\[18px\\].p-5 p.text-\\[11px\\]')
+    ];
+
+    labels.forEach(l => {
+        if (l && l.textContent.includes('Minimum de retrait')) {
+            l.textContent = `Minimum de retrait : ${minAmount} XAF · Délai : 24–48h ouvrables`;
+        }
+    });
+}
+
 // Global window functions for HTML calls
 window.withdraw = function() {
     const session = getSession();
     const balance = session?.wallet_balance || 0;
-    if (balance < 500) {
-        alert(`Solde insuffisant — minimum 500 XAF requis.\nSolde actuel : ${balance} XAF`);
+    const minAmount = 500; // Default or from APP_SETTINGS if accessible
+    if (balance < minAmount) {
+        alert(`Solde insuffisant — minimum ${minAmount} XAF requis.\nSolde actuel : ${balance} XAF`);
     } else {
         alert("Fonctionnalité de retrait bientôt disponible !");
     }

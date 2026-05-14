@@ -11,6 +11,8 @@ const authController = new AuthController();
  * Register a new user
  */
 router.post('/register', (req, res) => authController.register(req, res));
+router.post('/send-verification-pin', (req, res) => authController.sendVerificationPin(req, res));
+router.post('/verify-email-pin', (req, res) => authController.verifyEmailPin(req, res));
 
 /**
  * POST /auth/login
@@ -41,5 +43,12 @@ router.get('/profile', authMiddleware, (req, res) => authController.getProfile(r
  * Update user profile (Protected)
  */
 router.put('/profile', authMiddleware, upload.single('photo_profile'), (req, res) => authController.updateProfile(req, res));
+router.get('/earnings-stats', authMiddleware, (req, res) => authController.getEarningsStats(req, res));
+
+/**
+ * GET /auth/admin/users
+ * Admin: Get all users
+ */
+router.get('/admin/users', authMiddleware, (req, res) => authController.getAdminUsers(req, res));
 
 export default router;

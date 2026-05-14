@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 /**
  * ═════════════════════════════════════════════════════════════════
  * SERVER.TS - Server Start Point

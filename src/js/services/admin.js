@@ -288,4 +288,115 @@ export const adminService = {
       throw error;
     }
   },
+
+  /**
+   * Get all pending withdrawals
+   */
+  async getPendingWithdrawals() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/withdrawals/admin/pending`, {
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok)
+        throw new Error("Erreur lors de la récupération des retraits");
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error("Admin Withdrawals Error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Approve a withdrawal
+   */
+  async approveWithdrawal(id, adminNote = "") {
+    try {
+      const response = await fetch(`${API_BASE_URL}/withdrawals/admin/approve/${id}`, {
+        method: "POST",
+        headers: {
+          ...getAuthHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ adminNote }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Approve Withdrawal Error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reject a withdrawal
+   */
+  async rejectWithdrawal(id, adminNote = "") {
+    try {
+      const response = await fetch(`${API_BASE_URL}/withdrawals/admin/reject/${id}`, {
+        method: "POST",
+        headers: {
+          ...getAuthHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ adminNote }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Reject Withdrawal Error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all settings
+   */
+  async getAllSettings() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/settings`, {
+        headers: getAuthHeaders(),
+      });
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      console.error("Admin Settings Error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update a setting
+   */
+  async updateSetting(key, value) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/settings/${key}`, {
+        method: "POST", // The backend update uses POST on /:key or similar
+        headers: {
+          ...getAuthHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ value }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Update Setting Error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all users for administration
+   */
+  async getAdminUsers() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/admin/users`, {
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok)
+        throw new Error("Erreur lors de la récupération des utilisateurs");
+      return await response.json();
+    } catch (error) {
+      console.error("Admin Users Error:", error);
+      throw error;
+    }
+  },
 };

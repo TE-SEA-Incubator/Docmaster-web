@@ -174,6 +174,18 @@ export const DOC_META = {
       { id:'desc',      label:'Description', type:'textarea', placeholder:'État, couleur, mentions…', icon:'', optional:true },
     ]
   },
+  carte_grise: {
+    label:'Carte grise', icon:'fa-car', color:'#3B82F6',
+    fields:[
+      { id:'titulaire', label:'Nom du titulaire', type:'text', placeholder:'Nom complet sur le document', icon:'fa-user', optional:false },
+      { id:'immatriculation', label:'N° d\'immatriculation', type:'text', placeholder:'Ex: CE 123 AB', icon:'fa-car-rear', optional:false },
+      { id:'marque_modele', label:'Marque / Modèle', type:'text', placeholder:'Ex: Toyota Corolla', icon:'fa-car-side', optional:true },
+      { id:'chassis', label:'Numéro de châssis (VIN)', type:'text', placeholder:'Ex: VF3...', icon:'fa-barcode', optional:true },
+      { id:'pays',      label:'Pays émetteur', type:'select', icon:'fa-earth-africa', optional:false,
+        options:['Cameroun','Sénégal','Côte d\'Ivoire','Mali','Gabon','RD Congo','France','Autre…'] },
+      { id:'desc',      label:'Description physique', type:'textarea', placeholder:'Couleur, état, particularités…', icon:'', optional:true },
+    ]
+  },
   autre: {
     label:'Autre document', icon:'fa-folder', color:'#9CA3AF',
     fields:[
@@ -184,6 +196,33 @@ export const DOC_META = {
     ]
   },
 };
+
+/**
+ * Resolves metadata for a document type by ID.
+ * Since selectedDocs contains database IDs, we need to find the corresponding 
+ * document type object to get its code and look up in DOC_META.
+ */
+function getDocMeta(id) {
+  const types = window.allDocumentTypes || [];
+  const t = types.find(type => type.id === id);
+  
+  // Si le type n'est pas trouvé du tout dans l'API, on utilise le type "Autre" par défaut
+  if (!t) return DOC_META.autre;
+  
+  const code = t.code ? t.code.toLowerCase() : '';
+  const meta = DOC_META[code];
+  
+  // Si on a une configuration précise, on l'utilise
+  if (meta) return meta;
+  
+  // Sinon, on utilise la structure de "autre" mais on garde le nom et l'icône de l'API si possible
+  return {
+    ...DOC_META.autre,
+    label: t.nom || DOC_META.autre.label,
+    icon: t.icone ? (t.icone.startsWith('fa-') ? t.icone : `fa-${t.icone}`) : DOC_META.autre.icon,
+    fields: DOC_META.autre.fields
+  };
+}
 
 /* ════ ÉTAT ════ */
 let isThirdParty = false;
@@ -244,10 +283,16 @@ export function initLostDeclaration() {
 
   // Render types (async)
   getActiveDocumentTypes().then(res => {
-    if (res.success) {
+    if (res.success && Array.isArray(res.data) && res.data.length > 0) {
       window.allDocumentTypes = res.data;
       renderDocTypeCards(res.data);
+    } else {
+      console.warn('Document types not available or invalid format:', res.data);
+      window.allDocumentTypes = res.data || [];
     }
+  }).catch(err => {
+    console.error('Failed to load document types:', err);
+    window.allDocumentTypes = [];
   });
 
   // URL params
@@ -260,7 +305,7 @@ export function initLostDeclaration() {
         clearInterval(checkInterval);
         const type = window.allDocumentTypes.find(t => t.code.toLowerCase() === docCode.toLowerCase());
         if (type) {
-          const card = document.querySelector(`.doc-card[onclick*="'${type.id}'"]`);
+          const card = document.querySelector(`.doc-type-card[onclick*="'${type.id}'"]`) || document.querySelector(`.doc-card[onclick*="'${type.id}'"]`);
           if (card) toggleDocType(card, type.id);
         }
       }
@@ -291,18 +336,21 @@ export function initLostDeclaration() {
 }
 
 function renderDocTypeCards(types) {
-  const container = document.querySelector('.grid.grid-cols-2.sm\\:grid-cols-4.gap-3');
-  if (!container) return;
+  const container = document.getElementById('docTypeGrid') || document.querySelector('.grid.grid-cols-2.sm\\:grid-cols-4.gap-3');
+  if (!container) {
+    console.warn('Document type grid container not found');
+    return;
+  }
 
   container.innerHTML = types.map(t => {
     const isSelected = selectedDocs.includes(t.id);
     return `
-      <div class="doc-card ${isSelected ? 'selected' : ''}" onclick="toggleDocType(this, '${t.id}')">
+      <div class="doc-type-card ${isSelected ? 'selected' : ''}" onclick="toggleDocType(this, '${t.id}')">
+        <div class="doc-check"><i class="fa-solid fa-check"></i></div>
         <div class="card-icon">
           <i class="fa-solid fa-${t.icone || 'file-lines'}"></i>
         </div>
         <span class="card-label">${t.nom}</span>
-        <div class="card-check"><i class="fa-solid fa-check"></i></div>
       </div>
     `;
   }).join('');
@@ -350,9 +398,7 @@ function renderSelectionUI(){
   document.getElementById('selText').textContent = count > 1 ? 'documents sélectionnés' : 'document sélectionné';
   
   tags.innerHTML = selectedDocs.map(id => {
-    const t = window.allDocumentTypes.find(type => type.id === id);
-    const code = t ? t.code.toLowerCase() : null;
-    const m = DOC_META[code] || { label: t ? t.nom : 'Document', icon: t ? `fa-${t.icone}` : 'fa-file-lines' };
+    const m = getDocMeta(id);
     
     return `<span class="sel-tag" onclick="removeDoc('${id}')">
       <i class="fa-solid ${m.icon}"></i> ${m.label} <i class="fa-solid fa-xmark"></i>
@@ -377,8 +423,8 @@ function updateRecapSidebar(){
     el.innerHTML='<span style="font-size:11px;color:rgba(255,255,255,.4);font-style:italic;">Aucun sélectionné</span>';
     return;
   }
-  el.innerHTML = selectedDocs.map(type => {
-    const m = DOC_META[type];
+  el.innerHTML = selectedDocs.map(id => {
+    const m = getDocMeta(id);
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,.08);border-radius:10px;">
       <i class="fa-solid ${m.icon}" style="color:#F5A64B;font-size:13px;width:16px;text-align:center;"></i>
       <span style="font-size:11.5px;font-weight:600;color:white;">${m.label}</span>
@@ -388,8 +434,8 @@ function updateRecapSidebar(){
 
 function buildStep2(direction){
   if(selectedDocs.length === 0) return;
-  const type = selectedDocs[activeDocIdx];
-  const meta = DOC_META[type];
+  const id = selectedDocs[activeDocIdx];
+  const meta = getDocMeta(id);
   const total = selectedDocs.length;
 
   document.getElementById('step2Title').textContent = `Détails : ${meta.label}`;
@@ -411,10 +457,9 @@ function buildStep2(direction){
   const tabs = document.getElementById('docTabs');
   if(total > 1){
     tabs.style.display='block';
-    document.getElementById('docTabsInner').innerHTML = selectedDocs.map((t,i) => {
-      const m2 = DOC_META[t];
+    document.getElementById('docTabsInner').innerHTML = selectedDocs.map((id, i) => {
+      const m2 = getDocMeta(id);
       const cls = i < activeDocIdx ? 'done' : (i === activeDocIdx ? 'active' : '');
-      const icon = i < activeDocIdx ? 'fa-check' : `fa-solid ${m2.icon}`;
       return `<button type="button" class="doc-nav-tab ${cls}" onclick="jumpToDoc(${i})">
         <span class="tab-num">${i < activeDocIdx ? '<i class="fa-solid fa-check" style="font-size:8px;"></i>' : (i+1)}</span>
         <i class="fa-solid ${m2.icon}" style="font-size:11px;"></i>
@@ -621,24 +666,63 @@ function fillSummary(){
   const recapDocList = document.getElementById('recapDocList');
   if (recapDocList && selectedDocs.length > 0) {
     recapDocList.innerHTML = selectedDocs
-      .map(doc => `<span style="font-size:11px;color:rgba(255,255,255,.8);">✓ ${DOC_META[doc]?.label || doc}</span>`)
+      .map(id => {
+        const m = getDocMeta(id);
+        return `<span style="font-size:11px;color:rgba(255,255,255,.8);">✓ ${m.label}</span>`;
+      })
       .join('');
   }
 }
 
 function collectDeclarationData(ref) {
-  const docs = selectedDocs.map(key => DOC_META[key].label).join(', ');
+  const documents = selectedDocs.map(id => {
+    const meta = getDocMeta(id);
+    // On essaie de trouver le numéro dans les champs dynamiques (le sélecteur dépend de comment ils sont générés)
+    // Dans buildStep2, les inputs ont des IDs comme 'field_numero_id'
+    const numInput = document.getElementById(`field_numero_${id}`) || 
+                     document.getElementById(`field_document_number_${id}`) ||
+                     document.querySelector(`input[name*="numero"]`) || 
+                     { value: '' };
+                     
+    return {
+      label: meta.label,
+      number: numInput.value || ''
+    };
+  });
+
   const datePerte = document.getElementById('lossDate')?.value || '';
-  let lieu = document.getElementById('ville')?.value || '';
-  const lieuEl = document.querySelector('.place-tag.active');
-  if(lieu && lieuEl) lieu += ` (${lieuEl.textContent.trim()})`;
-  else if(!lieu && lieuEl) lieu = lieuEl.textContent.trim();
+  let ville = document.getElementById('ville')?.value || '';
+  let quartier = document.getElementById('quartier')?.value || '';
+  let lieuPrecis = document.getElementById('lieu_precis')?.value || '';
+  let descriptionLieu = document.getElementById('description_lieu')?.value || '';
+  
+  const lieuTag = document.querySelector('.place-tag.active')?.textContent.trim();
+  
+  let circumstances = `Perte survenue le ${datePerte}`;
+  if (ville) circumstances += ` à ${ville}`;
+  if (quartier) circumstances += ` (Quartier: ${quartier})`;
+  if (lieuPrecis) circumstances += `, lieu précis : ${lieuPrecis}`;
+  if (lieuTag) circumstances += ` [Type de lieu: ${lieuTag}]`;
+  if (descriptionLieu) circumstances += `. Détails additionnels : ${descriptionLieu}`;
+
+  const user = {
+    name: window.USER_SESSION ? `${window.USER_SESSION.prenom || ''} ${window.USER_SESSION.nom || ''}`.trim() : 'Déclarant DocMaster',
+    phone: document.getElementById('contactPhone')?.value || window.USER_SESSION?.telephone || '',
+    email: document.getElementById('contactEmail')?.value || window.USER_SESSION?.email || '',
+    adresse: window.USER_SESSION?.adresse || 'Non renseignée',
+    birthDate: window.USER_SESSION?.date_naissance ? window.USER_SESSION.date_naissance.split('T')[0] : '........',
+    birthPlace: window.USER_SESSION?.lieu_naissance || '........'
+  };
 
   return {
     ref: ref,
-    datePerte: datePerte,
-    documents: docs,
-    lieu: lieu || 'Non précisé',
+    date: new Date().toLocaleDateString('fr-FR'),
+    place: ville || 'Yaoundé',
+    user: user,
+    documents: documents,
+    circumstances: circumstances,
+    datePerte: datePerte, // Pour compatibilité summary
+    lieu: ville // Pour compatibilité summary
   };
 }
 
@@ -689,7 +773,7 @@ async function validateAndSubmit() {
     }
     
     const inputs = container.querySelectorAll('input, select, textarea');
-    const docMeta = DOC_META[docKey];
+    const docMeta = getDocMeta(docId);
     
     // Créer une map des inputs par ID
     const inputsMap = {};
@@ -847,11 +931,14 @@ async function validateAndSubmit() {
     console.groupEnd();
 
     if (result.success) {
+      const refNum = result.data?.data?.identifiant_doc_dm || result.data?.id || 'DOC-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      
+      // Sauvegarder les données pour le PDF
+      lastDeclarationData = collectDeclarationData(refNum);
+      
       closeConfirmModal();
-      const refNum = result.data?.data?.identifiant_doc_dm || result.data?.id || 'DOC-SUCCESS';
       document.getElementById('refNumber').textContent = refNum;
       document.getElementById('successOverlay').classList.add('show');
-      alert('✅ Déclaration envoyée avec succès!');
       
       // Effacer le brouillon après succès
       clearDeclarationDraft();
@@ -885,5 +972,15 @@ async function validateAndSubmit() {
 }
 
 function downloadDeclarationPdf() {
-  alert('Téléchargement du récépissé de déclaration...');
+  if (!lastDeclarationData) {
+    alert("Erreur: Données de déclaration introuvables.");
+    return;
+  }
+
+  if (typeof window.generateSwornStatementPdf === 'function') {
+    window.generateSwornStatementPdf(lastDeclarationData);
+  } else {
+    alert("Le générateur de PDF n'est pas encore prêt. Veuillez patienter.");
+    console.error("generateSwornStatementPdf is not defined on window");
+  }
 }

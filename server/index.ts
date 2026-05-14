@@ -25,6 +25,8 @@ import claimRoutes from "./src/routes/claim.routes.ts";
 import paymentRoutes from "./src/routes/payment.routes.ts";
 import referralRoutes from "./src/routes/referral.routes.ts";
 import documentTypeRoutes from "./src/routes/document-type.routes.ts";
+import settingRoutes from "./src/routes/setting.routes.ts";
+import withdrawalRoutes from "./src/routes/withdrawal.routes.ts";
 
 // Load environment variables
 dotenv.config();
@@ -182,6 +184,8 @@ export function createApp(): Application {
   app.use("/api/payments", paymentRoutes);
   app.use("/api/referrals", referralRoutes);
   app.use("/api/document-types", documentTypeRoutes);
+  app.use("/api/settings", settingRoutes);
+  app.use("/api/withdrawals", withdrawalRoutes);
 
   // ═════════════════════════════════════════════════════════════════
   // ERROR HANDLING - 404 Handler

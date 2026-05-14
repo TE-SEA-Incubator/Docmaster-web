@@ -11,6 +11,8 @@ import {
   registerUser as apiRegister,
   logout as apiLogout,
   updateProfile as apiUpdateProfile,
+  requestPasswordReset as apiRequestReset,
+  resetPassword as apiResetPassword,
 } from './api.js';
 
 // Import utility functions
@@ -35,6 +37,33 @@ import {
   showErrorModal,
   showSuccessModal,
 } from '../utils/index.js';
+
+/**
+ * Generate pseudo suggestions based on name
+ */
+export function generateSuggestions(prefix) {
+  const nom = document.getElementById(`${prefix}-nom`)?.value.trim() || '';
+  const prenom = document.getElementById(`${prefix}-prenom`)?.value.trim() || '';
+  
+  if (!nom && !prenom) return;
+  
+  const base = (prenom + nom).toLowerCase().replace(/\s+/g, '');
+  const suggestions = [
+    base,
+    `${base}${Math.floor(Math.random() * 99)}`,
+    `${prenom.toLowerCase()}_${nom.toLowerCase()}`,
+    `${nom.toLowerCase()}${prenom.charAt(0).toLowerCase()}${new Date().getFullYear()}`
+  ];
+  
+  const container = document.getElementById(`${prefix}-suggestions`);
+  if (container) {
+    container.innerHTML = suggestions.map(s => `
+      <button type="button" onclick="selectPseudo('${prefix}', '${s}', this)" class="pseudo-chip px-3 py-1.5 rounded-full border border-borderMain text-[11px] font-bold text-textMuted hover:border-primary hover:text-primary transition-all">
+        @${s}
+      </button>
+    `).join('');
+  }
+}
 
 const AUTH_KEY = "docmaster_user_session";
 const AUTH_TOKEN_KEY = "docmaster_jwt_token";
@@ -124,7 +153,7 @@ async function login(email, password) {
 /**
  * Register - Create new user account
  */
-async function register(nom, prenom, email, password, telephone = null, pays = 'Cameroun', ville = 'Yaoundé') {
+async function register(nom, prenom, email, password, telephone = null, pays = 'Cameroun', ville = 'Yaoundé', codeParrainage = null, is_verified = false) {
   try {
     if (!nom || !prenom || !email || !password) {
       const message = "Le nom, prénom, email et mot de passe sont requis.";
@@ -140,22 +169,33 @@ async function register(nom, prenom, email, password, telephone = null, pays = '
       telephone,
       pays,
       ville,
+      code_parrainage: codeParrainage,
+      is_verified,
     });
 
     if (result.success) {
-      const { user, code_invitation } = result.data;
+      const { user, token, code_invitation } = result.data;
       console.log("✓ Inscription réussie. Code d'invitation:", code_invitation);
+      
+      // Auto-login if token is provided
+      if (token) {
+        saveSession(user, token);
+        localStorage.setItem('docmaster_is_new_user', 'true');
+      }
+
       showSuccessModal(
         "Inscription réussie! ✓",
-        `Bienvenue ${nom}!\n\nVotre code d'invitation: ${code_invitation}\n\nVous allez être redirigé vers la connexion.`,
-        3000
+        `Bienvenue ${prenom || nom}!\n\nVotre code d'invitation: ${code_invitation}\n\nConnexion automatique en cours...`,
+        2500
       );
+
       return {
         success: true,
         user: {
           ...user,
           initial: getInitials(user.nom, user.prenom),
         },
+        token,
         code_invitation,
       };
     } else {
@@ -237,18 +277,40 @@ function checkAuth() {
   const isPublicPage = publicPages.includes(currentPage);
 
   if (session && token) {
-    console.log("👤 Utilisateur connecté:", session.email);
+    console.log("👤 Utilisateur connecté:", session.email, "Rôle:", session.role);
     updateUI(session);
     markActiveSidebarLocal();
 
+    const isAdmin = session.role && session.role.toUpperCase() === 'ADMIN';
+    const isInsideAdmin = window.location.pathname.includes('/admin/');
+
+    // Auto-redirect Admin to their dashboard if they are on user pages
+    if (isAdmin && !isInsideAdmin && !isPublicPage) {
+      console.log("⚡ Redirection Admin vers Dashboard Admin...");
+      window.location.href = "/admin/dashboard.html";
+      return;
+    }
+
+    // Auto-redirect regular users AWAY from admin pages
+    if (!isAdmin && isInsideAdmin) {
+      console.log("🚫 Accès refusé: Redirection vers Dashboard Utilisateur...");
+      window.location.href = "/dashboard.html";
+      return;
+    }
+
     // Redirect to dashboard if on login page
     if (isLoginPage) {
-      window.location.href = "/dashboard.html";
+      if (isAdmin) {
+        window.location.href = "/admin/dashboard.html";
+      } else {
+        window.location.href = "/dashboard.html";
+      }
     }
   } else {
     console.log("👤 Aucun utilisateur connecté.");
     
     // Redirect to login if on protected page
+    const isInsideAdmin = window.location.pathname.includes('/admin/');
     if (!isPublicPage && !isLoginPage) {
       window.location.href = "/login.html";
     }
@@ -363,6 +425,7 @@ window.login = login;
 window.register = register;
 window.logout = logout;
 window.checkAuth = checkAuth;
+window.getSession = getSession;
 
 // UI helpers
 window.switchTab = switchTab;
@@ -418,8 +481,12 @@ document.querySelectorAll(".form-login").forEach((form) => {
 
       if (result.success) {
         console.log("✓ Connexion réussie!");
-        // We still redirect to dashboard, but we ensure it's handled via JS
-        window.location.href = "/dashboard.html";
+        const isAdmin = result.user && result.user.role && result.user.role.toUpperCase() === 'ADMIN';
+        if (isAdmin) {
+          window.location.href = "/admin/dashboard.html";
+        } else {
+          window.location.href = "/dashboard.html";
+        }
       }
     } catch (err) {
       if (submitBtn) stopButtonLoader(submitBtn);
@@ -470,10 +537,10 @@ document.querySelectorAll(".form-register").forEach((form) => {
       if (submitBtn) stopButtonLoader(submitBtn);
 
       if (result.success) {
-        console.log("✓ Inscription réussie! Code d'invitation:", result.code_invitation);
+        console.log("✓ Inscription réussie! Redirection vers le dashboard...");
         setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 3500);
+          window.location.href = "/dashboard.html";
+        }, 2500);
       }
     } catch (err) {
       if (submitBtn) stopButtonLoader(submitBtn);
@@ -501,6 +568,108 @@ document.querySelectorAll(".sb-item").forEach((a) => {
 
 window.handleUpdateProfile = handleUpdateProfile;
 window.updateUI = updateUI;
+window.switchTab = switchTab;
+window.togglePw = togglePw;
+window.checkStrength = checkStrength;
+window.checkMatch = checkMatch;
+window.checkPseudo = checkPseudo;
+window.selectPseudo = selectPseudo;
+window.toggleReferral = toggleReferral;
+window.generateSuggestions = generateSuggestions;
+window.resendPin = resendPin;
+window.nextStep = nextStep;
+window.prevStep = prevStep;
+window.submitRegister = submitRegister;
+
+/**
+ * Open Forgot Password Modal
+ */
+export function openForgotModal() {
+  const modal = document.getElementById('forgot_modal');
+  if (modal) modal.showModal();
+}
+
+/**
+ * Handle Forgot Password Form Submission
+ */
+export async function handleForgotPassword(event) {
+  event.preventDefault();
+  const emailInput = document.getElementById('forgot-email');
+  const btn = document.getElementById('btn-forgot-submit');
+  
+  if (!emailInput?.value) return;
+
+  startButtonLoader(btn);
+  
+  const result = await apiRequestReset(emailInput.value);
+  
+  stopButtonLoader(btn);
+  
+  if (result.success) {
+    const modal = document.getElementById('forgot_modal');
+    if (modal) modal.close();
+    
+    // In dev mode, we show the token for convenience
+    const message = result.data.token 
+      ? `Un lien de réinitialisation a été généré. (Dev Mode Token: ${result.data.token})` 
+      : 'Un lien de réinitialisation a été envoyé à votre adresse email.';
+      
+    showSuccessModal(message);
+    
+    // For testing/dev purposes, if token exists, we could redirect to reset page
+    if (result.data.token) {
+      setTimeout(() => {
+        if(confirm("Voulez-vous aller à la page de réinitialisation avec ce token ?")) {
+          window.location.href = `/reset-password.html?token=${result.data.token}`;
+        }
+      }, 2000);
+    }
+  } else {
+    showErrorModal(result.message);
+  }
+}
+
+/**
+ * Handle Reset Password Form Submission
+ */
+export async function handleResetPassword(event) {
+  event.preventDefault();
+  const passwordInput = document.getElementById('new-password');
+  const confirmInput = document.getElementById('confirm-password');
+  const btn = document.getElementById('btn-reset-submit');
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+
+  if (!token) {
+    showErrorModal("Token de réinitialisation manquant.");
+    return;
+  }
+
+  if (passwordInput.value !== confirmInput.value) {
+    showErrorModal("Les mots de passe ne correspondent pas.");
+    return;
+  }
+
+  startButtonLoader(btn);
+  
+  const result = await apiResetPassword(token, passwordInput.value);
+  
+  stopButtonLoader(btn);
+  
+  if (result.success) {
+    showSuccessModal("Votre mot de passe a été réinitialisé avec succès.");
+    setTimeout(() => {
+      window.location.href = "/login.html";
+    }, 2000);
+  } else {
+    showErrorModal(result.message);
+  }
+}
+
+window.handleForgotPassword = handleForgotPassword;
+window.handleResetPassword = handleResetPassword;
+window.openForgotModal = openForgotModal;
 
 // Initialize auth
 checkAuth();

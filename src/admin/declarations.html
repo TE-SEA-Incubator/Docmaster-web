@@ -6,103 +6,62 @@
     <title>Admin DocMaster — Déclarations</title>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/input.css">
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* ── DocMaster theme overrides ── */
-        [data-theme="light"] {
-            --color-primary: oklch(73.5% 0.155 59.5);       /* #F5A64B */
-            --color-primary-content: oklch(98% 0 0);
-            --color-base-100: #F4EFE6;
-            --color-base-200: #EAE3D8;
-            --color-base-300: #DDD5C8;
-            --color-base-content: #1a1a1a;
+        :root {
+            --gray-50:  #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-400: #9ca3af;
+            --gray-600: #6b7280;
+            --gray-900: #111827;
+            --accent:       #F5A64B;
+            --accent-dark:  #D48D3B;
+            --accent-light: #FFF9F0;
         }
 
-        body { font-family: 'Poppins', sans-serif; }
-        .font-bricolage { font-family: 'Bricolage Grotesque', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #fff; color: var(--gray-900); margin: 0; display: flex; height: 100vh; }
 
-        /* ── Custom Sidebar ── */
-        .admin-sidebar {
-            width: 260px;
-            background: #1e3a2f;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-            z-index: 100;
-        }
+        /* Sidebar */
+        .sidebar { width: 240px; background: #1E312B; border-right: none; height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; color: #fff; }
+        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; }
+        .logo-area span { font-weight: 600; font-size: 0.9375rem; color: #fff; }
+        .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 0.8125rem; font-weight: 500; text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
+        .nav-link i { width: 16px; text-align: center; }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .nav-link.active { background: var(--accent); color: #fff; }
 
-        .sidebar-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        /* Override DaisyUI menu for dark sidebar context */
-        .admin-sidebar .menu li > a {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.8125rem;
-            font-weight: 500;
-            border-radius: 8px;
-            gap: 10px;
-            transition: all 0.15s;
-        }
-        .admin-sidebar .menu li > a:hover {
-            background: rgba(255,255,255,0.06);
-            color: white;
-        }
-        .admin-sidebar .menu li > a.active {
-            background: #F5A64B;
-            color: white;
-        }
-        .admin-sidebar .menu li > a.text-red-400 {
-            color: #f87171;
-        }
-        .admin-sidebar .menu li > a.text-red-400:hover {
-            background: rgba(248,113,113,0.1);
-            color: #fca5a5;
-        }
-
-        /* Scrollbar */
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #DDD5C8; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-
+        /* Main */
+        .main { flex: 1; overflow-y: auto; padding: 2rem 3rem; }
+        .page-header { margin-bottom: 2rem; }
+        .page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+        .page-header p { font-size: 0.875rem; color: var(--gray-600); margin-top: 4px; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden bg-base-100">
-  <script type="module" src="/js/utils/ui-helpers.js"></script>
-
-    <!-- ── Sidebar ── -->
-    <aside class="admin-sidebar">
-        <div class="sidebar-header flex items-center gap-3">
-            <img src="../assets/images/logo.png" alt="Logo" class="h-8 w-auto">
-            <span class="font-bricolage font-extrabold text-lg tracking-tight text-white">Admin Panel</span>
-        </div>
-
-        <nav class="flex-1 p-3 flex flex-col">
-            <ul class="menu gap-1 flex-1">
-                <li><a href="dashboard.html"><i class="fa-solid fa-gauge-high w-4"></i> Vue d'ensemble</a></li>
-                <li><a href="users.html"><i class="fa-solid fa-users w-4"></i> Utilisateurs</a></li>
-                <li><a href="document-types.html"><i class="fa-solid fa-file-invoice w-4"></i> Types de Documents</a></li>
-                <li><a href="subscriptions.html"><i class="fa-solid fa-crown w-4"></i> Abonnements</a></li>
-                <li><a href="transactions.html"><i class="fa-solid fa-receipt w-4"></i> Transactions</a></li>
-                <li><a href="referrals.html"><i class="fa-solid fa-user-friends w-4"></i> Parrainages</a></li>
-                <li><a href="declarations.html" class="active"><i class="fa-solid fa-folder-open w-4"></i> Déclarations</a></li>
-                <li><a href="settings.html"><i class="fa-solid fa-gear w-4"></i> Paramètres</a></li>
-            </ul>
-
-            <div class="border-t border-white/10 pt-3 mt-3">
-                <ul class="menu gap-1">
-                    <li><a href="../dashboard.html"><i class="fa-solid fa-arrow-left w-4"></i> Retour au site</a></li>
-                    <li><a href="#" class="text-red-400"><i class="fa-solid fa-right-from-bracket w-4"></i> Déconnexion</a></li>
-                </ul>
-            </div>
+<body>
+    <aside class="sidebar">
+        <div class="logo-area"><img src="../assets/images/logo.png" alt="Logo" class="h-6"><span>Admin Panel</span></div>
+        <nav class="flex-1">
+            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Vue d'ensemble</a>
+            <a href="users.html" class="nav-link"><i class="fa-solid fa-users"></i> Utilisateurs</a>
+            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-invoice"></i> Documents</a>
+            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-crown"></i> Abonnements</a>
+            <a href="transactions.html" class="nav-link"><i class="fa-solid fa-receipt"></i> Transactions</a>
+            <a href="referrals.html" class="nav-link"><i class="fa-solid fa-user-friends"></i> Parrainages</a>
+            <a href="declarations.html" class="nav-link active"><i class="fa-solid fa-folder-open"></i> Déclarations</a>
+            <a href="withdrawals.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i> Retraits</a>
+            <a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Paramètres</a>
         </nav>
+        <div class="mt-auto pt-4 border-t border-white/10">
+            <a href="#" id="adminLogout" class="nav-link text-red-400 hover:text-red-300">
+                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+            </a>
+        </div>
     </aside>
 
-    <!-- ── Main ── -->
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <main class="main">
 
         <!-- Top bar -->
         <div class="navbar bg-white border-b border-base-200 px-8 min-h-[64px] flex-shrink-0">
@@ -158,6 +117,8 @@
 
         </div>
     </div>
+
+    </main>
 
     <!-- Scripts -->
     <script type="module">
@@ -249,8 +210,8 @@
                     <td class="font-semibold text-sm">${d.doc_type}</td>
                     <td class="text-sm">${d.owner_name || 'N/A'}</td>
                     <td>
-                        <span class="badge ${d.type === 'LOST' ? 'badge-error' : 'badge-primary'} badge-sm text-white">
-                            ${d.type === 'LOST' ? 'Perdu' : 'Trouvé'}
+                        <span class="badge ${d.declaration_type === 'LOST' ? 'badge-error' : 'badge-primary'} badge-sm text-white">
+                            ${d.declaration_type === 'LOST' ? 'Perdu' : 'Trouvé'}
                         </span>
                     </td>
                     <td>${getStatusBadge(d.status)}</td>

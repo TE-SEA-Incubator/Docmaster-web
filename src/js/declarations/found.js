@@ -9,6 +9,9 @@ import { createFoundDeclaration, getActiveDocumentTypes } from '../services/api.
 let selectedType = null;
 const tags = [];
 let currentStep = 1;
+let map = null;
+let marker = null;
+let selectedLocation = null;
 
 // Metadata for document types (will be loaded from API)
 let DOC_TYPES = [];
@@ -35,7 +38,7 @@ function renderDocTypes() {
           <i class="fa-solid fa-${d.icone || 'file-lines'} ${iconCls} text-lg"></i>
         </div>
         <div class="text-[12px] font-bold text-textMain">${d.nom}</div>
-        <div class="text-[10px] text-textMuted mt-0.5">${d.prix_retrouvaille.toLocaleString()} XAF</div>
+      
       </button>
     `;
     
@@ -55,7 +58,13 @@ export function initFoundDeclaration() {
   window.handleTag = handleTag;
   window.removeTag = removeTag;
   window.selectReward = selectReward;
-  window.simulateMapClick = simulateMapClick;
+  window.searchLocation = searchLocation;
+  
+  // Real-time search setup
+  const searchInput = document.getElementById('map-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', debounce(() => searchLocation(), 400));
+  }
   
   // File previews
   window.fileChg = fileChg;
@@ -65,10 +74,16 @@ export function initFoundDeclaration() {
 
   // Render types (async)
   getActiveDocumentTypes().then(res => {
-    if (res.success) {
+    if (res.success && Array.isArray(res.data) && res.data.length > 0) {
       DOC_TYPES = res.data;
       renderDocTypes();
+    } else {
+      console.warn('Document types not available or invalid format:', res.data);
+      DOC_TYPES = res.data || [];
     }
+  }).catch(err => {
+    console.error('Failed to load document types:', err);
+    DOC_TYPES = [];
   });
 
   // Defaults
@@ -116,6 +131,9 @@ function goToStep(n) {
   }
   
   currentStep = n;
+  if (n === 3) {
+    setTimeout(initInlineMap, 100);
+  }
   if (n === 5) fillRecap();
   
   const panelArea = document.getElementById("panel-area");
@@ -291,6 +309,11 @@ async function submitDeclaration() {
   const fileExtra1 = document.getElementById('file-extra1').files[0];
   if (fileExtra1) formData.append('photo_verso', fileExtra1);
 
+  // Map Location
+  if (selectedLocation) {
+    formData.append('found_location', JSON.stringify(selectedLocation));
+  }
+
   // Progress animation simulation (actual upload progress is harder without axios/xhr hooks here, but let's keep the UI alive)
   let p = 0;
   const interval = setInterval(() => {
@@ -336,21 +359,185 @@ async function submitDeclaration() {
 }
 
 /**
- * Placeholder for map logic
+ * Map Integration Logic (Inline)
  */
-function simulateMapClick() {
-  const mapBtn = document.getElementById("map-btn");
-  if (mapBtn) {
-    mapBtn.innerHTML = `
-      <i class="fa-solid fa-location-dot text-green-mid text-3xl"></i>
-      <div class="text-center">
-        <p class="text-[13px] font-bold text-green-mid">📍 Lieu sélectionné</p>
-        <p class="text-[11px] text-textMuted">Cliquez pour repositionner</p>
-      </div>`;
+function initInlineMap() {
+  if (map) {
+    // Already initialized, just refresh layout
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
+    return;
+  }
+
+  const mapContainer = document.getElementById('map-inline-container');
+  if (!mapContainer) return;
+
+  // Default coordinates (Douala, Cameroon)
+  const lat = 4.0511;
+  const lng = 9.7679;
+
+  // Initialize Map
+  map = L.map('map-inline-container', {
+    zoomControl: false, // Custom position below
+    attributionControl: false
+  }).setView([lat, lng], 14);
+
+  // Google Maps Style Tiles (Roadmap with POIs and Businesses)
+  L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+  }).addTo(map);
+
+  // Reposition zoom control
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  // Add Marker
+  marker = L.marker([lat, lng], { 
+    draggable: true,
+    icon: L.icon({
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41]
+    })
+  }).addTo(map);
+
+  // Map Click Logic
+  map.on('click', (e) => {
+    marker.setLatLng(e.latlng);
+    updateSelection(e.latlng);
+  });
+
+  // Marker Drag Logic
+  marker.on('dragend', () => {
+    updateSelection(marker.getLatLng());
+  });
+
+  // Initial selection
+  updateSelection({ lat, lng });
+
+  // Hide loader
+  const loader = document.getElementById('map-loader');
+  if (loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => loader.classList.add('hidden'), 500);
   }
 }
 
-// Global exposure for non-module scripts if needed
+/**
+ * Update selection state and UI
+ */
+async function updateSelection(latlng) {
+  selectedLocation = {
+    lat: latlng.lat,
+    long: latlng.lng,
+    city: ''
+  };
+
+  // Update floating badge
+  const badge = document.getElementById('location-badge');
+  const coordsText = document.getElementById('selected-coords-text');
+  const addrText = document.getElementById('selected-address-text');
+  
+  if (badge) badge.classList.remove('hidden');
+  if (coordsText) coordsText.textContent = `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+  
+  // Reverse Geocode
+  if (addrText) addrText.textContent = 'Identification du lieu...';
+  
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&zoom=18&addressdetails=1`);
+    const data = await res.json();
+    
+    const city = data.address.city || data.address.town || data.address.village || data.address.suburb || document.getElementById('lieu-adresse')?.value || 'Cameroun';
+    const address = data.display_name ? data.display_name.split(',').slice(0, 2).join(',') : city;
+    
+    if (addrText) addrText.textContent = address;
+    selectedLocation.city = city;
+    
+    // Auto-fill input if empty
+    const cityInput = document.getElementById('lieu-adresse');
+    if (cityInput && !cityInput.value) cityInput.value = city;
+  } catch (err) {
+    if (addrText) addrText.textContent = 'Lieu sélectionné';
+    selectedLocation.city = document.getElementById('lieu-adresse')?.value || 'Cameroun';
+  }
+}
+
+/**
+ * Search Location with Nominatim
+ */
+async function searchLocation() {
+  const input = document.getElementById('map-search-input');
+  const query = input?.value.trim();
+  if (!query) return;
+
+  const resultsBox = document.getElementById('map-search-results');
+  resultsBox.innerHTML = '<div class="p-3 text-[12px] text-textMuted italic flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin"></i> Recherche...</div>';
+  resultsBox.classList.remove('hidden');
+
+  try {
+    // Search restricted to Cameroon (countrycodes=cm)
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=cm&limit=5`);
+    const data = await res.json();
+    
+    if (data.length === 0) {
+      resultsBox.innerHTML = '<div class="p-3 text-[12px] text-red-500 italic">Aucun résultat trouvé au Cameroun.</div>';
+      return;
+    }
+
+    resultsBox.innerHTML = data.map(item => `
+      <div class="p-3 hover:bg-surface2 cursor-pointer border-b border-borderMain last:border-0 transition-colors" 
+           onclick="selectSearchResult(${item.lat}, ${item.lon}, '${item.display_name.replace(/'/g, "\\'")}')">
+        <div class="text-[12.5px] font-bold text-textMain truncate">${item.display_name.split(',')[0]}</div>
+        <div class="text-[11px] text-textMuted truncate">${item.display_name.split(',').slice(1).join(',')}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    resultsBox.innerHTML = '<div class="p-3 text-[12px] text-red-500 italic">Erreur de connexion.</div>';
+  }
+}
+
+/**
+ * Handle search result selection
+ */
+window.selectSearchResult = (lat, lon, displayName) => {
+  const latlng = { lat: parseFloat(lat), lng: parseFloat(lon) };
+  map.setView(latlng, 16);
+  marker.setLatLng(latlng);
+  updateSelection(latlng);
+  
+  document.getElementById('map-search-results').classList.add('hidden');
+  document.getElementById('map-search-input').value = displayName.split(',')[0];
+};
+
+/**
+ * Debounce helper
+ */
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Helper: Close search results on outside click
+document.addEventListener('click', (e) => {
+  const box = document.getElementById('map-search-results');
+  const input = document.getElementById('map-search-input');
+  if (box && !box.contains(e.target) && e.target !== input) {
+    box.classList.add('hidden');
+  }
+});
+
+// Global Exposure
+window.searchLocation = searchLocation;
 window.copyRef = function() {
   const ref = document.getElementById("decl-ref").textContent;
   navigator.clipboard.writeText(ref).then(() => alert("Référence copiée !"));

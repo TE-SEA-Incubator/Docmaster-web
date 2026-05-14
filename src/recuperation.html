@@ -9,7 +9,10 @@
     href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="./css/input.css" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module" src="/js/services/auth.js"></script>
   <script type="module" src="/js/services/recovery.js"></script>
   <script src="./js/ui/sidebar.js"></script>
@@ -130,6 +133,29 @@
     /* Progress */
     .progress-track { background: rgba(255,255,255,0.15); border-radius: 99px; height: 6px; overflow: hidden; }
     .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #22c55e, #F5A64B); transition: width 1.2s ease; }
+    /* Marker pulse */
+    @keyframes map-pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:.6} }
+    .owner-marker-pulse { animation: map-pulse 1.6s infinite; }
+    /* Route ETA badge */
+    .eta-badge { backdrop-filter: blur(12px); background: rgba(255,255,255,0.94); }
+    /* Map fullscreen */
+    #finder-map-section.map-fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 9999 !important;
+      margin: 0 !important;
+      border-radius: 0 !important;
+    }
+    #finder-map-section.map-fullscreen > div {
+      height: 100% !important;
+      border-radius: 0 !important;
+    }
+    #finder-map-section.map-fullscreen #finder-route-map {
+      height: calc(100vh - 116px) !important;
+    }
+    #finder-map-section.map-fullscreen .map-bottom-bar {
+      border-radius: 0 !important;
+    }
   </style>
 </head>
 
@@ -266,22 +292,27 @@
                <div class="bg-white rounded-[28px] border border-borderMain p-6 shadow-sm">
                   <h4 class="text-[11px] font-bold text-textMuted uppercase tracking-widest mb-6">Informations du bienfaiteur</h4>
                   <div class="flex items-center gap-5 mb-6">
-                    <div class="w-14 h-14 rounded-full bg-green-dark border-4 border-green-light flex items-center justify-center font-bricolage text-xl font-bold text-primary shadow-lg">AD</div>
-                    <div class="blur-info transition-all duration-1000" id="finderInfoBlur">
-                      <p class="text-[16px] font-bold text-green-dark">Amadou Djibril</p>
+                    <div class="w-14 h-14 rounded-full bg-green-dark border-4 border-green-light flex items-center justify-center font-bricolage text-xl font-bold text-primary shadow-lg" id="finderAvatar">AD</div>
+                    <div class="transition-all duration-700" id="finderInfoBlur" style="filter:blur(4.5px);user-select:none">
+                      <p class="text-[16px] font-bold text-green-dark" id="finderName" data-real="Amadou Djibril">••••••••••</p>
                       <div class="flex items-center gap-1.5 text-textMuted text-[12px] mt-0.5">
-                        <i class="fa-solid fa-star text-primary text-[10px]"></i> 4.9 (15 remises)
+                        <i class="fa-solid fa-star text-primary text-[10px]"></i>
+                        <span>4.9</span><span class="text-textMuted">(15 remises)</span>
                       </div>
                     </div>
                   </div>
                   <div class="space-y-3">
                     <div class="p-3 bg-surface2 rounded-xl border border-borderMain flex items-center justify-between">
-                       <span class="text-[12px] text-textMuted">Contact direct</span>
-                       <div class="blur-info font-bold text-textMain text-[13px]" id="finderContactBlur">+237 6•• •• •• ••</div>
+                       <span class="text-[12px] text-textMuted flex items-center gap-2"><i class="fa-solid fa-phone text-primary text-[10px]"></i> Contact direct</span>
+                       <div class="transition-all duration-700" id="finderContactBlur" style="filter:blur(4.5px);user-select:none" data-real="+237 6 71 23 45 67">
+                         <span class="font-bold text-textMain text-[13px]">+237 6•• •• •• ••</span>
+                       </div>
                     </div>
                     <div class="p-3 bg-surface2 rounded-xl border border-borderMain flex items-center justify-between">
-                       <span class="text-[12px] text-textMuted">Localisation</span>
-                       <div class="blur-info font-bold text-textMain text-[13px]" id="finderLocBlur">Damas, Yaoundé</div>
+                       <span class="text-[12px] text-textMuted flex items-center gap-2"><i class="fa-solid fa-location-dot text-primary text-[10px]"></i> Localisation</span>
+                       <div class="transition-all duration-700" id="finderLocBlur" style="filter:blur(4.5px);user-select:none" data-real="Damas, Yaoundé">
+                         <span class="font-bold text-textMain text-[13px]">••••••••</span>
+                       </div>
                     </div>
                   </div>
                </div>
@@ -297,6 +328,76 @@
                   </p>
                </div>
             </div>
+
+            <!-- ══ YANGO MAP SECTION ══ -->
+            <div id="finder-map-section" class="mt-6">
+              <div class="bg-white rounded-[28px] border border-borderMain overflow-hidden shadow-lg">
+                <!-- Header -->
+                <div class="px-6 py-4 border-b border-borderMain flex items-center justify-between bg-surface2/60">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
+                      <i class="fa-solid fa-route text-white text-sm"></i>
+                    </div>
+                    <div>
+                      <p class="text-[13px] font-bold text-textMain">Itinéraire vers le trouveur</p>
+                      <p class="text-[11px] text-textMuted" id="map-status-text">Calcul de l'itinéraire...</p>
+                    </div>
+                  </div>
+                   <!-- Live dot + fullscreen btn -->
+                  <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 text-green-600 text-[11px] font-bold">
+                      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> En direct
+                    </div>
+                    <button onclick="toggleMapFullscreen()" id="map-fs-btn"
+                      class="w-9 h-9 rounded-xl bg-surface2 border border-borderMain flex items-center justify-center text-textMuted hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all ml-1"
+                      title="Plein écran">
+                      <i class="fa-solid fa-expand text-[13px]" id="map-fs-icon"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Map -->
+                <div class="relative">
+                  <div id="finder-route-map" class="w-full" style="height:500px;"></div>
+
+                  <!-- ETA Badge (overlaid on map bottom) -->
+                  <div id="eta-badge" class="eta-badge hidden absolute bottom-3 left-3 right-3 rounded-2xl border border-borderMain shadow-xl p-3 flex items-center gap-4 z-[1000]">
+                    <div class="flex-1 flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-car text-blue-600 text-sm"></i>
+                      </div>
+                      <div>
+                        <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider">Temps estimé</p>
+                        <p class="text-[15px] font-black text-textMain" id="eta-time">—</p>
+                      </div>
+                    </div>
+                    <div class="w-px h-10 bg-borderMain"></div>
+                    <div class="flex-1">
+                      <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider">Distance</p>
+                      <p class="text-[15px] font-black text-textMain" id="eta-dist">—</p>
+                    </div>
+                    <div class="w-px h-10 bg-borderMain"></div>
+                    <!-- Call CTA -->
+                    <a id="finder-call-btn" href="tel:+237671234567" class="flex-shrink-0 w-10 h-10 rounded-xl bg-green-dark flex items-center justify-center shadow-md hover:bg-green-mid transition-all">
+                      <i class="fa-solid fa-phone text-white text-sm"></i>
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Bottom action -->
+                <div class="map-bottom-bar px-6 py-4 border-t border-borderMain flex items-center gap-3 bg-white">
+                  <a id="finder-whatsapp-btn" href="https://wa.me/237671234567" target="_blank"
+                     class="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 hover:bg-green-600 transition-all">
+                    <i class="fa-brands fa-whatsapp text-base"></i> WhatsApp
+                  </a>
+                  <a id="finder-maps-btn" href="#" target="_blank"
+                     class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 hover:bg-blue-700 transition-all">
+                    <i class="fa-solid fa-diamond-turn-right text-base"></i> Naviguer
+                  </a>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           <!-- Right col: Sticky Action Column (Payment Always Visible) -->
@@ -640,7 +741,16 @@
   </div>
 
   <script>
-    // ── Logic Toggle Perspersctive ───────────────────────────────────────
+    // ── Map state (populated dynamically from DB) ───────────────────────────
+    window.FINDER_LAT   = 3.8615;
+    window.FINDER_LNG   = 11.5174;
+    window.FINDER_PHONE = '+237671234567';
+    window.FINDER_NAME  = 'Amadou Djibril';
+    window.FINDER_CITY  = 'Damas, Yaoundé';
+    let finderMap      = null;
+    let mapIsFullscreen = false;
+
+    // ── Logic Toggle Perspective ───────────────────────────────────────────
     function setView(view) {
         const owner = document.getElementById('viewOwner');
         const finder = document.getElementById('viewFinder');
@@ -709,46 +819,162 @@
         }, 2000);
     }
 
+
     function finishOwnerProcess() {
         const actionPanel = document.getElementById('ownerActionPanel');
         const successPanel = document.getElementById('ownerSuccessPanel');
-        const lock = document.getElementById('ownerLockOverlay');
-        const preview = document.getElementById('docPreviewOwner');
-        const finderInf = document.getElementById('finderInfoBlur');
-        const finderLoc = document.getElementById('finderLocBlur');
-        const finderCon = document.getElementById('finderContactBlur');
 
-        // Update UI
+        // Swap panels
         actionPanel.classList.add('hidden');
         successPanel.classList.remove('hidden');
-        
-        // Reveal info
-        if(lock) {
-            lock.classList.add('opacity-0');
-            setTimeout(() => lock.remove(), 700);
+
+        // ── Reveal Finder Info ─────────────────────────────────────────────
+        const revealEl = (id, realText) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.filter = 'blur(0)';
+            el.classList.add('revealed');
+            el.style.userSelect = 'auto';
+            if (realText) el.innerHTML = `<span class="font-bold text-textMain text-[13px]">${realText}</span>`;
+        };
+
+        // Name
+        const nameEl = document.getElementById('finderName');
+        if (nameEl) { 
+            nameEl.textContent = window.FINDER_NAME;
+            nameEl.classList.add('revealed');
         }
-        if(preview) preview.classList.add('revealed');
-        if(finderInf) finderInf.classList.add('revealed');
-        if(finderLoc) finderLoc.classList.add('revealed');
-        if(finderCon) finderCon.classList.add('revealed');
-        
-        // Update Timeline
+        document.getElementById('finderInfoBlur').style.filter = 'blur(0)';
+
+        // Contact & Location
+        revealEl('finderContactBlur', window.FINDER_PHONE);
+        revealEl('finderLocBlur', window.FINDER_CITY);
+
+        // Update WhatsApp / Call links
+        document.getElementById('finder-call-btn').href = `tel:${window.FINDER_PHONE}`;
+        document.getElementById('finder-whatsapp-btn').href = `https://wa.me/${window.FINDER_PHONE.replace(/\D/g,'')}`;
+        document.getElementById('finder-maps-btn').href =
+            `https://www.google.com/maps/dir/?api=1&destination=${window.FINDER_LAT},${window.FINDER_LNG}`;
+
+        // ── Show Yango Map ─────────────────────────────────────────────────
+        const mapSection = document.getElementById('finder-map-section');
+        mapSection.classList.remove('hidden');
+        // Small delay to let DOM paint before Leaflet init
+        setTimeout(() => initFinderMap(window.FINDER_LAT, window.FINDER_LNG, window.FINDER_PHONE), 300);
+
+        // ── Step indicators ────────────────────────────────────────────────
         document.getElementById('ownerProgressionPercent').textContent = '100%';
-        document.getElementById('ownerProgressBar').style.width = '100%';
-        document.getElementById('ownerProgressionText').textContent = 'Processus Terminé — Récupération prête';
-        
-        document.getElementById('ownerStep3Dot').className = "timeline-dot step-done font-bold text-[10px]";
-        document.getElementById('ownerStep3Dot').innerHTML = '<i class="fa-solid fa-check"></i>';
-        document.getElementById('ownerStep3Line').classList.add('done');
-        document.getElementById('ownerStep3Title').classList.remove('text-primary');
-        document.getElementById('ownerStep3Title').classList.add('text-textMain');
-        document.getElementById('ownerStep3Action').style.display = 'none';
-        
-        document.getElementById('ownerStep4Dot').className = "timeline-dot step-active pulse-ring";
-        document.getElementById('ownerStep4Dot').innerHTML = '<i class="fa-solid fa-key" style="font-size:9px"></i>';
-        document.getElementById('ownerStep4Title').className = "text-[14px] font-bold text-primary";
-        document.getElementById('ownerStep4Desc').textContent = "Remettez le code ci-dessous au point de retrait";
+        document.getElementById('ownerProgressionText').textContent = 'Paiement confirmé — Récupération en cours';
+
+        const s3Dot = document.getElementById('ownerStep3Dot');
+        if (s3Dot) { s3Dot.className = 'w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xs shadow-lg'; s3Dot.innerHTML = '<i class="fa-solid fa-check"></i>'; }
+        const s4Dot = document.getElementById('ownerStep4Dot');
+        if (s4Dot) { s4Dot.className = 'w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-base shadow-xl pulse-ring border-4 border-white'; s4Dot.innerHTML = '<i class="fa-solid fa-key"></i>'; }
+        const s4Title = document.getElementById('ownerStep4Title');
+        if (s4Title) s4Title.className = 'text-[12px] font-black text-primary uppercase tracking-tighter';
     }
+
+    // ── Yango-Style Map ────────────────────────────────────────────────────
+    async function initFinderMap(finderLat, finderLng, phone) {
+        const statusEl = document.getElementById('map-status-text');
+
+        // Prevent double init
+        if (finderMap) { finderMap.invalidateSize(); return; }
+
+        finderMap = L.map('finder-route-map', { zoomControl: false, attributionControl: false })
+                     .setView([finderLat, finderLng], 13);
+
+        // Google Maps Roadmap tiles
+        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(finderMap);
+        L.control.zoom({ position: 'topright' }).addTo(finderMap);
+
+        // Finder marker (red pin)
+        const finderIcon = L.divIcon({
+            className: '',
+            html: `<div style="width:36px;height:36px;background:#ef4444;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,.35)"></div>`,
+            iconSize: [36, 36], iconAnchor: [18, 36]
+        });
+        L.marker([finderLat, finderLng], { icon: finderIcon })
+         .addTo(finderMap)
+         .bindPopup(`<b>${FINDER_NAME}</b><br>📍 ${FINDER_CITY}`)
+         .openPopup();
+
+        // Get owner position then draw route
+        const drawRoute = (ownerLat, ownerLng) => {
+            // Owner marker (blue pulse)
+            const ownerIcon = L.divIcon({
+                className: 'owner-marker-pulse',
+                html: `<div style="width:20px;height:20px;background:#1d4ed8;border-radius:50%;border:3px solid white;box-shadow:0 0 0 6px rgba(29,78,216,.25)"></div>`,
+                iconSize: [20, 20], iconAnchor: [10, 10]
+            });
+            L.marker([ownerLat, ownerLng], { icon: ownerIcon })
+             .addTo(finderMap)
+             .bindPopup('📍 Votre position');
+
+            // Fit bounds
+            const bounds = L.latLngBounds([[ownerLat, ownerLng],[finderLat, finderLng]]);
+            finderMap.fitBounds(bounds, { padding: [40, 40] });
+
+            // OSRM Route
+            if (statusEl) statusEl.textContent = 'Tracé de l\'itinéraire...';
+            fetch(`https://router.project-osrm.org/route/v1/driving/${ownerLng},${ownerLat};${finderLng},${finderLat}?geometries=geojson&overview=full`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.routes || !data.routes[0]) return;
+                    const route = data.routes[0];
+
+                    // Draw polyline
+                    L.geoJSON(route.geometry, {
+                        style: { color: '#1d4ed8', weight: 5, opacity: 0.85, lineJoin: 'round', lineCap: 'round' }
+                    }).addTo(finderMap);
+
+                    // ETA
+                    const mins = Math.round(route.duration / 60);
+                    const km   = (route.distance / 1000).toFixed(1);
+                    document.getElementById('eta-time').textContent = mins < 60 ? `${mins} min` : `${Math.floor(mins/60)}h${mins%60}`;
+                    document.getElementById('eta-dist').textContent = `${km} km`;
+                    document.getElementById('eta-badge').classList.remove('hidden');
+                    if (statusEl) statusEl.textContent = `${km} km • ${mins} min en voiture`;
+                })
+                .catch(() => { if (statusEl) statusEl.textContent = 'Itinéraire calculé (hors ligne)'; });
+        };
+
+        // Geolocation
+        if (navigator.geolocation) {
+            if (statusEl) statusEl.textContent = 'Localisation en cours...';
+            navigator.geolocation.getCurrentPosition(
+                pos => drawRoute(pos.coords.latitude, pos.coords.longitude),
+                ()  => drawRoute(3.8480, 11.5021) // Fallback: Yaoundé centre
+            );
+        } else {
+            drawRoute(3.8480, 11.5021);
+        }
+    }
+
+    // ── Map Fullscreen Toggle
+    function toggleMapFullscreen() {
+        const section = document.getElementById('finder-map-section');
+        const icon = document.getElementById('map-fs-icon');
+        mapIsFullscreen = !mapIsFullscreen;
+
+        if (mapIsFullscreen) {
+            section.classList.add('map-fullscreen');
+            icon.className = 'fa-solid fa-compress text-[13px]';
+            document.body.style.overflow = 'hidden';
+        } else {
+            section.classList.remove('map-fullscreen');
+            icon.className = 'fa-solid fa-expand text-[13px]';
+            document.body.style.overflow = '';
+        }
+
+        // Leaflet must recalculate size after DOM change
+        if (finderMap) setTimeout(() => finderMap.invalidateSize(), 150);
+    }
+
+    // Close fullscreen on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && mapIsFullscreen) toggleMapFullscreen();
+    });
 
     function copyCode() {
         const code = document.getElementById('pickupCode').innerText;
@@ -862,6 +1088,10 @@
     window.onload = () => {
         const params = new URLSearchParams(window.location.search);
         setView(params.get('view') || 'owner');
+        
+        // The actual data populating happens in recovery.js via renderRecoveryData
+        // We just need to ensure the map inits AFTER the data is ready
+        // recovery.js will trigger the map init once it has the coordinates
     };
   </script>
 </body>

@@ -35,8 +35,8 @@ export class UserRepository {
    */
   async createUser(userData: Partial<User>): Promise<User> {
     const query = `
-      INSERT INTO users (nom, prenom, email, mot_de_passe, telephone, pays, ville, code_invitation, parrain_id) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+      INSERT INTO users (nom, prenom, email, mot_de_passe, telephone, pays, ville, code_invitation, parrain_id, is_verified) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
       RETURNING *`;
     
     const { rows } = await pool.query(query, [
@@ -49,9 +49,22 @@ export class UserRepository {
       userData.ville || 'Yaoundé',
       userData.code_invitation || null,
       userData.parrain_id || null,
+      userData.is_verified || false,
     ]);
     
     return rows[0];
+  }
+
+  /**
+   * Check if an email has been verified recently (e.g., in the last 15 minutes)
+   */
+  async checkRecentlyVerified(email: string): Promise<boolean> {
+    const query = `
+      SELECT id FROM verification_codes 
+      WHERE email = $1 AND used = true AND created_at > NOW() - INTERVAL '15 minutes'
+      LIMIT 1`;
+    const { rows } = await pool.query(query, [email]);
+    return rows.length > 0;
   }
 
   /**
@@ -177,12 +190,26 @@ export class UserRepository {
   }
   
   /**
-   * Update user points
+   * Update user points (increment)
    */
   async updatePoints(userId: string, points: number): Promise<number> {
     const query = `
       UPDATE users 
-      SET points = points + $1, updated_at = NOW() 
+      SET points = COALESCE(points, 0) + $1, updated_at = NOW() 
+      WHERE id = $2 
+      RETURNING points`;
+    
+    const { rows } = await pool.query(query, [points, userId]);
+    return rows[0]?.points || 0;
+  }
+
+  /**
+   * Set user points (absolute)
+   */
+  async setPoints(userId: string, points: number): Promise<number> {
+    const query = `
+      UPDATE users 
+      SET points = $1, updated_at = NOW() 
       WHERE id = $2 
       RETURNING points`;
     
@@ -200,5 +227,57 @@ export class UserRepository {
     
     const result = await pool.query(query);
     return result.rowCount || 0;
+  }
+
+  /**
+   * Get all users with subscription and referral info (Admin)
+   */
+  async getAllUsersForAdmin(): Promise<any[]> {
+    const query = `
+      SELECT 
+          u.id, u.nom, u.prenom, u.email, u.telephone, u.pays, u.ville, 
+          u.role, u.wallet_balance, u.points, u.code_invitation, u.created_at,
+          s.plan_id as active_plan, 
+          s.status as subscription_status,
+          s.date_fin as subscription_end,
+          (SELECT COUNT(*) FROM users WHERE parrain_id = u.id) as referral_count
+      FROM users u
+      LEFT JOIN user_subscriptions s ON s.user_id = u.id AND s.status = 'ACTIVE'
+      ORDER BY u.created_at DESC
+    `;
+    const { rows } = await pool.query(query);
+    return rows;
+  }
+
+  /**
+   * Store a verification code
+   */
+  async storeVerificationCode(email: string, code: string, expiresInMinutes: number = 10): Promise<void> {
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + expiresInMinutes);
+    
+    const query = `
+      INSERT INTO verification_codes (email, code, expires_at)
+      VALUES ($1, $2, $3)`;
+    
+    await pool.query(query, [email, code, expiresAt]);
+  }
+
+  /**
+   * Verify a code
+   */
+  async verifyCode(email: string, code: string): Promise<boolean> {
+    const query = `
+      SELECT * FROM verification_codes 
+      WHERE email = $1 AND code = $2 AND expires_at > NOW() AND used = false
+      ORDER BY created_at DESC LIMIT 1`;
+    
+    const { rows } = await pool.query(query, [email, code]);
+    if (rows[0]) {
+      // Mark as used
+      await pool.query('UPDATE verification_codes SET used = true WHERE id = $1', [rows[0].id]);
+      return true;
+    }
+    return false;
   }
 }

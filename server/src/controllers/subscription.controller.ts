@@ -32,3 +32,16 @@ export const updateSubscriptionStatus = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getUserUsage = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Non autorisé' });
+    }
+    const usage = await subscriptionService.getUserUsage(userId);
+    res.status(200).json({ success: true, data: usage });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

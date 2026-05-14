@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { 
   getAllSubscriptions, 
   getAdminStats, 
-  updateSubscriptionStatus 
+  updateSubscriptionStatus,
+  getUserUsage
 } from '../controllers/subscription.controller.ts';
 import { subscriptionRepository } from '../repositories/subscription.repository.ts';
-import { DeclarationRepository } from '../repositories/declaration.repository.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
+import { subscriptionService } from '../services/subscription.service.ts';
 
 const router = Router();
 
@@ -23,52 +24,26 @@ router.get('/admin/stats', authMiddleware, adminMiddleware, getAdminStats);
 router.get('/admin/all', authMiddleware, adminMiddleware, getAllSubscriptions);
 router.patch('/admin/:id/status', authMiddleware, adminMiddleware, updateSubscriptionStatus);
 
-const declarationRepository = new DeclarationRepository();
-
 // User routes
 /**
- * @route GET /api/subscriptions/my-subscription
- * @desc Get current user's active subscription and usage
+ * @route GET /api/subscriptions/usage
+ * @desc Get current user's active subscription and usage stats
  */
-router.get('/my-subscription', authMiddleware, async (req: any, res: any) => {
-    try {
-        const userId = req.user.id;
-        const sub = await subscriptionRepository.findActiveByUserId(userId);
-        
-        if (!sub) {
-            return res.json({ success: true, data: null });
-        }
+router.get('/usage', authMiddleware, getUserUsage);
 
-        const docCount = await declarationRepository.countByReporterId(userId);
-        
-        res.json({ 
-            success: true, 
-            data: {
-                ...sub,
-                doc_count: docCount,
-                doc_limit: sub.features?.docs_per_type || 1
-            } 
-        });
-    } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
+/**
+ * @route GET /api/subscriptions/my-subscription (LEGACY/BACKWARD COMPAT)
+ * @desc Redirect to usage or keep for simple sub data
+ */
+router.get('/my-subscription', authMiddleware, getUserUsage);
 router.post('/subscribe', authMiddleware, async (req: any, res: any) => {
     try {
-        const { planId, months } = req.body;
+        const { planId, months, paymentMethod, phone } = req.body;
         const userId = req.user.id;
         
-        // Calculate end date
-        const dateDebut = new Date();
-        const dateFin = new Date();
-        dateFin.setMonth(dateFin.getMonth() + (months || 1));
-
-        const sub = await subscriptionRepository.create({
-            user_id: userId,
-            plan_id: planId,
-            date_debut: dateDebut,
-            date_fin: dateFin,
-            status: 'ACTIVE'
+        const sub = await subscriptionService.subscribeUser(userId, planId, months, { 
+            method: paymentMethod,
+            phone: phone
         });
 
         res.status(201).json({ success: true, data: sub });

@@ -1,225 +1,336 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin DocMaster — Tableau de bord</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Admin DocMaster — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* ── DocMaster theme overrides ── */
-        [data-theme="light"] {
-            --color-primary: oklch(73.5% 0.155 59.5);       /* #F5A64B */
-            --color-primary-content: oklch(98% 0 0);
-            --color-base-100: #F4EFE6;
-            --color-base-200: #EAE3D8;
-            --color-base-300: #DDD5C8;
-            --color-base-content: #1a1a1a;
+        :root {
+            --gray-50:  #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-400: #9ca3af;
+            --gray-600: #6b7280;
+            --gray-900: #111827;
+            --accent:       #F5A64B;
+            --accent-dark:  #D48D3B;
+            --accent-light: #FFF9F0;
         }
 
-        body { font-family: 'Poppins', sans-serif; }
-        .font-bricolage { font-family: 'Bricolage Grotesque', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #fff; color: var(--gray-900); margin: 0; display: flex; height: 100vh; }
 
-        /* ── Custom Sidebar ── */
-        .admin-sidebar {
-            width: 260px;
-            background: #1e3a2f;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-            z-index: 100;
-        }
+        /* Sidebar */
+        .sidebar { width: 240px; background: #1E312B; border-right: none; height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; color: #fff; }
+        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; }
+        .logo-area span { font-weight: 600; font-size: 0.9375rem; color: #fff; }
+        .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 0.8125rem; font-weight: 500; text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
+        .nav-link i { width: 16px; text-align: center; }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .nav-link.active { background: var(--accent); color: #fff; }
 
-        .sidebar-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
+        /* Main */
+        .main { flex: 1; overflow-y: auto; padding: 2rem 3rem; }
+        .page-header { margin-bottom: 2rem; }
+        .page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+        .page-header p { font-size: 0.875rem; color: var(--gray-600); margin-top: 4px; }        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: #fff; border: 0.5px solid var(--gray-200); border-radius: 12px; padding: 1.25rem; }
+        .stat-label { font-size: 0.75rem; font-weight: 500; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; display: block; }
+        .stat-value { font-size: 1.5rem; font-weight: 600; color: var(--gray-900); }
+        .stat-trend { font-size: 0.6875rem; font-weight: 500; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+        .trend-up { color: #D48D3B; }
+        .trend-down { color: #ef4444; }
 
-        /* Override DaisyUI menu for dark sidebar context */
-        .admin-sidebar .menu li > a {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.8125rem;
-            font-weight: 500;
-            border-radius: 8px;
-            gap: 10px;
-            transition: all 0.15s;
-        }
-        .admin-sidebar .menu li > a:hover {
-            background: rgba(255,255,255,0.06);
-            color: white;
-        }
-        .admin-sidebar .menu li > a.active {
-            background: #F5A64B;
-            color: white;
-        }
-        .admin-sidebar .menu li > a.text-red-400 {
-            color: #f87171;
-        }
-        .admin-sidebar .menu li > a.text-red-400:hover {
-            background: rgba(248,113,113,0.1);
-            color: #fca5a5;
-        }
+        /* Chart Sections */
+        .chart-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .section-card { background: #fff; border: 0.5px solid var(--gray-200); border-radius: 12px; padding: 1.5rem; }
+        .section-title { font-size: 0.9375rem; font-weight: 600; margin-bottom: 1rem; color: var(--gray-900); }
+        .chart-container { height: 260px; position: relative; }
 
-        /* Scrollbar */
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #DDD5C8; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-
-        /* Stats custom style on top of DaisyUI */
-        .stat { border-right: 1px solid #EAE3D8 !important; }
-        .stat:last-child { border-right: none !important; }
-        .stat-value { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.75rem !important; }
-
-        /* Chart placeholder */
-        .chart-placeholder {
-            background: #fafafa;
-            border: 2px dashed #EAE3D8;
-            border-radius: 16px;
-            height: 260px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #9ca3af;
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
+        @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .chart-grid { grid-template-columns: 1fr; } }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="flex h-screen overflow-hidden bg-base-100">
-  <script type="module" src="/js/utils/ui-helpers.js"></script>
-
-    <!-- ── Sidebar ── -->
-    <aside class="admin-sidebar">
-        <div class="sidebar-header flex items-center gap-3">
-            <img src="../assets/images/logo.png" alt="Logo" class="h-8 w-auto">
-            <span class="font-bricolage font-extrabold text-lg tracking-tight text-white">Admin Panel</span>
-        </div>
-
-        <nav class="flex-1 p-3 flex flex-col">
-            <ul class="menu gap-1 flex-1">
-                <li><a href="dashboard.html" class="active"><i class="fa-solid fa-gauge-high w-4"></i> Vue d'ensemble</a></li>
-                <li><a href="users.html"><i class="fa-solid fa-users w-4"></i> Utilisateurs</a></li>
-                <li><a href="document-types.html"><i class="fa-solid fa-file-invoice w-4"></i> Types de Documents</a></li>
-                <li><a href="subscriptions.html"><i class="fa-solid fa-crown w-4"></i> Abonnements</a></li>
-                <li><a href="transactions.html"><i class="fa-solid fa-receipt w-4"></i> Transactions</a></li>
-                <li><a href="referrals.html"><i class="fa-solid fa-user-friends w-4"></i> Parrainages</a></li>
-                <li><a href="declarations.html"><i class="fa-solid fa-folder-open w-4"></i> Déclarations</a></li>
-                <li><a href="settings.html"><i class="fa-solid fa-gear w-4"></i> Paramètres</a></li>
-            </ul>
-
-            <div class="border-t border-white/10 pt-3 mt-3">
-                <ul class="menu gap-1">
-                    <li><a href="../dashboard.html"><i class="fa-solid fa-arrow-left w-4"></i> Retour au site</a></li>
-                    <li><a href="#" class="text-red-400"><i class="fa-solid fa-right-from-bracket w-4"></i> Déconnexion</a></li>
-                </ul>
-            </div>
+<body>
+    <aside class="sidebar">
+        <div class="logo-area"><img src="../assets/images/logo.png" alt="Logo" class="h-6"><span>Admin Panel</span></div>
+        <nav class="flex-1">
+            <a href="dashboard.html" class="nav-link active"><i class="fa-solid fa-chart-pie"></i> Vue d'ensemble</a>
+            <a href="users.html" class="nav-link"><i class="fa-solid fa-users"></i> Utilisateurs</a>
+            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-contract"></i> Types Docs</a>
+            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-star"></i> Abonnements</a>
+            <a href="transactions.html" class="nav-link"><i class="fa-solid fa-receipt"></i> Transactions</a>
+            <a href="referrals.html" class="nav-link"><i class="fa-solid fa-user-friends"></i> Parrainages</a>
+            <a href="declarations.html" class="nav-link"><i class="fa-solid fa-folder-open"></i> Déclarations</a>
+            <a href="withdrawals.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i> Retraits</a>
+            <a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Paramètres</a>
         </nav>
+        <div class="mt-auto pt-4 border-t border-white/10">
+            <a href="#" id="adminLogout" class="nav-link text-red-400 hover:text-red-300">
+                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+            </a>
+        </div>
     </aside>
 
-    <!-- ── Main ── -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-
-        <!-- Top bar (DaisyUI navbar) -->
-        <div class="navbar bg-white border-b border-base-200 px-8 min-h-[64px] flex-shrink-0">
-            <div class="flex-1">
-                <h2 class="font-bricolage text-xl font-extrabold tracking-tight">Tableau de Bord Admin</h2>
+    <main class="main">
+        <header class="flex items-center justify-between mb-8">
+            <div class="page-header mb-0">
+                <h1>Vue d'ensemble</h1>
+                <p>Performances globales et statistiques de DocMaster.</p>
             </div>
-            <div class="flex-none gap-3">
-                <div class="avatar placeholder">
-                    <div class="bg-base-200 text-base-content rounded-full w-10 border-2 border-white shadow-sm">
-                        <span class="text-xs font-bold">AD</span>
-                    </div>
+            <div class="flex items-center gap-4">
+                <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fa-solid fa-bell text-xl"></i>
+                    <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+                </button>
+                <div class="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold">
+                    A
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Utilisateurs</span>
+                <div class="stat-value" id="stat-users">---</div>
+                <div class="stat-trend" id="trend-users">---</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Abonnements</span>
+                <div class="stat-value" id="stat-subs">---</div>
+                <div class="stat-trend" id="trend-subs">---</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Revenus</span>
+                <div class="stat-value" id="stat-revenue">--- XAF</div>
+                <div class="stat-trend" id="trend-revenue">---</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Docs Perdus</span>
+                <div class="stat-value" id="stat-lost">---</div>
+                <div class="stat-trend" id="trend-lost">---</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Docs Retrouvés</span>
+                <div class="stat-value" id="stat-found">---</div>
+                <div class="stat-trend" id="trend-found">---</div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="section-card">
+                <h3 class="section-title">Évolution des revenus (6 mois)</h3>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+            <div class="section-card">
+                <h3 class="section-title">Répartition des abonnements</h3>
+                <div class="chart-container">
+                    <canvas id="plansChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Scrollable content -->
-        <div class="flex-1 overflow-y-auto p-8 custom-scroll">
-
-            <!-- ── DaisyUI Stats ── -->
-            <div class="stats stats-horizontal bg-white border border-base-200 shadow-none w-full rounded-2xl mb-8 overflow-hidden">
-                <div class="stat">
-                    <div class="stat-figure text-primary">
-                        <i class="fa-solid fa-users text-2xl opacity-40"></i>
-                    </div>
-                    <div class="stat-title text-xs font-semibold uppercase tracking-wider">Utilisateurs inscrits</div>
-                    <div class="stat-value" id="stat-users">8,492</div>
-                    <div class="stat-desc text-success font-semibold">↗ +12% ce mois</div>
-                </div>
-
-                <div class="stat">
-                    <div class="stat-figure text-primary">
-                        <i class="fa-solid fa-crown text-2xl opacity-40"></i>
-                    </div>
-                    <div class="stat-title text-xs font-semibold uppercase tracking-wider">Abonnements actifs</div>
-                    <div class="stat-value" id="stat-subs">1,284</div>
-                    <div class="stat-desc text-success font-semibold">↗ +8.4%</div>
-                </div>
-
-                <div class="stat">
-                    <div class="stat-figure text-primary">
-                        <i class="fa-solid fa-money-bill-wave text-2xl opacity-40"></i>
-                    </div>
-                    <div class="stat-title text-xs font-semibold uppercase tracking-wider">Chiffre d'affaires</div>
-                    <div class="stat-value text-2xl" id="stat-revenue">12.5M XAF</div>
-                    <div class="stat-desc">Total cumulé</div>
-                </div>
-
-                <div class="stat">
-                    <div class="stat-figure text-error">
-                        <i class="fa-solid fa-file-circle-exclamation text-2xl opacity-40"></i>
-                    </div>
-                    <div class="stat-title text-xs font-semibold uppercase tracking-wider">Documents perdus</div>
-                    <div class="stat-value">156</div>
-                    <div class="stat-desc">Déclarés perdus</div>
-                </div>
+        <div class="section-card mt-8">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="section-title mb-0">Transactions récentes</h3>
+                <a href="transactions.html" class="text-sm font-medium text-accent hover:underline">Voir tout</a>
             </div>
-
-            <!-- ── Charts ── -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="card bg-white border border-base-200 shadow-none rounded-3xl">
-                    <div class="card-body">
-                        <h3 class="card-title font-bricolage font-bold text-base">
-                            <i class="fa-solid fa-chart-line text-primary mr-1"></i>
-                            Évolution des revenus
-                        </h3>
-                        <div class="chart-placeholder">Graphique des revenus (Simulation)</div>
-                    </div>
-                </div>
-
-                <div class="card bg-white border border-base-200 shadow-none rounded-3xl">
-                    <div class="card-body">
-                        <h3 class="card-title font-bricolage font-bold text-base">
-                            <i class="fa-solid fa-chart-pie text-primary mr-1"></i>
-                            Répartition des plans
-                        </h3>
-                        <div class="chart-placeholder">Graphique des plans (Simulation)</div>
-                    </div>
-                </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="text-gray-400 font-medium border-b border-gray-100 uppercase tracking-wider text-[11px]">
+                        <tr>
+                            <th class="py-3 px-4 font-bold">Utilisateur</th>
+                            <th class="py-3 px-4 font-bold">Type</th>
+                            <th class="py-3 px-4 font-bold">Montant</th>
+                            <th class="py-3 px-4 font-bold">Statut</th>
+                            <th class="py-3 px-4 font-bold text-right">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-transactions-tbody" class="divide-y divide-gray-50 text-gray-700">
+                        <!-- Transactions will be injected here -->
+                        <tr><td colspan="5" class="py-4 text-center text-gray-400">Chargement...</td></tr>
+                    </tbody>
+                </table>
             </div>
-
         </div>
-    </div>
+    </main>
 
     <script type="module">
         import { adminService } from '../js/services/admin.js';
+        import { initAdminUI } from '../js/services/admin-ui.js';
+
+        // Helper to format trend
+        function setTrend(elementId, growth) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const value = parseFloat(growth);
+            if (value > 0) {
+                el.className = 'stat-trend trend-up';
+                el.innerHTML = `<i class="fa-solid fa-arrow-up"></i> +${value}% ce mois`;
+            } else if (value < 0) {
+                el.className = 'stat-trend trend-down';
+                el.innerHTML = `<i class="fa-solid fa-arrow-down"></i> ${value}% ce mois`;
+            } else {
+                el.className = 'stat-trend text-gray-400';
+                el.innerHTML = `0% ce mois`;
+            }
+        }
 
         async function initDashboard() {
             try {
                 const stats = await adminService.getDashboardStats();
                 if (stats) {
+                    // Update main numbers
                     document.getElementById('stat-users').textContent   = stats.totalUsers.toLocaleString();
                     document.getElementById('stat-subs').textContent    = stats.activeSubscriptions.toLocaleString();
                     document.getElementById('stat-revenue').textContent = `${stats.estimatedMonthlyRevenue.toLocaleString()} XAF`;
+                    document.getElementById('stat-lost').textContent    = stats.lostDocs.toLocaleString();
+                    document.getElementById('stat-found').textContent   = stats.foundDocs.toLocaleString();
+
+                    // Update trends
+                    setTrend('trend-users', stats.usersGrowth);
+                    setTrend('trend-subs', stats.subsGrowth);
+                    setTrend('trend-revenue', stats.revenueGrowth);
+                    setTrend('trend-lost', stats.lostDocsGrowth);
+                    setTrend('trend-found', stats.foundDocsGrowth);
+
+                    // Initialize Charts
+                    if (stats.graphs) {
+                        initCharts(stats.graphs);
+                    }
+
+                    // Populate Recent Transactions
+                    const tbody = document.getElementById('recent-transactions-tbody');
+                    if (stats.recentTransactions && stats.recentTransactions.length > 0) {
+                        tbody.innerHTML = stats.recentTransactions.map(tx => {
+                            const date = new Date(tx.created_at).toLocaleDateString('fr-FR', {
+                                day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                            });
+                            const statusColor = tx.status === 'COMPLETED' ? 'text-green-600 bg-green-50' : 
+                                              tx.status === 'PENDING' ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50';
+                            return `
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="py-3 px-4 font-medium text-gray-900">${tx.nom} ${tx.prenom}</td>
+                                    <td class="py-3 px-4">${tx.type === 'SUBSCRIPTION' ? '<span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-medium">Abonnement</span>' : '<span class="px-2 py-1 bg-purple-50 text-purple-600 rounded text-xs font-medium">Doc</span>'}</td>
+                                    <td class="py-3 px-4 font-semibold">${tx.amount} ${tx.currency}</td>
+                                    <td class="py-3 px-4">
+                                        <span class="px-2 py-1 rounded text-[11px] font-bold ${statusColor}">${tx.status}</span>
+                                    </td>
+                                    <td class="py-3 px-4 text-right text-gray-500 text-xs">${date}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400">Aucune transaction récente</td></tr>`;
+                    }
                 }
-            } catch (error) {
-                console.error('Failed to load dashboard stats:', error);
-            }
+            } catch (error) { console.error('Dashboard Error:', error); }
         }
 
+        function initCharts(graphs) {
+            const revenueCtx = document.getElementById('revenueChart');
+            const plansCtx = document.getElementById('plansChart');
+
+            // 1. Revenue & Subscriptions Over Time
+            if (revenueCtx && graphs.monthly) {
+                new Chart(revenueCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: graphs.monthly.map(m => m.label),
+                        datasets: [
+                            {
+                                label: 'Revenus (XAF)',
+                                data: graphs.monthly.map(m => m.revenue),
+                                backgroundColor: '#F5A64B',
+                                borderRadius: 4,
+                                order: 2
+                            },
+                            {
+                                label: 'Abonnements',
+                                data: graphs.monthly.map(m => m.subscriptions),
+                                type: 'line',
+                                borderColor: '#1E312B',
+                                backgroundColor: '#1E312B',
+                                borderWidth: 2,
+                                yAxisID: 'y1',
+                                order: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { type: 'linear', display: true, position: 'left' },
+                            y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } }
+                        }
+                    }
+                });
+            }
+
+            // 2. Plans Distribution
+            if (plansCtx && graphs.plans) {
+                const totalSubs = graphs.plans.reduce((acc, curr) => acc + curr.count, 0);
+                const hasData = totalSubs > 0;
+                
+                const fallbackData = hasData ? graphs.plans.map(p => p.count) : [1];
+                const fallbackLabels = hasData ? graphs.plans.map(p => p.label) : ['Aucun abonnement'];
+                const fallbackColors = hasData ? ['#1E312B', '#F5A64B', '#639922', '#e5e7eb'] : ['#f3f4f6'];
+
+                new Chart(plansCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: fallbackLabels,
+                        datasets: [{
+                            data: fallbackData,
+                            backgroundColor: fallbackColors,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '75%',
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { enabled: hasData }
+                        }
+                    },
+                    plugins: [{
+                        id: 'centerText',
+                        beforeDraw: function(chart) {
+                            var width = chart.width,
+                                height = chart.height,
+                                ctx = chart.ctx;
+                            ctx.restore();
+                            var fontSize = (height / 114).toFixed(2);
+                            ctx.font = "600 " + fontSize + "em Inter";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "#111827";
+                            var text = hasData ? totalSubs.toString() : "0",
+                                textX = Math.round((width - ctx.measureText(text).width) / 2),
+                                textY = height / 2 - 10; // offset a bit for legend
+                            ctx.fillText(text, textX, textY);
+                            
+                            ctx.font = "400 " + (fontSize * 0.4).toFixed(2) + "em Inter";
+                            ctx.fillStyle = "#6b7280";
+                            var subText = "Abonnés",
+                                subTextX = Math.round((width - ctx.measureText(subText).width) / 2),
+                                subTextY = height / 2 + 10;
+                            ctx.fillText(subText, subTextX, subTextY);
+                            ctx.save();
+                        }
+                    }]
+                });
+            }
+        }
+        
         initDashboard();
     </script>
 </body>

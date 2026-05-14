@@ -32,11 +32,6 @@ const SIDEBAR_NAV = {
       icon: "fa-mobile-screen-button",
       label: "Mes appareils",
     },
-    {
-      href: "/recherche-auth.html",
-      icon: "fa-magnifying-glass",
-      label: "Rechercher",
-    },
   ],
   compte: [
     {
@@ -48,12 +43,6 @@ const SIDEBAR_NAV = {
       href: "/Abonnement.html",
       icon: "fa-crown",
       label: "Abonnement",
-    },
-    {
-      href: "/admin/dashboard.html",
-      icon: "fa-lock",
-      label: "Administration",
-      isAdmin: true,
     },
     {
       href: "/parrainage.html?v=20260317-2",
@@ -131,19 +120,19 @@ function _sbNavItem(item) {
 }
 
 function _sbRender() {
-  // Detect admin status
-  let isAdmin = false;
-  try {
+    const session = (typeof getSession === 'function') ? getSession() : null;
     const raw = localStorage.getItem("docmaster_user_session");
-    if (raw) {
-      const user = JSON.parse(raw);
-      // Case-insensitive check and logging for debug
-      isAdmin = user.role?.toUpperCase() === 'ADMIN';
-      console.log("DEBUG [Sidebar]: User role is", user.role, "| isAdmin:", isAdmin);
+    const user = session || (raw ? JSON.parse(raw) : null);
+    
+    let isAdmin = false;
+    try {
+        if (user && user.role) {
+            console.log("DEBUG [Sidebar]: User role is", user.role);
+            isAdmin = user.role.toUpperCase() === 'ADMIN';
+        }
+    } catch (e) {
+        console.error("DEBUG [Sidebar]: Error checking admin role:", e);
     }
-  } catch (e) {
-    console.error("DEBUG [Sidebar]: Error parsing session", e);
-  }
 
   const filterAdmin = (item) => !item.isAdmin || isAdmin;
 
@@ -479,6 +468,8 @@ function _sbApplyMobileBottomNavActiveState() {
     if (plusLink) _sbSetBottomNavItemState(plusLink, true);
   }
 }
+
+// Attach functions to window for global access
 window.openSb = openSb;
 window.closeSb = closeSb;
 window.toggleSb = toggleSb;
@@ -491,9 +482,20 @@ document.addEventListener("DOMContentLoaded", function () {
     root.outerHTML = _sbRender();
   }
 
+  // Set initial state
+  document.body.classList.add("sidebar-open");
+  
+  const mainWrapper = document.getElementById("mainWrapper");
+  if (mainWrapper) mainWrapper.classList.add("page-fade-in");
+
   const style = document.createElement("style");
   style.id = "sb-desktop-slide-style";
   style.textContent = `
+        body {
+          display: flex !important;
+          height: 100vh !important;
+          overflow: hidden !important;
+        }
         .sb-overlay {
           display: none;
           position: fixed;
@@ -531,6 +533,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         @media (min-width: 900px) {
+          .sidebar-open .main-wrapper, .sidebar-open .main-wrap {
+            margin-left: 0 !important; /* Flexbox handles the spacing */
+          }
           .sidebar {
             position: relative;
             transform: translateX(0) !important;

@@ -6,276 +6,231 @@
     <title>Admin DocMaster — Gestion des Abonnements</title>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/input.css">
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* ── DocMaster theme overrides ── */
-        [data-theme="light"] {
-            --color-primary: oklch(73.5% 0.155 59.5);       /* #F5A64B */
-            --color-primary-content: oklch(98% 0 0);
-            --color-base-100: #f9fafb;
-            --color-base-200: #f3f4f6;
-            --color-base-300: #e5e7eb;
-            --color-base-content: #111827;
+        :root {
+            --gray-50:  #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-400: #9ca3af;
+            --gray-600: #6b7280;
+            --gray-900: #111827;
+            --accent:       #F5A64B;
+            --accent-dark:  #D48D3B;
+            --accent-light: #FFF9F0;
         }
 
-        body { font-family: 'Poppins', sans-serif; background-color: #f9fafb; }
-        .font-bricolage { font-family: 'Bricolage Grotesque', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #fff; color: var(--gray-900); margin: 0; display: flex; height: 100vh; }
 
-        /* ── Custom Sidebar ── */
-        .admin-sidebar {
-            width: 260px;
-            background: #1e3a2f;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-            z-index: 100;
-        }
-        .sidebar-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .admin-sidebar .menu li > a {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.8125rem;
-            font-weight: 500;
-            border-radius: 8px;
-            gap: 10px;
-            transition: all 0.15s;
-        }
-        .admin-sidebar .menu li > a:hover {
-            background: rgba(255,255,255,0.06);
-            color: white;
-        }
-        .admin-sidebar .menu li > a.active {
-            background: #F5A64B;
-            color: white;
-        }
-        .admin-sidebar .menu li > a.text-red-400 {
-            color: #f87171;
-        }
-        .admin-sidebar .menu li > a.text-red-400:hover {
-            background: rgba(248,113,113,0.1);
-            color: #fca5a5;
-        }
+        /* Sidebar */
+        .sidebar { width: 240px; background: #1E312B; border-right: none; height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; color: #fff; }
+        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; }
+        .logo-area span { font-weight: 600; font-size: 0.9375rem; color: #fff; }
+        .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 0.8125rem; font-weight: 500; text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
+        .nav-link i { width: 16px; text-align: center; }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .nav-link.active { background: var(--accent); color: #fff; }
 
-        /* ── Stats overrides ── */
-        .stat { border-right: 1px solid #e5e7eb !important; }
-        .stat:last-child { border-right: none !important; }
-        .stat-value { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.6rem !important; }
+        /* Main */
+        .main { flex: 1; overflow-y: auto; padding: 2rem 3rem; }
+        .page-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; }
+        .page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; color: var(--gray-900); }
+        .page-header p { font-size: 0.875rem; color: var(--gray-600); margin-top: 4px; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: #fff; border: 0.5px solid var(--gray-200); border-radius: 12px; padding: 1.25rem; }
+        .stat-label { font-size: 0.75rem; font-weight: 500; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; display: block; }
+        .stat-value { font-size: 1.5rem; font-weight: 600; color: var(--gray-900); }
+        .stat-trend { font-size: 0.6875rem; font-weight: 500; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+        .trend-up { color: #D48D3B; }
+        .trend-down { color: #ef4444; }
 
-        /* ── Plan card featured style ── */
-        .plan-admin-card.featured {
-            border-color: #F5A64B !important;
-            background: linear-gradient(135deg, #ffffff 60%, #FEF0DC) !important;
-        }
+        /* Sections */
+        .section-card { background: #fff; border: 0.5px solid var(--gray-200); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+        .section-title { font-size: 0.9375rem; font-weight: 600; color: var(--gray-900); margin: 0; }
 
-        /* ── Scrollbar ── */
-        .custom-scroll::-webkit-scrollbar { width: 5px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        /* Flat Design Skill Overrides for Modal */
+        .modal { backdrop-filter: blur(4px); background-color: rgba(17, 24, 39, 0.4); }
+        .modal-box { border: 0.5px solid var(--gray-200); box-shadow: 0 4px 20px rgba(0,0,0,0.05) !important; background: #fff !important; border-radius: 12px !important; }
+        .modal-header-flat { border-bottom: 0.5px solid var(--gray-200); padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+        .modal-body-flat { padding: 1.5rem; }
+        .modal-footer-flat { border-top: 0.5px solid var(--gray-200); padding: 1.25rem 1.5rem; display: flex; justify-content: flex-end; gap: 10px; background: var(--gray-50); }
+        
+        .flat-field label { font-size: 0.75rem; font-weight: 500; color: var(--gray-600); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .flat-field input { background: var(--gray-50) !important; border: 0.5px solid var(--gray-200) !important; border-radius: 8px !important; padding: 10px 12px !important; font-size: 0.875rem !important; color: var(--gray-900) !important; width: 100%; transition: all 0.2s; }
+        .flat-field input:focus { outline: none !important; border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(245, 166, 75, 0.1) !important; background: #fff !important; }
 
-        /* ── Modal scroll ── */
-        .modal-box { max-height: 88vh; overflow-y: auto; }
+        .flat-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--gray-50); border: 0.5px solid var(--gray-200); border-radius: 8px; margin-top: 1rem; }
+        .flat-toggle-label p { font-size: 0.8125rem; font-weight: 500; color: var(--gray-900); }
+        .flat-toggle-label span { font-size: 0.6875rem; color: var(--gray-400); }
 
-        /* ── Group hover on plan cards ── */
-        .plan-admin-card .edit-btn-hover { opacity: 0; transition: opacity 0.15s; }
-        .plan-admin-card:hover .edit-btn-hover { opacity: 1; }
+        /* Buttons */
+        .btn-primary-flat { background: #1E312B; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 0.8125rem; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+        .btn-primary-flat:hover { background: #111827; }
+
+        /* Plan Cards */
+        .plan-card { background: var(--gray-50); border: 0.5px solid var(--gray-200); border-radius: 10px; padding: 1rem; position: relative; }
+        .plan-card.plan-popular { border-color: var(--accent); border-width: 1.5px; }
+        .plan-id-tag { font-size: 0.625rem; font-weight: 500; padding: 2px 8px; border-radius: 999px; background: var(--gray-200); color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 8px; }
+        .plan-popular-tag { background: var(--accent-light); color: var(--accent-dark); font-size: 0.625rem; font-weight: 500; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 8px; }
+        
+        /* Custom Toggle */
+        .flat-toggle { width: 40px; height: 22px; border-radius: 999px; border: none; cursor: pointer; position: relative; padding: 0; transition: background 0.2s; }
+        .flat-toggle-on { background: var(--accent); }
+        .flat-toggle-off { background: var(--gray-200); }
+        .flat-toggle-thumb { position: absolute; top: 3px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: left 0.2s; display: block; }
+        .flat-toggle-on .flat-toggle-thumb { left: 21px; }
+        .flat-toggle-off .flat-toggle-thumb { left: 3px; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
-  <script type="module" src="/js/utils/ui-helpers.js"></script>
-
-    <!-- ── Sidebar ── -->
-    <aside class="admin-sidebar">
-        <div class="sidebar-header flex items-center gap-3">
-            <img src="../assets/images/logo.png" alt="Logo" class="h-8 w-auto">
-            <span class="font-bricolage font-extrabold text-lg tracking-tight text-white">Admin Panel</span>
-        </div>
-
-        <nav class="flex-1 p-3 flex flex-col">
-            <ul class="menu gap-1 flex-1">
-                <li><a href="dashboard.html"><i class="fa-solid fa-gauge-high w-4"></i> Vue d'ensemble</a></li>
-                <li><a href="users.html"><i class="fa-solid fa-users w-4"></i> Utilisateurs</a></li>
-                <li><a href="document-types.html"><i class="fa-solid fa-file-invoice w-4"></i> Types de Documents</a></li>
-                <li><a href="subscriptions.html" class="active"><i class="fa-solid fa-crown w-4"></i> Abonnements</a></li>
-                <li><a href="transactions.html"><i class="fa-solid fa-receipt w-4"></i> Transactions</a></li>
-                <li><a href="referrals.html"><i class="fa-solid fa-user-friends w-4"></i> Parrainages</a></li>
-                <li><a href="declarations.html"><i class="fa-solid fa-folder-open w-4"></i> Déclarations</a></li>
-                <li><a href="settings.html"><i class="fa-solid fa-gear w-4"></i> Paramètres</a></li>
-            </ul>
-
-            <div class="border-t border-white/10 pt-3 mt-3">
-                <ul class="menu gap-1">
-                    <li><a href="../dashboard.html"><i class="fa-solid fa-arrow-left w-4"></i> Retour au site</a></li>
-                    <li><a href="#" class="text-red-400"><i class="fa-solid fa-right-from-bracket w-4"></i> Déconnexion</a></li>
-                </ul>
-            </div>
+<body>
+    <aside class="sidebar">
+        <div class="logo-area"><img src="../assets/images/logo.png" alt="Logo" class="h-6"><span>Admin Panel</span></div>
+        <nav class="flex-1">
+            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Vue d'ensemble</a>
+            <a href="users.html" class="nav-link"><i class="fa-solid fa-users"></i> Utilisateurs</a>
+            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-invoice"></i> Documents</a>
+            <a href="subscriptions.html" class="nav-link active"><i class="fa-solid fa-crown"></i> Abonnements</a>
+            <a href="transactions.html" class="nav-link"><i class="fa-solid fa-receipt"></i> Transactions</a>
+            <a href="referrals.html" class="nav-link"><i class="fa-solid fa-user-friends"></i> Parrainages</a>
+            <a href="declarations.html" class="nav-link"><i class="fa-solid fa-folder-open"></i> Déclarations</a>
+            <a href="withdrawals.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i> Retraits</a>
+            <a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Paramètres</a>
         </nav>
+        <div class="mt-auto pt-4 border-t border-white/10">
+            <a href="#" id="adminLogout" class="nav-link text-red-400 hover:text-red-300">
+                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+            </a>
+        </div>
     </aside>
 
-    <!-- ── Main ── -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-
-        <!-- Top bar (DaisyUI navbar) -->
-        <div class="navbar bg-white border-b border-base-200 px-8 min-h-[60px] flex-shrink-0">
-            <div class="flex-1">
-                <h2 class="font-bricolage text-xl font-extrabold tracking-tight">Gestion des Abonnements</h2>
+    <main class="main">
+        <div class="page-header">
+            <div>
+                <h1>Abonnements & Forfaits</h1>
+                <p>Gérez les plans d'abonnement et visualisez les statistiques.</p>
             </div>
-            <div class="flex-none gap-3">
-                <!-- DaisyUI search input -->
-                <label class="input input-bordered input-sm flex items-center gap-2 w-56 bg-base-100">
-                    <i class="fa-solid fa-magnifying-glass text-base-content/40 text-xs"></i>
-                    <input id="search-input" type="text" placeholder="Rechercher un client...">
-                </label>
-                <div class="avatar placeholder">
-                    <div class="bg-base-200 text-base-content rounded-full w-10 border-2 border-white shadow-sm">
-                        <span class="text-xs font-bold">AD</span>
+            <div class="flex items-center gap-3">
+                <div class="flat-field mb-0 w-64">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input id="search-input" type="text" placeholder="Rechercher..." class="pl-8 !py-2">
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Scrollable content -->
-        <div class="flex-1 overflow-y-auto p-8 custom-scroll">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Total Abonnés</span>
+                <div class="stat-value" id="stat-total-subs">...</div>
+                <div class="stat-trend trend-up">↗ +12% ce mois</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">MRR (Revenu Mensuel)</span>
+                <div class="stat-value" id="stat-mrr">...</div>
+                <div class="stat-trend trend-up">↗ +8.4% ce mois</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Nouveaux (24h)</span>
+                <div class="stat-value" id="stat-new-subs">...</div>
+                <div class="stat-trend text-gray-400">Aujourd'hui</div>
+            </div>
+        </div>
 
-            <!-- ── DaisyUI Stats ── -->
-            <div class="stats stats-horizontal bg-white border border-base-200 shadow-none w-full rounded-2xl mb-6 overflow-hidden">
-                <div class="stat">
-                    <div class="stat-figure text-primary">
-                        <i class="fa-solid fa-crown text-2xl opacity-40"></i>
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">Offres d'abonnement</h2>
+                <button onclick="openPlanModal()" class="btn-primary-flat">
+                    <i class="fa-solid fa-plus mr-1"></i> Créer une offre
+                </button>
+            </div>
+                <!-- Plans grid -->
+                <div id="plans-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
+                    <!-- Plans injected here -->
+                    <div class="col-span-full flex justify-center py-6">
+                        <span class="text-sm text-gray-400">Chargement des offres...</span>
                     </div>
-                    <div class="stat-title text-xs font-semibold uppercase tracking-wider">Total Abonnés</div>
-                    <div class="stat-value" id="stat-total-subs">...</div>
-                    <div class="stat-desc text-success font-semibold">↗ +12% ce mois</div>
                 </div>
+        </div>
 
-                <div class="stat">
-                    <div class="stat-figure text-primary">
-                        <i class="fa-solid fa-money-bill-trend-up text-2xl opacity-40"></i>
-                    </div>
-                    <div class="stat-title text-xs font-semibold uppercase tracking-wider">MRR (Revenu Mensuel)</div>
-                    <div class="stat-value" id="stat-mrr">...</div>
-                    <div class="stat-desc text-success font-semibold">↗ +8.4%</div>
-                </div>
-
-                <div class="stat">
-                    <div class="stat-figure text-success">
-                        <i class="fa-solid fa-user-plus text-2xl opacity-40"></i>
-                    </div>
-                    <div class="stat-title text-xs font-semibold uppercase tracking-wider">Nouveaux (24h)</div>
-                    <div class="stat-value" id="stat-new-subs">...</div>
-                    <div class="stat-desc font-semibold">Aujourd'hui</div>
-                </div>
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">Abonnements Récents</h2>
             </div>
 
-            <!-- ── Offres d'abonnement ── -->
-            <div class="card bg-white border border-base-200 shadow-none rounded-2xl mb-6 overflow-hidden">
-                <!-- Card header -->
-                <div class="flex items-center justify-between px-6 py-4 border-b border-base-200">
-                    <h2 class="font-bricolage font-bold text-base">Offres d'abonnement</h2>
-                    <button onclick="openPlanModal()" class="btn btn-primary btn-sm gap-2">
-                        <i class="fa-solid fa-plus text-[10px]"></i> Créer une offre
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="text-gray-400 font-medium border-b border-gray-100 uppercase tracking-wider text-[11px]">
+                        <tr>
+                            <th class="py-3 px-4 font-bold">Client</th>
+                            <th class="py-3 px-4 font-bold">Plan</th>
+                            <th class="py-3 px-4 font-bold">Statut</th>
+                            <th class="py-3 px-4 font-bold">Montant</th>
+                            <th class="py-3 px-4 font-bold">Expiration</th>
+                            <th class="py-3 px-4 font-bold text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sub-table-body" class="divide-y divide-gray-50 text-gray-700">
+                        <tr>
+                            <td colspan="6" class="text-center py-8">
+                                <span class="text-sm text-gray-400">Chargement...</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex items-center justify-between pt-4 mt-2 border-t border-gray-100">
+                <p class="text-xs text-gray-400">Affichage des derniers abonnements</p>
+                <div class="flex gap-1">
+                    <button class="px-2 py-1 border border-gray-200 rounded text-gray-400 hover:bg-gray-50 disabled:opacity-50" disabled>
+                        <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    </button>
+                    <button class="px-3 py-1 bg-gray-100 rounded text-gray-900 text-xs font-medium">1</button>
+                    <button class="px-2 py-1 border border-gray-200 rounded text-gray-600 hover:bg-gray-50">
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
                     </button>
                 </div>
-                <!-- Plans grid -->
-                <div id="plans-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 p-6">
-                    <!-- Plans injected here -->
-                    <div class="col-span-full flex items-center justify-center py-10">
-                        <span class="loading loading-spinner loading-sm text-primary"></span>
-                        <span class="ml-3 text-sm text-base-content/40 font-medium">Chargement des offres...</span>
-                    </div>
-                </div>
             </div>
-
-            <!-- ── Table des Abonnements ── -->
-            <div class="card bg-white border border-base-200 shadow-none rounded-2xl overflow-hidden">
-                <div class="flex items-center justify-between px-6 py-4 border-b border-base-200">
-                    <h2 class="font-bricolage font-bold text-base">Abonnements Récents</h2>
-                </div>
-
-                <!-- DaisyUI table -->
-                <div class="overflow-x-auto">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr class="bg-base-100 text-base-content/50 text-[11px] uppercase tracking-wider">
-                                <th>Client</th>
-                                <th>Plan</th>
-                                <th>Statut</th>
-                                <th>Montant</th>
-                                <th>Expiration</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sub-table-body">
-                            <tr>
-                                <td colspan="6" class="text-center py-12">
-                                    <span class="loading loading-spinner loading-sm text-primary"></span>
-                                    <span class="ml-2 text-sm text-base-content/40">Chargement...</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <div class="flex items-center justify-between px-6 py-4 border-t border-base-200 bg-white">
-                    <p class="text-xs text-base-content/40 font-medium">Affichage des derniers abonnements</p>
-                    <div class="join">
-                        <button class="join-item btn btn-xs btn-ghost" disabled>
-                            <i class="fa-solid fa-chevron-left text-[10px]"></i>
-                        </button>
-                        <button class="join-item btn btn-xs btn-primary">1</button>
-                        <button class="join-item btn btn-xs btn-ghost">
-                            <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
         </div>
-    </div>
+
+    </main>
 
     <!-- ── Modal (DaisyUI dialog) ── -->
+    <!-- ── Modal (Flat Design Skill) ── -->
     <dialog id="planModal" class="modal">
-        <div class="modal-box max-w-lg p-0 overflow-hidden rounded-2xl border border-base-200">
-
+        <div class="modal-box max-w-lg p-0 overflow-hidden">
             <!-- Modal header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-base-200">
-                <h3 id="modal-title" class="font-bricolage font-bold text-base tracking-tight">Configuration de l'offre</h3>
-                <button onclick="closePlanModal()" class="btn btn-sm btn-circle btn-ghost text-base-content/40">
+            <div class="modal-header-flat">
+                <h3 id="modal-title" class="font-bold text-sm tracking-tight text-gray-900">Configuration de l'offre</h3>
+                <button onclick="closePlanModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
             <!-- Modal body -->
-            <div class="p-6 custom-scroll overflow-y-auto max-h-[60vh]">
-
+            <div class="modal-body-flat custom-scroll overflow-y-auto max-h-[60vh]">
                 <!-- Nom + Prix -->
                 <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="form-control">
-                        <label class="label pb-1">
-                            <span class="label-text text-[10px] font-bold uppercase tracking-widest text-base-content/40">Nom du Plan</span>
-                        </label>
-                        <input id="edit-plan-name" type="text"
-                            class="input input-bordered input-sm w-full bg-base-100 font-medium"
-                            placeholder="Ex: Premium">
+                    <div class="flat-field">
+                        <label>Nom du Plan</label>
+                        <input id="edit-plan-name" type="text" placeholder="Ex: Premium">
                     </div>
-                    <div class="form-control">
-                        <label class="label pb-1">
-                            <span class="label-text text-[10px] font-bold uppercase tracking-widest text-base-content/40">Prix (XAF)</span>
-                        </label>
-                        <input id="edit-plan-price" type="number"
-                            class="input input-bordered input-sm w-full bg-base-100 font-medium"
-                            placeholder="0">
+                    <div class="flat-field">
+                        <label>Prix (XAF)</label>
+                        <input id="edit-plan-price" type="number" placeholder="0">
                     </div>
                 </div>
 
                 <!-- Fonctionnalités dynamiques -->
                 <div class="mb-6">
-                    <div class="flex items-center gap-2 mb-4 pb-2 border-b border-base-200">
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/40">Limites &amp; Fonctionnalités</span>
+                    <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Limites &amp; Fonctionnalités</span>
                     </div>
                     <div id="dynamic-features-container" class="space-y-4">
                         <!-- Features injected here -->
@@ -283,19 +238,21 @@
                 </div>
 
                 <!-- Toggle "Mettre en avant" -->
-                <div class="flex items-center justify-between p-4 bg-primary/5 rounded-xl border border-primary/10">
-                    <div>
-                        <p class="text-sm font-bold text-primary">Mettre en avant</p>
-                        <span class="text-xs text-primary/60">Ajouter le badge "Recommandé"</span>
+                <div class="flat-toggle-row">
+                    <div class="flat-toggle-label">
+                        <p>Mettre en avant</p>
+                        <span>Ajouter le badge "Recommandé"</span>
                     </div>
-                    <input id="edit-plan-featured" type="checkbox" class="toggle toggle-primary toggle-sm">
+                    <button id="edit-plan-featured" class="flat-toggle flat-toggle-off" onclick="this.classList.toggle('flat-toggle-on'); this.classList.toggle('flat-toggle-off')">
+                        <span class="flat-toggle-thumb"></span>
+                    </button>
                 </div>
             </div>
 
             <!-- Modal footer / actions -->
-            <div class="flex justify-end gap-3 px-6 py-4 border-t border-base-200 bg-base-100">
-                <button onclick="closePlanModal()" class="btn btn-ghost btn-sm">Annuler</button>
-                <button id="save-plan-btn" onclick="savePlan()" class="btn btn-primary btn-sm px-8 font-bold">
+            <div class="modal-footer-flat">
+                <button onclick="closePlanModal()" class="btn-cancel">Annuler</button>
+                <button id="save-plan-btn" onclick="savePlan()" class="btn-confirm">
                     Enregistrer
                 </button>
             </div>
@@ -306,8 +263,11 @@
         </form>
     </dialog>
 
+    </main>
+
     <script type="module">
         import { adminService } from '../js/services/admin.js';
+        import { initAdminUI } from '../js/services/admin-ui.js';
 
         let currentPlanId = null;
         let featureDefinitions = [];
@@ -411,52 +371,48 @@
 
                 plans.forEach(plan => {
                     const card = document.createElement('div');
-                    card.className = `card plan-admin-card bg-white border border-base-200 shadow-none rounded-2xl ${plan.is_featured ? 'featured' : ''}`;
+                    card.className = `plan-card ${plan.is_featured ? 'plan-popular' : ''}`;
 
                     const featuresHtml = Object.entries(plan.features || {}).map(([key, val]) => `
-                        <div class="flex items-center gap-2 text-xs text-base-content/60">
+                        <div class="flex items-center gap-2 text-xs text-gray-600">
                             <i class="fa-solid ${typeof val === 'boolean'
-                                ? (val ? 'fa-check text-success' : 'fa-xmark text-error/40')
-                                : 'fa-circle-dot text-base-content/20'} w-3 text-[10px]"></i>
-                            <span>${key}: <strong class="text-base-content/80">${val}</strong></span>
+                                ? (val ? 'fa-check text-green-600' : 'fa-xmark text-gray-400')
+                                : 'fa-circle-dot text-gray-300'} w-3 text-[10px]"></i>
+                            <span>${key}: <strong class="text-gray-900">${val}</strong></span>
                         </div>
                     `).join('');
 
                     card.innerHTML = `
-                        <div class="card-body p-5">
-                            <div class="flex items-start justify-between mb-1">
-                                <div>
-                                    <div class="badge ${plan.is_featured ? 'badge-primary' : 'badge-ghost'} badge-sm mb-2 uppercase tracking-wider text-[9px] font-bold">
-                                        ${plan.is_featured ? 'Recommandé' : 'Standard'}
-                                    </div>
-                                    <h3 class="font-bold text-base-content text-base leading-tight">${plan.name}</h3>
+                        <div class="flex items-start justify-between mb-1">
+                            <div>
+                                <div class="${plan.is_featured ? 'plan-popular-tag' : 'plan-id-tag'}">
+                                    ${plan.is_featured ? 'Recommandé' : 'Standard'}
                                 </div>
-                                <button onclick="window.editPlan('${plan.id}')"
-                                    class="edit-btn-hover btn btn-xs btn-ghost btn-square">
-                                    <i class="fa-solid fa-pen-to-square text-[11px]"></i>
-                                </button>
+                                <h3 class="font-semibold text-gray-900 text-base leading-tight">${plan.name}</h3>
                             </div>
-
-                            <div class="text-xl font-bricolage font-extrabold text-primary my-2">
-                                ${plan.price?.toLocaleString()}
-                                <span class="text-xs font-normal text-base-content/40 uppercase tracking-tighter ml-1">
-                                    XAF / ${plan.interval === 'month' ? 'MOIS' : 'AN'}
-                                </span>
-                            </div>
-
-                            <div class="divider my-2"></div>
-
-                            <div class="space-y-2 flex-1">
-                                ${featuresHtml}
-                            </div>
-
-                            <div class="card-actions mt-4">
-                                <button onclick="window.editPlan('${plan.id}')"
-                                    class="btn btn-outline btn-sm w-full text-[11px] font-bold">
-                                    Modifier la configuration
-                                </button>
-                            </div>
+                            <button onclick="window.editPlan('${plan.id}')"
+                                class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                                <i class="fa-solid fa-pen-to-square text-[11px]"></i>
+                            </button>
                         </div>
+
+                        <div class="text-xl font-bricolage font-bold text-gray-900 my-2">
+                            ${plan.price?.toLocaleString()}
+                            <span class="text-xs font-normal text-gray-400 uppercase tracking-tighter ml-1">
+                                XAF / ${plan.interval === 'month' ? 'MOIS' : 'AN'}
+                            </span>
+                        </div>
+
+                        <div class="border-t border-gray-100 my-3"></div>
+
+                        <div class="space-y-2 flex-1 mb-4">
+                            ${featuresHtml}
+                        </div>
+
+                        <button onclick="window.editPlan('${plan.id}')"
+                            class="w-full border border-gray-200 bg-gray-50 text-gray-700 text-xs font-medium py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                            Modifier la configuration
+                        </button>
                     `;
                     container.appendChild(card);
                 });
@@ -464,7 +420,7 @@
             } catch (error) {
                 console.error('Error loading plans:', error);
                 document.getElementById('plans-container').innerHTML =
-                    '<div class="col-span-full text-center py-10 text-sm text-error">Erreur lors du chargement des offres.</div>';
+                    '<div class="col-span-full text-center py-10 text-sm text-red-500">Erreur lors du chargement des offres.</div>';
             }
         }
 
@@ -479,23 +435,21 @@
                     const div = document.createElement('div');
 
                     if (feat.type === 'boolean') {
-                        div.className = 'flex items-center justify-between py-2';
+                        div.className = 'flat-toggle-row';
                         div.innerHTML = `
-                            <div>
-                                <p class="text-sm font-semibold">${feat.label}</p>
-                                <span class="text-[10px] text-base-content/40">${feat.description || ''}</span>
+                            <div class="flat-toggle-label">
+                                <p>${feat.label}</p>
+                                <span>${feat.description || ''}</span>
                             </div>
-                            <input id="feat-${feat.code}" type="checkbox" class="toggle toggle-primary toggle-sm">
+                            <button id="feat-${feat.code}" class="flat-toggle flat-toggle-off" onclick="this.classList.toggle('flat-toggle-on'); this.classList.toggle('flat-toggle-off')">
+                                <span class="flat-toggle-thumb"></span>
+                            </button>
                         `;
                     } else {
-                        div.className = 'form-control';
+                        div.className = 'flat-field mb-3';
                         div.innerHTML = `
-                            <label class="label pb-1">
-                                <span class="label-text text-[10px] font-bold uppercase tracking-widest text-base-content/40">${feat.label}</span>
-                            </label>
-                            <input id="feat-${feat.code}" type="number"
-                                class="input input-bordered input-sm w-full bg-base-100 font-medium"
-                                placeholder="${feat.description || 'Valeur'}">
+                            <label>${feat.label}</label>
+                            <input id="feat-${feat.code}" type="number" placeholder="${feat.description || 'Valeur'}">
                         `;
                     }
                     container.appendChild(div);
@@ -511,13 +465,20 @@
             document.getElementById('modal-title').textContent = 'Nouvelle Offre';
             document.getElementById('edit-plan-name').value = '';
             document.getElementById('edit-plan-price').value = '';
-            document.getElementById('edit-plan-featured').checked = false;
+            
+            const featuredToggle = document.getElementById('edit-plan-featured');
+            featuredToggle.classList.remove('flat-toggle-on');
+            featuredToggle.classList.add('flat-toggle-off');
 
             featureDefinitions.forEach(feat => {
                 const input = document.getElementById(`feat-${feat.code}`);
                 if (input) {
-                    if (feat.type === 'boolean') input.checked = false;
-                    else input.value = '';
+                    if (feat.type === 'boolean') {
+                        input.classList.remove('flat-toggle-on');
+                        input.classList.add('flat-toggle-off');
+                    } else {
+                        input.value = '';
+                    }
                 }
             });
 
@@ -534,14 +495,21 @@
 
                 document.getElementById('edit-plan-name').value      = plan.name;
                 document.getElementById('edit-plan-price').value     = plan.price;
-                document.getElementById('edit-plan-featured').checked = plan.is_featured || false;
+                
+                const featuredToggle = document.getElementById('edit-plan-featured');
+                featuredToggle.classList.remove('flat-toggle-on', 'flat-toggle-off');
+                featuredToggle.classList.add(plan.is_featured ? 'flat-toggle-on' : 'flat-toggle-off');
 
                 featureDefinitions.forEach(feat => {
                     const input = document.getElementById(`feat-${feat.code}`);
                     if (input) {
                         const val = plan.features ? plan.features[feat.code] : null;
-                        if (feat.type === 'boolean') input.checked = !!val;
-                        else input.value = val || '';
+                        if (feat.type === 'boolean') {
+                            input.classList.remove('flat-toggle-on', 'flat-toggle-off');
+                            input.classList.add(val ? 'flat-toggle-on' : 'flat-toggle-off');
+                        } else {
+                            input.value = val || '';
+                        }
                     }
                 });
 
@@ -564,15 +532,18 @@
             featureDefinitions.forEach(feat => {
                 const input = document.getElementById(`feat-${feat.code}`);
                 if (input) {
-                    if (feat.type === 'boolean') features[feat.code] = input.checked;
-                    else features[feat.code] = input.value === '' ? null : parseFloat(input.value);
+                    if (feat.type === 'boolean') {
+                        features[feat.code] = input.classList.contains('flat-toggle-on');
+                    } else {
+                        features[feat.code] = input.value === '' ? null : parseFloat(input.value);
+                    }
                 }
             });
 
             const data = {
                 name: document.getElementById('edit-plan-name').value,
                 price: parseFloat(document.getElementById('edit-plan-price').value),
-                is_featured: document.getElementById('edit-plan-featured').checked,
+                is_featured: document.getElementById('edit-plan-featured').classList.contains('flat-toggle-on'),
                 features,
             };
 

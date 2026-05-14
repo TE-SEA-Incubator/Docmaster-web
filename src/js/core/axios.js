@@ -48,7 +48,13 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem('docmaster_user_session');
-      window.location.href = '/login.html';
+      
+      const isLoginPage = window.location.pathname.endsWith('/login.html') || 
+                          window.location.pathname === '/';
+                          
+      if (!isLoginPage) {
+        window.location.href = '/login.html';
+      }
     }
     return Promise.reject(error);
   }

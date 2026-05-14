@@ -2,29 +2,53 @@ import { pool } from '../database/db.ts';
 
 export class ReferralRepository {
   /**
-   * Create a new referral
+   * Create a new referral and award rewards to both parrain and filleul
    */
   async createReferral(parrainId: string, filleulId: string, pointsGagnes: number = 500): Promise<any> {
-    const query = `
-      INSERT INTO referrals (parrain_id, filleul_id, points_gagnes, status)
-      VALUES ($1, $2, $3, 'VALIDATED')
-      RETURNING *
-    `;
-    const { rows } = await pool.query(query, [parrainId, filleulId, pointsGagnes]);
-    
-    // update parrain points
-    const updatePointsQuery = `
-      UPDATE users 
-      SET points = COALESCE(points, 0) + $1 
-      WHERE id = $2
-    `;
-    await pool.query(updatePointsQuery, [pointsGagnes, parrainId]);
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    // Give the filleul their reward, e.g., 3 free declarations. Let's add them to points or wallet?
-    // The spec said: "500 XAF pour vous + 1 mois gratuit pour votre filleul" but also "3 déclarations gratuites".
-    // Let's assume declarations are paid by wallet_balance or plan. Let's just create the referral for now.
-    
-    return rows[0];
+      // 1. Insert into referrals table
+      const insertRefQuery = `
+        INSERT INTO referrals (parrain_id, filleul_id, points_gagnes, status, recompense_attribuee)
+        VALUES ($1, $2, $3, 'VALIDATED', true)
+        RETURNING *
+      `;
+      const { rows: refRows } = await client.query(insertRefQuery, [parrainId, filleulId, pointsGagnes]);
+      
+      // 2. Award Parrain: +500 XAF to wallet_balance and +10 points
+      const updateParrainQuery = `
+        UPDATE users 
+        SET wallet_balance = COALESCE(wallet_balance, 0) + $1,
+            points = COALESCE(points, 0) + 10
+        WHERE id = $2
+      `;
+      await client.query(updateParrainQuery, [pointsGagnes, parrainId]);
+
+      // 3. Award Filleul: 1 month Standard plan
+      const planId = 'standard';
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 1);
+
+      const insertSubQuery = `
+        INSERT INTO user_subscriptions (user_id, plan_id, date_debut, date_fin, status, avantages_restants)
+        VALUES ($1, $2, $3, $4, 'ACTIVE', $5)
+      `;
+      // Avantages restants include 3 free declarations as requested in the UI
+      const avantages = JSON.stringify({ declarations: 3 });
+      await client.query(insertSubQuery, [filleulId, planId, startDate, endDate, avantages]);
+
+      await client.query('COMMIT');
+      return refRows[0];
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error("Error in createReferral transaction:", error);
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   /**
@@ -82,7 +106,7 @@ export class ReferralRepository {
     const rewardAmount = ref.points_gagnes || 500;
     const updateParrainQuery = `
       UPDATE users 
-      SET wallet = COALESCE(wallet, 0) + $1,
+      SET wallet_balance = COALESCE(wallet_balance, 0) + $1,
           points = COALESCE(points, 0) + 10 -- Bonus points
       WHERE id = $2
     `;

@@ -1,10 +1,17 @@
 import { deviceRepository, Device } from '../repositories/device.repository.ts';
 import { UserService } from '../services/auth.service.ts';
+import { subscriptionService } from './subscription.service.ts';
 
 const userService = new UserService();
 
 class DeviceService {
   async registerDevice(deviceData: Device) {
+    // 0. Check Subscription Limits
+    const validation = await subscriptionService.validateAction(deviceData.user_id, 'REGISTER_OBJECT');
+    if (!validation.allowed) {
+      throw new Error(validation.reason);
+    }
+
     if (deviceData.serial_number_imei && deviceData.serial_number_imei.trim() !== '') {
       const existing = await deviceRepository.findAnyByIdentifier(deviceData.serial_number_imei);
       if (existing) {

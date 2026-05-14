@@ -103,7 +103,7 @@ function renderCards() {
         <div class="flex items-start justify-between gap-3 mb-3">
           <div class="min-w-0">
             <p class="text-[11px] font-bold text-textMuted uppercase tracking-wide">${item.identifiant_doc_dm || 'DOC-DM'}</p>
-            <h3 class="font-bricolage text-[18px] font-bold text-textMain leading-tight mt-0.5">${item.doc_type || 'Document'}</h3>
+            <h3 class="font-bricolage text-[18px] font-bold text-textMain leading-tight mt-0.5">${item.docTypeInfo?.nom || item.doc_type || 'Document'}</h3>
           </div>
           <span class="px-2.5 py-1 rounded-full border text-[11px] font-bold ${typeBadgeClass}">
             <i class="fa-solid ${typeIcon} mr-1"></i>${typeLabel}
@@ -159,7 +159,7 @@ export function openDetail(id) {
 
       <!-- Main Info -->
       <div>
-        <h3 class="font-bricolage text-2xl font-extrabold text-textMain">${item.doc_type}</h3>
+        <h3 class="font-bricolage text-2xl font-extrabold text-textMain">${item.docTypeInfo?.nom || item.doc_type}</h3>
         <p class="text-textMuted text-sm mt-1">Publié le ${formatDate(item.created_at)}</p>
       </div>
 

@@ -4,12 +4,16 @@ import { DeclarationRepository } from '../repositories/declaration.repository.ts
 import { NotificationService } from '../services/notification.service.ts';
 import { MatchRepository } from '../repositories/match.repository.ts';
 import { UserRepository } from '../repositories/auth.repository.ts';
+import { DocumentTypeRepository } from '../repositories/document-type.repository.ts';
+import { v4 as uuidv4 } from 'uuid';
+import { query } from '../database/db.ts';
 
 const claimRepo = new ClaimRepository();
 const declRepo = new DeclarationRepository();
 const notifService = new NotificationService();
 const matchRepo = new MatchRepository();
 const userRepo = new UserRepository();
+const docTypeRepo = new DocumentTypeRepository();
 
 export class ClaimController {
   /**
@@ -19,6 +23,7 @@ export class ClaimController {
   async validateCode(req: Request, res: Response) {
     try {
       const { docId, code } = req.body;
+      console.log(`🔍 [Claim] Validating code for docId: ${docId}, code: ${code}`);
 
       if (!docId || !code) {
         return res.status(400).json({
@@ -28,7 +33,28 @@ export class ClaimController {
       }
 
       // 1. Find the active claim for this document
-      const claim = await claimRepo.findActiveByDocId(docId);
+      let claim = await claimRepo.findActiveByDocId(docId);
+      console.log(`🔎 [Claim] findActiveByDocId result:`, claim ? `Found claim ID ${claim.id} (Status: ${claim.status})` : 'NULL');
+
+      // If no claim found directly, check if docId is part of a match with an active claim
+      // This is crucial because finders use their FOUND declaration ID, while claims are often linked to the LOST ID
+      if (!claim) {
+        console.log(`🔎 [Claim] No direct claim for ${docId}, checking matched counterparts...`);
+        const matches = await matchRepo.findByDeclarationId(docId);
+        
+        if (matches && matches.length > 0) {
+          for (const match of matches) {
+            const counterpartId = match.lost_declaration_id === docId ? match.found_declaration_id : match.lost_declaration_id;
+            const potentialClaim = await claimRepo.findActiveByDocId(counterpartId);
+            
+            if (potentialClaim) {
+              claim = potentialClaim;
+              console.log(`✅ [Claim] Found active claim ${claim.id} via counterpart ${counterpartId}`);
+              break;
+            }
+          }
+        }
+      }
 
       if (!claim) {
         return res.status(404).json({
@@ -58,37 +84,81 @@ export class ClaimController {
       // 4. Code is valid! Update claim and declaration status
       await claimRepo.updateStatus(claim.id, 'VALIDATED');
       
-      // Update the LOST declaration to RETURNED status
-      const lostDecl = await declRepo.updateStatus(docId, 'RETURNED');
-
-      // Find the associated FOUND declaration via matches
-      const matches = await matchRepo.findByDeclarationId(docId);
+      // Update the declarations associated with this claim
+      // The claim is linked to one side (usually the LOST one), but we must update both
+      const claimDocId = claim.doc_id;
+      const updatedDecl = await declRepo.updateStatus(claimDocId, 'RETURNED');
+      
+      // Find the counterpart in the match and update it too
+      const matches = await matchRepo.findByDeclarationId(claimDocId);
       if (matches && matches.length > 0) {
         for (const match of matches) {
-          // Find the counterpart (FOUND declaration)
-          const foundId = match.lost_declaration_id === docId ? match.found_declaration_id : match.lost_declaration_id;
-          const foundDecl = await declRepo.findById(foundId);
-          
-          // Double check if this FOUND declaration belongs to the current finder
-          if (foundDecl && foundDecl.reporter_id === claim.finder_id) {
-            await declRepo.updateStatus(foundId, 'RETURNED');
-            console.log(`✅ [Claim] Marked FOUND declaration ${foundId} as RETURNED`);
+          const otherId = match.lost_declaration_id === claimDocId ? match.found_declaration_id : match.lost_declaration_id;
+          await declRepo.updateStatus(otherId, 'RETURNED');
+          console.log(`✅ [Claim] Marked counterpart declaration ${otherId} as RETURNED`);
+        }
+      }
+
+      // 5. Identify the LOST declaration for notifications and rewards
+      // If the declaration linked to the claim isn't LOST, we try to find the LOST one in the match
+      let lostDecl = updatedDecl?.declaration_type === 'LOST' ? updatedDecl : null;
+      if (!lostDecl && matches && matches.length > 0) {
+        for (const match of matches) {
+          const otherId = match.lost_declaration_id === claimDocId ? match.found_declaration_id : match.lost_declaration_id;
+          const otherDecl = await declRepo.findById(otherId);
+          if (otherDecl?.declaration_type === 'LOST') {
+            lostDecl = otherDecl;
+            break;
           }
         }
       }
 
-      // 5. Notify the owner that the document has been recovered
+      // 6. Notify the owner and credit reward to finder
       if (lostDecl) {
         await notifService.notifyDocumentRecovered(
           claim.owner_id,
           lostDecl.doc_type,
-          docId
+          lostDecl.id
         );
 
-        // 6. Credit reward to finder
-        if (lostDecl.recompense_montant && lostDecl.recompense_montant > 0) {
-          const newBalance = await userRepo.updateBalance(claim.finder_id, lostDecl.recompense_montant);
-          console.log(`💰 [Claim] Finder ${claim.finder_id} rewarded with ${lostDecl.recompense_montant}. New balance: ${newBalance}`);
+        // Calculate and credit reward to finder (XAF and Points)
+        // Fetch document type to get commission details
+        const docType = await docTypeRepo.findById(lostDecl.doc_type);
+        
+        if (docType && claim.finder_id) {
+          const basePrice = Number(docType.prix_retrouvaille) || 5000;
+          const finderPercent = Number(docType.finder_percent) || 80;
+          const pointsReward = Number(docType.points_recompense) || 20;
+          
+          const finderRewardAmount = (basePrice * finderPercent) / 100;
+
+          // 1. Credit wallet
+          await userRepo.updateBalance(claim.finder_id, finderRewardAmount);
+          
+          // 2. Create transaction record (payout)
+          await query(
+            `INSERT INTO transactions (id, user_id, amount, currency, status, payment_method, type, metadata) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [
+              uuidv4(),
+              claim.finder_id,
+              finderRewardAmount,
+              'XAF',
+              'SUCCESS',
+              'VIRTUAL_WALLET',
+              'finder_payout',
+              JSON.stringify({ 
+                docId: lostDecl.id, 
+                claimId: claim.id,
+                note: `Récompense pour remise de ${docType.nom}`
+              })
+            ]
+          );
+
+          // 3. Award points
+          await userRepo.updatePoints(claim.finder_id, pointsReward);
+          
+          console.log(`💰 [Claim] Finder ${claim.finder_id} rewarded with ${finderRewardAmount} XAF and ${pointsReward} pts after validation.`);
         }
       }
 

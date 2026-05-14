@@ -1,4 +1,5 @@
-import { subscribeToPlan } from './services/api.js';
+import { subscribeToPlan, getUserSubscriptionUsage, getMyTransactions } from './services/api.js';
+import { getSession } from './services/auth.js';
 import { planService } from './services/plan.js';
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -47,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
    * ==================================
    */
   let currentPlanData = null;
+  let selectedMethod = 'MOMO';
   let iti = null;
 
   /**
@@ -108,7 +110,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  window.goToStep2 = function () {
+  window.goToStep2 = function (method = 'MOMO') {
+    selectedMethod = method;
     const view1 = document.getElementById("viewStep1");
     const view2 = document.getElementById("viewStep2");
     const sBtn = document.getElementById("submitBtn");
@@ -133,12 +136,10 @@ document.addEventListener("DOMContentLoaded", () => {
       window.goToStep2();
     } else {
       const phoneInput = document.getElementById("payPhone");
-      const pseudoInput = document.getElementById("payPseudo");
       const phone = phoneInput ? phoneInput.value : "";
-      const pseudo = pseudoInput ? pseudoInput.value : "";
 
-      if (!phone || !pseudo) {
-        alert("Veuillez remplir votre numéro et votre pseudo.");
+      if (!phone) {
+        alert("Veuillez remplir votre numéro de téléphone.");
         return;
       }
       
@@ -151,21 +152,30 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Traitement...';
         btn.disabled = true;
 
-        const planId = currentPlanData.nom.toLowerCase();
+        const planId = currentPlanData.id;
         // Determine months based on features or defaults
         const monthsFeat = currentPlanData.features.find(f => f.label.includes("validité"));
         let months = 1;
-        if (monthsFeat) {
-          if (monthsFeat.valeur.includes("12")) months = 12;
+        const phone = document.getElementById("payPhone").value;
+
+        if (!phone) {
+          alert("Veuillez entrer un numéro de téléphone.");
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+          return;
         }
 
         try {
-          const result = await subscribeToPlan(planId, months);
+          const result = await subscribeToPlan(planId, months, selectedMethod, phone);
           if (result.success) {
-            alert(`Félicitations !\nVotre abonnement "${currentPlanData.nom}" est maintenant actif.\nID Souscription: #${result.data.data.id}`);
+            const data = result.data;
+            if (data.status === 'PENDING_PAYMENT') {
+              alert(data.message); // "Paiement initié. Veuillez valider sur votre téléphone."
+              // We could show a specific "Waiting for payment" UI here
+            } else {
+              alert(`Félicitations !\nVotre abonnement "${currentPlanData.nom}" est maintenant actif.`);
+            }
             window.closeSubscriptionModal();
-            // Optional: refresh page to see new status
-            window.location.reload();
           } else {
             alert(result.message);
           }
@@ -277,26 +287,56 @@ document.addEventListener("DOMContentLoaded", () => {
     }).join('');
   };
 
-  const genererFactures = () => {
+  const genererFactures = async () => {
     const container = document.getElementById("invoice-container");
     if (!container) return;
 
-    container.innerHTML = factures.map(f => `
-        <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors">
-          <div class="w-9 h-9 rounded-[10px] bg-green-light flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-file-invoice text-green-mid text-sm"></i></div>
-          <div class="flex-1 min-w-0">
-            <div class="text-[13.5px] font-semibold text-textMain">Plan ${f.plan} — ${f.date.split(' ').slice(1).join(' ')}</div>
-            <div class="text-[11.5px] text-textMuted italic">${f.date} · Paiement ${f.mode}</div>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <div class="text-[13.5px] font-bold text-textMain">${f.montant} XAF</div>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">${f.status}</span>
-          </div>
-          <button class="ml-2 w-8 h-8 rounded-[8px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted flex-shrink-0">
-            <i class="fa-solid fa-download text-[11px]"></i>
-          </button>
-        </div>
-    `).join('');
+    try {
+      const result = await getMyTransactions();
+      if (result.success && result.data) {
+        const transactions = result.data;
+        
+        if (transactions.length === 0) {
+          container.innerHTML = `
+            <div class="px-5 py-8 text-center text-textMuted text-[13.5px]">
+              Aucune transaction trouvée.
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = transactions.map(t => {
+          const date = new Date(t.created_at);
+          const formattedDate = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+          const planInfo = t.metadata?.planId ? `Plan ${t.metadata.planId.charAt(0).toUpperCase() + t.metadata.planId.slice(1)}` : (t.type === 'subscription' ? 'Abonnement' : 'Récupération');
+          
+          const statusClass = t.status === 'SUCCESS' ? 'bg-green-100 text-green-700' : (t.status === 'PENDING' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700');
+          const statusText = t.status === 'SUCCESS' ? 'Payé' : (t.status === 'PENDING' ? 'En cours' : 'Échoué');
+
+          return `
+            <div class="flex items-center gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors">
+              <div class="w-9 h-9 rounded-[10px] bg-green-light flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid ${t.type === 'subscription' ? 'fa-bolt' : 'fa-file-invoice'} text-green-mid text-sm"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-[13.5px] font-semibold text-textMain">${planInfo}</div>
+                <div class="text-[11.5px] text-textMuted italic">${formattedDate} · ${t.payment_method}</div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="text-[13.5px] font-bold text-textMain">${t.amount} XAF</div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${statusClass}">${statusText}</span>
+              </div>
+              <button class="ml-2 w-8 h-8 rounded-[8px] bg-bgMain border border-borderMain flex items-center justify-center hover:border-primary hover:text-primary transition-colors text-textMuted flex-shrink-0">
+                <i class="fa-solid fa-download text-[11px]"></i>
+              </button>
+            </div>
+          `;
+        }).join('');
+      }
+    } catch (error) {
+      console.error("Erreur chargement transactions:", error);
+      container.innerHTML = `<div class="p-5 text-center text-red-500 text-xs">Erreur de chargement.</div>`;
+    }
   };
 
   /**
@@ -332,8 +372,72 @@ document.addEventListener("DOMContentLoaded", () => {
     counters.forEach(c => obs.observe(c));
   };
 
+  const loadUserUsage = async () => {
+    try {
+      const result = await getUserSubscriptionUsage();
+      if (result.success && result.data) {
+        const usage = result.data;
+        
+        // Update current plan section
+        const planNameEl = document.getElementById("currentPlanName");
+        if (planNameEl) planNameEl.innerText = `Plan ${usage.plan_name}`;
+        
+        const docsLimitEl = document.getElementById("currentDocsLimit");
+        if (docsLimitEl) docsLimitEl.innerText = `${usage.limits.docs_per_type} Document${usage.limits.docs_per_type > 1 ? 's' : ''}`;
+        
+        const objectsUsageEl = document.getElementById("currentObjectsUsage");
+        if (objectsUsageEl) objectsUsageEl.innerText = `${usage.usage.objects} Objet${usage.usage.objects > 1 ? 's' : ''}`;
+        
+        const objectsLimitEl = document.getElementById("currentObjectsLimit");
+        if (objectsLimitEl) objectsLimitEl.innerText = `Sur ${usage.limits.objects}`;
+        
+        // Update Quota Displays
+        const percentage = usage.percentage;
+        
+        const percTextEl = document.getElementById("quotaPercentageText");
+        if (percTextEl) percTextEl.innerText = `${percentage}%`;
+        
+        const progressEl = document.getElementById("quotaProgressBar");
+        if (progressEl) progressEl.style.width = `${percentage}%`;
+        
+        const circleEl = document.getElementById("quotaCircle");
+        if (circleEl) {
+          const circumference = 213.6;
+          const offset = circumference - (percentage / 100) * circumference;
+          circleEl.style.strokeDashoffset = offset;
+        }
+      }
+    } catch (error) {
+      console.error("Erreur chargement usage subscription:", error);
+    }
+  };
+
+  const updateUserInfo = () => {
+    const user = getSession();
+    if (user) {
+      const topInitial = document.getElementById("topInitial");
+      const topName = document.getElementById("topName");
+      const helloName = document.getElementById("helloName");
+      
+      const fullName = `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email;
+      const initial = (user.prenom?.[0] || user.nom?.[0] || user.email?.[0] || 'U').toUpperCase();
+
+      if (topInitial) topInitial.innerText = initial;
+      if (topName) topName.innerText = user.prenom || user.nom || user.email.split('@')[0];
+      if (helloName) helloName.innerText = user.prenom || user.nom || 'Utilisateur';
+    }
+
+    const currentDayEl = document.getElementById("currentDay");
+    if (currentDayEl) {
+      const now = new Date();
+      currentDayEl.innerText = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+  };
+
   // Initializations
+  updateUserInfo();
   loadPlans();
+  loadUserUsage();
   genererFactures();
   animateCounters();
 

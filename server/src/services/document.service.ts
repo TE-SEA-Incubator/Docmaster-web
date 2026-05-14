@@ -2,20 +2,36 @@ import { DocumentRepository } from '../repositories/document.repository.ts';
 import { UserDocument } from '../types/database.ts';
 import { calculateDocumentFingerprint } from '../utils/crypto.utils.ts';
 import { NotificationService } from './notification.service.ts';
+import { subscriptionService } from './subscription.service.ts';
+import { UserRepository } from '../repositories/auth.repository.ts';
+import { DeclarationService } from './declaration.service.ts';
+import argon2 from 'argon2';
 
 export class DocumentService {
   private documentRepository: DocumentRepository;
   private notificationService: NotificationService;
+  private userRepository: UserRepository;
+  private declarationService: DeclarationService;
 
   constructor() {
     this.documentRepository = new DocumentRepository();
     this.notificationService = new NotificationService();
+    this.userRepository = new UserRepository();
+    this.declarationService = new DeclarationService();
   }
 
   /**
    * Register a user's own document
    */
   async registerUserDocument(data: Partial<UserDocument>): Promise<UserDocument> {
+    // 0. Check Subscription Limits
+    if (data.user_id) {
+      const validation = await subscriptionService.validateAction(data.user_id, 'REGISTER_OBJECT');
+      if (!validation.allowed) {
+        throw new Error(validation.reason);
+      }
+    }
+
     // Sanitize dates: convert empty strings to null
     if (data.date_expiration === '' as any) {
       data.date_expiration = undefined;
@@ -87,5 +103,60 @@ export class DocumentService {
     }
 
     return doc;
+  }
+
+  /**
+   * Report a document as lost
+   */
+  async reportDocumentLost(id: string, userId: string, password?: string): Promise<{ document: UserDocument, declarationId?: string }> {
+    // 1. Find document
+    const doc = await this.documentRepository.findById(id);
+    if (!doc || doc.user_id !== userId) {
+      throw new Error('Document introuvable ou accès non autorisé');
+    }
+
+    // 2. Verify password if provided (for security)
+    if (password) {
+      const user = await this.userRepository.findById(userId);
+      if (!user) throw new Error('Utilisateur introuvable');
+      
+      const isMatch = await argon2.verify(user.mot_de_passe, password);
+      if (!isMatch) throw new Error('Mot de passe incorrect');
+    }
+
+    // 3. Create the public declaration automatically
+    let declarationId: string | null = null;
+    try {
+      const decl = await this.declarationService.createDeclaration({
+        doc_type: doc.type_doc,
+        owner_name: doc.nom_sur_doc,
+        document_number: doc.numero_doc,
+        declaration_type: 'LOST',
+        reporter_id: userId,
+        photo_recto: doc.photo_recto,
+        photo_verso: doc.photo_verso,
+        fingerprint: doc.fingerprint,
+        status: 'SEARCHING'
+      }, { bypassLimits: true });
+      declarationId = decl.id;
+    } catch (declError) {
+      console.error('⚠️ Could not auto-create declaration:', declError);
+    }
+
+    // 4. Update the document status in DB with the link
+    const updatedDoc = await this.documentRepository.updateLostStatus(id, userId, true, declarationId || undefined);
+    
+    if (!updatedDoc) {
+      throw new Error('Erreur lors de la mise à jour du document.');
+    }
+
+    // 5. Notify user
+    await this.notificationService.notifyDeclarationCreated(userId, 'LOST', updatedDoc.type_doc);
+
+    return { 
+      document: updatedDoc,
+      declarationId: declarationId || undefined,
+      declarationIdentifiant: declarationId ? (await this.declarationService.getDeclarationById(declarationId))?.identifiant_doc_dm : undefined
+    };
   }
 }

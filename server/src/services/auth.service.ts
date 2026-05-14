@@ -4,9 +4,15 @@ import crypto from 'crypto';
 import { User } from '../types/database.ts';
 import { generateToken } from '../config/jwt.ts';
 import { ReferralService } from './referral.service.ts';
+import { MailService } from './mail.service.ts';
+import { DeclarationRepository } from '../repositories/declaration.repository.ts';
+import { ReferralRepository } from '../repositories/referral.repository.ts';
+import { SettingRepository } from '../repositories/setting.repository.ts';
+import { DocumentTypeRepository } from '../repositories/document-type.repository.ts';
 
 export class UserService {
   private userRepository = new UserRepository();
+  private mailService = new MailService();
 
   /**
    * Generate a unique referral code
@@ -35,9 +41,15 @@ export class UserService {
    * Register a new user with referral code generation
    */
   async registerUser(data: any): Promise<User> {
+    // If frontend says it's verified, double check in DB for security
+    let isVerified = false;
+    if (data.is_verified) {
+      isVerified = await this.userRepository.checkRecentlyVerified(data.email);
+    }
+
     // Hash password
     const hashedPassword = await argon2.hash(data.mot_de_passe);
-
+    
     // Generate unique referral code
     const codeInvitation = await this.generateUniqueReferralCode();
 
@@ -46,12 +58,20 @@ export class UserService {
       ...data,
       mot_de_passe: hashedPassword,
       code_invitation: codeInvitation,
+      is_verified: isVerified,
     });
 
     // If there is a parrain_id, create a referral
     if (data.parrain_id) {
       const referralService = new ReferralService();
       await referralService.createReferral(data.parrain_id, user.id);
+    }
+
+    // Send welcome email
+    try {
+      await this.mailService.sendWelcomeEmail(user.email, user.prenom);
+    } catch (err) {
+      console.warn('Could not send welcome email:', err);
     }
 
     return user;
@@ -75,6 +95,10 @@ export class UserService {
 
     // Generate reset token
     const token = await this.userRepository.forgotPassword(user.id);
+    
+    // Send reset email
+    await this.mailService.sendPasswordResetEmail(user.email, token);
+    
     return token;
   }
 
@@ -158,5 +182,135 @@ export class UserService {
    */
   async getUserByReferralCode(code: string): Promise<User | null> {
     return await this.userRepository.findByReferralCode(code);
+  }
+
+  /**
+   * Get all users for admin
+   */
+  async getAllUsersForAdmin(): Promise<any[]> {
+    return await this.userRepository.getAllUsersForAdmin();
+  }
+
+  /**
+   * Send verification PIN to email
+   */
+  async sendVerificationPin(email: string): Promise<void> {
+    // Generate 6-digit PIN
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Store in DB
+    await this.userRepository.storeVerificationCode(email, pin);
+    
+    // Send email
+    await this.mailService.sendVerificationEmail(email, pin);
+  }
+
+  /**
+   * Verify email PIN
+   */
+  async verifyEmailPin(email: string, pin: string): Promise<boolean> {
+    return await this.userRepository.verifyCode(email, pin);
+  }
+
+  /**
+   * Get user earnings and points statistics
+   */
+  async getEarningsStats(userId: string): Promise<any> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new Error('User not found');
+
+    const declRepo = new DeclarationRepository();
+    const referralRepo = new ReferralRepository();
+    const settingRepo = new SettingRepository();
+    const docTypeRepo = new DocumentTypeRepository();
+
+    // 1. Get all declarations by this user
+    const declarations = await declRepo.findByReporterId(userId);
+    const totalFound = declarations.filter(d => d.declaration_type === 'FOUND').length;
+    const returnedDecls = declarations.filter(d => d.status === 'RETURNED');
+    const totalReturned = returnedDecls.length;
+
+    // 2. Get all referrals by this user
+    const referrals = await referralRepo.getReferralsByParrain(userId);
+    const totalReferrals = referrals.length;
+
+    // 3. Points per declaration (from settings)
+    const ptsPerDeclStr = await settingRepo.getByKey('points_per_declaration') || '5';
+    const PTS_PER_DECL = parseInt(ptsPerDeclStr);
+
+    // 4. Calculate points breakdown
+    const declPoints = declarations.length * PTS_PER_DECL;
+    
+    // For returned docs, we sum up their doc type rewards
+    let returnPoints = 0;
+    const docTypesCache = new Map();
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    for (const d of returnedDecls) {
+      if (!d.doc_type) continue;
+      
+      let docType = docTypesCache.get(d.doc_type);
+      if (!docType) {
+        // 1. Try as UUID if format matches
+        if (uuidRegex.test(d.doc_type)) {
+           try {
+             docType = await docTypeRepo.findById(d.doc_type);
+           } catch (e) {
+             console.error(`Error finding doc type by ID ${d.doc_type}:`, e);
+           }
+        }
+        
+        // 2. If not found or not a UUID, try as code
+        if (!docType) {
+          try {
+            docType = await docTypeRepo.findByCode(d.doc_type.toUpperCase());
+          } catch (e) {
+            console.error(`Error finding doc type by code ${d.doc_type}:`, e);
+          }
+        }
+        
+        if (docType) {
+          docTypesCache.set(d.doc_type, docType);
+        }
+      }
+      
+      returnPoints += docType?.points_recompense || 0;
+    }
+
+    // For referrals, 10 points each (as defined in ReferralRepository)
+    const refPoints = totalReferrals * 10;
+
+    const calculatedTotal = declPoints + returnPoints + refPoints;
+
+    // Sync back to DB if different (self-healing)
+    if ((user.points || 0) !== calculatedTotal) {
+      await this.userRepository.setPoints(userId, calculatedTotal);
+    }
+
+    return {
+      wallet_balance: user.wallet_balance || 0,
+      total_points: calculatedTotal,
+      db_points: user.points || 0, // For debugging
+      stats: {
+        total_found: totalFound,
+        total_returned: totalReturned,
+        total_referrals: totalReferrals
+      },
+      points_breakdown: {
+        declarations: {
+          count: declarations.length,
+          points: declPoints,
+          pts_per_unit: PTS_PER_DECL
+        },
+        returns: {
+          count: totalReturned,
+          points: returnPoints
+        },
+        referrals: {
+          count: totalReferrals,
+          points: refPoints
+        }
+      }
+    };
   }
 }

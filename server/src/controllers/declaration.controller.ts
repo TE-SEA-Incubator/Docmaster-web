@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { DeclarationService } from '../services/declaration.service.ts';
 import { PdfService } from '../services/pdf.service.ts';
+import { subscriptionService } from '../services/subscription.service.ts';
 import { CreateDeclarationDTO, RequestDeleteDeclarationDTO } from '../dtos/declaration.dto.ts';
 import { validateDTO, mapFormDataToObject, formatValidationErrors } from '../utils/validation.utils.ts';
 
@@ -30,6 +31,20 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
     const photo_recto = files?.photo_recto?.[0]?.path;
     const photo_verso = files?.photo_verso?.[0]?.path;
 
+    // 1. Validate subscription limits
+    const validation = await subscriptionService.validateAction(userId, 'CREATE_DECLARATION', { 
+      docTypeId: req.body.doc_type 
+    });
+
+    if (!validation.allowed) {
+      return res.status(403).json({
+        success: false,
+        message: validation.reason,
+        limit: validation.limit,
+        current: validation.current
+      });
+    }
+
     const result = await declarationService.createDeclaration({
       ...req.body,
       declaration_type: 'LOST',
@@ -37,6 +52,11 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
       photo_recto,
       photo_verso
     });
+
+    // 2. Consume referral benefit if used
+    if (validation.useBenefit) {
+      await subscriptionService.consumeBenefit(validation.subscriptionId, 'declaration');
+    }
 
     res.status(201).json({
       success: true,
@@ -72,6 +92,20 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
     const photo_recto = files?.photo_recto?.[0]?.path;
     const photo_verso = files?.photo_verso?.[0]?.path;
 
+    // 1. Validate subscription limits
+    const validation = await subscriptionService.validateAction(userId, 'CREATE_DECLARATION', { 
+      docTypeId: req.body.doc_type 
+    });
+
+    if (!validation.allowed) {
+      return res.status(403).json({
+        success: false,
+        message: validation.reason,
+        limit: validation.limit,
+        current: validation.current
+      });
+    }
+
     const result = await declarationService.createDeclaration({
       ...req.body,
       declaration_type: 'FOUND',
@@ -79,6 +113,11 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
       photo_recto,
       photo_verso
     });
+
+    // 2. Consume referral benefit if used
+    if (validation.useBenefit) {
+      await subscriptionService.consumeBenefit(validation.subscriptionId, 'declaration');
+    }
 
     res.status(201).json({
       success: true,

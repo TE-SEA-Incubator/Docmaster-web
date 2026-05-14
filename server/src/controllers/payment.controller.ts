@@ -1,148 +1,228 @@
 import { Request, Response } from 'express';
-import { TransactionRepository } from '../repositories/transaction.repository.ts';
-import { ClaimRepository } from '../repositories/claim.repository.ts';
-import { NotificationService } from '../services/notification.service.ts';
-import { DeclarationRepository } from '../repositories/declaration.repository.ts';
-import { UserRepository } from '../repositories/auth.repository.ts';
-import { DocumentTypeRepository } from '../repositories/document-type.repository.ts';
+import { query } from '../database/db.ts';
+import { v4 as uuidv4 } from 'uuid';
+import { subscriptionService } from '../services/subscription.service.ts';
+import { notificationService } from '../services/notification.service.ts';
 
-const transRepo = new TransactionRepository();
-const claimRepo = new ClaimRepository();
-const notifService = new NotificationService();
-const declRepo = new DeclarationRepository();
-const userRepo = new UserRepository();
-const docTypeRepo = new DocumentTypeRepository();
+/**
+ * Handle Nokash Payment Callback
+ * Body format: { id, status, amount, phone, orderId }
+ */
+export const nokashCallback = async (req: Request, res: Response) => {
+  console.log('Nokash Callback Received:', req.body);
+  
+  const { id, status, orderId } = req.body;
 
-export class PaymentController {
-  /**
-   * Simulate a payment for document recovery
-   * POST /api/payments/pay-recovery
-   */
-  async payRecovery(req: Request, res: Response) {
-    try {
-      const { docId, amount, paymentMethod } = req.body;
-      const userId = (req as any).user?.id || req.body.userId; // Fallback for dev if auth middleware not applied
+  try {
+    // 1. Find the transaction
+    const transRes = await query('SELECT * FROM transactions WHERE external_ref = $1', [id]);
+    if (transRes.rows.length === 0) {
+      console.warn(`Transaction not found for Nokash ID: ${id}`);
+      return res.status(404).json({ success: false, message: 'Transaction non trouvée' });
+    }
 
-      if (!docId || !amount) {
-        return res.status(400).json({
-          success: false,
-          message: 'Document ID and amount are required'
-        });
+    const transaction = transRes.rows[0];
+
+    // 2. If status is SUCCESS and transaction was PENDING
+    if (status === 'SUCCESS' && transaction.status === 'PENDING') {
+      let metadata = transaction.metadata;
+      
+      // Safety parse if string (some DB adapters return JSONB as string)
+      if (typeof metadata === 'string') {
+        try { metadata = JSON.parse(metadata); } catch(e) { 
+          console.error('Metadata parse error:', e);
+        }
       }
 
-      // 1. Create a PENDING transaction
-      const transaction = await transRepo.create({
-        user_id: userId,
-        amount: amount,
-        status: 'PENDING',
-        payment_method: paymentMethod || 'MOBILE_MONEY',
-        type: 'recovery_fee',
-        metadata: { docId }
-      });
+      const { planId, months } = metadata || {};
 
-      console.log(`[Payment] Transaction ${transaction.id} initiated for doc ${docId}`);
+      // Update transaction status
+      await query('UPDATE transactions SET status = $1 WHERE id = $2', ['SUCCESS', transaction.id]);
 
-      // 2. Simulate external payment delay (fictitious)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Activate subscription
+      await subscriptionService.activateSubscription(transaction.user_id, planId, months);
+      
+      console.log(`Subscription activated for user ${transaction.user_id} via Nokash ${id}`);
 
-      // 3. Update transaction to SUCCESS
-      const updatedTrans = await transRepo.updateStatus(
-        transaction.id, 
-        'SUCCESS', 
-        'EXT-MOCK-' + Math.random().toString(36).substring(7).toUpperCase()
+      // Notify Admins
+      await notificationService.notifyAdmins(
+        'Nouveau Paiement Reçu',
+        `Un paiement de ${transaction.amount} ${transaction.currency} a été effectué avec succès (Réf: ${id}).`,
+        'INFO'
       );
+    } else if (status === 'FAILED' || status === 'CANCELED') {
+      await query('UPDATE transactions SET status = $1 WHERE id = $2', [status, transaction.id]);
+      
+      // Notify user of failure
+      await notificationService.createNotification({
+        user_id: transaction.user_id,
+        type: 'PAYMENT_FAILED',
+        title: 'Échec du Paiement',
+        message: `Le paiement pour votre abonnement a échoué ou a été annulé.`,
+        metadata: { nokashId: id }
+      });
+    }
 
-      // 4. Retrieve the verification code from the claim
-      const claim = await claimRepo.findByDocIdAndOwner(docId, userId);
+    // Always respond 200 to Nokash
+    res.status(200).json({ success: true });
+  } catch (error: any) {
+    console.error('Nokash Callback Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
-      if (!claim) {
-        return res.status(404).json({
-          success: true, // Transaction succeeded but claim missing? 
-          transaction: updatedTrans,
-          message: 'Payment successful, but no claim record found for this document.'
-        });
-      }
+/**
+ * Get current user's transactions
+ */
+export const getMyTransactions = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Non autorisé' });
+    }
 
-      // 5. Update claim status to PAID
-      await claimRepo.updateStatus(claim.id, 'PAID');
+    const result = await query(
+      'SELECT * FROM transactions WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    );
 
-      // 6. Notify the finder and Distribute commission
-      const declaration = await declRepo.findById(docId);
-      if (declaration) {
-        // Find document type for percentages
-        const docType = await docTypeRepo.findByCode(declaration.doc_type);
+    res.status(200).json({ 
+      success: true, 
+      transactions: result.rows 
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+/**
+ * Get all transactions (Admin)
+ */
+export const getAllTransactions = async (req: Request, res: Response) => {
+  try {
+    const result = await query(
+      'SELECT t.*, u.nom, u.prenom, u.email FROM transactions t JOIN users u ON t.user_id = u.id ORDER BY t.created_at DESC'
+    );
+
+    res.status(200).json({ 
+      success: true, 
+      transactions: result.rows 
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Process payment for document recovery
+ * POST /api/payments/pay-recovery
+ */
+export const payRecovery = async (req: Request, res: Response) => {
+    const { docId, amount, paymentMethod } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+        return res.status(401).json({ success: false, message: 'Utilisateur non authentifié' });
+    }
+
+    try {
+        // 1. Check if declaration exists
+        const declRes = await query('SELECT * FROM declarations WHERE id = $1', [docId]);
+        if (declRes.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Déclaration non trouvée' });
+        }
+        const declaration = declRes.rows[0];
+
+        // 2. Fetch document type to get pricing/commission
+        const docTypeRes = await query('SELECT * FROM document_types WHERE code = $1 OR id::text = $1', [declaration.doc_type]);
+        const docType = docTypeRes.rows[0];
+        const finalAmount = docType ? Number(docType.prix_retrouvaille) : (amount || 5000);
+
+        // 3. Create transaction for owner
+        const transId = uuidv4();
+        await query(
+            `INSERT INTO transactions (id, user_id, amount, currency, status, payment_method, type, metadata) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [
+                transId, 
+                userId, 
+                finalAmount, 
+                'XAF', 
+                'SUCCESS', 
+                paymentMethod || 'MOBILE_MONEY',
+                'recovery_fee', 
+                JSON.stringify({ docId })
+            ]
+        );
+
+        // 4. Generate verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // 5. Identify finder and calculate commission
+        const matchRes = await query(
+            `SELECT * FROM matches 
+             WHERE (lost_declaration_id = $1 OR found_declaration_id = $1) 
+             ORDER BY created_at DESC LIMIT 1`,
+            [docId]
+        );
+
+        let finderId = null;
+        let finderReward = 0;
         
-        if (docType) {
-          const finderAmount = (amount * docType.finder_percent) / 100;
-          
-          console.log(`[Payment] Distributing commission: ${finderAmount} to finder ${claim.finder_id}`);
-          
-          // Credit the finder's wallet
-          await userRepo.updateBalance(claim.finder_id, finderAmount);
-          
-          // Award points to the finder
-          if (docType.points_recompense > 0) {
-            console.log(`[Payment] Awarding ${docType.points_recompense} points to finder ${claim.finder_id}`);
-            await userRepo.updatePoints(claim.finder_id, docType.points_recompense);
-          }
-          
-          // Record the payout transaction
-          await transRepo.create({
-            user_id: claim.finder_id,
-            amount: finderAmount,
-            status: 'SUCCESS',
-            payment_method: 'WALLET',
-            type: 'finder_payout',
-            metadata: { docId, originalAmount: amount, commissionPercent: docType.finder_percent }
-          });
+        if (matchRes.rows.length > 0) {
+            const match = matchRes.rows[0];
+            const otherId = match.lost_declaration_id === docId ? match.found_declaration_id : match.lost_declaration_id;
+            const otherDeclRes = await query('SELECT reporter_id FROM declarations WHERE id = $1', [otherId]);
+            if (otherDeclRes.rows.length > 0) {
+                finderId = otherDeclRes.rows[0].reporter_id;
+            }
         }
 
-        await notifService.notifyPaymentReceived(
-          claim.finder_id, 
-          declaration.doc_type, 
-          docId
-        );
-      }
+        // Calculate reward if finder identified
+        if (finderId && docType) {
+            const basePrice = Number(docType.prix_retrouvaille) || finalAmount;
+            const percent = Number(docType.finder_percent) || 80;
+            finderReward = (basePrice * percent) / 100;
+        }
 
-      return res.json({
-        success: true,
-        message: 'Paiement effectué avec succès !',
-        transaction: updatedTrans,
-        verificationCode: claim.verification_code // Reveal the code to the owner
-      });
+        // 6. Create or update claim
+        const claimRes = await query('SELECT id FROM claims WHERE doc_id = $1 AND owner_id = $2', [docId, userId]);
+        
+        if (claimRes.rows.length > 0) {
+            await query(
+                'UPDATE claims SET status = $1, verification_code = $2, finder_id = $3 WHERE id = $4',
+                ['PAID', verificationCode, finderId, claimRes.rows[0].id]
+            );
+        } else {
+            await query(
+                'INSERT INTO claims (doc_id, owner_id, finder_id, verification_code, status) VALUES ($1, $2, $3, $4, $5)',
+                [docId, userId, finderId, verificationCode, 'PAID']
+            );
+        }
+
+        // 6. Update declaration status
+        await query('UPDATE declarations SET payment_status = $1, status = $2 WHERE id = $3', ['PAID', 'MATCHED', docId]);
+
+        // 7. Notify finder about the payment (Informational)
+        if (finderId) {
+            await notificationService.createNotification({
+                user_id: finderId,
+                type: 'PAYMENT_PENDING',
+                title: 'Paiement effectué par le propriétaire',
+                message: `Le propriétaire a payé les frais. Vous recevrez votre récompense une fois le code de vérification validé lors de la remise.`,
+                metadata: { docId }
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                verificationCode,
+                transactionId: transId
+            }
+        });
 
     } catch (error: any) {
-      console.error('Error in payRecovery:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Erreur lors du traitement du paiement',
-        error: error.message
-      });
+        console.error('❌ [PayRecovery] Error:', error);
+        res.status(500).json({ success: false, message: 'Erreur interne du serveur lors du paiement.' });
     }
-  }
-
-  /**
-   * Get transaction history for user
-   */
-  async getMyTransactions(req: Request, res: Response) {
-    try {
-      const userId = (req as any).user?.id;
-      const transactions = await transRepo.findByUser(userId);
-      return res.json({ success: true, transactions });
-    } catch (error: any) {
-      return res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  /**
-   * Admin: Get all transactions
-   */
-  async getAllTransactionsAdmin(req: Request, res: Response) {
-    try {
-      const transactions = await transRepo.getAll();
-      return res.json({ success: true, transactions });
-    } catch (error: any) {
-      return res.status(500).json({ success: false, message: error.message });
-    }
-  }
-}
+};

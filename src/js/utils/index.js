@@ -17,13 +17,19 @@ export {
   checkStrength,
   checkMatch,
   checkPseudo,
-  selectPseudo,
+  generateSuggestions,
   toggleReferral,
   resendPin,
 } from './ui-helpers.js';
 
 // Form helpers
-export { nextStep, prevStep, submitRegister } from './form-helpers.js';
+export { 
+  nextStep, 
+  prevStep, 
+  submitRegister, 
+  setupPinInputs, 
+  selectPseudo 
+} from './form-helpers.js';
 
 // Error modal
 export { showErrorModal, showSuccessModal, showInfoModal } from './error-modal.js';

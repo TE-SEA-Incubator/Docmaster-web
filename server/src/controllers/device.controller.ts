@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { deviceService } from '../services/device.service.ts';
+import { subscriptionService } from '../services/subscription.service.ts';
 
 export const registerMyDevice = async (req: Request, res: Response) => {
   try {
@@ -19,6 +20,18 @@ export const registerMyDevice = async (req: Request, res: Response) => {
     if (files?.photo_facture?.[0]) photos.push(files.photo_facture[0].path);
     if (files?.photo_face?.[0]) photos.push(files.photo_face[0].path);
     if (files?.photo_serial?.[0]) photos.push(files.photo_serial[0].path);
+
+    // 1. Validate subscription limits
+    const validation = await subscriptionService.validateAction(userId, 'REGISTER_OBJECT');
+
+    if (!validation.allowed) {
+      return res.status(403).json({
+        success: false,
+        message: validation.reason,
+        limit: validation.limit,
+        current: validation.current
+      });
+    }
 
     const result = await deviceService.registerDevice({
       ...data,

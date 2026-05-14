@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin DocMaster — Utilisateurs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --gray-50:  #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-400: #9ca3af;
+            --gray-600: #6b7280;
+            --gray-900: #111827;
+            --accent:       #F5A64B;
+            --accent-dark:  #D48D3B;
+            --accent-light: #FFF9F0;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: #fff; color: var(--gray-900); margin: 0; display: flex; height: 100vh; }
+
+        /* Sidebar */
+        .sidebar { width: 240px; background: #1E312B; border-right: none; height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; color: #fff; }
+        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; }
+        .logo-area span { font-weight: 600; font-size: 0.9375rem; color: #fff; }
+        .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 0.8125rem; font-weight: 500; text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
+        .nav-link i { width: 16px; text-align: center; }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .nav-link.active { background: var(--accent); color: #fff; }
+
+        /* Main */
+        .main { flex: 1; overflow-y: auto; padding: 2rem 3rem; }
+        .page-header { margin-bottom: 2rem; }
+        .page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+        .page-header p { font-size: 0.875rem; color: var(--gray-600); margin-top: 4px; }
+
+        /* Table Style */
+        .table-container { border: 0.5px solid var(--gray-200); border-radius: 12px; overflow: hidden; background: #fff; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--gray-50); padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.5px solid var(--gray-200); }
+        td { padding: 14px 16px; font-size: 0.875rem; border-bottom: 0.5px solid var(--gray-200); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--gray-50); }
+
+        .user-cell { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: var(--gray-400); }
+        .user-details { display: flex; flex-direction: column; }
+        .user-name { font-weight: 500; color: var(--gray-900); }
+        .user-email { font-size: 0.75rem; color: var(--gray-400); }
+
+        .sub-badge { font-size: 0.625rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .sub-active { background: #EAF3DE; color: #3B6D11; }
+        .sub-none { background: var(--gray-100); color: var(--gray-400); }
+
+        .ref-code { font-family: monospace; font-size: 0.75rem; background: var(--gray-50); border: 0.5px solid var(--gray-200); padding: 2px 6px; border-radius: 4px; color: var(--gray-600); }
+        .stats-cell { font-size: 0.8125rem; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo-area"><img src="../assets/images/logo.png" alt="Logo" class="h-6"><span>Admin Panel</span></div>
+        <nav class="flex-1">
+            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Vue d'ensemble</a>
+            <a href="users.html" class="nav-link active"><i class="fa-solid fa-users"></i> Utilisateurs</a>
+            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-invoice"></i> Documents</a>
+            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-crown"></i> Abonnements</a>
+            <a href="transactions.html" class="nav-link"><i class="fa-solid fa-receipt"></i> Transactions</a>
+            <a href="referrals.html" class="nav-link"><i class="fa-solid fa-user-friends"></i> Parrainages</a>
+            <a href="declarations.html" class="nav-link"><i class="fa-solid fa-folder-open"></i> Déclarations</a>
+            <a href="withdrawals.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i> Retraits</a>
+            <a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Paramètres</a>
+        </nav>
+        <div class="mt-auto pt-4 border-t border-white/10">
+            <a href="#" id="adminLogout" class="nav-link text-red-400 hover:text-red-300">
+                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+            </a>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="flex items-center justify-between mb-8">
+            <div class="page-header mb-0">
+                <h1>Gestion des utilisateurs</h1>
+                <p>Liste complète des utilisateurs inscrits et leur état d'abonnement.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fa-solid fa-bell text-xl"></i>
+                    <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+                </button>
+                <div class="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold">
+                    A
+                </div>
+            </div>
+        </header>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Abonnement</th>
+                        <th>Portefeuille</th>
+                        <th>Points</th>
+                        <th>Code Parrain</th>
+                        <th>Filleuls</th>
+                        <th>Date Inscription</th>
+                    </tr>
+                </thead>
+                <tbody id="users-list">
+                    <!-- Loaded via JS -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script type="module">
+        import { adminService } from '../js/services/admin.js';
+        import { initAdminUI } from '../js/services/admin-ui.js';
+
+        async function loadUsers() {
+            try {
+                const users = await adminService.getAdminUsers();
+                const list = document.getElementById('users-list');
+                list.innerHTML = '';
+                
+                users.forEach(u => {
+                    const row = document.createElement('tr');
+                    const initial = (u.nom ? u.nom[0] : '') + (u.prenom ? u.prenom[0] : '');
+                    
+                    row.innerHTML = `
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">${initial || '?'}</div>
+                                <div class="user-details">
+                                    <span class="user-name">${u.nom} ${u.prenom}</span>
+                                    <span class="user-email">${u.email}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            ${u.subscription_status === 'ACTIVE' 
+                                ? `<span class="sub-badge sub-active">${u.active_plan}</span>` 
+                                : `<span class="sub-badge sub-none">Gratuit</span>`
+                            }
+                        </td>
+                        <td class="font-medium">${u.wallet_balance} XAF</td>
+                        <td><span class="text-orange-500 font-bold">${u.points}</span></td>
+                        <td><span class="ref-code">${u.code_invitation || '---'}</span></td>
+                        <td class="stats-cell text-center">${u.referral_count}</td>
+                        <td class="text-[11px] text-gray-400">${new Date(u.created_at).toLocaleDateString()}</td>
+                    `;
+                    list.appendChild(row);
+                });
+            } catch (error) { console.error(error); }
+        }
+        loadUsers();
+    </script>
+</body>
+</html>

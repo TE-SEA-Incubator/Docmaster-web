@@ -8,10 +8,14 @@ import {
   getPerformanceStats,
 } from "../services/api.js";
 import { getSession } from "../services/auth.js";
+import { showSuccessModal } from "../utils/index.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
   // 1. Initialize Basic UI
   setupBasicUI();
+
+  // Check for new user welcome
+  checkNewUserWelcome();
 
   // 2. Load Dashboard Data
   await loadDashboardContent();
@@ -82,8 +86,12 @@ async function loadDashboardContent() {
     ]);
 
     if (declRes.success) {
-      renderDeclarationsFlow(declRes.data);
-      renderRecentActivities(declRes.data);
+      const allDecls = declRes.data || [];
+      // Filter out returned/closed items from the dashboard view
+      const activeDecls = allDecls.filter(d => !['RETURNED', 'CANCELLED', 'CLAIMED'].includes(d.status));
+
+      renderDeclarationsFlow(activeDecls);
+      renderRecentActivities(activeDecls);
 
       const statsData = {
         totalLost: globalStatsRes.success ? globalStatsRes.data.total_lost : 0,
@@ -93,7 +101,7 @@ async function loadDashboardContent() {
       };
 
       updateStats(
-        declRes.data,
+        allDecls, // We pass allDecls to updateStats to keep the 'Recovered' count accurate
         deviceRes.success ? deviceRes.data.length : 0,
         statsData,
       );
@@ -768,4 +776,25 @@ function formatTimeAgo(dateString) {
   if (diffInHours < 24) return `Il y a ${diffInHours}h`;
   const diffInDays = Math.floor(diffInHours / 24);
   return `Il y a ${diffInDays}j`;
+}
+
+/**
+ * Show a welcome message if the user just registered
+ */
+function checkNewUserWelcome() {
+  const isNew = localStorage.getItem('docmaster_is_new_user');
+  if (isNew === 'true') {
+    const user = getSession();
+    const name = user ? (user.prenom || user.nom) : '';
+    
+    setTimeout(() => {
+      showSuccessModal(
+        `Bienvenue sur DocMaster, ${name} ! 🎊`,
+        "Votre compte a été créé avec succès. Vous pouvez maintenant commencer à protéger vos documents et déclarer vos pertes.",
+        6000
+      );
+    }, 1000);
+    
+    localStorage.removeItem('docmaster_is_new_user');
+  }
 }

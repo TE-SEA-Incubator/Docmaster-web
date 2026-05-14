@@ -6,8 +6,10 @@
   <title>DocMaster – Déclarer un document perdu</title>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="./css/input.css" />
   <script src="https://cdn.tailwindcss.com"></script>
-   <script src="./js/ui/sidebar.js"></script>
+   <script defer src="./js/ui/sidebar.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="./js/pdfGenerator.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -54,7 +56,7 @@
     .main-wrap{margin-left:260px;height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .3s ease}
     .main-wrap.expanded{margin-left:0}
     .topbar{flex-shrink:0;background:white;border-bottom:1px solid #E0D5C4;padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;z-index:20}
-    #pageBody{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding:16px 28px 0}
+    #pageBody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;padding:16px 28px 0}
     #alertBanner{flex-shrink:0;margin-bottom:14px}
     #formGrid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 288px;gap:20px;overflow:hidden}
     #formLeft{min-height:0;overflow-y:auto;padding-bottom:20px;display:flex;flex-direction:column;gap:14px}
@@ -510,13 +512,15 @@
       </p>
     </div>
     
-    <div class="field-group" style="margin-bottom:24px;">
-      <div class="field-wrapper">
-        <i class="fa-solid fa-lock field-icon"></i>
-        <input type="password" id="confirmPassword" class="field-input" placeholder="Votre mot de passe" style="border-color:#E0D5C4"/>
+    <form onsubmit="return false" autocomplete="on">
+      <div class="field-group" style="margin-bottom:24px;">
+        <div class="field-wrapper">
+          <i class="fa-solid fa-lock field-icon"></i>
+          <input type="password" id="confirmPassword" class="field-input" placeholder="Votre mot de passe" style="border-color:#E0D5C4"/>
+        </div>
+        <p id="passwordError" style="display:none;font-size:11px;color:#ef4444;margin-top:4px;font-weight:600;">Mot de passe incorrect</p>
       </div>
-      <p id="passwordError" style="display:none;font-size:11px;color:#ef4444;margin-top:4px;font-weight:600;">Mot de passe incorrect</p>
-    </div>
+    </form>
 
     <div style="display:flex;gap:10px;">
       <button onclick="closeConfirmModal()" style="flex:1;padding:12px;border:1.5px solid #E0D5C4;background:white;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;color:#374151;cursor:pointer;">Annuler</button>

@@ -17,5 +17,6 @@ CREATE TABLE referrals (
     filleul_id UUID REFERENCES users(id),
     points_gagnes INTEGER,
     status VARCHAR(20) DEFAULT 'VALIDATED',
+    recompense_attribuee BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

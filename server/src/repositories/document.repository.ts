@@ -70,8 +70,9 @@ export class DocumentRepository {
         fingerprint = COALESCE($5, fingerprint),
         photo_recto = COALESCE($6, photo_recto),
         photo_verso = COALESCE($7, photo_verso),
-        is_protected = COALESCE($8, is_protected)
-      WHERE id = $9 AND user_id = $10
+        is_protected = COALESCE($8, is_protected),
+        is_lost = COALESCE($9, is_lost)
+      WHERE id = $10 AND user_id = $11
       RETURNING *`;
 
     const { rows } = await pool.query(query, [
@@ -83,6 +84,7 @@ export class DocumentRepository {
       data.photo_recto,
       data.photo_verso,
       data.is_protected,
+      data.is_lost,
       id,
       userId
     ]);
@@ -98,5 +100,14 @@ export class DocumentRepository {
     const query = 'SELECT * FROM my_documents WHERE fingerprint = $1';
     const { rows } = await pool.query(query, [fingerprint]);
     return rows;
+  }
+
+  /**
+   * Update the lost status of a document and link it to a declaration
+   */
+  async updateLostStatus(id: string, userId: string, isLost: boolean, declarationId: string | null = null): Promise<UserDocument | null> {
+    const query = 'UPDATE my_documents SET is_lost = $1, declaration_id = $2 WHERE id = $3 AND user_id = $4 RETURNING *';
+    const { rows } = await pool.query(query, [isLost, declarationId, id, userId]);
+    return rows[0] || null;
   }
 }

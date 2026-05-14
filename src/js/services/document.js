@@ -11,7 +11,8 @@ import {
   deleteDocument,
   shareDocument,
   getDocumentShares,
-  revokeShare
+  revokeShare,
+  reportDocumentLost as apiReportLost
 } from './api.js';
 import { 
   showErrorModal, 
@@ -720,3 +721,107 @@ export async function generateDocumentPDF(docId) {
 window.generateDocumentPDF = generateDocumentPDF;
 window.shareSocial = shareSocial;
 window.downloadDocument = downloadDocument;
+
+/**
+ * ────────────────────────────────────────────────────────────────
+ * LOST DECLARATION UI LOGIC
+ * ────────────────────────────────────────────────────────────────
+ */
+
+let documentToMarkLost = null;
+let lastCreatedDeclarationId = null;
+
+export function confirmLost(id) {
+  documentToMarkLost = id;
+  const modal = document.getElementById('confirmLostModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+export function closeConfirmLost() {
+  const modal = document.getElementById('confirmLostModal');
+  if (modal) modal.classList.add('hidden');
+  documentToMarkLost = null;
+  
+  const pwdInput = document.getElementById('confirmPassword');
+  if (pwdInput) pwdInput.value = '';
+  
+  const err = document.getElementById('passwordError');
+  if (err) err.classList.add('hidden');
+}
+
+export async function validateAndSubmitLost() {
+  const pwdInput = document.getElementById('confirmPassword');
+  const pwd = pwdInput ? pwdInput.value : '';
+  
+  if (!pwd) {
+    const err = document.getElementById('passwordError');
+    if (err) err.classList.remove('hidden');
+    return;
+  }
+
+  const btn = document.getElementById('finalSubmitBtn');
+  if (!btn) return;
+  
+  btn.disabled = true;
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement…';
+
+  try {
+    const result = await apiReportLost(documentToMarkLost, pwd);
+    
+    if (result.success) {
+      lastCreatedDeclarationId = result.data.declarationId;
+      const identifiant = result.data.declarationIdentifiant;
+      
+      closeConfirmLost();
+      
+      const successOverlay = document.getElementById('successOverlay');
+      if (successOverlay) {
+        successOverlay.classList.remove('hidden');
+        const idBox = document.getElementById('declarationIdentifiantBox');
+        if (idBox && identifiant) {
+          idBox.textContent = identifiant;
+          idBox.classList.remove('hidden');
+        } else if (idBox) {
+          idBox.classList.add('hidden');
+        }
+      }
+      
+      // Refresh the list to show "Lost" badge
+      initDocumentList();
+    } else {
+      showErrorModal('Erreur', result.message);
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  } catch (error) {
+    console.error('Lost Declaration Error:', error);
+    showErrorModal('Erreur', 'Une erreur est survenue lors de la déclaration.');
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
+}
+
+export function downloadDeclarationPdf() {
+  if (!lastCreatedDeclarationId) {
+    alert('Aucun rapport disponible.');
+    return;
+  }
+  
+  const url = `http://localhost:5000/api/declarations/${lastCreatedDeclarationId}/pdf`;
+  const token = localStorage.getItem('docmaster_jwt_token');
+  
+  // Open in new tab or download
+  const link = document.createElement('a');
+  link.href = url + (token ? `?token=${token}` : ''); // Token in query param for direct download if needed
+  link.target = '_blank';
+  link.download = `declaration_perte_${lastCreatedDeclarationId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+window.confirmLost = confirmLost;
+window.closeConfirmLost = closeConfirmLost;
+window.validateAndSubmitLost = validateAndSubmitLost;
+window.downloadDeclarationPdf = downloadDeclarationPdf;

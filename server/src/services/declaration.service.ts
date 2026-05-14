@@ -1,3 +1,4 @@
+import { pool } from "../database/db.ts";
 import { DeclarationRepository } from "../repositories/declaration.repository.ts";
 import { DocumentDeclaration } from "../types/database.ts";
 import { calculateDocumentFingerprint } from "../utils/crypto.utils.ts";
@@ -8,6 +9,8 @@ import { TransactionRepository } from "../repositories/transaction.repository.ts
 import { ClaimRepository } from "../repositories/claim.repository.ts";
 import { UserRepository } from "../repositories/auth.repository.ts";
 import { DocumentTypeRepository } from "../repositories/document-type.repository.ts";
+import { subscriptionService } from "./subscription.service.ts";
+import { SettingRepository } from "../repositories/setting.repository.ts";
 
 
 export class DeclarationService {
@@ -18,6 +21,7 @@ export class DeclarationService {
   private claimRepository: ClaimRepository;
   private userRepository: UserRepository;
   private docTypeRepository: DocumentTypeRepository;
+  private settingRepository: SettingRepository;
 
   constructor() {
     this.declarationRepository = new DeclarationRepository();
@@ -27,6 +31,7 @@ export class DeclarationService {
     this.claimRepository = new ClaimRepository();
     this.userRepository = new UserRepository();
     this.docTypeRepository = new DocumentTypeRepository();
+    this.settingRepository = new SettingRepository();
   }
 
   /**
@@ -34,6 +39,7 @@ export class DeclarationService {
    */
   async createDeclaration(
     data: Partial<DocumentDeclaration>,
+    options: { bypassLimits?: boolean } = {}
   ): Promise<DocumentDeclaration> {
     // 1. Generate unique DocMaster ID (Nomenclature: DM_YYMM_N)
     const now = new Date();
@@ -68,6 +74,24 @@ export class DeclarationService {
 
       // Ensure we store the ID for future-proofing and relational integrity
       data.doc_type = docType.id;
+    }
+
+    // 2.5 Check Subscription Limits
+    if (data.reporter_id && !options.bypassLimits) {
+      const validation = await subscriptionService.validateAction(
+        data.reporter_id, 
+        'CREATE_DECLARATION', 
+        { docTypeId: data.doc_type }
+      );
+
+      if (!validation.allowed) {
+        throw new Error(validation.reason);
+      }
+
+      // If allowed via a specific benefit (like referral free declaration), consume it
+      if (validation.useBenefit && validation.subscriptionId) {
+        await subscriptionService.consumeBenefit(validation.subscriptionId, 'declaration');
+      }
     }
 
     // 3. Generate fingerprint and check for duplicates
@@ -113,7 +137,28 @@ export class DeclarationService {
       .findAndNotifyMatches(declaration)
       .catch((err) => console.error("Error checking matches:", err));
 
+    // 8. Award Points (based on setting)
+    if (declaration.reporter_id) {
+      const points = await this.settingRepository.getByKey('points_per_declaration');
+      await this.awardPoints(declaration.reporter_id, Number(points) || 5);
+    }
+
     return declaration;
+  }
+
+  /**
+   * Award points to a user
+   */
+  async awardPoints(userId: string, points: number) {
+    try {
+      await pool.query(
+        'UPDATE users SET points = COALESCE(points, 0) + $1 WHERE id = $2',
+        [points, userId]
+      );
+      console.log(`✅ Awarded ${points} points to user ${userId}`);
+    } catch (error) {
+      console.error(`❌ Error awarding points to user ${userId}:`, error);
+    }
   }
 
   /**

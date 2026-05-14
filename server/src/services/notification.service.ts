@@ -1,4 +1,5 @@
 import { NotificationRepository, Notification } from '../repositories/notification.repository.ts';
+import { subscriptionService } from './subscription.service.ts';
 
 export class NotificationService {
   private notificationRepository: NotificationRepository;
@@ -8,7 +9,51 @@ export class NotificationService {
   }
 
   async createNotification(data: Notification) {
-    return await this.notificationRepository.create(data);
+    // 1. Check user subscription for allowed channels
+    const userId = data.user_id;
+    const channels: any = { in_app: true }; // In-app is always enabled
+    
+    // Check SMS
+    const smsVal = await subscriptionService.validateAction(userId, 'ADD_ALERT', { alertType: 'sms' });
+    channels.sms = smsVal.allowed;
+    
+    // Check Email
+    const emailVal = await subscriptionService.validateAction(userId, 'ADD_ALERT', { alertType: 'email' });
+    channels.email = emailVal.allowed;
+
+    // Check Push
+    const pushVal = await subscriptionService.validateAction(userId, 'ADD_ALERT', { alertType: 'push' });
+    channels.push = pushVal.allowed;
+
+    // 2. Enrich data with allowed channels
+    const enrichedData = {
+      ...data,
+      channels: channels
+    };
+
+    const savedNotif = await this.notificationRepository.create(enrichedData);
+    
+    // 3. Trigger actual delivery (mocked for now)
+    await this.deliverNotification(savedNotif);
+
+    return savedNotif;
+  }
+
+  /**
+   * Mocked delivery logic to external providers
+   */
+  private async deliverNotification(notification: any) {
+    const { channels, title, message, user_id } = notification;
+    
+    if (channels.sms) {
+      console.log(`[SMS-PROVIDER] Sending SMS to user ${user_id}: ${title} - ${message}`);
+    }
+    if (channels.email) {
+      console.log(`[EMAIL-PROVIDER] Sending Email to user ${user_id}: ${title}`);
+    }
+    if (channels.push) {
+      console.log(`[PUSH-PROVIDER] Sending Push to user ${user_id}: ${title}`);
+    }
   }
 
   async getUserNotifications(userId: string) {
@@ -138,6 +183,29 @@ export class NotificationService {
       metadata: { docId, action: 'RECOVERY_COMPLETE' }
     });
   }
+  /**
+   * Admin Notifications
+   */
+  async notifyAdmins(title: string, message: string, type: 'ALERT' | 'INFO' = 'INFO') {
+    try {
+      const { query } = await import('../config/database.ts');
+      const admins = await query("SELECT id FROM users WHERE role = 'ADMIN'");
+      
+      const promises = admins.rows.map(admin => {
+        return this.createNotification({
+          user_id: admin.id,
+          title,
+          message,
+          type
+        });
+      });
+      
+      await Promise.all(promises);
+    } catch (error) {
+      console.error('Error notifying admins:', error);
+    }
+  }
+
 }
 
 export const notificationService = new NotificationService();

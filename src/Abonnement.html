@@ -9,6 +9,7 @@
     href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="./css/input.css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="module" src="/js/services/auth.js"></script>
   <script src="./js/ui/sidebar.js"></script>
@@ -278,7 +279,7 @@
               <i class="fa-solid fa-bolt text-primary text-[10px] animate-pulse"></i>
               <span class="text-[11px] font-bold text-primary uppercase tracking-widest">Plan actuel</span>
             </div>
-            <h1 class="font-bricolage text-2xl md:text-4xl font-extrabold text-white leading-tight mb-2">Plan Standard
+            <h1 class="font-bricolage text-2xl md:text-4xl font-extrabold text-white leading-tight mb-2" id="currentPlanName">Plan Standard
             </h1>
             <p class="text-white/60 text-[13px] md:text-[14px] mb-5 max-w-lg">Renouvelé le <strong
                 class="text-white/90">10 avril 2024</strong> · Prochaine échéance le <strong class="text-white/90">10
@@ -289,7 +290,7 @@
                 class="flex items-center gap-3 bg-white/10 border border-white/10 backdrop-blur-xl rounded-2xl px-4 py-2 transition-transform hover:scale-105">
                 <i class="fa-solid fa-file-circle-check text-primary text-lg"></i>
                 <div class="flex flex-col">
-                  <span class="text-white/90 text-[12px] font-bold leading-none">1 Document</span>
+                  <span class="text-white/90 text-[12px] font-bold leading-none" id="currentDocsLimit">1 Document</span>
                   <span class="text-white/40 text-[10px] uppercase font-bold mt-1">Par type</span>
                 </div>
               </div>
@@ -297,8 +298,8 @@
                 class="flex items-center gap-3 bg-white/10 border border-white/10 backdrop-blur-xl rounded-2xl px-4 py-2 transition-transform hover:scale-105">
                 <i class="fa-solid fa-box-open text-primary text-lg"></i>
                 <div class="flex flex-col">
-                  <span class="text-white/90 text-[12px] font-bold leading-none">2 Objets</span>
-                  <span class="text-white/40 text-[10px] uppercase font-bold mt-1">Bientôt disponible</span>
+                  <span class="text-white/90 text-[12px] font-bold leading-none" id="currentObjectsUsage">0 Objets</span>
+                  <span class="text-white/40 text-[10px] uppercase font-bold mt-1" id="currentObjectsLimit">Sur 2</span>
                 </div>
               </div>
             </div>
@@ -310,16 +311,16 @@
               <svg class="w-24 h-24 -rotate-90" viewBox="0 0 80 80">
                 <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="6" />
                 <circle cx="40" cy="40" r="34" fill="none" stroke="#F5A64B" stroke-width="6" stroke-dasharray="213.6"
-                  stroke-dashoffset="85.4" stroke-linecap="round" class="transition-all duration-1000" />
+                  stroke-dashoffset="213.6" stroke-linecap="round" class="transition-all duration-1000" id="quotaCircle" />
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <span class="font-bricolage text-xl font-black text-white leading-none">60%</span>
+                <span class="font-bricolage text-xl font-black text-white leading-none" id="quotaPercentageText">0%</span>
                 <span class="text-white/40 text-[9px] font-bold uppercase mt-1">Quota</span>
               </div>
             </div>
             <div class="text-white/50 text-[11px] font-bold uppercase tracking-widest mb-3">Capacité utilisée</div>
             <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full" style="width:60%"></div>
+              <div class="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all duration-1000" style="width:0%" id="quotaProgressBar"></div>
             </div>
           </div>
         </div>
@@ -494,14 +495,14 @@
         </p>
 
         <div id="viewStep1" class="grid animate-fade-in space-y-4 grid-cols-2 gap-4">
-          <button onclick="goToStep2()"
+          <button onclick="goToStep2('ORANGE_MONEY')"
             class="w-full flex items-center justify-between border-2 border-slate-100 bg-white rounded-2xl p-4 hover:border-[#F5A64B] hover:bg-orange-50/30 transition-all group">
             <div class="flex flex-col items-center text-center justify-center gap-3">
               <img src="./assets/images/orange_money.jpg" class="w-12 h-12 rounded object-cover" />
               <span class="font-bold text-slate-700 text-xs">Paiement mobile</span>
             </div>
           </button>
-          <button onclick="goToStep2()"
+          <button onclick="goToStep2('PAYPOINT')"
             class="w-full flex items-center justify-between border-2 border-slate-100 bg-white rounded-2xl p-4 hover:border-[#F5A64B] hover:bg-orange-50/30 transition-all group">
             <div class="flex flex-col items-center text-center justify-center gap-3 w-full">
               <img src="./assets/images/paypoint (2).png" class="w-12 h-12 rounded object-cover" />
@@ -515,9 +516,6 @@
             <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Numéro de téléphone</label>
             <input type="tel" id="payPhone"
               class="w-full border-2 border-slate-100 rounded-xl p-4 outline-none focus:border-[#F5A64B] font-bold bg-slate-50">
-            <label class="text-[10px] font-bold text-gray-400 uppercase ml-1">Nom / Pseudo</label>
-            <input type="text" id="payPseudo" placeholder="@pseudo"
-              class="w-full border-2 border-slate-100 rounded-xl p-4 outline-none focus:border-[#F5A64B] font-bold bg-slate-50 transition-colors">
           </div>
         </div>
 

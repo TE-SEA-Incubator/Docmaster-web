@@ -9,6 +9,7 @@ import apiClient, { setAuthToken, clearAuthToken } from '../core/axios.js';
 
 export const API_BASE_URL = 'http://localhost:5000/api';
 export const BASE_URL = 'http://localhost:5000';
+export const api = apiClient;
 
 /**
  * Helper to get authentication headers for fetch calls
@@ -40,7 +41,8 @@ export async function registerUser(userData) {
       telephone: userData.telephone || null,
       pays: userData.pays || 'Cameroun',
       ville: userData.ville || 'Yaoundé',
-      parrain_id: userData.parrain_id || null,
+      code_parrainage: userData.code_parrainage || null,
+      is_verified: userData.is_verified || false
     });
     return { success: true, data: response.data };
   } catch (error) {
@@ -100,6 +102,32 @@ export async function resetPassword(token, newPassword) {
 }
 
 /**
+ * Send verification PIN to email
+ */
+export async function apiSendVerificationPin(email) {
+  try {
+    const response = await apiClient.post('auth/send-verification-pin', { email });
+    return { success: true, data: response.data };
+  } catch (error) {
+    const message = error.response?.data?.error || 'Erreur lors de l\'envoi du code.';
+    return { success: false, message };
+  }
+}
+
+/**
+ * Verify email PIN
+ */
+export async function apiVerifyEmailPin(email, pin) {
+  try {
+    const response = await apiClient.post('auth/verify-email-pin', { email, pin });
+    return { success: true, data: response.data };
+  } catch (error) {
+    const message = error.response?.data?.error || 'Code de vérification invalide.';
+    return { success: false, message };
+  }
+}
+
+/**
  * Logout user
  */
 export function logout() {
@@ -142,6 +170,19 @@ export async function getProfile() {
     return { success: true, data: response.data };
   } catch (error) {
     const message = error.response?.data?.error || 'Erreur lors de la récupération du profil.';
+    return { success: false, message };
+  }
+}
+
+/**
+ * Get current user earnings and points breakdown
+ */
+export async function getUserEarningsStats() {
+  try {
+    const response = await apiClient.get('auth/earnings-stats');
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    const message = error.response?.data?.message || 'Erreur lors de la récupération des gains.';
     return { success: false, message };
   }
 }
@@ -261,6 +302,19 @@ export async function deleteDocument(id) {
     return { success: true, message: response.data.message };
   } catch (error) {
     const message = error.response?.data?.message || 'Erreur lors de la suppression.';
+    return { success: false, message };
+  }
+}
+
+/**
+ * Declare a personal document as lost
+ */
+export async function reportDocumentLost(id, password) {
+  try {
+    const response = await apiClient.patch(`documents/${id}/lost`, { password });
+    return { success: true, data: response.data };
+  } catch (error) {
+    const message = error.response?.data?.message || 'Erreur lors de la déclaration de perte.';
     return { success: false, message };
   }
 }
@@ -509,10 +563,18 @@ export async function getPerformanceStats(period = 'month') {
 export async function getActiveDocumentTypes() {
   try {
     const response = await apiClient.get('document-types/active');
-    return { success: true, data: response.data };
+    // Ensure we always return an array
+    let data = response.data;
+    if (data && data.data && Array.isArray(data.data)) {
+      data = data.data;
+    }
+    if (!Array.isArray(data)) {
+      data = [];
+    }
+    return { success: true, data };
   } catch (error) {
     console.error('Erreur getActiveDocumentTypes:', error);
-    return { success: false, message: 'Impossible de charger les types de documents.' };
+    return { success: false, message: 'Impossible de charger les types de documents.', data: [] };
   }
 }
 
@@ -659,7 +721,7 @@ export async function payRecoveryFee(paymentData) {
  */
 export async function getMyTransactions() {
   try {
-    const response = await apiClient.get('payments/my-transactions');
+    const response = await apiClient.get('payments/my-history');
     return { success: true, data: response.data.transactions };
   } catch (error) {
     const message = error.response?.data?.message || 'Erreur lors de la récupération des transactions.';
@@ -750,6 +812,55 @@ export async function updateSubscriptionStatus(subscriptionId, status) {
 
 /**
  * ────────────────────────────────────────────────────────────────
+ * SUBSCRIPTION ENDPOINTS
+ * ────────────────────────────────────────────────────────────────
+ */
+
+/**
+ * Get current user's subscription usage and limits
+ */
+export async function getUserSubscriptionUsage() {
+  try {
+    const response = await apiClient.get('subscriptions/usage');
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    const message = error.response?.data?.message || 'Erreur lors de la récupération de l\'usage.';
+    return { success: false, message };
+  }
+}
+
+/**
+ * Get current user's active subscription (Legacy)
+ */
+export async function getMySubscription() {
+  try {
+    const response = await apiClient.get('subscriptions/my-subscription');
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    const message = error.response?.data?.message || 'Erreur lors de la récupération de l\'abonnement.';
+    return { success: false, message };
+  }
+}
+
+/**
+ * Subscribe to a plan
+ * @param {string} planId - ID of the plan
+ * @param {number} months - Duration in months
+ * @param {string} paymentMethod - Selected payment method
+ * @param {string} phone - Payer phone number
+ */
+export async function subscribeToPlan(planId, months = 1, paymentMethod = 'MOMO', phone = '') {
+  try {
+    const response = await apiClient.post('subscriptions/subscribe', { planId, months, paymentMethod, phone });
+    return { success: true, data: response.data };
+  } catch (error) {
+    const message = error.response?.data?.message || 'Erreur lors de la souscription.';
+    return { success: false, message };
+  }
+}
+
+/**
+ * ────────────────────────────────────────────────────────────────
  * PLAN ENDPOINTS
  * ────────────────────────────────────────────────────────────────
  */
@@ -796,41 +907,6 @@ export async function getFeatureDefinitions() {
 
 /**
  * ────────────────────────────────────────────────────────────────
- * SUBSCRIPTION ENDPOINTS
- * ────────────────────────────────────────────────────────────────
- */
-
-/**
- * Subscribe to a plan
- * @param {string} planId - Plan ID ('standard', 'pro', 'vip')
- * @param {number} months - Duration in months
- */
-export async function subscribeToPlan(planId, months = 1) {
-  try {
-    const response = await apiClient.post('subscriptions/subscribe', {
-      planId,
-      months
-    });
-    return { success: true, data: response.data };
-  } catch (error) {
-    const message = error.response?.data?.message || 'Erreur lors de la souscription.';
-    return { success: false, message };
-  }
-}
-
-/**
- * Get current user's active subscription
- */
-export async function getMySubscription() {
-  try {
-    const response = await apiClient.get('subscriptions/my-subscription');
-    return { success: true, data: response.data.data };
-  } catch (error) {
-    return { success: false, message: 'Erreur lors de la récupération de l\'abonnement.' };
-  }
-}
-/**
- * ────────────────────────────────────────────────────────────────
  * TRANSACTION / PAYMENT ENDPOINTS
  * ────────────────────────────────────────────────────────────────
  */
@@ -843,7 +919,18 @@ export async function getTransactionHistory() {
     const response = await apiClient.get('payments/my-history');
     return { success: true, data: response.data.transactions };
   } catch (error) {
-    const message = error.response?.data?.message || 'Erreur lors de la récupération de l\'historique.';
     return { success: false, message };
+  }
+}
+
+/**
+ * Get application settings
+ */
+export async function getSettings() {
+  try {
+    const response = await apiClient.get('settings');
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    return { success: false, message: 'Erreur lors de la récupération des paramètres.' };
   }
 }

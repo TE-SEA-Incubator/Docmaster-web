@@ -2,12 +2,12 @@ import { pool } from "../database/db.js";
 
 export class ClaimRepository {
   /**
-   * Find a claim by document ID and ensure it's still PENDING
+   * Find a claim by document ID and ensure it's still active (PENDING or PAID)
    */
   async findActiveByDocId(docId: string) {
     const query = `
       SELECT * FROM claims 
-      WHERE doc_id = $1 AND status = 'PENDING'
+      WHERE doc_id = $1 AND status IN ('PENDING', 'PAID')
       LIMIT 1
     `;
     const { rows } = await pool.query(query, [docId]);
@@ -34,12 +34,12 @@ export class ClaimRepository {
   async incrementAttempts(claimId: string) {
     const query = `
       UPDATE claims 
-      SET verification_attempts = verification_attempts + 1 
+      SET attempts = attempts + 1 
       WHERE id = $1 
-      RETURNING verification_attempts
+      RETURNING attempts
     `;
     const { rows } = await pool.query(query, [claimId]);
-    return rows[0].verification_attempts;
+    return rows[0].attempts;
   }
 
   /**
@@ -71,7 +71,7 @@ export class ClaimRepository {
     status?: 'PENDING' | 'VALIDATED' | 'FAILED';
   }) {
     const query = `
-      INSERT INTO claims (doc_id, owner_id, finder_id, verification_code, status, verification_attempts)
+      INSERT INTO claims (doc_id, owner_id, finder_id, verification_code, status, attempts)
       VALUES ($1, $2, $3, $4, $5, 0)
       RETURNING *
     `;

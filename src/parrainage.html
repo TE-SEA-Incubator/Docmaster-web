@@ -6,6 +6,7 @@
 <title>DocMaster — Parrainage</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="./css/input.css" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script type="module" src="/js/services/auth.js"></script>
 <script src="./js/ui/sidebar.js"></script>
@@ -228,13 +229,10 @@ html, body { font-family: 'Poppins', sans-serif; background: #F4EFE6 }
           <p class="text-white/80 text-[14px] leading-relaxed max-w-[560px]">Invitez vos proches sur DocMaster. Pour chaque parrainage validé, vous et votre filleul recevez des avantages exclusifs.</p>
         </div>
         <div class="bg-white/8 border border-white/10 rounded-[18px] p-5 flex-shrink-0 text-center min-w-[160px]">
-          <div class="text-[42px] font-bricolage font-extrabold text-primary leading-none">7</div>
+          <div class="text-[42px] font-bricolage font-extrabold text-primary leading-none" id="hero-active-count">0</div>
           <div class="text-white/60 text-[12px] font-medium mt-1">Filleuls actifs</div>
-          <div class="mt-3 flex items-center justify-center">
-            <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[9px] font-bold text-white border-2 border-green-dark">A</div>
-            <div class="w-6 h-6 rounded-full bg-blue-400 flex items-center justify-center text-[9px] font-bold text-white -ml-1 border-2 border-green-dark">B</div>
-            <div class="w-6 h-6 rounded-full bg-purple-400 flex items-center justify-center text-[9px] font-bold text-white -ml-1 border-2 border-green-dark">C</div>
-            <div class="w-6 h-6 rounded-full bg-green-mid flex items-center justify-center text-[9px] font-bold text-white -ml-1 border-2 border-green-dark">+4</div>
+          <div class="mt-3 flex items-center justify-center" id="hero-avatars">
+            <!-- Will be populated -->
           </div>
         </div>
       </div>
@@ -268,11 +266,11 @@ html, body { font-family: 'Poppins', sans-serif; background: #F4EFE6 }
           <span class="text-[10px] font-bold py-1 px-2.5 rounded-full bg-green-light text-green-mid">Ce mois</span>
         </div>
         <div>
-          <div class="font-bricolage text-3xl font-extrabold text-textMain">3 500 <span class="text-lg font-bold text-textMuted">XAF</span></div>
+          <div class="font-bricolage text-3xl font-extrabold text-textMain" id="total-gains-xaf">0 <span class="text-lg font-bold text-textMuted">XAF</span></div>
           <div class="text-[12.5px] text-textMuted font-medium">Gains cumulés</div>
         </div>
-        <div class="h-1.5 bg-bgMain rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full shimmer" style="width:58%"></div></div>
-        <div class="text-[11.5px] text-textMuted">Prochain palier : <span class="font-bold text-textMain">5 000 XAF</span></div>
+        <div class="h-1.5 bg-bgMain rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full shimmer" id="payout-progress-bar" style="width:0%"></div></div>
+        <div class="text-[11.5px] text-textMuted">Prochain palier : <span class="font-bold text-textMain" id="next-payout-label">5 000 XAF</span></div>
       </div>
       <div class="bg-white border border-borderMain rounded-[18px] p-5 flex flex-col gap-3">
         <div class="flex items-center justify-between">
@@ -280,7 +278,7 @@ html, body { font-family: 'Poppins', sans-serif; background: #F4EFE6 }
           <span class="text-[10px] font-bold py-1 px-2.5 rounded-full bg-primary/10 text-primary-dark">Bonus actifs</span>
         </div>
         <div>
-          <div class="font-bricolage text-3xl font-extrabold text-textMain">+14 <span class="text-lg font-bold text-textMuted">slots</span></div>
+          <div class="font-bricolage text-3xl font-extrabold text-textMain" id="total-slots-bonus">+0 <span class="text-lg font-bold text-textMuted">slots</span></div>
           <div class="text-[12.5px] text-textMuted font-medium">Signalements bonus</div>
         </div>
         <div class="flex items-center gap-1.5">
@@ -404,6 +402,27 @@ html, body { font-family: 'Poppins', sans-serif; background: #F4EFE6 }
 
       <!-- Dernière activité -->
       <div class="bg-bgMain border-t border-borderMain px-5 py-3 flex items-center gap-2.5" id="last-activity"></div>
+    </div>
+
+    <!-- Historique des parrainages -->
+    <div class="bg-white border border-borderMain rounded-[20px] overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-borderMain">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-[9px] bg-primary/10 flex items-center justify-center">
+            <i class="fa-solid fa-clock-rotate-left text-primary text-sm"></i>
+          </div>
+          <h2 class="font-bricolage text-[15px] font-bold text-textMain">Historique des points reçus</h2>
+        </div>
+      </div>
+      <div id="referral-history-list" class="divide-y divide-borderMain">
+        <div class="flex flex-col items-center justify-center py-12 text-center px-5" id="history-empty-state">
+          <div class="w-12 h-12 rounded-xl bg-bgMain border border-borderMain flex items-center justify-center mb-3">
+            <i class="fa-solid fa-user-plus text-textMuted text-lg"></i>
+          </div>
+          <p class="text-[13px] font-semibold text-textMain mb-1">Aucun parrainage</p>
+          <p class="text-[11px] text-textMuted">Partagez votre code pour commencer à gagner !</p>
+        </div>
+      </div>
     </div>
 
     <!-- Progression -->
@@ -541,21 +560,46 @@ html, body { font-family: 'Poppins', sans-serif; background: #F4EFE6 }
 
 
 /* ── Code parrainage ── */
+function getRefCode() {
+  const session = JSON.parse(localStorage.getItem('docmaster_user_session') || '{}');
+  return session.code_invitation || document.getElementById('ref-code')?.textContent.trim() || 'DOC-DEFAULT';
+}
+
 function copyCode(){
-  const code = document.getElementById('ref-code').textContent;
+  const code = getRefCode();
   const btn  = document.getElementById('copy-btn');
-  navigator.clipboard.writeText(code.trim()).then(() => {
-    btn.innerHTML = '<i class="fa-solid fa-check text-[11px]"></i> Copié !';
-    btn.classList.add('bg-green-600'); btn.classList.remove('bg-primary','hover:bg-primary-dark');
-    setTimeout(() => { btn.innerHTML='<i class="fa-regular fa-copy text-[11px]"></i> Copier'; btn.classList.remove('bg-green-600'); btn.classList.add('bg-primary','hover:bg-primary-dark'); }, 2000);
+  navigator.clipboard.writeText(code).then(() => {
+    if (btn) {
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-check text-[11px]"></i> Copié !';
+      btn.classList.add('bg-green-600'); btn.classList.remove('bg-primary','hover:bg-primary-dark');
+      setTimeout(() => { 
+        btn.innerHTML = originalHtml; 
+        btn.classList.remove('bg-green-600'); 
+        btn.classList.add('bg-primary','hover:bg-primary-dark'); 
+      }, 2000);
+    }
+    showToast('Code copié !');
   });
 }
+
+function copyInviteLink(){
+  const code = getRefCode();
+  const link = `https://docmaster.cm/login.html?ref=${code}`;
+  navigator.clipboard.writeText(link)
+    .then(()=>showToast('Lien copié !')).catch(()=>showToast('Lien copié !'));
+}
+
 function shareCode(method){
-  const code = 'DOC-JM2024';
-  const msg  = `Rejoins DocMaster avec mon code *${code}* et reçois 1 mois offert + 3 analyses gratuites ! https://docmaster.cm/ref/${code}`;
+  const code = getRefCode();
+  const link = `https://docmaster.cm/login.html?ref=${code}`;
+  const msg  = `Rejoignez-moi sur DocMaster avec mon code *${code}* et recevez 1 mois offert + 3 déclarations gratuites ! ${link}`;
+  
   if(method==='whatsapp') window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
   else if(method==='sms') window.open('sms:?body='+encodeURIComponent(msg));
-  else copyCode();
+  else if(method==='facebook') window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(link),'_blank');
+  else if(method==='twitter') window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(msg),'_blank');
+  else copyInviteLink();
 }
 
 /* ── Données filleuls ── */
@@ -706,12 +750,6 @@ dragHandle.addEventListener('touchend',()=>{
   dragging=false; currentY=0;
 });
 
-/* ── Invite ── */
-function copyInviteLink(){
-  navigator.clipboard.writeText('https://docmaster.cm/ref/DOC-JM2024')
-    .then(()=>showToast('Lien copié !')).catch(()=>showToast('Lien copié !'));
-}
-
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePanel(); });
 
 function ensureFriendsTriggerVisible() {
@@ -816,11 +854,67 @@ async function loadReferrals() {
     renderAvatarPreview();
     renderList();
 
+    // Helper for safe updates
+    const safeUpdate = (id, value, property = 'innerHTML') => {
+      const el = document.getElementById(id);
+      if (el) el[property] = value;
+      return el;
+    };
+
     // Update global stat displays
-    document.getElementById('stat-total').textContent = referredFriends.length;
-    document.getElementById('active-count').textContent = `${referredFriends.filter(f=>f.active).length} actifs`;
-    document.getElementById('stat-cash').textContent = referredFriends.reduce((s,f)=>s+f.reward,0).toLocaleString('fr-FR');
-    document.getElementById('stat-slots').textContent = `+${referredFriends.reduce((s,f)=>s+f.slots,0)}`;
+    const totalCash = referredFriends.reduce((s,f)=>s+f.reward,0);
+    const totalSlots = referredFriends.reduce((s,f)=>s+f.slots,0);
+    
+    safeUpdate('total-gains-xaf', `${totalCash.toLocaleString('fr-FR')} <span class="text-lg font-bold text-textMuted">XAF</span>`);
+    safeUpdate('total-slots-bonus', `+${totalSlots} <span class="text-lg font-bold text-textMuted">slots</span>`);
+    safeUpdate('hero-active-count', referredFriends.length, 'textContent');
+    
+    // Progress bar logic
+    const nextPalier = totalCash < 5000 ? 5000 : (Math.ceil(totalCash / 5000) * 5000);
+    const progressPct = Math.min((totalCash / nextPalier) * 100, 100);
+    const progBar = document.getElementById('payout-progress-bar');
+    if (progBar) progBar.style.width = `${progressPct}%`;
+    safeUpdate('next-payout-label', `${nextPalier.toLocaleString('fr-FR')} XAF`, 'textContent');
+
+    // Hero avatars
+    const heroAvatars = document.getElementById('hero-avatars');
+    if (heroAvatars) {
+      if (referredFriends.length > 0) {
+        heroAvatars.innerHTML = referredFriends.slice(0, 3).map((f, i) => `
+          <div class="w-6 h-6 rounded-full ${f.color} flex items-center justify-center text-[9px] font-bold text-white border-2 border-green-dark ${i > 0 ? '-ml-1' : ''}">${f.initials}</div>
+        `).join('');
+        if (referredFriends.length > 3) {
+          heroAvatars.innerHTML += `<div class="w-6 h-6 rounded-full bg-green-mid flex items-center justify-center text-[9px] font-bold text-white -ml-1 border-2 border-green-dark">+${referredFriends.length - 3}</div>`;
+        }
+      } else {
+        heroAvatars.innerHTML = '<span class="text-[10px] text-white/40">Aucun filleul</span>';
+      }
+    }
+
+    // Populate history list
+    const historyList = document.getElementById('referral-history-list');
+    if (historyList) {
+      if (referredFriends.length > 0) {
+        const emptyState = document.getElementById('history-empty-state');
+        if (emptyState) emptyState.style.display = 'none';
+        
+        historyList.innerHTML = referredFriends.map(f => `
+          <div class="flex items-center justify-between p-4 px-5">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full ${f.color} flex items-center justify-center font-bricolage text-[12px] font-bold">${f.initials}</div>
+              <div>
+                <div class="text-[13.5px] font-bold text-textMain">${f.name}</div>
+                <div class="text-[11px] text-textMuted">${relativeDate(f.joined)}</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-[13px] font-bold text-primary">+${f.reward} XAF</div>
+              <div class="text-[10px] font-semibold text-green-mid">+10 pts fidélité</div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
   }
 }
 

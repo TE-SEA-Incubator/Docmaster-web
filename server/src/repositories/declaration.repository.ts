@@ -252,8 +252,9 @@ export class DeclarationRepository {
         date_expiration = COALESCE($15, date_expiration),
         telephone_contact = COALESCE($16, telephone_contact),
         email_contact = COALESCE($17, email_contact),
-        mode_contact = COALESCE($18, mode_contact)
-      WHERE id = $19 AND reporter_id = $20
+        mode_contact = COALESCE($18, mode_contact),
+        found_location = COALESCE($19, found_location)
+      WHERE id = $20 AND reporter_id = $21
       RETURNING *`;
 
     const { rows } = await pool.query(query, [
@@ -275,6 +276,7 @@ export class DeclarationRepository {
       data.telephone_contact,
       data.email_contact,
       data.mode_contact,
+      data.found_location ? JSON.stringify(data.found_location) : null,
       id,
       reporterId,
     ]);

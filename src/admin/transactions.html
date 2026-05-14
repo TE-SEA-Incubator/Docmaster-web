@@ -1,229 +1,147 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin DocMaster — Transactions</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* ── DocMaster theme overrides ── */
-        [data-theme="light"] {
-            --color-primary: oklch(73.5% 0.155 59.5);       /* #F5A64B */
-            --color-primary-content: oklch(98% 0 0);
-            --color-base-100: #F4EFE6;
-            --color-base-200: #EAE3D8;
-            --color-base-300: #DDD5C8;
-            --color-base-content: #1a1a1a;
+        :root {
+            --gray-50:  #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-400: #9ca3af;
+            --gray-600: #6b7280;
+            --gray-900: #111827;
+            --accent:       #F5A64B;
+            --accent-dark:  #D48D3B;
+            --accent-light: #FFF9F0;
         }
 
-        body { font-family: 'Poppins', sans-serif; }
-        .font-bricolage { font-family: 'Bricolage Grotesque', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #fff; color: var(--gray-900); margin: 0; display: flex; height: 100vh; }
 
-        /* ── Custom Sidebar ── */
-        .admin-sidebar {
-            width: 260px;
-            background: #1e3a2f;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-            z-index: 100;
-        }
+        /* Sidebar */
+        .sidebar { width: 240px; background: #1E312B; border-right: none; height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; color: #fff; }
+        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; }
+        .logo-area span { font-weight: 600; font-size: 0.9375rem; color: #fff; }
+        .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 0.8125rem; font-weight: 500; text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
+        .nav-link i { width: 16px; text-align: center; }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .nav-link.active { background: var(--accent); color: #fff; }
 
-        .sidebar-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
+        /* Main */
+        .main { flex: 1; overflow-y: auto; padding: 2rem 3rem; }
+        .page-header { margin-bottom: 2rem; }
+        .page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
+        .page-header p { font-size: 0.875rem; color: var(--gray-600); margin-top: 4px; }
 
-        /* Override DaisyUI menu for dark sidebar context */
-        .admin-sidebar .menu li > a {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.8125rem;
-            font-weight: 500;
-            border-radius: 8px;
-            gap: 10px;
-            transition: all 0.15s;
-        }
-        .admin-sidebar .menu li > a:hover {
-            background: rgba(255,255,255,0.06);
-            color: white;
-        }
-        .admin-sidebar .menu li > a.active {
-            background: #F5A64B;
-            color: white;
-        }
-        .admin-sidebar .menu li > a.text-red-400 {
-            color: #f87171;
-        }
-        .admin-sidebar .menu li > a.text-red-400:hover {
-            background: rgba(248,113,113,0.1);
-            color: #fca5a5;
-        }
+        /* Table Style */
+        .table-container { border: 0.5px solid var(--gray-200); border-radius: 12px; overflow: hidden; background: #fff; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--gray-50); padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.5px solid var(--gray-200); }
+        td { padding: 14px 16px; font-size: 0.875rem; border-bottom: 0.5px solid var(--gray-200); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--gray-50); }
 
-        /* Scrollbar */
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #DDD5C8; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .status-badge { font-size: 0.625rem; font-weight: 600; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .status-success { background: #FFF9F0; color: #D48D3B; }
+        .status-pending { background: #FAEEDA; color: #BA7517; }
+        .status-failed  { background: #FAECE7; color: #993C1D; }
 
+        .type-badge { font-size: 0.6875rem; color: var(--gray-600); }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden bg-base-100">
-  <script type="module" src="/js/utils/ui-helpers.js"></script>
-
-    <!-- ── Sidebar ── -->
-    <aside class="admin-sidebar">
-        <div class="sidebar-header flex items-center gap-3">
-            <img src="../assets/images/logo.png" alt="Logo" class="h-8 w-auto">
-            <span class="font-bricolage font-extrabold text-lg tracking-tight text-white">Admin Panel</span>
-        </div>
-
-        <nav class="flex-1 p-3 flex flex-col">
-            <ul class="menu gap-1 flex-1">
-                <li><a href="dashboard.html"><i class="fa-solid fa-gauge-high w-4"></i> Vue d'ensemble</a></li>
-                <li><a href="users.html"><i class="fa-solid fa-users w-4"></i> Utilisateurs</a></li>
-                <li><a href="document-types.html"><i class="fa-solid fa-file-invoice w-4"></i> Types de Documents</a></li>
-                <li><a href="subscriptions.html"><i class="fa-solid fa-crown w-4"></i> Abonnements</a></li>
-                <li><a href="transactions.html" class="active"><i class="fa-solid fa-receipt w-4"></i> Transactions</a></li>
-                <li><a href="referrals.html"><i class="fa-solid fa-user-friends w-4"></i> Parrainages</a></li>
-                <li><a href="declarations.html"><i class="fa-solid fa-folder-open w-4"></i> Déclarations</a></li>
-                <li><a href="settings.html"><i class="fa-solid fa-gear w-4"></i> Paramètres</a></li>
-            </ul>
-
-            <div class="border-t border-white/10 pt-3 mt-3">
-                <ul class="menu gap-1">
-                    <li><a href="../dashboard.html"><i class="fa-solid fa-arrow-left w-4"></i> Retour au site</a></li>
-                    <li><a href="#" class="text-red-400"><i class="fa-solid fa-right-from-bracket w-4"></i> Déconnexion</a></li>
-                </ul>
-            </div>
+<body>
+    <aside class="sidebar">
+        <div class="logo-area"><img src="../assets/images/logo.png" alt="Logo" class="h-6"><span>Admin Panel</span></div>
+        <nav class="flex-1">
+            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Vue d'ensemble</a>
+            <a href="users.html" class="nav-link"><i class="fa-solid fa-users"></i> Utilisateurs</a>
+            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-invoice"></i> Documents</a>
+            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-crown"></i> Abonnements</a>
+            <a href="transactions.html" class="nav-link active"><i class="fa-solid fa-receipt"></i> Transactions</a>
+            <a href="referrals.html" class="nav-link"><i class="fa-solid fa-user-friends"></i> Parrainages</a>
+            <a href="declarations.html" class="nav-link"><i class="fa-solid fa-folder-open"></i> Déclarations</a>
+            <a href="withdrawals.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i> Retraits</a>
+            <a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Paramètres</a>
         </nav>
+        <div class="mt-auto pt-4 border-t border-white/10">
+            <a href="#" id="adminLogout" class="nav-link text-red-400 hover:text-red-300">
+                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+            </a>
+        </div>
     </aside>
 
-    <!-- ── Main ── -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-
-        <!-- Top bar -->
-        <div class="navbar bg-white border-b border-base-200 px-8 min-h-[64px] flex-shrink-0">
-            <div class="flex-1">
-                <h2 class="font-bricolage text-xl font-extrabold tracking-tight">Gestion des Transactions</h2>
+    <main class="main">
+        <header class="flex items-center justify-between mb-8">
+            <div class="page-header mb-0">
+                <h1>Transactions</h1>
+                <p>Historique complet des flux financiers de la plateforme.</p>
             </div>
-            <div class="flex-none gap-3">
-                <div class="avatar placeholder">
-                    <div class="bg-base-200 text-base-content rounded-full w-10 border-2 border-white shadow-sm">
-                        <span class="text-xs font-bold">AD</span>
-                    </div>
+            <div class="flex items-center gap-4">
+                <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fa-solid fa-bell text-xl"></i>
+                    <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+                </button>
+                <div class="w-10 h-10 rounded-full bg-[#F5A64B] flex items-center justify-center text-white font-bold">
+                    A
                 </div>
             </div>
+        </header>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID / Réf</th>
+                        <th>Utilisateur</th>
+                        <th>Montant</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="tx-list">
+                    <!-- Loaded via JS -->
+                </tbody>
+            </table>
         </div>
+    </main>
 
-        <!-- Scrollable content -->
-        <div class="flex-1 overflow-y-auto p-8 custom-scroll">
-
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bricolage text-lg font-bold">Toutes les transactions</h3>
-                <div class="flex gap-2">
-                    <input type="text" id="searchInput" placeholder="Rechercher par utilisateur ou réf..." class="input input-sm input-bordered w-64 bg-white" />
-                    <button class="btn btn-sm btn-primary text-white" onclick="loadTransactions()"><i class="fa-solid fa-rotate-right"></i> Actualiser</button>
-                </div>
-            </div>
-
-            <!-- Table -->
-            <div class="bg-white border border-base-200 rounded-2xl overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="table w-full">
-                        <thead class="bg-base-200/50 text-base-content">
-                            <tr>
-                                <th>Date</th>
-                                <th>Utilisateur</th>
-                                <th>Type</th>
-                                <th>Montant</th>
-                                <th>Statut</th>
-                                <th>Moyen de paiement</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionsTableBody">
-                            <tr>
-                                <td colspan="7" class="text-center py-8 text-base-content/60">
-                                    <span class="loading loading-spinner loading-md text-primary"></span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Modals or scripts -->
     <script type="module">
         import { adminService } from '../js/services/admin.js';
+        import { initAdminUI } from '../js/services/admin-ui.js';
 
-        window.loadTransactions = async function() {
+        async function loadTransactions() {
             try {
-                const tbody = document.getElementById('transactionsTableBody');
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8"><span class="loading loading-spinner loading-md text-primary"></span></td></tr>';
+                const transactions = await adminService.getAllTransactions();
+                const list = document.getElementById('tx-list');
+                list.innerHTML = '';
                 
-                const data = await adminService.getAllTransactions();
-                
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-base-content/60">Aucune transaction trouvée.</td></tr>';
-                    return;
-                }
-
-                renderTable(data);
-
-                // Add search listener
-                document.getElementById('searchInput').addEventListener('input', (e) => {
-                    const search = e.target.value.toLowerCase();
-                    const filtered = data.filter(t => 
-                        (t.user_nom + ' ' + t.user_prenom).toLowerCase().includes(search) ||
-                        (t.id).toLowerCase().includes(search) ||
-                        (t.type).toLowerCase().includes(search) ||
-                        (t.external_ref && t.external_ref.toLowerCase().includes(search))
-                    );
-                    renderTable(filtered);
+                transactions.forEach(t => {
+                    const row = document.createElement('tr');
+                    const statusClass = t.status === 'SUCCESS' ? 'status-success' : (t.status === 'PENDING' ? 'status-pending' : 'status-failed');
+                    
+                    row.innerHTML = `
+                        <td class="text-xs font-mono text-gray-400">${t.id.substring(0,8)}...</td>
+                        <td>
+                            <div class="font-medium">${t.nom} ${t.prenom}</div>
+                            <div class="text-[11px] text-gray-400">${t.email}</div>
+                        </td>
+                        <td class="font-semibold ${t.amount < 0 ? 'text-red-500' : 'text-green-600'}">
+                            ${t.amount > 0 ? '+' : ''}${t.amount} XAF
+                        </td>
+                        <td><span class="type-badge">${t.type}</span></td>
+                        <td><span class="status-badge ${statusClass}">${t.status}</span></td>
+                        <td class="text-xs text-gray-400">${new Date(t.created_at).toLocaleString()}</td>
+                    `;
+                    list.appendChild(row);
                 });
-
-            } catch (error) {
-                console.error('Erreur lors du chargement des transactions', error);
-                document.getElementById('transactionsTableBody').innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-500">Erreur lors du chargement des données.</td></tr>';
-            }
-        };
-
-        function getStatusBadge(status) {
-            switch(status) {
-                case 'SUCCESS': return '<span class="badge badge-success badge-sm text-white">Réussi</span>';
-                case 'PENDING': return '<span class="badge badge-warning badge-sm">En attente</span>';
-                case 'FAILED': return '<span class="badge badge-error badge-sm text-white">Échoué</span>';
-                default: return `<span class="badge badge-ghost badge-sm">${status}</span>`;
-            }
+            } catch (error) { console.error(error); }
         }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('transactionsTableBody');
-            tbody.innerHTML = data.map(t => `
-                <tr class="hover">
-                    <td class="whitespace-nowrap text-xs">${new Date(t.created_at).toLocaleString('fr-FR')}</td>
-                    <td>
-                        <div class="font-semibold text-sm">${t.user_prenom || ''} ${t.user_nom || ''}</div>
-                        <div class="text-[11px] text-base-content/60">${t.user_email}</div>
-                    </td>
-                    <td><span class="text-xs font-mono bg-base-200 px-2 py-1 rounded">${t.type}</span></td>
-                    <td class="font-bricolage font-bold text-primary">${Number(t.amount).toLocaleString('fr-FR')} ${t.currency || 'XAF'}</td>
-                    <td>${getStatusBadge(t.status)}</td>
-                    <td class="text-xs">${t.payment_method || 'N/A'}</td>
-                    <td>
-                        <button class="btn btn-xs btn-ghost text-primary" onclick="alert('Réf: ${t.external_ref || 'N/A'}\\nID: ${t.id}')">Détails</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        window.loadTransactions();
+        loadTransactions();
     </script>
 </body>
 </html>

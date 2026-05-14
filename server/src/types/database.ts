@@ -74,6 +74,7 @@ export interface UserDocument {
     photo_recto?: string;
     photo_verso?: string;
     is_protected: boolean;
+    is_lost: boolean;
     created_at: Date;
 }
 

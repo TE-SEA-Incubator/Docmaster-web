@@ -1,26 +1,31 @@
 import { Router } from 'express';
-import { PaymentController } from '../controllers/payment.controller.ts';
+import { nokashCallback, getMyTransactions, getAllTransactions, payRecovery } from '../controllers/payment.controller.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
 
 const router = Router();
-const paymentController = new PaymentController();
 
 /**
  * @route POST /api/payments/pay-recovery
- * @desc Process (fictitious) payment for document recovery
+ * @desc Process payment for document recovery
  */
-router.post('/pay-recovery', (req, res) => paymentController.payRecovery(req, res));
+router.post('/pay-recovery', authMiddleware, payRecovery);
+
+/**
+ * @route POST /api/payments/nokash/callback
+ * @desc Webhook for Nokash payment status updates
+ */
+router.post('/nokash/callback', nokashCallback);
 
 /**
  * @route GET /api/payments/my-history
- * @desc Get payment history for the current user
+ * @desc Get current user's transaction history
  */
-router.get('/my-history', authMiddleware, (req, res) => paymentController.getMyTransactions(req, res));
+router.get('/my-history', authMiddleware, getMyTransactions);
 
 /**
  * @route GET /api/payments/admin/all
- * @desc Admin: Get all transactions across the platform
+ * @desc Get all transactions for admin
  */
-router.get('/admin/all', authMiddleware, (req, res) => paymentController.getAllTransactionsAdmin(req, res));
+router.get('/admin/all', authMiddleware, getAllTransactions);
 
 export default router;

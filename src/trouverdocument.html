@@ -6,9 +6,12 @@
     <title>DocMaster — J'ai trouvé un document</title>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="stylesheet" href="./css/input.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon"/>
     <link href="/css/main.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
       tailwind.config = {
         theme: {
@@ -369,21 +372,62 @@
               </div>
               <div>
                 <h2 class="font-bricolage text-[15px] font-bold text-textMain">Où avez-vous trouvé le document ?</h2>
-                <p class="text-[11px] text-textMuted">Le lieu exact aide à retrouver le propriétaire plus vite.</p>
+                <p class="text-[11px] text-textMuted">Indiquez le lieu précis sur la carte ou recherchez une adresse.</p>
               </div>
             </div>
 
-            <div class="flex flex-col gap-3 mb-4">
-              <div class="map-placeholder" id="map-btn" onclick="simulateMapClick()">
-                <i class="fa-solid fa-map-location-dot text-green-mid text-2xl"></i>
-                <div class="text-center">
-                  <p class="text-[12.5px] font-bold text-textMain" id="map-label">Cliquer pour indiquer le lieu sur la carte</p>
-                  <p class="text-[11px] text-textMuted" id="map-sub">Ou saisissez l'adresse ci-dessous</p>
-                </div>
+            <div class="flex flex-col gap-4 mb-4">
+              <!-- Map Container -->
+              <div id="map-inline" class="w-full h-[400px] sm:h-[450px] rounded-[18px] border border-borderMain overflow-hidden shadow-inner bg-surface2 relative">
+                  <!-- Loader -->
+                  <div id="map-loader" class="absolute inset-0 z-10 bg-surface2 flex flex-col items-center justify-center gap-2 transition-opacity duration-500">
+                      <i class="fa-solid fa-spinner fa-spin text-primary text-xl"></i>
+                  </div>
+                  <!-- Inline Map Container -->
+                  <div id="map-inline-container" class="w-full h-full"></div>
               </div>
 
-              <input type="text" id="lieu-adresse" class="form-input" placeholder="Adresse ou ville..."/>
-              <input type="date" id="lieu-date" class="form-input"/>
+              <!-- Search Bar (Now Below Map) -->
+              <div class="relative group/search">
+                  <div class="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted group-focus-within/search:text-primary transition-colors">
+                      <i class="fa-solid fa-magnifying-glass text-[13px]"></i>
+                  </div>
+                  <input type="text" id="map-search-input" 
+                         placeholder="Rechercher une ville, une rue..." 
+                         class="w-full pl-10 pr-12 py-3 bg-white border border-borderMain rounded-xl text-[12.5px] focus:border-primary focus:ring-0 outline-none transition-all"
+                         onkeydown="if(event.key==='Enter') searchLocation()">
+                  <button onclick="searchLocation()" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-all shadow-sm">
+                      <i class="fa-solid fa-arrow-right text-[11px]"></i>
+                  </button>
+                  
+                  <!-- Search Results Dropdown -->
+                  <div id="map-search-results" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-borderMain shadow-xl max-h-[200px] overflow-y-auto hidden z-[1001] custom-scroll">
+                      <!-- Results injected here -->
+                  </div>
+              </div>
+
+              <!-- Selected Location Indicator (Now Below Map) -->
+              <div id="location-badge" class="bg-green-light/30 border border-green-mid/10 p-3 rounded-xl flex items-center gap-3 hidden animate-in fade-in duration-300">
+                  <div class="w-10 h-10 rounded-xl bg-white border border-green-mid/20 flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <i class="fa-solid fa-location-dot text-green-mid text-lg"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                      <p class="text-[10px] font-bold text-green-mid uppercase tracking-wider">Lieu de découverte</p>
+                      <p id="selected-address-text" class="text-[12px] text-textMain font-bold truncate">Chargement de l'adresse...</p>
+                  </div>
+                  <div class="text-[10px] font-mono text-textMuted bg-white px-2 py-1 rounded border border-borderMain shadow-sm" id="selected-coords-text">0.000, 0.000</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div>
+                <label class="form-label">Ville / Quartier <span class="text-textMuted font-normal">(Auto-rempli)</span></label>
+                <input type="text" id="lieu-adresse" class="form-input" placeholder="Ex: Akwa, Douala"/>
+              </div>
+              <div>
+                <label class="form-label">Date de la découverte</label>
+                <input type="date" id="lieu-date" class="form-input"/>
+              </div>
             </div>
 
             <div class="flex gap-2">
@@ -401,9 +445,9 @@
               <h2 class="font-bricolage text-[15px] font-bold text-textMain">Photos du document</h2>
             </div>
 
-            <div class="flex flex-col gap-3 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div>
-                <label class="form-label">Photo principale *</label>
+                <label class="form-label">Photo principale (Recto) *</label>
                 <div class="drop-zone p-4 text-center" id="drop-main" onclick="document.getElementById('file-main').click()" ondragover="drgOver(event,'drop-main')" ondragleave="drgLeave('drop-main')" ondrop="drgDrop(event,'drop-main','prev-main','img-main')">
                   <input type="file" id="file-main" class="hidden" accept="image/*" onchange="fileChg(this,'prev-main','img-main','drop-main')"/>
                   <div id="prev-main" class="hidden">
@@ -411,11 +455,24 @@
                   </div>
                   <div id="phold-main">
                     <i class="fa-solid fa-cloud-arrow-up text-2xl text-textMuted mb-1 block"></i>
-                    <p class="text-[13px] font-bold text-textMain">Glissez ou cliquez pour uploader</p>
+                    <p class="text-[13px] font-bold text-textMain">Glissez ou cliquez (Recto)</p>
                   </div>
                 </div>
               </div>
-              <input type="file" id="file-extra1" class="hidden" accept="image/*"/>
+              
+              <div>
+                <label class="form-label">Photo du Verso <span class="text-textMuted font-normal">(Optionnel)</span></label>
+                <div class="drop-zone p-4 text-center" id="drop-verso" onclick="document.getElementById('file-extra1').click()" ondragover="drgOver(event,'drop-verso')" ondragleave="drgLeave('drop-verso')" ondrop="drgDrop(event,'drop-verso','prev-verso','img-verso')">
+                  <input type="file" id="file-extra1" class="hidden" accept="image/*" onchange="fileChg(this,'prev-verso','img-verso','drop-verso')"/>
+                  <div id="prev-verso" class="hidden">
+                    <img id="img-verso" class="w-full max-h-28 object-contain rounded-[8px] mb-1.5 mx-auto" src="" alt=""/>
+                  </div>
+                  <div id="phold-verso">
+                    <i class="fa-solid fa-rotate-right text-2xl text-textMuted mb-1 block"></i>
+                    <p class="text-[13px] font-bold text-textMain">Glissez ou cliquez (Verso)</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="flex gap-2">
@@ -492,6 +549,7 @@
         </div><!-- /panel-scroll -->
       </div><!-- /app-body -->
     </div><!-- /main-wrapper -->
+
 
     <script type="module">
       import { initFoundDeclaration } from './js/declarations/found.js';

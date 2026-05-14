@@ -6,6 +6,7 @@
     <title>DocMaster - Connexion</title>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/input.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -34,7 +35,6 @@
     </script>
     <link rel="stylesheet" href="/css/main.css" />
     <script type="module" src="/js/services/auth.js"></script>
-    <script type="module" src="/js/firebase.js"></script>
 
 <style>
   html, body {
@@ -220,7 +220,7 @@
             </div>
           </div>
           <div class="text-right -mt-1">
-            <a href="#" class="text-[12.5px] text-primary font-semibold hover:underline"><i class="fa-solid fa-key mr-1.5"></i>Mot de passe oublié ?</a>
+            <a href="javascript:void(0)" onclick="openForgotModal()" class="text-[12.5px] text-primary font-semibold hover:underline"><i class="fa-solid fa-key mr-1.5"></i>Mot de passe oublié ?</a>
           </div>
           <button type="submit" class="p-[15px_20px] bg-primary text-white rounded-v14 font-bricolage text-[16px] font-bold cursor-pointer flex items-center justify-center gap-[9px] transition-all shadow-lg shadow-primary/40 active:scale-[0.98] mt-1">
             <i class="fa-solid fa-right-to-bracket"></i> Se connecter
@@ -363,7 +363,7 @@
               <div class="w-14 h-14 bg-green-dark rounded-full flex items-center justify-center mb-1">
                 <i class="fa-solid fa-mobile-screen-button text-primary text-[22px]"></i>
               </div>
-              <p class="text-[13px] text-textMuted leading-[1.6]">Un code PIN à 6 chiffres a été envoyé au numéro <span class="font-semibold text-textMain" id="m-phone-display"></span></p>
+              <p class="text-[13px] text-textMuted leading-[1.6]">Un code PIN à 6 chiffres a été envoyé à l'adresse <span class="font-semibold text-textMain" id="m-email-display"></span></p>
             </div>
             <div class="flex justify-center gap-2.5 my-2">
               <input class="pin-input" maxlength="1" type="text" inputmode="numeric" data-idx="0" data-prefix="m" />
@@ -422,9 +422,14 @@
               </div>
             </div>
 
-            <button type="button" onclick="submitRegister('m')" class="p-[15px_20px] bg-green-dark text-white rounded-v14 font-bricolage text-[16px] font-bold cursor-pointer flex items-center justify-center gap-[9px] transition-all shadow-lg shadow-black/20 active:scale-[0.98] mt-1">
-              <i class="fa-solid fa-rocket"></i> Créer mon compte
-            </button>
+            <div class="flex gap-2.5 mt-1">
+              <button type="button" onclick="prevStep('m',4)" class="p-[14px_16px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 font-poppins text-[14px] font-semibold text-textMain cursor-pointer flex items-center justify-center gap-2 transition-all active:scale-[0.97]">
+                <i class="fa-solid fa-arrow-left"></i>
+              </button>
+              <button type="button" onclick="submitRegister('m')" class="flex-1 p-[15px_20px] bg-green-dark text-white rounded-v14 font-bricolage text-[16px] font-bold cursor-pointer flex items-center justify-center gap-[9px] transition-all shadow-lg shadow-black/20 active:scale-[0.98]">
+                <i class="fa-solid fa-rocket"></i> Créer mon compte
+              </button>
+            </div>
           </div>
         </div>
 
@@ -512,7 +517,7 @@
               </div>
             </div>
             <div class="text-right -mt-1">
-              <a href="#" class="text-[12.5px] text-primary font-semibold hover:underline"><i class="fa-solid fa-key mr-1.5"></i>Mot de passe oublié ?</a>
+              <a href="javascript:void(0)" onclick="openForgotModal()" class="text-[12.5px] text-primary font-semibold hover:underline"><i class="fa-solid fa-key mr-1.5"></i>Mot de passe oublié ?</a>
             </div>
             <button type="submit" class="p-[15px_20px] bg-primary text-white rounded-v14 font-bricolage text-[16px] font-bold cursor-pointer flex items-center justify-center gap-[9px] transition-all shadow-lg shadow-primary/40 active:scale-[0.98] mt-1">
               <i class="fa-solid fa-right-to-bracket"></i> Se connecter
@@ -664,8 +669,8 @@
                   <i class="fa-solid fa-mobile-screen-button text-primary text-[16px]"></i>
                 </div>
                 <div>
-                  <p class="font-semibold text-textMain text-[14px] mb-0.5">Vérification du numéro</p>
-                  <p class="text-[12.5px] text-textMuted leading-[1.6]">Un code PIN à 6 chiffres a été envoyé au <span class="font-semibold text-textMain" id="d-phone-display"></span></p>
+                  <p class="font-semibold text-textMain text-[14px] mb-0.5">Vérification de l'email</p>
+                  <p class="text-[12.5px] text-textMuted leading-[1.6]">Un code PIN à 6 chiffres a été envoyé à l'adresse <span class="font-semibold text-textMain" id="d-email-display"></span></p>
                 </div>
               </div>
               <div class="flex justify-center gap-3 py-2">
@@ -728,9 +733,14 @@
                 </div>
               </div>
 
-              <button type="button" onclick="submitRegister('d')" class="p-[15px_20px] bg-green-dark text-white rounded-v14 font-bricolage text-[16px] font-bold cursor-pointer flex items-center justify-center gap-[9px] transition-all shadow-lg shadow-black/20 active:scale-[0.98]">
-                <i class="fa-solid fa-rocket"></i> Créer mon compte
-              </button>
+              <div class="flex gap-3 mt-1">
+                <button type="button" onclick="prevStep('d',4)" class="p-[14px_18px] bg-[#faf8f5] border-[1.5px] border-borderMain rounded-v14 font-poppins text-[14px] font-semibold text-textMain cursor-pointer flex items-center justify-center gap-2 transition-all hover:bg-white active:scale-[0.97]">
+                  <i class="fa-solid fa-arrow-left"></i> Retour
+                </button>
+                <button type="button" onclick="submitRegister('d')" class="flex-1 p-[15px_20px] bg-green-dark text-white rounded-v14 font-bricolage text-[16px] font-bold cursor-pointer flex items-center justify-center gap-[9px] transition-all shadow-lg shadow-black/20 active:scale-[0.98]">
+                  <i class="fa-solid fa-rocket"></i> Créer mon compte
+                </button>
+              </div>
             </div>
           </div>
         </main>
@@ -739,267 +749,65 @@
 
 
     <script>
-    /* ════════════════════════════════════════
-       STEP CONFIG
-    ════════════════════════════════════════ */
-    const STEP_META = {
-      1: { title: 'Créer un compte', subtitle: 'Vos informations personnelles', dtitle: 'Créer un compte', dsubtitle: 'Vos informations personnelles' },
-      2: { title: 'Sécurisez votre compte', subtitle: 'Confirmez votre mot de passe', dtitle: 'Validation du mot de passe', dsubtitle: 'Confirmez votre mot de passe' },
-      3: { title: 'Vérification', subtitle: 'Entrez le code reçu par SMS', dtitle: 'Confirmation par code PIN', dsubtitle: 'Entrez le code reçu par SMS' },
-      4: { title: 'Votre pseudo', subtitle: 'Choisissez comment vous appeler', dtitle: 'Attribution du pseudo', dsubtitle: 'Comment la communauté vous appellera' },
-    };
-
-    let currentStep = { m: 1, d: 1 };
-
-    /* ── Tab switch ── */
-    function switchTab(tab, prefix) {
-      prefix = prefix || '';
-      const isLogin = tab === 'login';
-      ['login', 'register'].forEach(t => {
-        const form = document.getElementById(prefix + 'form-' + t);
-        if (form) form.classList.toggle('visible', t === tab);
-        const btn = document.getElementById(prefix + 'tab-' + t);
-        if (btn) {
-          btn.classList.toggle('text-white', t === tab);
-          btn.classList.toggle('text-textMuted', t !== tab);
-        }
-      });
-      const slider = document.getElementById(prefix + 'toggle-slider');
-      if (slider) slider.style.left = isLogin ? '1.5px' : 'calc(50% + 1.5px)';
-    }
-
-    /* ── Password toggle ── */
-    function togglePw(id, btn) {
-      const input = document.getElementById(id);
-      const icon = btn.querySelector('i');
-      const show = input.type === 'password';
-      input.type = show ? 'text' : 'password';
-      icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
-    }
-
-    /* ── Password strength ── */
-    function checkStrength(input, prefix) {
-      const v = input.value;
-      const bars = [1,2,3,4].map(n => document.getElementById(prefix+'bar'+n));
-      bars.forEach(b => { if(b) b.className = 'pw-bar flex-1'; });
-      let s = 0;
-      if (v.length >= 6) s++;
-      if (v.length >= 10) s++;
-      if (/[A-Z]/.test(v) && /[0-9]/.test(v)) s++;
-      if (/[^A-Za-z0-9]/.test(v)) s++;
-      const cls = s <= 1 ? 'weak' : s <= 2 ? 'medium' : 'strong';
-      for (let i = 0; i < s; i++) { if(bars[i]) bars[i].classList.add(cls); }
-    }
-
-    /* ── Password match check ── */
-    function checkMatch(prefix) {
-      const pw1 = document.getElementById(prefix + '-pw1');
-      const pw2 = document.getElementById(prefix + '-pw2');
-      const err = document.getElementById(prefix + '-pw-error');
-      const ok  = document.getElementById(prefix + '-pw-ok');
-      if (!pw1 || !pw2 || !pw2.value) { if(err) err.classList.add('hidden'); if(ok) ok.classList.add('hidden'); return; }
-      const match = pw1.value === pw2.value;
-      if (err) err.classList.toggle('hidden', match);
-      if (ok)  ok.classList.toggle('hidden', !match);
-    }
-
-    /* ── Next step ── */
-    function nextStep(prefix, from) {
-      // Validation
-      if (from === 1) {
-        const nom    = document.getElementById(prefix + '-nom');
-        const prenom = document.getElementById(prefix + '-prenom');
-        const phone  = document.getElementById(prefix + '-phone');
-        const email  = document.getElementById(prefix + '-email');
-        const pw1    = document.getElementById(prefix + '-pw1');
-        if (!nom.value.trim() || !prenom.value.trim() || !phone.value.trim() || !email.value.trim() || !pw1.value.trim()) {
-          shake(prefix + '-step-1'); return;
-        }
-        if (pw1.value.length < 8) { shake(prefix + '-step-1'); alert('Le mot de passe doit avoir au moins 8 caractères.'); return; }
-        // Populate step 2 mirror field
-        const mirror = document.getElementById(prefix + '-pw1-show');
-        if (mirror) { mirror.value = pw1.value; }
-        // Show phone in step 3
-        const phoneDisplay = document.getElementById(prefix + '-phone-display');
-        if (phoneDisplay) phoneDisplay.textContent = phone.value;
-      }
-      if (from === 2) {
-        const pw1 = document.getElementById(prefix + '-pw1');
-        const pw2 = document.getElementById(prefix + '-pw2');
-        if (!pw2.value || pw1.value !== pw2.value) {
-          document.getElementById(prefix + '-pw-error').classList.remove('hidden');
-          document.getElementById(prefix + '-pw-ok').classList.add('hidden');
-          shake(prefix + '-step-2'); return;
-        }
-        // Setup PIN
-        setupPinInputs(prefix);
-      }
-      if (from === 3) {
-        // Collect PIN
-        const pins = document.querySelectorAll(`#${prefix}-step-3 .pin-input`);
-        const code = [...pins].map(p => p.value).join('');
-        if (code.length < 6) { shake(prefix + '-step-3'); alert('Veuillez saisir le code PIN complet.'); return; }
-        // Setup pseudo suggestions
-        const nom    = document.getElementById(prefix + '-nom').value.toLowerCase().trim();
-        const prenom = document.getElementById(prefix + '-prenom').value.toLowerCase().trim();
-        generateSuggestions(prefix, nom, prenom);
-      }
-
-      goToStep(prefix, from + 1);
-    }
-
-    /* ── Prev step ── */
-    function prevStep(prefix, from) {
-      goToStep(prefix, from - 1);
-    }
-
-    /* ── Go to step ── */
-    function goToStep(prefix, step) {
-      const old = currentStep[prefix];
-      // Hide old step
-      const oldEl = document.getElementById(prefix + '-step-' + old);
-      if (oldEl) oldEl.classList.remove('active');
-      // Show new step
-      const newEl = document.getElementById(prefix + '-step-' + step);
-      if (newEl) newEl.classList.add('active');
-      // Update dots
-      for (let i = 1; i <= 4; i++) {
-        const dot  = document.getElementById(prefix + '-dot-' + i);
-        const line = document.getElementById(prefix + '-line-' + i);
-        if (dot) {
-          dot.classList.remove('active','done');
-          if (i < step) dot.classList.add('done');
-          if (i === step) dot.classList.add('active');
-        }
-        if (line) {
-          line.classList.toggle('done', i < step);
-        }
-      }
-      // Update title
-      const meta = STEP_META[step];
-      if (meta) {
-        const titleEl    = document.getElementById(prefix + '-step-title');
-        const subtitleEl = document.getElementById(prefix + '-step-subtitle');
-        if (titleEl) titleEl.textContent    = prefix === 'm' ? meta.title    : meta.dtitle;
-        if (subtitleEl) subtitleEl.textContent = prefix === 'm' ? meta.subtitle : meta.dsubtitle;
-      }
-      currentStep[prefix] = step;
-    }
-
-    /* ── PIN inputs logic ── */
-    function setupPinInputs(prefix) {
-      const container = document.getElementById(prefix + '-step-3');
-      if (!container) return;
-      const inputs = container.querySelectorAll('.pin-input');
-      inputs.forEach((inp, idx) => {
-        inp.value = '';
-        inp.classList.remove('filled');
-        inp.addEventListener('input', function() {
-          this.value = this.value.replace(/[^0-9]/g,'').slice(-1);
-          if (this.value) {
-            this.classList.add('filled');
-            if (idx < inputs.length - 1) inputs[idx+1].focus();
-          } else {
-            this.classList.remove('filled');
-          }
-        }, { once: false });
-        inp.addEventListener('keydown', function(e) {
-          if (e.key === 'Backspace' && !this.value && idx > 0) inputs[idx-1].focus();
-        });
-      });
-      setTimeout(() => inputs[0].focus(), 100);
-    }
-
-    /* ── Pseudo suggestions ── */
-    function generateSuggestions(prefix, nom, prenom) {
-      const container = document.getElementById(prefix + '-suggestions');
-      if (!container) return;
-      const n = nom.charAt(0).toUpperCase() + nom.slice(1);
-      const p = prenom.charAt(0).toUpperCase() + prenom.slice(1);
-      const suggs = [
-        `${prenom}_${nom}`,
-        `${prenom}.${nom}`,
-        `${prenom}${Math.floor(Math.random()*90+10)}`,
-        `${nom}_${prenom.charAt(0)}`,
-        `${prenom}_dm`,
-      ];
-      container.innerHTML = suggs.map(s =>
-        `<button type="button" class="pseudo-chip" onclick="selectPseudo('${prefix}','${s}',this)">${s}</button>`
-      ).join('');
-    }
-
-    function selectPseudo(prefix, value, btn) {
-      const input = document.getElementById(prefix + '-pseudo');
-      if (input) { input.value = value; checkPseudo(input, prefix); }
-      const chips = btn.closest('[id$="-suggestions"]').querySelectorAll('.pseudo-chip');
-      chips.forEach(c => c.classList.remove('selected'));
-      btn.classList.add('selected');
-    }
-
-    function checkPseudo(input, prefix) {
-      const v = input.value;
-      const icon = document.getElementById(prefix + '-pseudo-icon');
-      if (!icon) return;
-      if (v.length >= 3 && /^[a-zA-Z0-9_]+$/.test(v)) {
-        icon.innerHTML = '<i class="fa-solid fa-circle-check text-green-500"></i>';
-        icon.classList.remove('hidden');
-      } else if (v.length > 0) {
-        icon.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-400"></i>';
-        icon.classList.remove('hidden');
-      } else {
-        icon.classList.add('hidden');
-      }
-    }
-
-    /* ── Parrainage toggle ── */
-    function toggleReferral(prefix) {
-      const field   = document.getElementById(prefix + '-referral-field');
-      const chevron = document.getElementById(prefix + '-referral-chevron');
-      if (!field) return;
-      const open = field.classList.toggle('hidden');
-      if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
-      if (!open) {
-        const input = document.getElementById(prefix + '-referral');
-        if (input) setTimeout(() => input.focus(), 50);
-      }
-    }
-
-    /* ── Resend PIN ── */
-    function resendPin(e) {
-      e.preventDefault();
-      const link = e.target;
-      link.textContent = 'Code renvoyé ✓';
-      link.style.color = '#22c55e';
-      setTimeout(() => { link.textContent = 'Renvoyer'; link.style.color = ''; }, 3000);
-    }
-
-    /* ── Shake animation ── */
-    function shake(id) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.style.animation = 'none';
-      el.offsetHeight; // reflow
-      el.style.animation = 'shakeX 0.4s ease';
-      setTimeout(() => el.style.animation = '', 400);
-    }
-
-    // Inject shake keyframes
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes shakeX {
-        0%, 100% { transform: translateX(0); }
-        20% { transform: translateX(-6px); }
-        40% { transform: translateX(6px); }
-        60% { transform: translateX(-4px); }
-        80% { transform: translateX(4px); }
-      }
-    `;
-    document.head.appendChild(style);
-
-    // Init PIN listeners on load (for both prefixes)
+    // Init on load
     document.addEventListener('DOMContentLoaded', () => {
-      // setupPinInputs is called lazily in nextStep
+      // Auto-fill referral code from URL if present (?ref=CODE or ?code=CODE)
+      const urlParams = new URLSearchParams(window.location.search);
+      const refCode = urlParams.get('ref') || urlParams.get('code');
+      
+      if (refCode && window.toggleReferral) {
+        console.log("🎁 Code de parrainage détecté:", refCode);
+        ['m', 'd'].forEach(prefix => {
+          const refInput = document.getElementById(prefix + '-referral');
+          if (refInput) {
+            refInput.value = refCode;
+            window.toggleReferral(prefix);
+          }
+        });
+      }
     });
     </script>
+    <!-- Forgot Password Modal -->
+    <dialog id="forgot_modal" class="modal modal-bottom sm:modal-middle">
+      <div class="modal-box bg-white border-none shadow-2xl rounded-[32px] p-8 relative overflow-hidden">
+        <!-- Background decoration -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-[#f5a64b]/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-[#f5a64b]/5 rounded-full blur-3xl"></div>
+
+        <form method="dialog">
+          <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors">✕</button>
+        </form>
+
+        <div class="flex flex-col gap-6 relative z-10">
+          <div class="w-16 h-16 bg-[#f5a64b]/10 rounded-2xl flex items-center justify-center text-primary text-3xl">
+            <i class="fa-solid fa-key"></i>
+          </div>
+          
+          <div class="space-y-2">
+            <h3 class="font-bricolage text-3xl font-extrabold tracking-tight text-gray-900">Mot de passe oublié ?</h3>
+            <p class="text-gray-500 leading-relaxed text-[15px]">
+              Entrez votre adresse email pour recevoir un lien de réinitialisation.
+            </p>
+          </div>
+
+          <form id="forgot-pw-form" class="flex flex-col gap-4" onsubmit="handleForgotPassword(event)">
+            <div class="flex flex-col">
+              <label class="field-label ml-1">Votre email</label>
+              <div class="relative flex items-center group">
+                <i class="fa-regular fa-envelope absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary"></i>
+                <input type="email" id="forgot-email" placeholder="exemple@mail.com" class="field-input w-full" required />
+              </div>
+            </div>
+
+            <button type="submit" id="btn-forgot-submit" class="btn border-none w-full rounded-2xl text-white font-bold h-14 text-lg shadow-lg shadow-[#f5a64b]/20 hover:shadow-[#f5a64b]/40 transition-all duration-300" style="background-color: #f5a64b;" data-loading-text="Envoi en cours...">
+              Envoyer le lien
+            </button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-sm">
+        <button class="cursor-default outline-none">close</button>
+      </form>
+    </dialog>
 </body>
 </html>

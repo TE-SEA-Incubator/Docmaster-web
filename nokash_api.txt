@@ -1,0 +1,234 @@
+NOKASH API_PAYIN
+
+Documentation
+
+NOKASH GLOBAL
+July 2024
+1/6
+
+Version
+
+Authors
+
+Quality
+
+Date
+
+Comments
+
+1
+
+FEUDJIO LIONEL
+
+Team
+Dev NOKASH
+
+January 2023
+
+2
+
+FEUDJIO LIONEL
+
+Team
+Dev NOKASH
+
+April 2023
+
+update after api version 301 was ready
+
+3
+
+FEUDJIO LIONEL
+
+Team
+Dev NOKASH
+
+May 2023
+
+adding callback url
+
+4
+
+FEUDJIO LIONEL
+
+Team
+Dev NOKASH
+
+July 2024
+
+adding api payin v407
+
+initial Document
+
+NOKASH GLOBAL
+July 2024
+2/6
+
+Table of contents:
+I. Initiate the payment
+II. response of initiate payment
+III. check status
+
+3/6
+
+Process of collecting payments in NOKASH
+Find the link of the postman collection file here: postman collection
+
+I.
+
+Initiate the payment
+
+This is done via the api:
+http method
+
+POST
+
+url
+
+https://api.nokash.app/lapas-on-trans/trans/api-payin-request/407
+
+header
+
+-
+
+content-Type: application/json
+
+●
+●
+●
+
+i_space_key: the key of the integrator
+app_space_key: the key of the app.
+payment_type: the type of payment needed
+○ for CM country, use: CM_MOBILEMONEY
+○ for NG country, use: NG_BANKTRANSFER
+country: the iso alpha 2 of the country (only {CM, NG} are available now)
+payment_method: the payment method to use for the payment;
+○ for CM country, use these: MTN_MOMO, ORANGE_MONEY
+○ for NG country, use these: BANK_TRANSFER;
+order_id: the unique id of the transaction in your system
+amount: the amount of the transaction
+○ minimum for CM country is: 1 XAF
+○ minimum for NG country is: 100 NGN
+callback_url (optional and only for production keys): this is an endpoint
+you will open in your system to let us send you the status of the request
+when it is changed. It is a post request with this body data: id, status,
+amount, phone, orderId;
+user_data: the information of the payer which depend on the payment
+type:
+○ for payment_type: CM_MOBILEMONEY, set field:
+■ user_phone: the payer phone number
+○ for NG_BANKTRANSFER payment_type, set fields:
+■ user_email: the payer email address
+■ user_name: the payer name
+
+parameters
+body
+
+●
+●
+
+●
+●
+
+●
+
+●
+
+4/6
+
+II.
+
+get the response of initiate payment
+
+The structure of the response is:
+●
+
+●
+●
+
+status: the status of your request.
+possible values are:
+○ REQUEST_OK: process have been initiate
+○ REQUEST_BAD_INFOS: you did not send an information
+○ … others are unknown errors; you may report it to us please.
+message: the message of the server
+data: the data of the response;
+○ when status is not REQUEST_OK, data is null
+○ when it is REQUEST_OK, data is an object.
+
+data object structure depend on payment_type used when initiating the payment:
+● for payment_type CM_MOBILEMONEY :
+○ id: the unique id of the payment in our system (you will use it to get
+the status of the payment)
+○ status: current status of the payment; possible values are:
+PENDING, FAILED, CANCELED, TIMEOUT, SUCCESS
+○ amount: the amount of the payment.
+○ orderId: the id from your system
+○ phone: the phone number of payer
+● for payment_type NG_BANKTRANSFER:
+○ id: the unique id of the payment in our system (you will use it to get
+the status of the payment)
+○ status: current status of the payment; possible values are:
+PENDING, FAILED, CANCELED, TIMEOUT, SUCCESS
+○ amount: the amount of the payment.
+○ orderId: the id from your system
+○ va_bank_code: the bank code of VA generated
+○ va_bank_name: the bank name
+○ va_account_number: the VA generated
+○ va_expiry_date_in_utc: expiration data of the va in utc
+○ user_name: the payer name
+○ user_email: the payer email
+
+5/6
+
+III.
+
+check status
+
+http method
+
+POST
+
+url
+
+https://api.nokash.app/lapas-on-trans/trans/310/status-request
+
+parameter
+
+-
+
+transaction_id: the id of the transaction
+
+response
+
+●
+
+status: the status of your request.
+possible values are:
+○ REQUEST_OK: your request was proceed.
+○ REQUEST_BAD_INFOS: you did not send an information
+○ … others are unknown errors; you may report it to us please.
+message: the message of the server
+data: data of the response; when the status is REQUEST_OK, data is
+an object which represent the transaction:
+○ amount
+○ status: status of the transaction; possible values are: PENDING,
+FAILED, CANCELED, TIMEOUT, SUCCESS
+○ statusReason: a string, which is:
+■ null when status is SUCCESS
+■ have value when status is FAILED
+○ orderId: the order id of the transaction
+○ id: the id of the transaction
+○ phone: the payer phone
+○ user_name
+○ user_email
+○ user_bank_code
+○ user_bank_account
+
+●
+●
+
+6/6
+
+
