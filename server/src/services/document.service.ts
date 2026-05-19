@@ -27,14 +27,17 @@ export class DocumentService {
     // 0. Check Subscription Limits
     if (data.user_id) {
       const validation = await subscriptionService.validateAction(data.user_id, 'REGISTER_OBJECT');
-      if (!validation.allowed) {
-        throw new Error(validation.reason);
+      if (!(validation as any).allowed) {
+        throw new Error((validation as any).reason);
       }
     }
 
-    // Sanitize dates: convert empty strings to null
+    // Sanitize dates: convert empty strings to undefined
     if (data.date_expiration === '' as any) {
       data.date_expiration = undefined;
+    }
+    if (data.date_delivrance === '' as any) {
+      data.date_delivrance = undefined;
     }
 
     // Automatically calculate fingerprint if type and number are provided
@@ -108,7 +111,7 @@ export class DocumentService {
   /**
    * Report a document as lost
    */
-  async reportDocumentLost(id: string, userId: string, password?: string): Promise<{ document: UserDocument, declarationId?: string }> {
+  async reportDocumentLost(id: string, userId: string, password?: string): Promise<{ document: UserDocument, declarationId?: string, declarationIdentifiant?: string }> {
     // 1. Find document
     const doc = await this.documentRepository.findById(id);
     if (!doc || doc.user_id !== userId) {

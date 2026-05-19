@@ -86,7 +86,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if(vStep2) vStep2.classList.add("hidden");
     
     const sBtn = document.getElementById("submitBtn");
-    if(sBtn) sBtn.innerText = "Suivant";
+    if(sBtn) sBtn.innerHTML = 'Continuer <i class="fa-solid fa-arrow-right text-sm"></i>';
+
+    // Reset steps UI
+    window.goToStep1();
 
     // Show Modal
     const wrapper = document.getElementById("modalWrapper");
@@ -94,6 +97,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if(wrapper && box){
       wrapper.classList.remove("hidden");
       wrapper.classList.add("flex");
+      
+      // Fermer au clic sur le wrapper (hors de la box)
+      wrapper.onclick = (e) => {
+        if (e.target === wrapper) window.closeSubscriptionModal();
+      };
+      
       setTimeout(() => box.classList.remove("translate-y-full"), 10);
     }
   };
@@ -110,11 +119,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  window.goToStep1 = function () {
+    const view1 = document.getElementById("viewStep1");
+    const view2 = document.getElementById("viewStep2");
+    const sBtn = document.getElementById("submitBtn");
+    const dot2 = document.getElementById("stepDot2");
+    const line = document.getElementById("stepLine");
+    const label2 = document.getElementById("stepLabel2");
+
+    if(view1 && view2){
+      view2.classList.add("hidden");
+      view1.classList.remove("hidden");
+      if(sBtn) sBtn.innerHTML = 'Continuer <i class="fa-solid fa-arrow-right text-sm"></i>';
+      
+      if(dot2) {
+        dot2.classList.replace("bg-primary", "bg-slate-100");
+        dot2.classList.replace("text-white", "text-slate-400");
+      }
+      if(line) line.classList.replace("bg-primary", "bg-slate-100");
+      if(label2) label2.classList.replace("text-primary", "text-slate-400");
+    }
+  };
+
   window.goToStep2 = function (method = 'MOMO') {
     selectedMethod = method;
     const view1 = document.getElementById("viewStep1");
     const view2 = document.getElementById("viewStep2");
     const sBtn = document.getElementById("submitBtn");
+    const dot2 = document.getElementById("stepDot2");
+    const line = document.getElementById("stepLine");
+    const label2 = document.getElementById("stepLabel2");
     
     if(view1 && view2){
       view1.classList.add("opacity-0");
@@ -123,7 +157,14 @@ document.addEventListener("DOMContentLoaded", () => {
           view1.classList.remove("opacity-0");
           view2.classList.remove("hidden");
           view2.classList.add("animate-fade-in");
-          if(sBtn) sBtn.innerText = "Confirmer le paiement";
+          if(sBtn) sBtn.innerHTML = 'Confirmer le paiement <i class="fa-solid fa-check text-sm"></i>';
+          
+          if(dot2) {
+            dot2.classList.replace("bg-slate-100", "bg-primary");
+            dot2.classList.replace("text-slate-400", "text-white");
+          }
+          if(line) line.classList.replace("bg-slate-100", "bg-primary");
+          if(label2) label2.classList.replace("text-slate-400", "text-primary");
       }, 200);
     }
   };
@@ -154,19 +195,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const planId = currentPlanData.id;
         // Determine months based on features or defaults
-        const monthsFeat = currentPlanData.features.find(f => f.label.includes("validité"));
         let months = 1;
-        const phone = document.getElementById("payPhone").value;
-
-        if (!phone) {
-          alert("Veuillez entrer un numéro de téléphone.");
-          btn.innerHTML = originalText;
-          btn.disabled = false;
-          return;
-        }
 
         try {
-          const result = await subscribeToPlan(planId, months, selectedMethod, phone);
+          const result = await subscribeToPlan(planId, months, selectedMethod, fullNumber);
           if (result.success) {
             const data = result.data;
             if (data.status === 'PENDING_PAYMENT') {
@@ -421,7 +453,15 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Update current plan section
         const planNameEl = document.getElementById("currentPlanName");
-        if (planNameEl) planNameEl.innerText = `Plan ${usage.plan_name}`;
+        if (planNameEl) {
+          const planName = usage.plan_name || 'Gratuit';
+          planNameEl.innerText = `Plan ${planName}`;
+          
+          // If it's the free plan, we can add a specific style or badge
+          if (planName.toLowerCase().includes('gratuit') || !usage.subscription_id) {
+             planNameEl.innerHTML = `Plan Gratuit <span class="ml-2 text-[10px] px-2 py-0.5 bg-white/20 rounded-full border border-white/30 uppercase tracking-widest font-black">Basic</span>`;
+          }
+        }
         
         const docsLimitEl = document.getElementById("currentDocsLimit");
         if (docsLimitEl) docsLimitEl.innerText = `${usage.limits.docs_per_type} Document${usage.limits.docs_per_type > 1 ? 's' : ''}`;
@@ -476,11 +516,28 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Initializations
-  updateUserInfo();
-  loadPlans();
-  loadUserUsage();
-  genererFactures();
-  animateCounters();
+  const init = async () => {
+    if (window.toggleLoader) window.toggleLoader(true);
+    
+    try {
+      updateUserInfo();
+      
+      // Load all data concurrently
+      await Promise.all([
+        loadPlans(),
+        loadUserUsage(),
+        genererFactures()
+      ]);
+      
+      animateCounters();
+    } catch (error) {
+      console.error("❌ Subscription initialization failed:", error);
+    } finally {
+      if (window.toggleLoader) setTimeout(() => window.toggleLoader(false), 800);
+    }
+  };
+
+  init();
 
   // intl-tel-input
   const phoneInput = document.querySelector("#payPhone");

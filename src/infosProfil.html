@@ -10,6 +10,8 @@
         <link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon" />
         <link rel="stylesheet" href="./css/input.css" />
         <script src="https://cdn.tailwindcss.com"></script>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+
 
         <script>
             tailwind.config = {
@@ -79,6 +81,7 @@
                 .main-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
             }
         </style>
+        <script type="module" src="/js/index.js"></script>
     </head>
     <body>
   <script type="module" src="/js/utils/ui-helpers.js"></script>
@@ -307,6 +310,7 @@
                     event.preventDefault();
                     
                     feedback.textContent = "";
+                    if (window.toggleLoader) window.toggleLoader(true);
                     startButtonLoader(saveBtn);
 
                     const userData = {
@@ -349,6 +353,7 @@
                         feedback.className = "text-[12px] text-red-500 font-semibold";
                     } finally {
                         stopButtonLoader(saveBtn);
+                        if (window.toggleLoader) window.toggleLoader(false);
                     }
                 });
             });

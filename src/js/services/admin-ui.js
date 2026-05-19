@@ -3,6 +3,7 @@
  * Handles Sidebar active states, Logout, and Notifications
  */
 import { logout } from './auth.js';
+import { getToken } from '../utils/cookie.js';
 
 export function initAdminUI() {
     // 1. Handle Active Sidebar Link
@@ -45,10 +46,14 @@ export function initAdminUI() {
 async function fetchNotificationsCount(badgeEl) {
     if (!badgeEl) return;
     try {
-        const token = localStorage.getItem('docmaster_jwt_token');
+        const token = getToken();
         if (!token) return;
 
-        const response = await fetch('http://localhost:5000/api/notifications', {
+        // Use centralized backend URL from environment configuration
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+        const apiUrl = `${API_BASE_URL}/notifications`;
+
+        const response = await fetch(apiUrl, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const result = await response.json();

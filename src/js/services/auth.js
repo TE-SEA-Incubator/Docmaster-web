@@ -14,6 +14,8 @@ import {
   requestPasswordReset as apiRequestReset,
   resetPassword as apiResetPassword,
 } from './api.js';
+import { socketService } from './socket.js';
+import { saveToken, deleteToken, getToken } from '../utils/cookie.js';
 
 // Import utility functions
 import {
@@ -84,7 +86,7 @@ function getInitials(nom, prenom) {
 }
 
 /**
- * Save user session to localStorage
+ * Save user session to localStorage and cookies
  */
 function saveSession(user, token) {
   const session = {
@@ -108,7 +110,7 @@ function saveSession(user, token) {
     role: user.role,
   };
   localStorage.setItem(AUTH_KEY, JSON.stringify(session));
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  saveToken(token);
 }
 
 /**
@@ -245,14 +247,125 @@ async function handleUpdateProfile(userData) {
  */
 async function logout() {
   try {
-    apiLogout();
+    await apiLogout();
+    socketService.disconnect();
     console.log("✓ Déconnexion réussie");
     return { success: true };
   } catch (error) {
     console.error("❌ Erreur de déconnexion:", error);
     localStorage.removeItem(AUTH_KEY);
-    localStorage.removeItem(AUTH_TOKEN_KEY);
+    deleteToken();
     window.location.href = "/login.html";
+  }
+}
+
+/**
+ * Google OAuth Login
+ * Handles sign-in with Google via Firebase
+ */
+async function loginWithGoogle() {
+  try {
+    console.log("🔐 Initialisation de la connexion Google...");
+    console.log("🔐 Step 1: Firebase config check");
+    console.log("API Key:", import.meta.env.VITE_FIREBASE_API_KEY?.substring(0, 10) + "***");
+    console.log("Auth Domain:", import.meta.env.VITE_FIREBASE_AUTH_DOMAIN);
+    
+    // Import Firebase auth functions
+    console.log("🔐 Step 2: Importing Firebase modules...");
+    const { signInWithPopup } = await import("firebase/auth");
+    console.log("✓ signInWithPopup imported");
+    
+    const { auth, googleProvider } = await import("../firebase.js");
+    console.log("✓ Firebase auth imported:", auth !== undefined);
+    console.log("✓ Google Provider imported:", googleProvider !== undefined);
+    
+    const { googleOAuthLogin } = await import("./api.js");
+    console.log("✓ googleOAuthLogin imported");
+    
+    // Show loading state
+    console.log("🔐 Step 3: Finding Google buttons and showing loaders...");
+    const googleButtons = document.querySelectorAll('button.google-login-btn');
+    console.log("✓ Found", googleButtons.length, "Google buttons");
+    googleButtons.forEach(btn => startButtonLoader(btn));
+    
+    // Firebase Google sign-in with popup
+    console.log("🔐 Step 4: Opening Google sign-in popup...");
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log("✓ Google sign-in popup result:", result);
+    
+    const user = result.user;
+    const token = await user.getIdToken();
+    
+    console.log("✓ Google Sign-in réussi:", user.email);
+    console.log("✓ Got Firebase ID token (length:", token.length, ")");
+    
+    // Send token to backend
+    console.log("🔐 Step 5: Sending token to backend...");
+    const oauthResult = await googleOAuthLogin(token, {
+      email: user.email,
+      displayName: user.displayName,
+    });
+    console.log("✓ Backend response:", oauthResult);
+    
+    if (googleButtons.length > 0) {
+      googleButtons.forEach(btn => stopButtonLoader(btn));
+    }
+    
+    if (oauthResult.success) {
+      const { user: dbUser, token: jwtToken } = oauthResult.data;
+      
+      // Save session with JWT from backend
+      saveSession(dbUser, jwtToken);
+      
+      console.log("✓ Connexion Google réussie!");
+      showSuccessModal(
+        "Bienvenue! 🎉",
+        `Connexion réussie en tant que ${dbUser.prenom || dbUser.email}`,
+        1500
+      );
+      
+      // Redirect after modal
+      setTimeout(() => {
+        const isAdmin = dbUser.role && dbUser.role.toUpperCase() === 'ADMIN';
+        if (isAdmin) {
+          window.location.href = "/admin/dashboard.html";
+        } else {
+          window.location.href = "/dashboard.html";
+        }
+      }, 1500);
+      
+      return { success: true, user: dbUser };
+    } else {
+      if (googleButtons.length > 0) {
+        googleButtons.forEach(btn => stopButtonLoader(btn));
+      }
+      showErrorModal(
+        "Erreur",
+        oauthResult.message || "Une erreur s'est produite lors de la connexion au serveur.",
+        5000
+      );
+      return { success: false, message: oauthResult.message };
+    }
+  } catch (error) {
+    console.error("❌ Erreur Google Login:", error);
+    
+    const googleButtons = document.querySelectorAll('button.google-login-btn');
+    if (googleButtons.length > 0) {
+      googleButtons.forEach(btn => stopButtonLoader(btn));
+    }
+    
+    // Handle specific Firebase error codes
+    const errorMessages = {
+      'auth/popup-closed-by-user': 'Fenêtre de connexion fermée. Veuillez réessayer.',
+      'auth/popup-blocked': 'Les popups sont bloquées. Veuillez activer les popups pour ce site.',
+      'auth/cancelled-popup-request': 'Connexion annulée.',
+      'auth/operation-not-allowed': 'La connexion Google n\'est pas activée.',
+    };
+    
+    const errorMessage = errorMessages[error.code] || error.message || "Une erreur inattendue s'est produite.";
+    showErrorModal("Erreur de connexion Google", errorMessage);
+    
+    return { success: false, message: error.message };
   }
 }
 
@@ -261,7 +374,7 @@ async function logout() {
  */
 function checkAuth() {
   const session = getSession();
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const token = getToken();
   const currentPage = window.location.pathname.split("/").pop();
   
   // Pages that don't require authentication
@@ -280,6 +393,9 @@ function checkAuth() {
     console.log("👤 Utilisateur connecté:", session.email, "Rôle:", session.role);
     updateUI(session);
     markActiveSidebarLocal();
+
+    // Initialize Real-time Socket
+    socketService.init();
 
     const isAdmin = session.role && session.role.toUpperCase() === 'ADMIN';
     const isInsideAdmin = window.location.pathname.includes('/admin/');
@@ -424,6 +540,7 @@ window.stopButtonLoader = stopButtonLoader;
 window.login = login;
 window.register = register;
 window.logout = logout;
+window.loginWithGoogle = loginWithGoogle;
 window.checkAuth = checkAuth;
 window.getSession = getSession;
 

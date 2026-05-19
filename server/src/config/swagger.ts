@@ -23,6 +23,14 @@ const options = {
         url: 'http://localhost:5000/api',
         description: 'Serveur de Développement Local',
       },
+      {
+        url: 'http://217.154.126.24:5000/api',
+        description: 'Serveur de Production',
+      },
+      {
+        url: 'https://217.154.126.24:5000/api',
+        description: 'Production (HTTPS)',
+      },
     ],
     components: {
       securitySchemes: {

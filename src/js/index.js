@@ -1,4 +1,10 @@
 import { initDatePickers } from "./utils/index.js";
+import { protectPage, isPublicPage } from "./utils/auth-guard.js";
+
+// Protéger les pages internes
+if (!isPublicPage()) {
+  protectPage();
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   initDatePickers();
@@ -16,6 +22,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   navLinks.forEach((link) => {
     const anchor = link.querySelector("a");
+    if (!anchor) return; // Skip si pas de <a> trouvé
+    
     const href = anchor.getAttribute("href");
 
     if (
@@ -82,6 +90,8 @@ window.data = {
 // 2. Fonction pour générer la carte
 function renderCards(docs) {
   const container = document.getElementById("document-container");
+  if (!container) return; // Sortir si le conteneur n'existe pas
+  
   container.innerHTML = ""; // Vide le conteneur
 
   docs.forEach((doc) => {
@@ -159,12 +169,20 @@ document.addEventListener("DOMContentLoaded", () => {
 const btn = document.getElementById("langButton");
 const dropdown = document.getElementById("langDropdown");
 
-btn.onclick = () => dropdown.classList.toggle("hidden");
+if (btn && dropdown) {
+  btn.onclick = () => dropdown.classList.toggle("hidden");
+}
 
 function changeLang(code, flagUrl) {
-  document.getElementById("currentFlag").src = flagUrl;
-  btn.querySelector("span").innerText = code.toUpperCase();
-  dropdown.classList.add("hidden");
+  const currentFlag = document.getElementById("currentFlag");
+  if (currentFlag) currentFlag.src = flagUrl;
+  
+  if (btn) {
+    const span = btn.querySelector("span");
+    if (span) span.innerText = code.toUpperCase();
+  }
+  
+  if (dropdown) dropdown.classList.add("hidden");
   // Ici tu peux ajouter ta logique de changement de langue (i18next, etc.)
 }
 

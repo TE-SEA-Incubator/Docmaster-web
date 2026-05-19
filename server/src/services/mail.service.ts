@@ -177,4 +177,57 @@ export class MailService {
       throw new Error('Impossible d\'envoyer l\'email de vérification.');
     }
   }
+
+  /**
+   * Send a notification when a document match is found
+   */
+  async sendMatchNotificationEmail(to: string, userName: string, docType: string, matchType: 'LOST_SIDE' | 'FOUND_SIDE'): Promise<void> {
+    const fromName = "DocMaster Notifications";
+    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'notifications@dm.cm';
+
+    const isLostSide = matchType === 'LOST_SIDE';
+    const subject = isLostSide ? `Bonne nouvelle ! Votre ${docType} a été retrouvé` : `Correspondance trouvée pour le document : ${docType}`;
+    
+    const title = isLostSide ? "Document Retrouvé !" : "Propriétaire Identifié !";
+    const message = isLostSide 
+      ? `Bonne nouvelle ${userName}, quelqu'un a signalé avoir trouvé votre <strong>${docType}</strong>.`
+      : `Le propriétaire du document <strong>${docType}</strong> que vous avez signalé a été identifié.`;
+    
+    const actionText = isLostSide ? "Voir les détails et récupérer" : "Voir les détails";
+    const actionUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard.html`;
+
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
+      to,
+      subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 60px; height: 60px; background-color: #FEF0DC; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+              <span style="font-size: 30px;">🎉</span>
+            </div>
+          </div>
+          <h2 style="color: #f5a64b; text-align: center;">${title}</h2>
+          <p>Bonjour ${userName},</p>
+          <p>${message}</p>
+          <p>Connectez-vous à votre tableau de bord DocMaster pour voir les prochaines étapes.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${actionUrl}" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">${actionText}</a>
+          </div>
+          <p style="font-size: 13px; color: #64748b;">Merci d'utiliser DocMaster pour la sécurité de vos documents.</p>
+          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
+          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
+            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
+          </p>
+        </div>
+      `,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`📧 Notification de match envoyée à : ${to}`);
+    } catch (error: any) {
+      console.error(`❌ Erreur lors de l'envoi de l'email de match à ${to}:`, error.message);
+    }
+  }
 }

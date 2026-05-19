@@ -298,7 +298,11 @@ export function initLostDeclaration() {
   // URL params
   const urlParams = new URLSearchParams(window.location.search);
   const docCode = urlParams.get('doc');
-  if (docCode) {
+  const prefillId = urlParams.get('prefillDocId');
+
+  if (prefillId) {
+    handlePrefill(prefillId);
+  } else if (docCode) {
     // Wait for types to be loaded
     const checkInterval = setInterval(() => {
       if (window.allDocumentTypes.length > 0) {
@@ -552,6 +556,58 @@ function showStep(step){
   
   // Restaurer les données sauvegardées après un délai (pour laisser le DOM se construire)
   setTimeout(() => restoreDeclarationDraft(), 100);
+}
+
+/**
+ * Gère le pré-remplissage à partir d'un document existant
+ */
+async function handlePrefill(docId) {
+  try {
+    const { getMyDocuments } = await import('../services/api.js');
+    const res = await getMyDocuments();
+    
+    if (res.success && Array.isArray(res.data)) {
+      const doc = res.data.find(d => d.id === docId);
+      if (doc) {
+        console.log('✨ Pré-remplissage avec:', doc);
+        
+        // 1. Sélectionner le type
+        const checkTypes = setInterval(() => {
+          if (window.allDocumentTypes.length > 0) {
+            clearInterval(checkTypes);
+            const type = window.allDocumentTypes.find(t => t.code.toLowerCase() === doc.type_doc.toLowerCase());
+            if (type) {
+              selectedDocs.push(type.id);
+              renderSelectionUI();
+              
+              // 2. Aller à l'étape de saisie des détails
+              showStep(3); 
+              
+              // 3. Remplir les champs dynamiques (un peu plus tard pour laisser le DOM se construire)
+              setTimeout(() => {
+                const mapping = {
+                  'titulaire': doc.nom_sur_doc,
+                  'numero': doc.numero_doc,
+                  'expiration': doc.date_expiration ? doc.date_expiration.split('T')[0] : '',
+                  'date_naissance': doc.date_naissance ? doc.date_naissance.split('T')[0] : '',
+                };
+
+                for (const [id, value] of Object.entries(mapping)) {
+                  const input = document.getElementById(id);
+                  if (input && value) input.value = value;
+                }
+                
+                // Sauvegarder le brouillon
+                saveDeclarationDraft();
+              }, 300);
+            }
+          }
+        }, 100);
+      }
+    }
+  } catch (err) {
+    console.error('Erreur pré-remplissage:', err);
+  }
 }
 
 function updateProgressUI(){

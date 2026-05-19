@@ -8,6 +8,7 @@ export interface Plan {
   features: any;
   is_active: boolean;
   is_featured: boolean;
+  duration_months: number;
 }
 
 class PlanRepository {
@@ -50,6 +51,10 @@ class PlanRepository {
       fields.push(`is_featured = $${i++}`);
       values.push(data.is_featured);
     }
+    if (data.duration_months !== undefined) {
+      fields.push(`duration_months = $${i++}`);
+      values.push(data.duration_months);
+    }
 
     if (fields.length === 0) return null;
 
@@ -61,8 +66,8 @@ class PlanRepository {
 
   async create(plan: Plan) {
     const sql = `
-      INSERT INTO plans (id, name, price, interval, features, is_active, is_featured)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO plans (id, name, price, interval, features, is_active, is_featured, duration_months)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
     const params = [
@@ -72,7 +77,8 @@ class PlanRepository {
       plan.interval || 'month',
       JSON.stringify(plan.features || {}),
       plan.is_active ?? true,
-      plan.is_featured ?? false
+      plan.is_featured ?? false,
+      plan.duration_months || 1
     ];
     const result = await query(sql, params);
     return result.rows[0];

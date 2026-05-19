@@ -11,6 +11,8 @@ import { UserRepository } from "../repositories/auth.repository.ts";
 import { DocumentTypeRepository } from "../repositories/document-type.repository.ts";
 import { subscriptionService } from "./subscription.service.ts";
 import { SettingRepository } from "../repositories/setting.repository.ts";
+import { v4 as uuidv4 } from "uuid";
+import { nokashService } from "./nokash.service.ts";
 
 
 export class DeclarationService {
@@ -84,13 +86,13 @@ export class DeclarationService {
         { docTypeId: data.doc_type }
       );
 
-      if (!validation.allowed) {
-        throw new Error(validation.reason);
+      if (!(validation as any).allowed) {
+        throw new Error((validation as any).reason);
       }
 
       // If allowed via a specific benefit (like referral free declaration), consume it
-      if (validation.useBenefit && validation.subscriptionId) {
-        await subscriptionService.consumeBenefit(validation.subscriptionId, 'declaration');
+      if ((validation as any).useBenefit && (validation as any).subscriptionId) {
+        await subscriptionService.consumeBenefit((validation as any).subscriptionId, 'declaration');
       }
     }
 

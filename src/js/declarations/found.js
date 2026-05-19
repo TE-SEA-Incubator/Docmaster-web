@@ -59,6 +59,7 @@ export function initFoundDeclaration() {
   window.removeTag = removeTag;
   window.selectReward = selectReward;
   window.searchLocation = searchLocation;
+  window.useCurrentLocation = useCurrentLocation;
   
   // Real-time search setup
   const searchInput = document.getElementById('map-search-input');
@@ -88,7 +89,9 @@ export function initFoundDeclaration() {
 
   // Defaults
   const dateInput = document.getElementById("lieu-date");
-  if (dateInput) dateInput.valueAsDate = new Date();
+  if (dateInput && dateInput.type === "date") {
+    dateInput.valueAsDate = new Date();
+  }
 }
 
 /**
@@ -99,6 +102,22 @@ function goToStep(n) {
   if (n === 2 && !selectedType) {
     alert("Veuillez sélectionner un type de document.");
     return;
+  }
+  
+  if (n === 3 && currentStep === 2) {
+    const ownerName = document.getElementById('owner-name').value;
+    if (!ownerName || ownerName.trim().length < 2) {
+      alert("Veuillez entrer le nom du propriétaire (ou 'Inconnu' si illisible).");
+      return;
+    }
+  }
+
+  if (n === 4 && currentStep === 3) {
+    const ville = document.getElementById('lieu-adresse').value;
+    if (!ville || ville.trim().length < 2) {
+      alert("Veuillez préciser la ville ou le quartier.");
+      return;
+    }
   }
 
   for (let i = 1; i <= 5; i++) {
@@ -283,7 +302,8 @@ async function submitDeclaration() {
   
   formData.append('description', `${details}\n\nMots-clés: ${tags.join(', ')}`);
   
-  formData.append('ville', document.getElementById('lieu-adresse').value);
+  const ville = document.getElementById('lieu-adresse').value || 'Cameroun';
+  formData.append('ville', ville);
   
   // Add region and pays
   formData.append('region', document.getElementById('userRegion')?.value || 'Non spécifiée');
@@ -297,8 +317,8 @@ async function submitDeclaration() {
   formData.append('mode_contact', contactMode ? contactMode.value : 'APP_CHAT');
   
   // Add contact info if available
-  const phoneEl = document.getElementById('contactPhone') || document.querySelector('input[type="tel"]');
-  const emailEl = document.getElementById('contactEmail') || document.querySelector('input[type="email"]');
+  const phoneEl = document.getElementById('contact-tel') || document.getElementById('contactPhone') || document.querySelector('input[type="tel"]');
+  const emailEl = document.getElementById('contact-email') || document.getElementById('contactEmail') || document.querySelector('input[type="email"]');
   if(phoneEl?.value) formData.append('telephone_contact', phoneEl.value);
   if(emailEl?.value) formData.append('email_contact', emailEl.value);
 
@@ -311,6 +331,7 @@ async function submitDeclaration() {
 
   // Map Location
   if (selectedLocation) {
+    if (!selectedLocation.city) selectedLocation.city = ville;
     formData.append('found_location', JSON.stringify(selectedLocation));
   }
 
@@ -426,6 +447,43 @@ function initInlineMap() {
 }
 
 /**
+ * Use Browser Geolocation
+ */
+async function useCurrentLocation() {
+  if (!navigator.geolocation) {
+    alert("La géolocalisation n'est pas supportée par votre navigateur.");
+    return;
+  }
+
+  const btn = document.querySelector('button[onclick="useCurrentLocation()"]');
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Localisation...';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const latlng = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+      map.setView(latlng, 16);
+      marker.setLatLng(latlng);
+      updateSelection(latlng);
+      
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
+    },
+    (error) => {
+      console.error("Geolocation error:", error);
+      alert("Impossible de récupérer votre position. Assurez-vous d'avoir autorisé l'accès.");
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
+    },
+    { enableHighAccuracy: true }
+  );
+}
+
+/**
  * Update selection state and UI
  */
 async function updateSelection(latlng) {
@@ -456,9 +514,9 @@ async function updateSelection(latlng) {
     if (addrText) addrText.textContent = address;
     selectedLocation.city = city;
     
-    // Auto-fill input if empty
+    // Auto-fill input (Always update to ensure sync with map)
     const cityInput = document.getElementById('lieu-adresse');
-    if (cityInput && !cityInput.value) cityInput.value = city;
+    if (cityInput) cityInput.value = city;
   } catch (err) {
     if (addrText) addrText.textContent = 'Lieu sélectionné';
     selectedLocation.city = document.getElementById('lieu-adresse')?.value || 'Cameroun';

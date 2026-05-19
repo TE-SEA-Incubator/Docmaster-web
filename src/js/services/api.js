@@ -6,16 +6,46 @@
  */
 
 import apiClient, { setAuthToken, clearAuthToken } from '../core/axios.js';
+import { getToken } from '../utils/cookie.js';
 
-export const API_BASE_URL = 'http://localhost:5000/api';
-export const BASE_URL = 'http://localhost:5000';
+// Dynamic API base URL based on environment configuration
+const getApiBaseUrl = () => {
+  // Priority 1: Use explicit environment variable (from .env or .env.production)
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // Priority 2: Fallback to runtime detection (for backward compatibility)
+  const origin = window.location.origin; // Ex: http://217.154.126.24:3003
+  
+  // Si on est sur localhost ou 127.0.0.1 → backend local
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    return 'http://localhost:5000/api';
+  }
+  
+  // Production: remplacer le port 3003 par 5000
+  // http://217.154.126.24:3003 → http://217.154.126.24:5000/api
+  const backendUrl = origin.replace(':3003', ':5000');
+  return `${backendUrl}/api`;
+};
+
+export const API_BASE_URL = getApiBaseUrl();
+export const BASE_URL = window.location.origin;
 export const api = apiClient;
+
+// Debug: Log API configuration
+if (typeof console !== 'undefined') {
+  console.log('[API Config]', {
+    apiBaseUrl: API_BASE_URL,
+    frontendOrigin: window.location.origin
+  });
+}
 
 /**
  * Helper to get authentication headers for fetch calls
  */
 export function getAuthHeaders() {
-  const token = localStorage.getItem('docmaster_jwt_token');
+  const token = getToken();
   return {
     'Authorization': token ? `Bearer ${token}` : '',
   };
@@ -102,11 +132,11 @@ export async function resetPassword(token, newPassword) {
 }
 
 /**
- * Send verification PIN to email
+ * Send verification PIN to email or SMS
  */
-export async function apiSendVerificationPin(email) {
+export async function apiSendVerificationPin(email, telephone = null) {
   try {
-    const response = await apiClient.post('auth/send-verification-pin', { email });
+    const response = await apiClient.post('auth/send-verification-pin', { email, telephone });
     return { success: true, data: response.data };
   } catch (error) {
     const message = error.response?.data?.error || 'Erreur lors de l\'envoi du code.';
@@ -130,10 +160,40 @@ export async function apiVerifyEmailPin(email, pin) {
 /**
  * Logout user
  */
-export function logout() {
+export async function logout() {
+  try {
+    await apiClient.post('auth/logout');
+  } catch (e) {
+    console.error('Erreur lors de la déconnexion backend:', e);
+  }
   clearAuthToken();
   localStorage.removeItem('docmaster_user_session');
   window.location.href = '/login.html';
+}
+
+/**
+ * Login/Register with Google OAuth
+ * @param {string} firebaseToken - Firebase ID token from Google sign-in
+ * @param {Object} userInfo - User info from Firebase (email, displayName, photoURL)
+ */
+export async function googleOAuthLogin(firebaseToken, userInfo) {
+  try {
+    const response = await apiClient.post('auth/google-oauth', {
+      token: firebaseToken,
+      email: userInfo.email,
+      displayName: userInfo.displayName || '',
+      photoURL: userInfo.photoURL || '',
+    });
+    
+    if (response.data.token) {
+      setAuthToken(response.data.token);
+    }
+    
+    return { success: true, data: response.data };
+  } catch (error) {
+    const message = error.response?.data?.error || 'Erreur lors de la connexion Google.';
+    return { success: false, message };
+  }
 }
 
 /**
@@ -932,5 +992,43 @@ export async function getSettings() {
     return { success: true, data: response.data.data };
   } catch (error) {
     return { success: false, message: 'Erreur lors de la récupération des paramètres.' };
+  }
+}
+/**
+ * Get SMS Balance (admin only)
+ */
+export async function apiGetSmsBalance() {
+  try {
+    const response = await apiClient.get('sms/balance');
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    const message = error.response?.data?.message || 'Erreur lors de la récupération du solde SMS.';
+    return { success: false, message };
+  }
+}
+
+/**
+ * Get SMS Usage Statistics (admin only)
+ */
+export async function apiGetSmsUsage() {
+  try {
+    const response = await apiClient.get('sms/usage');
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    const message = error.response?.data?.message || 'Erreur lors de la récupération des statistiques SMS.';
+    return { success: false, message };
+  }
+}
+
+/**
+ * Get SMS Purchase History (admin only)
+ */
+export async function apiGetSmsPurchaseHistory() {
+  try {
+    const response = await apiClient.get('sms/purchase-history');
+    return { success: true, data: response.data.data };
+  } catch (error) {
+    const message = error.response?.data?.message || 'Erreur lors de la récupération de l\'historique SMS.';
+    return { success: false, message };
   }
 }

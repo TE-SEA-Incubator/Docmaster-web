@@ -124,21 +124,11 @@ body { display: flex; }
 .prog-track { background: #EAE3D8; border-radius: 99px; overflow: hidden; height: 6px; }
 .prog-fill   { height: 100%; border-radius: 99px; transition: width .6s ease; }
 </style>
+<script type="module" src="/js/index.js"></script>
 </head>
 <body>
   <script type="module" src="/js/utils/ui-helpers.js"></script>
 <div class="sb-overlay" id="overlay" onclick="closeSb()"></div>
-
-<!-- ══ LOADING OVERLAY ══ -->
-<div id="page-loader" class="fixed inset-0 z-[100] bg-bgMain/80 backdrop-blur-md flex items-center justify-center transition-all duration-500 opacity-0 pointer-events-none">
-  <div class="flex flex-col items-center gap-4">
-    <div class="relative w-16 h-16">
-      <div class="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
-      <div class="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
-    </div>
-    <p class="font-bricolage text-primary font-bold animate-pulse">Chargement...</p>
-  </div>
-</div>
 
 <!-- ══ SIDEBAR ══ -->
 <div id="sidebar-root"></div>

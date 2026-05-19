@@ -6,8 +6,9 @@
  */
 
 import axios from 'axios';
+import { getToken, saveToken, deleteToken } from '../utils/cookie.js';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/';
+const API_BASE_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_URL) || '/api/';
 const AUTH_TOKEN_KEY = 'docmaster_jwt_token';
 
 /**
@@ -15,17 +16,18 @@ const AUTH_TOKEN_KEY = 'docmaster_jwt_token';
  */
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true, // IMPORTANT: Allows sending and receiving cookies
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 /**
- * Request interceptor - Add JWT token to headers
+ * Request interceptor - Add JWT token to headers (kept as backup for old systems)
  */
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -44,9 +46,9 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // If 401, token expired - clear localStorage and redirect to login
+    // If 401, token expired - clear localStorage and cookies and redirect to login
     if (error.response?.status === 401) {
-      localStorage.removeItem(AUTH_TOKEN_KEY);
+      deleteToken();
       localStorage.removeItem('docmaster_user_session');
       
       const isLoginPage = window.location.pathname.endsWith('/login.html') || 
@@ -61,24 +63,24 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * Save JWT token to localStorage
+ * Save JWT token to localStorage and cookies
  */
 export function setAuthToken(token) {
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  saveToken(token);
 }
 
 /**
- * Get JWT token from localStorage
+ * Get JWT token from localStorage or cookies
  */
 export function getAuthToken() {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  return getToken();
 }
 
 /**
- * Clear JWT token from localStorage
+ * Clear JWT token from localStorage and cookies
  */
 export function clearAuthToken() {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
+  deleteToken();
 }
 
 /**

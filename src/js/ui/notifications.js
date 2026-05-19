@@ -198,12 +198,19 @@
     const modal = document.getElementById('notifModal');
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
+
+    // Add explicit listener to the modal container itself
+    modal.onclick = (e) => {
+      if (e.target === modal) window.closeNotifModal();
+    };
   };
 
   window.closeNotifModal = function() {
     const modal = document.getElementById('notifModal');
-    modal.classList.remove('open');
-    document.body.style.overflow = '';
+    if (modal) {
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
   };
 
   window.toggleNotifSettings = function() {
@@ -275,6 +282,134 @@
     if (countElm) countElm.innerText = '0';
     if (dot) dot.style.display = 'none';
   };
+
+  /* ════════════════════════════════════════════════════════════════
+     FERMETURE UNIVERSELLE DES MODALS
+     Gère : backdrop click + touche Échap
+     Fonctionne par délégation → couvre les modals injectés dynamiquement
+  ════════════════════════════════════════════════════════════════ */
+
+  // Fonctions de fermeture nommées par id de modal
+  const _MODAL_CLOSERS = {
+    confirmOverlay:       'closeConfirmModal',
+    confirmLostModal:     'closeConfirmLost',
+    addModal:             'closeAddModal',
+    verifyModal:          'closeVerifyModal',
+    'add-modal':          'closeModal',
+    'camera-modal':       'closeCameraModal',
+    modalWrapper:         'closeSubscriptionModal',
+    recoveryModalWrapper: 'closeRecoveryModal',
+    notifModal:           'closeNotifModal',
+  };
+
+  // Ferme un modal selon son pattern
+  function _doClose(el) {
+    if (!el) return;
+    const fn = _MODAL_CLOSERS[el.id];
+    if (fn && typeof window[fn] === 'function') { window[fn](); return; }
+
+    if (el.tagName === 'DIALOG') { el.close(); return; }
+
+    if (el.classList.contains('confirm-overlay') ||
+        el.classList.contains('success-overlay') ||
+        el.classList.contains('modal-bg')) {
+      el.classList.remove('show'); return;
+    }
+    if (el.classList.contains('modal-overlay')) {
+      el.classList.add('hidden'); return;
+    }
+    // Wrappers fixed flex (modalWrapper, recoveryModalWrapper…)
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+  }
+
+  // Remonte le DOM pour trouver le conteneur modal
+  function _findModal(target) {
+    let el = target;
+    while (el && el !== document.body) {
+      if (_isModalContainer(el)) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function _isModalContainer(el) {
+    return (
+      // Tout <dialog> ouvert (natif, DaisyUI, alert_modal_element…)
+      (el.tagName === 'DIALOG' && el.open) ||
+      // Modals injectés dynamiquement par id
+      el.id === 'notifModal' ||
+      el.id === 'alert_modal_element' ||
+      // Classes d'overlay
+      el.classList.contains('confirm-overlay') ||
+      el.classList.contains('success-overlay') ||
+      el.classList.contains('modal-bg') ||
+      el.classList.contains('modal-overlay') ||
+      el.id === 'modalWrapper' ||
+      el.id === 'recoveryModalWrapper'
+    );
+  }
+
+  // Vérifie si le clic est sur le fond et non sur la boîte de contenu
+  function _isBackdropClick(e, modal) {
+    if (e.target === modal) return true;
+
+    // Pour <dialog> DaisyUI : hors de .modal-box = backdrop
+    if (modal.tagName === 'DIALOG') {
+      const box = modal.querySelector('.modal-box');
+      return box ? !box.contains(e.target) : true;
+    }
+
+    // Cherche la boîte de contenu
+    let box = modal.querySelector(
+      '.modal-box, .confirm-card, .success-card, #notifCard, ' +
+      '[id$="ModalBox"], [id$="Box"]'
+    );
+    if (!box && modal.classList.contains('modal-bg')) {
+      box = modal.querySelector('.modal');
+    }
+
+    if (!box) return true;
+    return !box.contains(e.target);
+  }
+
+  // Vérifie si un modal est actuellement visible
+  function _isVisible(el) {
+    if (el.tagName === 'DIALOG') return el.open;
+    if (el.id === 'notifModal') return el.classList.contains('open');
+    if (el.classList.contains('modal-overlay') ||
+        el.id === 'modalWrapper' || el.id === 'recoveryModalWrapper') {
+      return !el.classList.contains('hidden');
+    }
+    return el.classList.contains('show');
+  }
+
+  // Clic délégué sur document (capture = attrape tout même stopPropagation)
+  document.addEventListener('click', function(e) {
+    const modal = _findModal(e.target);
+    if (!modal || !_isVisible(modal) || !_isBackdropClick(e, modal)) return;
+    _doClose(modal);
+  }, true);
+
+  // Touche Échap → ferme le modal le plus en avant
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    const candidates = Array.from(document.querySelectorAll(
+      'dialog.modal[open], ' +
+      '.confirm-overlay.show, .success-overlay.show, .modal-bg.show, ' +
+      '.modal-overlay:not(.hidden), ' +
+      '#notifModal.open, ' +
+      '#modalWrapper:not(.hidden), #recoveryModalWrapper:not(.hidden)'
+    ));
+    if (!candidates.length) return;
+    const top = candidates.reduce((best, el) => {
+      const z  = parseInt(getComputedStyle(el).zIndex, 10) || 0;
+      const bz = parseInt(getComputedStyle(best).zIndex, 10) || 0;
+      return z >= bz ? el : best;
+    });
+    e.preventDefault();
+    _doClose(top);
+  });
 
 })();
 

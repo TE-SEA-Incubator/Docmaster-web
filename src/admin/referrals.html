@@ -1,136 +1,133 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin DocMaster — Parrainages</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="/assets/images/favicon.png" type="image/x-icon" />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/input.css">
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --gray-50:  #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-400: #9ca3af;
-            --gray-600: #6b7280;
-            --gray-900: #111827;
-            --accent:       #F5A64B;
-            --accent-dark:  #D48D3B;
-            --accent-light: #FFF9F0;
+            --primary: #F5A64B;
+            --primary-dark: #D98A30;
+            --primary-light: #FEF0DC;
+            --green-dark: #1E3A2F;
+            --green-mid: #2D5A42;
+            --green-light: #E8F5EE;
+            --bgMain: #F4EFE6;
+            --surface: #FFFFFF;
+            --textMain: #1A1A1A;
+            --textMuted: #6B7280;
+            --borderMain: #EAE3D8;
+            --accent: #F5A64B;
         }
-
-        body { font-family: 'Inter', sans-serif; background-color: #fff; color: var(--gray-900); margin: 0; display: flex; height: 100vh; }
-
-        /* Sidebar */
-        .sidebar { width: 240px; background: #1E312B; border-right: none; height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; color: #fff; }
-        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; }
-        .logo-area span { font-weight: 600; font-size: 0.9375rem; color: #fff; }
-        .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 0.8125rem; font-weight: 500; text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
-        .nav-link i { width: 16px; text-align: center; }
-        .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
-        .nav-link.active { background: var(--accent); color: #fff; }
-
-        /* Main */
-        .main { flex: 1; overflow-y: auto; padding: 2rem 3rem; }
-        .page-header { margin-bottom: 2rem; }
-        .page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
-        .page-header p { font-size: 0.875rem; color: var(--gray-600); margin-top: 4px; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bgMain); color: var(--textMain); margin: 0; display: flex; height: 100vh; }
+        .sidebar { width: 260px; background: #fff; border-right: 1px solid var(--borderMain); height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; transition: all 0.3s ease; position: fixed; left: 0; top: 0; z-index: 40; overflow-y: auto; }
+        .sidebar.closed { transform: translateX(-100%); }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 30; backdrop-filter: blur(2px); }
+        .sidebar-overlay.active { display: block; }
+        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; text-decoration: none; }
+        .logo-area span { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--textMain); }
+        .nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; color: var(--textMuted); font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.2s; margin-bottom: 4px; }
+        .nav-link i { width: 18px; text-align: center; font-size: 14px; }
+        .nav-link:hover { background: var(--primary-light); color: var(--primary-dark); }
+        .nav-link.active { background: var(--green-dark); color: var(--primary); font-weight: 600; box-shadow: 0 4px 12px rgba(30, 58, 47, 0.15); }
+        .sidebar-toggle { display: none; position: fixed; top: 1rem; left: 1rem; width: 2.5rem; height: 2.5rem; background: var(--primary); border: none; border-radius: 10px; color: #fff; cursor: pointer; font-size: 1.2rem; z-index: 35; box-shadow: 0 4px 12px rgba(245, 166, 75, 0.3); }
+        .sidebar-toggle.visible { display: flex; align-items: center; justify-content: center; }
+        @media (max-width: 900px) { .sidebar { position: fixed; } .sidebar-toggle.visible { display: flex; } .main { margin-left: 0; padding: 1.5rem; } }
+        .main { flex: 1; overflow-y: auto; padding: 2rem 2.5rem; margin-left: 260px; transition: all 0.3s ease; }
+        .page-header h1 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.75rem; font-weight: 800; color: var(--textMain); margin: 0; letter-spacing: -0.02em; }
+        .page-header p { font-size: 0.875rem; color: var(--textMuted); margin-top: 4px; }
+        .table-container { border: 1px solid var(--borderMain); border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #fff; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--textMuted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--borderMain); }
+        td { padding: 16px; font-size: 13px; border-bottom: 1px solid var(--borderMain); vertical-align: middle; color: var(--textMain); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--bgMain); }
+        .user-avatar { width: 34px; height: 34px; border-radius: 10px; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--green-mid); }
+        .badge { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; }
     </style>
+    <script type="module" src="/js/index.js"></script>
 </head>
 <body>
-    <aside class="sidebar">
-        <div class="logo-area"><img src="../assets/images/logo.png" alt="Logo" class="h-6"><span>Admin Panel</span></div>
+    <button id="sidebarToggle" class="sidebar-toggle"><i class="fa-solid fa-bars"></i></button>
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <aside class="sidebar" id="adminSidebar">
+        <a href="dashboard.html" class="logo-area">
+            <img src="../assets/images/docmaster.png" alt="DocMaster" class="h-9 w-auto" />
+        </a>
         <nav class="flex-1">
-            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Vue d'ensemble</a>
+            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Vue d'ensemble</a>
             <a href="users.html" class="nav-link"><i class="fa-solid fa-users"></i> Utilisateurs</a>
-            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-invoice"></i> Documents</a>
-            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-crown"></i> Abonnements</a>
+            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-contract"></i> Types Docs</a>
+            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-star"></i> Abonnements</a>
             <a href="transactions.html" class="nav-link"><i class="fa-solid fa-receipt"></i> Transactions</a>
             <a href="referrals.html" class="nav-link active"><i class="fa-solid fa-user-friends"></i> Parrainages</a>
+            <a href="declarations.html" class="nav-link"><i class="fa-solid fa-folder-open"></i> Déclarations</a>
             <a href="withdrawals.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i> Retraits</a>
+            <a href="sms.html" class="nav-link"><i class="fa-solid fa-comment-sms"></i> Gestion SMS</a>
             <a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Paramètres</a>
         </nav>
-        <div class="mt-auto pt-4 border-t border-white/10">
-            <a href="#" id="adminLogout" class="nav-link text-red-400 hover:text-red-300">
-                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
-            </a>
+        <div class="mt-auto pt-4 border-t border-borderMain">
+            <a href="#" id="adminLogout" class="nav-link text-red-500"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
         </div>
     </aside>
-
     <main class="main">
+        <header class="flex items-center justify-between mb-8">
+            <div class="page-header mb-0">
+                <h1>Gestion des Parrainages</h1>
+                <p>Suivez les invitations et récompenses attribuées aux parrains.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="text" id="searchInput" placeholder="Rechercher par nom..." class="px-4 py-2 border border-borderMain rounded-xl text-sm focus:outline-none focus:border-primary bg-white w-64" />
+                <button class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold" onclick="loadReferrals()"><i class="fa-solid fa-rotate-right mr-2"></i> Actualiser</button>
+            </div>
+        </header>
 
-        <!-- Top bar -->
-        <div class="navbar bg-white border-b border-base-200 px-8 min-h-[64px] flex-shrink-0">
-            <div class="flex-1">
-                <h2 class="font-bricolage text-xl font-extrabold tracking-tight">Gestion des Parrainages</h2>
-            </div>
-            <div class="flex-none gap-3">
-                <div class="avatar placeholder">
-                    <div class="bg-base-200 text-base-content rounded-full w-10 border-2 border-white shadow-sm">
-                        <span class="text-xs font-bold">AD</span>
-                    </div>
-                </div>
-            </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Parrain</th>
+                        <th>Filleul</th>
+                        <th>Statut</th>
+                        <th>Points Gagnés</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="referralsTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-400">
+                            Chargement...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-
-        <!-- Scrollable content -->
-        <div class="flex-1 overflow-y-auto p-8 custom-scroll">
-
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bricolage text-lg font-bold">Tous les parrainages</h3>
-                <div class="flex gap-2">
-                    <input type="text" id="searchInput" placeholder="Rechercher par nom..." class="input input-sm input-bordered w-64 bg-white" />
-                    <button class="btn btn-sm btn-primary text-white" onclick="loadReferrals()"><i class="fa-solid fa-rotate-right"></i> Actualiser</button>
-                </div>
-            </div>
-
-            <!-- Table -->
-            <div class="bg-white border border-base-200 rounded-2xl overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="table w-full">
-                        <thead class="bg-base-200/50 text-base-content">
-                            <tr>
-                                <th>Date</th>
-                                <th>Parrain</th>
-                                <th>Filleul</th>
-                                <th>Statut</th>
-                                <th>Points Gagnés</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="referralsTableBody">
-                            <tr>
-                                <td colspan="6" class="text-center py-8 text-base-content/60">
-                                    <span class="loading loading-spinner loading-md text-primary"></span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
     </main>
-
-    <!-- Modals or scripts -->
     <script type="module">
         import { adminService } from '../js/services/admin.js';
         import { initAdminUI } from '../js/services/admin-ui.js';
+        import { startButtonLoader, stopButtonLoader } from '../js/utils/button-loaders.js';
+        import { showPageLoader, hidePageLoader } from '../js/utils/loader-spinner.js';
+
+        // Expose loaders to global scope
+        window.startButtonLoader = startButtonLoader;
+        window.stopButtonLoader = stopButtonLoader;
 
         window.loadReferrals = async function() {
+            showPageLoader();
             try {
                 const tbody = document.getElementById('referralsTableBody');
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8"><span class="loading loading-spinner loading-md text-primary"></span></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8">Chargement...</td></tr>';
                 
                 const data = await adminService.getAllReferrals();
                 
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-base-content/60">Aucun parrainage trouvé.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">Aucun parrainage trouvé.</td></tr>';
                     return;
                 }
 
@@ -149,6 +146,8 @@
             } catch (error) {
                 console.error('Erreur lors du chargement des parrainages', error);
                 document.getElementById('referralsTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500">Erreur lors du chargement des données.</td></tr>';
+            } finally {
+                hidePageLoader();
             }
         };
 
@@ -171,29 +170,28 @@
         function renderTable(data) {
             const tbody = document.getElementById('referralsTableBody');
             tbody.innerHTML = data.map(r => `
-                <tr class="hover">
-                    <td class="whitespace-nowrap">${new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
+                <tr class="hover:bg-gray-50">
+                    <td class="whitespace-nowrap text-xs text-gray-400">${new Date(r.created_at).toLocaleDateString('fr-FR')}</td>
                     <td>
-                        <div class="font-semibold text-sm">${r.parrain_prenom || ''} ${r.parrain_nom || ''}</div>
-                        <div class="text-xs text-base-content/60">${r.parrain_email}</div>
+                        <div class="font-semibold text-sm text-gray-900">${r.parrain_prenom || ''} ${r.parrain_nom || ''}</div>
+                        <div class="text-[11px] text-gray-400">${r.parrain_email}</div>
                     </td>
                     <td>
-                        <div class="font-semibold text-sm">${r.filleul_prenom || ''} ${r.filleul_nom || ''}</div>
-                        <div class="text-xs text-base-content/60">${r.filleul_email}</div>
+                        <div class="font-semibold text-sm text-gray-900">${r.filleul_prenom || ''} ${r.filleul_nom || ''}</div>
+                        <div class="text-[11px] text-gray-400">${r.filleul_email}</div>
                     </td>
                     <td>
-                        <span class="badge ${r.recompense_attribuee ? 'badge-success' : 'badge-warning'} badge-sm">
+                        <span class="badge ${r.recompense_attribuee ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
                             ${r.recompense_attribuee ? 'Récompensé' : 'En attente'}
                         </span>
                     </td>
-                    <td class="font-bricolage font-bold text-primary">+${r.points_gagnes || 500} pts</td>
+                    <td class="font-bold text-primary">+${r.points_gagnes || 500} pts</td>
                     <td>
-                        <div class="flex gap-1">
+                        <div class="flex gap-2">
                             ${!r.recompense_attribuee ? 
-                                `<button class="btn btn-xs btn-primary text-white" onclick="rewardReferral('${r.id}')">Récompenser</button>` : 
-                                `<button class="btn btn-xs btn-disabled">Récompensé</button>`
+                                `<button class="bg-primary text-white text-[10px] px-2 py-1 rounded-lg font-bold" onclick="rewardReferral('${r.id}')">Récompenser</button>` : 
+                                `<button class="bg-gray-100 text-gray-400 text-[10px] px-2 py-1 rounded-lg font-bold cursor-not-allowed" disabled>Récompensé</button>`
                             }
-                            <button class="btn btn-xs btn-ghost text-primary" onclick="alert('Détails: Parrainage ID ${r.id}')">Détails</button>
                         </div>
                     </td>
                 </tr>
@@ -201,6 +199,21 @@
         }
 
         window.loadReferrals();
+    </script>
+    <script>
+        // Sidebar Toggle Management (Copied from dashboard.html)
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const adminSidebar = document.getElementById('adminSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mainContent = document.querySelector('.main');
+        function updateSidebarToggle() {
+            if (window.innerWidth <= 900) { sidebarToggle.classList.add('visible'); } 
+            else { sidebarToggle.classList.remove('visible'); adminSidebar.classList.remove('closed'); sidebarOverlay.classList.remove('active'); mainContent.style.marginLeft = '260px'; }
+        }
+        sidebarToggle.addEventListener('click', () => { adminSidebar.classList.toggle('closed'); sidebarOverlay.classList.toggle('active'); });
+        sidebarOverlay.addEventListener('click', () => { adminSidebar.classList.add('closed'); sidebarOverlay.classList.remove('active'); });
+        window.addEventListener('resize', updateSidebarToggle);
+        updateSidebarToggle();
     </script>
 </body>
 </html>

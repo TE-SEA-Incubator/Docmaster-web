@@ -6,6 +6,7 @@
     <title>DocMaster — J'ai trouvé un document</title>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <link rel="stylesheet" href="./css/input.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="shortcut icon" href="./assets/images/favicon.png" type="image/x-icon"/>
@@ -45,12 +46,11 @@
       html, body {
         font-family: "Poppins", sans-serif;
         background: #f4efe6;
-        height: 100vh;
+        height: 100%;
         width: 100vw;
-        overflow: hidden;
         margin: 0; padding: 0;
       }
-      body { display: flex; }
+      body { display: flex; overflow-x: hidden; }
 
       /* ── Sidebar ───────────────────────────────────── */
       .sidebar {
@@ -107,13 +107,15 @@
         display: flex; flex-direction: column;
         padding: 12px 16px 12px;
         gap: 10px;
+        min-height: 0;
       }
       .panel-scroll {
         flex: 1; overflow-y: auto; overflow-x: hidden;
         border-radius: 18px;
+        min-height: 0;
       }
-      .panel-scroll::-webkit-scrollbar { width: 3px; }
-      .panel-scroll::-webkit-scrollbar-thumb { background: #ddd5c8; border-radius: 10px; }
+      .panel-scroll::-webkit-scrollbar { width: 5px; }
+      .panel-scroll::-webkit-scrollbar-thumb { background: #f5a64b; border-radius: 10px; }
 
       /* ── Steps ─────────────────────────────────────── */
       .step-wrap { display: flex; align-items: center; }
@@ -216,9 +218,94 @@
         padding: 2px 8px; font-size: 11px; font-weight: 600; color: #d98a30;
       }
       .tag button { background: none; border: none; cursor: pointer; color: #d98a30; font-size: 10px; padding: 0; }
+
+      /* ── Primary buttons ──────────────────────────────── */
+      button:not([disabled]) {
+        cursor: pointer;
+      }
+
+      #btn-s1, #btn-s2, #btn-s3, #btn-s4, #btn-s5 {
+        box-shadow: 0 4px 12px rgba(245, 166, 75, 0.2) !important;
+        transition: all 0.25s cubic-bezier(0.4,0,0.2,1) !important;
+        background-color: #f5a64b !important;
+        color: white !important;
+        opacity: 1 !important;
+      }
+
+      #btn-s1:disabled {
+        opacity: 0.85 !important;
+        background-color: #f5a64b !important;
+        color: white !important;
+        cursor: not-allowed !important;
+        box-shadow: 0 4px 12px rgba(245, 166, 75, 0.2) !important;
+      }
+
+      #btn-s1:not([disabled]) {
+        opacity: 1 !important;
+        cursor: pointer !important;
+      }
+
+      #btn-s1:not([disabled]):hover {
+        box-shadow: 0 6px 20px rgba(245, 166, 75, 0.35) !important;
+        transform: translateY(-3px) !important;
+        background-color: #d98a30 !important;
+      }
+
+      #btn-s1:not([disabled]):active {
+        transform: scale(0.98) !important;
+        box-shadow: 0 2px 8px rgba(245, 166, 75, 0.2) !important;
+      }
+
+      button[class*="bg-primary"]:not([disabled]):hover {
+        box-shadow: 0 4px 16px rgba(245, 166, 75, 0.25);
+        transform: translateY(-2px);
+      }
+
+      /* ── Button styles ──────────────────────────────── */
+      button {
+        transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      }
+
+      button.bg-green-dark, button[class*="bg-green-dark"] {
+        box-shadow: 0 2px 8px rgba(30, 58, 47, 0.15);
+      }
+
+      button.bg-green-dark:hover, button[class*="bg-green-dark"]:hover {
+        box-shadow: 0 4px 16px rgba(30, 58, 47, 0.25);
+        transform: translateY(-2px);
+      }
+
+      button.bg-green-dark:active, button[class*="bg-green-dark"]:active {
+        transform: scale(0.98);
+      }
+
+      button[class*="bg-bgMain"] {
+        transition: all 0.25s;
+      }
+
+      button[class*="bg-bgMain"]:hover {
+        background-color: #f4efe6;
+        border-color: #d98a30;
+        color: #d98a30;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      }
+
+      button[class*="rounded-\\[7px\\]"] {
+        transition: all 0.2s ease;
+      }
+
+      button[class*="rounded-\\[7px\\]"]:hover {
+        box-shadow: 0 2px 8px rgba(245, 166, 75, 0.2);
+        transform: translateY(-1px);
+      }
+
+      button[class*="rounded-\\[7px\\]"]:active {
+        transform: scale(0.96);
+      }
     </style>
     <script type="module" src="/js/services/auth.js"></script>
     <script src="./js/ui/sidebar.js"></script>
+    <script type="module" src="/js/index.js"></script>
   </head>
   <body>
   <script type="module" src="/js/utils/ui-helpers.js"></script>
@@ -233,6 +320,12 @@
         <button class="w-8 h-8 flex items-center justify-center rounded-[8px] bg-surface2 border border-borderMain hover:border-primary hover:text-primary transition-all" onclick="toggleSb()">
           <i class="fa-solid fa-bars text-sm"></i>
         </button>
+        
+        <!-- Logo (Bug Fix) -->
+        <a href="index.html" class="hidden sm:flex items-center gap-2.5 flex-shrink-0 mr-2">
+          <img src="./assets/images/docmaster.png" alt="DocMaster" class="h-7 w-auto" />
+        </a>
+
         <div class="flex items-center gap-2">
           <div class="w-6 h-6 rounded-[7px] bg-green-light flex items-center justify-center">
             <i class="fa-solid fa-file-circle-check text-green-mid text-xs"></i>
@@ -244,9 +337,14 @@
             <i class="fa-regular fa-bell text-sm"></i>
             <div class="absolute top-[6px] right-[6px] w-[6px] h-[6px] rounded-full bg-primary border-2 border-white"></div>
           </div>
-          <div class="flex items-center gap-2 pl-1.5 pr-2.5 py-1 bg-surface2 border border-borderMain rounded-[9px] cursor-pointer hover:border-primary transition-colors">
-            <div class="w-[22px] h-[22px] rounded-[5px] bg-green-dark flex items-center justify-center font-bricolage text-[10px] font-extrabold text-primary">JM</div>
-            <span class="text-[12px] font-semibold text-textMain hidden sm:block">Jean-Marc</span>
+          
+          <!-- Dynamic Profile (Bug Fix) -->
+          <div class="flex items-center gap-2 pl-1.5 pr-2.5 py-1 bg-surface2 border border-borderMain rounded-[9px] cursor-pointer hover:border-primary transition-colors" onclick="window.location.href='infosProfil.html'">
+            <div class="w-[22px] h-[22px] rounded-[5px] bg-green-dark flex items-center justify-center font-bricolage text-[10px] font-extrabold text-primary overflow-hidden">
+                <img id="topPhoto" src="" class="w-full h-full object-cover hidden" />
+                <span id="topInitial">JM</span>
+            </div>
+            <span class="text-[12px] font-semibold text-textMain hidden sm:block" id="topName">Jean-Marc</span>
           </div>
         </div>
       </header>
@@ -399,6 +497,11 @@
                   <button onclick="searchLocation()" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-all shadow-sm">
                       <i class="fa-solid fa-arrow-right text-[11px]"></i>
                   </button>
+
+                  <button onclick="useCurrentLocation()" class="absolute -bottom-12 right-0 bg-white border border-borderMain rounded-xl px-3 py-2 text-[11px] font-bold text-textMain hover:border-primary hover:text-primary transition-all shadow-sm flex items-center gap-1.5 z-[1002]">
+                      <i class="fa-solid fa-location-crosshairs text-primary"></i>
+                      Ma position actuelle
+                  </button>
                   
                   <!-- Search Results Dropdown -->
                   <div id="map-search-results" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-borderMain shadow-xl max-h-[200px] overflow-y-auto hidden z-[1001] custom-scroll">
@@ -523,7 +626,7 @@
 
             <div class="flex gap-2">
               <button onclick="goToStep(4)" class="px-4 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors flex items-center gap-1.5"><i class="fa-solid fa-arrow-left text-[11px]"></i> Retour</button>
-              <button onclick="submitDeclaration()" id="btn-submit" class="flex-1 py-2.5 rounded-[12px] bg-green-dark text-white font-bricolage text-[14px] font-bold">Publier</button>
+              <button onclick="submitDeclaration()" id="btn-submit" class="flex-1 py-2.5 rounded-[12px] bg-green-dark text-white font-bricolage text-[14px] font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95">Publier</button>
             </div>
           </div>
 
@@ -537,12 +640,12 @@
               <p class="text-[10px] font-bold text-textMuted uppercase mb-1.5">Numéro de déclaration</p>
               <div class="flex items-center gap-2">
                 <span class="font-bricolage text-lg font-extrabold text-textMain tracking-widest flex-1" id="decl-ref">DOC-FND-SUCCESS</span>
-                <button onclick="copyRef()" class="px-2.5 py-1.5 bg-primary text-white text-[11px] font-bold rounded-[7px]">Copier</button>
+                <button onclick="copyRef()" class="px-2.5 py-1.5 bg-primary text-white text-[11px] font-bold rounded-[7px] hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95">Copier</button>
               </div>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <button onclick="window.location.reload()" class="py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain font-bold">Nouvelle</button>
-              <button onclick="window.location.href='docDeclares.html'" class="py-2.5 rounded-[12px] bg-primary text-white font-bold">Mes déclarations</button>
+              <button onclick="window.location.reload()" class="py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-primary hover:text-primary hover:shadow-sm transition-all active:scale-95">Nouvelle</button>
+              <button onclick="window.location.href='docDeclares.html'" class="py-2.5 rounded-[12px] bg-primary text-white font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95">Mes déclarations</button>
             </div>
           </div>
 

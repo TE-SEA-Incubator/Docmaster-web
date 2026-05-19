@@ -428,6 +428,7 @@
     }
 
   </style>
+  <script type="module" src="/js/index.js"></script>
 </head>
 
 <body>
@@ -826,9 +827,13 @@
                 class="font-bold text-textMain" id="recap-type">—</span></div>
             <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Numéro</span><span
                 class="font-bold text-textMain" id="recap-number">—</span></div>
+            <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Délivré le</span><span
+                class="font-bold text-textMain" id="recap-issued">—</span></div>
             <div class="flex justify-between text-[13.5px]"><span
                 class="text-textMuted font-medium">Expiration</span><span class="font-bold text-textMain"
                 id="recap-expiry">—</span></div>
+            <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Autorité</span><span
+                class="font-bold text-textMain" id="recap-authority">—</span></div>
             <div class="flex justify-between text-[13.5px]"><span class="text-textMuted font-medium">Documents
                 joints</span><span class="font-bold text-green-mid" id="recap-files">0 fichier(s)</span></div>
           </div>
@@ -959,38 +964,54 @@
           </div>
 
           <!-- Structured Data Grid -->
-          <div class="space-y-8">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <div class="space-y-6">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Numéro du document</p>
-                <p class="text-[15px] font-bold text-slate-900" id="view-number-txt">—</p>
+                <p class="text-[14px] font-bold text-slate-900" id="view-number-txt">—</p>
               </div>
-              <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Date d'expiration</p>
-                <p class="text-[15px] font-bold text-slate-900" id="view-expiry-txt">—</p>
+              <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Type de document</p>
+                <p class="text-[14px] font-bold text-slate-900" id="view-type-txt">—</p>
               </div>
             </div>
 
-            <div class="p-5 border border-slate-200 rounded-2xl space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Date de délivrance</p>
+                <p class="text-[14px] font-bold text-slate-900" id="view-issued-txt">—</p>
+              </div>
+              <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Date d'expiration</p>
+                <p class="text-[14px] font-bold text-slate-900" id="view-expiry-txt">—</p>
+              </div>
+            </div>
+
+            <div class="p-4 border border-slate-200 rounded-2xl space-y-4">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200">
-                  <i class="fa-solid fa-id-card-clip"></i>
+                <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200">
+                  <i class="fa-solid fa-user-shield text-[14px]"></i>
                 </div>
                 <div>
                   <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Propriétaire déclaré</p>
-                  <p class="text-[16px] font-bold text-slate-900" id="view-authority-txt">Jean Dupont</p>
+                  <p class="text-[15px] font-bold text-slate-900" id="view-owner-txt">—</p>
                 </div>
               </div>
-              <div class="pt-4 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-500">
-                <i class="fa-solid fa-shield-halved text-green-600"></i>
-                <span>Document protégé par DocMaster Vault™</span>
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200">
+                  <i class="fa-solid fa-building-shield text-[14px]"></i>
+                </div>
+                <div>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Autorité délivrante</p>
+                  <p class="text-[15px] font-bold text-slate-900" id="view-authority-txt">—</p>
+                </div>
               </div>
             </div>
 
-            <div class="space-y-3">
+            <div class="space-y-2">
               <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Notes & Observations</p>
-              <div class="p-5 bg-[#fffbeb] border border-[#fef3c7] rounded-2xl">
-                <p class="text-[13px] text-amber-900 leading-relaxed font-medium" id="view-notes-txt">—</p>
+              <div class="p-4 bg-[#fffbeb] border border-[#fef3c7] rounded-2xl">
+                <p class="text-[12.5px] text-amber-900 leading-relaxed font-medium" id="view-notes-txt">—</p>
               </div>
             </div>
           </div>
@@ -1321,8 +1342,11 @@
       }
 
       document.getElementById('view-number-txt').textContent = data.numero_doc || 'Non renseigné';
+      document.getElementById('view-type-txt').textContent = typeLabels[data.type_doc] || 'Document';
+      document.getElementById('view-issued-txt').textContent = data.date_delivrance ? new Date(data.date_delivrance).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Non renseignée';
       document.getElementById('view-expiry-txt').textContent = data.date_expiration ? new Date(data.date_expiration).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Indéfinie';
-      document.getElementById('view-authority-txt').textContent = data.nom_sur_doc || '—';
+      document.getElementById('view-owner-txt').textContent = data.nom_sur_doc || '—';
+      document.getElementById('view-authority-txt').textContent = data.nom_autorite || '—';
       document.getElementById('view-notes-txt').textContent = data.notes || 'Aucune information complémentaire pour ce document.';
       
       const viewImg = document.getElementById('view-img');
@@ -1379,6 +1403,7 @@
     document.getElementById('successOverlay').addEventListener('click', function (e) { if (e.target === this) this.classList.add('hidden') });
 
   </script>
+  
 </body>
 
 </html>

@@ -11,17 +11,28 @@ import { getSession } from "../services/auth.js";
 import { showSuccessModal } from "../utils/index.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // 1. Initialize Basic UI
-  setupBasicUI();
+  if (window.toggleLoader) window.toggleLoader(true);
 
-  // Check for new user welcome
-  checkNewUserWelcome();
+  try {
+    // 1. Initialize Basic UI
+    setupBasicUI();
 
-  // 2. Load Dashboard Data
-  await loadDashboardContent();
-  await loadNotifications();
-  await loadUserPlan();
-  renderGlobalDocStats();
+    // Check for new user welcome
+    checkNewUserWelcome();
+
+    // 2. Load Dashboard Data (Run concurrently for speed)
+    await Promise.all([
+      loadDashboardContent(),
+      loadNotifications(),
+      loadUserPlan(),
+      renderGlobalDocStats(),
+    ]);
+  } catch (error) {
+    console.error("❌ Dashboard initialization failed:", error);
+  } finally {
+    // Petit délai pour éviter le scintillement si le réseau est ultra-rapide
+    if (window.toggleLoader) setTimeout(() => window.toggleLoader(false), 800);
+  }
 
   // 3. Setup global handlers
   window.customMarkAllReadHandler = async () => {
@@ -708,6 +719,9 @@ window.openStatsModal = (categoryName, items) => {
         modal = document.createElement('div');
         modal.id = 'statsDetailsModal';
         modal.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm hidden';
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.classList.add('hidden');
+        };
         document.body.appendChild(modal);
     }
 

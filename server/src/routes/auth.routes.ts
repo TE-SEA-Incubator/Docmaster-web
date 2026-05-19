@@ -106,6 +106,18 @@ router.post('/login', (req, res) => authController.login(req, res));
 
 /**
  * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Déconnecter l'utilisateur (supprime le cookie)
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Déconnexion réussie
+ */
+router.post('/logout', (req, res) => authController.logout(req, res));
+
+/**
+ * @swagger
  * /auth/profile:
  *   get:
  *     summary: Récupérer le profil de l'utilisateur connecté
@@ -322,5 +334,65 @@ router.post('/reset-password', (req, res) => authController.resetPassword(req, r
  *         description: Erreur serveur
  */
 router.get('/admin/users', authMiddleware, (req, res) => authController.getAdminUsers(req, res));
+
+/**
+ * @swagger
+ * /auth/admin/users/{id}:
+ *   delete:
+ *     summary: Supprimer un utilisateur (Admin)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Utilisateur supprimé
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Utilisateur introuvable
+ */
+router.delete('/admin/users/:id', authMiddleware, (req, res) => authController.deleteAdminUser(req, res));
+
+/**
+ * @swagger
+ * /auth/google-oauth:
+ *   post:
+ *     summary: Connexion avec Google OAuth (via Firebase)
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, email]
+ *             properties:
+ *               token: { type: string, description: "Firebase ID Token de Google" }
+ *               email: { type: string, example: "user@gmail.com" }
+ *               displayName: { type: string, example: "Jean Dupont" }
+ *               photoURL: { type: string, example: "https://..." }
+ *     responses:
+ *       200:
+ *         description: Connexion ou création réussie
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: "Google OAuth login successful"
+ *               user: { id: "uuid", nom: "Dupont", prenom: "Jean", email: "user@gmail.com", photo_url: "https://...", role: "USER" }
+ *               token: "eyJhbGciOiJIUzI1NiIsInR..."
+ *       400:
+ *         description: Token ou email manquant
+ *       401:
+ *         description: Token Firebase invalide
+ *       500:
+ *         description: Erreur serveur
+ */
+router.post('/google-oauth', (req, res) => authController.googleOAuth(req, res));
 
 export default router;

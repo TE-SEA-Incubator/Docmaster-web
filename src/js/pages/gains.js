@@ -27,24 +27,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateHeaderUI(user);
   updateBalanceUI(user);
 
-  const showLoader = () => {
-    const loader = document.getElementById('page-loader');
-    if (loader) {
-      loader.classList.remove('opacity-0', 'pointer-events-none');
-      loader.classList.add('opacity-100');
-    }
-  };
-
-  const hideLoader = () => {
-    const loader = document.getElementById('page-loader');
-    if (loader) {
-      loader.classList.add('opacity-0', 'pointer-events-none');
-      loader.classList.remove('opacity-100');
-    }
-  };
-
   // 3. Fetch detailed data
-  showLoader();
+  if (window.toggleLoader) window.toggleLoader(true);
+
   // Load settings
   try {
     const settingsResponse = await getSettings();
@@ -76,7 +61,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("❌ Error fetching gains data:", error);
   } finally {
     // Petit délai pour une transition fluide
-    setTimeout(hideLoader, 600);
+    if (window.toggleLoader) setTimeout(() => window.toggleLoader(false), 600);
   }
 });
 

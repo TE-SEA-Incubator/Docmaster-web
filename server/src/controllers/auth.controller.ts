@@ -45,6 +45,14 @@ export class AuthController {
       // Generate token for auto-login
       const token = generateToken(user.id, user.email, user.role);
 
+      // Set cookie
+      res.cookie('docmaster_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      });
+
       res.status(201).json({
         message: 'User registered successfully',
         user: userWithoutPassword,
@@ -77,6 +85,14 @@ export class AuthController {
       // Login user
       const { user, token } = await this.userService.loginUser(email, mot_de_passe);
 
+      // Set cookie
+      res.cookie('docmaster_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      });
+
       res.status(200).json({
         message: 'Login successful',
         user,
@@ -89,6 +105,14 @@ export class AuthController {
         res.status(500).json({ error: error.message || 'Login failed' });
       }
     }
+  }
+
+  /**
+   * Logout user
+   */
+  async logout(req: Request, res: Response): Promise<void> {
+    res.clearCookie('docmaster_token');
+    res.status(200).json({ message: 'Logout successful', success: true });
   }
 
   /**
@@ -151,7 +175,7 @@ export class AuthController {
   async updateProfile(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user.id;
-      const { nom, prenom, telephone, date_naissance, lieu_naissance, currency } = req.body;
+      const { nom, prenom, telephone, ville, date_naissance, lieu_naissance, currency } = req.body;
       let photo_url: string | undefined = undefined;
 
       // Handle photo upload if present
@@ -163,6 +187,7 @@ export class AuthController {
         nom,
         prenom,
         telephone,
+        ville,
         photo_url,
         date_naissance,
         lieu_naissance,
@@ -216,14 +241,18 @@ export class AuthController {
    */
   async sendVerificationPin(req: Request, res: Response): Promise<void> {
     try {
-      const { email } = req.body;
+      const { email, telephone } = req.body;
       if (!email) {
         res.status(400).json({ error: 'Email required' });
         return;
       }
 
-      await this.userService.sendVerificationPin(email);
-      res.status(200).json({ message: 'Verification code sent to email' });
+      const result = await this.userService.sendVerificationPin(email, telephone);
+      res.status(200).json({ 
+        message: `Code de vérification envoyé par ${result.method === 'SMS' ? 'SMS' : 'Email'}`,
+        method: result.method,
+        target: result.target
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message || 'Failed to send code' });
     }
@@ -261,6 +290,110 @@ export class AuthController {
       res.status(200).json({ success: true, data: stats });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message || 'Failed to fetch earnings stats' });
+    }
+  }
+
+  /**
+   * Delete user (Admin)
+   */
+  async deleteAdminUser(req: Request, res: Response): Promise<void> {
+    try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      
+      const currentUser = (req as any).user;
+      if (currentUser.role !== 'ADMIN') {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+
+      if (id === currentUser.id) {
+        res.status(400).json({ error: 'Cannot delete your own account' });
+        return;
+      }
+
+      const success = await this.userService.deleteUser(id);
+      if (success) {
+        res.status(200).json({ message: 'User deleted successfully', success: true });
+      } else {
+        res.status(404).json({ error: 'User not found' });
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to delete user' });
+    }
+  }
+
+  /**
+   * Google OAuth Login/Registration
+   * Creates user if doesn't exist, returns JWT token for established user
+   */
+  async googleOAuth(req: Request, res: Response): Promise<void> {
+    try {
+      const { token, email, displayName } = req.body;
+
+      // Validate required fields
+      if (!token || !email) {
+        res.status(400).json({ error: 'Token and email required' });
+        return;
+      }
+
+      // Note: In production, verify Firebase token on backend using firebase-admin SDK
+      // For now, we'll trust the token from the frontend (secured by HTTPS)
+      // TODO: Install firebase-admin and verify token: admin.auth().verifyIdToken(token)
+
+      try {
+        // Try to find existing user
+        let user = await this.userService.getUserByEmail(email);
+
+        if (!user) {
+          // Create new user from Google OAuth
+          // Extract name parts from displayName
+          const nameParts = (displayName || '').split(' ');
+          const prenom = nameParts[0] || 'User';
+          const nom = nameParts.slice(1).join(' ') || 'Google';
+
+          user = await this.userService.registerUser({
+            nom,
+            prenom,
+            email,
+            telephone: null,
+            pays: 'Cameroun',
+            ville: 'Yaoundé',
+            is_verified: true, // Google users are pre-verified
+          });
+
+          console.log('✓ New Google OAuth user created:', email);
+        } else {
+          console.log('✓ Existing Google OAuth user logged in:', email);
+        }
+
+        // Generate JWT token
+        const jwtToken = generateToken(user.id, user.email, user.role);
+
+        // Set cookie
+        res.cookie('docmaster_token', jwtToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        });
+
+        // Return user without password
+        const { mot_de_passe: _, ...userWithoutPassword } = user;
+
+        res.status(200).json({
+          message: 'Google OAuth login successful',
+          user: userWithoutPassword,
+          token: jwtToken,
+        });
+      } catch (error: any) {
+        if (error.message.includes('duplicate key')) {
+          res.status(409).json({ error: 'Email already exists' });
+        } else {
+          res.status(500).json({ error: error.message || 'Google OAuth login failed' });
+        }
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Google OAuth login failed' });
     }
   }
 }

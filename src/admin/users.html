@@ -4,82 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin DocMaster — Utilisateurs</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="/assets/images/favicon.png" type="image/x-icon" />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --gray-50:  #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-400: #9ca3af;
-            --gray-600: #6b7280;
-            --gray-900: #111827;
-            --accent:       #F5A64B;
-            --accent-dark:  #D48D3B;
-            --accent-light: #FFF9F0;
+            --primary: #F5A64B;
+            --primary-dark: #D98A30;
+            --primary-light: #FEF0DC;
+            --green-dark: #1E3A2F;
+            --green-mid: #2D5A42;
+            --green-light: #E8F5EE;
+            --bgMain: #F4EFE6;
+            --surface: #FFFFFF;
+            --textMain: #1A1A1A;
+            --textMuted: #6B7280;
+            --borderMain: #EAE3D8;
+            --accent: #F5A64B;
         }
-
-        body { font-family: 'Inter', sans-serif; background-color: #fff; color: var(--gray-900); margin: 0; display: flex; height: 100vh; }
-
-        /* Sidebar */
-        .sidebar { width: 240px; background: #1E312B; border-right: none; height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; color: #fff; }
-        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; }
-        .logo-area span { font-weight: 600; font-size: 0.9375rem; color: #fff; }
-        .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 0.8125rem; font-weight: 500; text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
-        .nav-link i { width: 16px; text-align: center; }
-        .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
-        .nav-link.active { background: var(--accent); color: #fff; }
-
-        /* Main */
-        .main { flex: 1; overflow-y: auto; padding: 2rem 3rem; }
-        .page-header { margin-bottom: 2rem; }
-        .page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
-        .page-header p { font-size: 0.875rem; color: var(--gray-600); margin-top: 4px; }
-
-        /* Table Style */
-        .table-container { border: 0.5px solid var(--gray-200); border-radius: 12px; overflow: hidden; background: #fff; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bgMain); color: var(--textMain); margin: 0; display: flex; height: 100vh; }
+        .sidebar { width: 260px; background: #fff; border-right: 1px solid var(--borderMain); height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; transition: all 0.3s ease; position: fixed; left: 0; top: 0; z-index: 40; overflow-y: auto; }
+        .sidebar.closed { transform: translateX(-100%); }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 30; backdrop-filter: blur(2px); }
+        .sidebar-overlay.active { display: block; }
+        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; text-decoration: none; }
+        .logo-area span { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--textMain); }
+        .nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; color: var(--textMuted); font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.2s; margin-bottom: 4px; }
+        .nav-link i { width: 18px; text-align: center; font-size: 14px; }
+        .nav-link:hover { background: var(--primary-light); color: var(--primary-dark); }
+        .nav-link.active { background: var(--green-dark); color: var(--primary); font-weight: 600; box-shadow: 0 4px 12px rgba(30, 58, 47, 0.15); }
+        .sidebar-toggle { display: none; position: fixed; top: 1rem; left: 1rem; width: 2.5rem; height: 2.5rem; background: var(--primary); border: none; border-radius: 10px; color: #fff; cursor: pointer; font-size: 1.2rem; z-index: 35; box-shadow: 0 4px 12px rgba(245, 166, 75, 0.3); }
+        .sidebar-toggle.visible { display: flex; align-items: center; justify-content: center; }
+        @media (max-width: 900px) { .sidebar { position: fixed; } .sidebar-toggle.visible { display: flex; } .main { margin-left: 0; padding: 1.5rem; } }
+        .main { flex: 1; overflow-y: auto; padding: 2rem 2.5rem; margin-left: 260px; transition: all 0.3s ease; }
+        .page-header h1 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.75rem; font-weight: 800; color: var(--textMain); margin: 0; letter-spacing: -0.02em; }
+        .page-header p { font-size: 0.875rem; color: var(--textMuted); margin-top: 4px; }
+        .table-container { border: 1px solid var(--borderMain); border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
         table { width: 100%; border-collapse: collapse; }
-        th { background: var(--gray-50); padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.5px solid var(--gray-200); }
-        td { padding: 14px 16px; font-size: 0.875rem; border-bottom: 0.5px solid var(--gray-200); vertical-align: middle; }
+        th { background: #fff; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--textMuted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--borderMain); }
+        td { padding: 16px; font-size: 13px; border-bottom: 1px solid var(--borderMain); vertical-align: middle; color: var(--textMain); }
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background: var(--gray-50); }
-
-        .user-cell { display: flex; align-items: center; gap: 12px; }
-        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: var(--gray-400); }
-        .user-details { display: flex; flex-direction: column; }
-        .user-name { font-weight: 500; color: var(--gray-900); }
-        .user-email { font-size: 0.75rem; color: var(--gray-400); }
-
-        .sub-badge { font-size: 0.625rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
-        .sub-active { background: #EAF3DE; color: #3B6D11; }
-        .sub-none { background: var(--gray-100); color: var(--gray-400); }
-
-        .ref-code { font-family: monospace; font-size: 0.75rem; background: var(--gray-50); border: 0.5px solid var(--gray-200); padding: 2px 6px; border-radius: 4px; color: var(--gray-600); }
-        .stats-cell { font-size: 0.8125rem; }
+        tr:hover td { background: var(--bgMain); }
+        .user-avatar { width: 34px; height: 34px; border-radius: 10px; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--green-mid); }
+        .badge { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; }
     </style>
+    <script type="module" src="/js/index.js"></script>
 </head>
 <body>
-    <aside class="sidebar">
-        <div class="logo-area"><img src="../assets/images/logo.png" alt="Logo" class="h-6"><span>Admin Panel</span></div>
+    <button id="sidebarToggle" class="sidebar-toggle"><i class="fa-solid fa-bars"></i></button>
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <aside class="sidebar" id="adminSidebar">
+        <a href="dashboard.html" class="logo-area">
+            <img src="../assets/images/docmaster.png" alt="DocMaster" class="h-9 w-auto" />
+        </a>
         <nav class="flex-1">
-            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Vue d'ensemble</a>
+            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Vue d'ensemble</a>
             <a href="users.html" class="nav-link active"><i class="fa-solid fa-users"></i> Utilisateurs</a>
-            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-invoice"></i> Documents</a>
-            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-crown"></i> Abonnements</a>
+            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-contract"></i> Types Docs</a>
+            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-star"></i> Abonnements</a>
             <a href="transactions.html" class="nav-link"><i class="fa-solid fa-receipt"></i> Transactions</a>
             <a href="referrals.html" class="nav-link"><i class="fa-solid fa-user-friends"></i> Parrainages</a>
             <a href="declarations.html" class="nav-link"><i class="fa-solid fa-folder-open"></i> Déclarations</a>
             <a href="withdrawals.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i> Retraits</a>
+            <a href="sms.html" class="nav-link"><i class="fa-solid fa-comment-sms"></i> Gestion SMS</a>
             <a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Paramètres</a>
         </nav>
-        <div class="mt-auto pt-4 border-t border-white/10">
-            <a href="#" id="adminLogout" class="nav-link text-red-400 hover:text-red-300">
-                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
-            </a>
+        <div class="mt-auto pt-4 border-t border-borderMain">
+            <a href="#" id="adminLogout" class="nav-link text-red-500"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
         </div>
     </aside>
-
     <main class="main">
         <header class="flex items-center justify-between mb-8">
             <div class="page-header mb-0">
@@ -108,6 +102,7 @@
                         <th>Code Parrain</th>
                         <th>Filleuls</th>
                         <th>Date Inscription</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="users-list">
@@ -116,48 +111,88 @@
             </table>
         </div>
     </main>
-
     <script type="module">
         import { adminService } from '../js/services/admin.js';
         import { initAdminUI } from '../js/services/admin-ui.js';
+        import { startButtonLoader, stopButtonLoader } from '../js/utils/button-loaders.js';
+        import { showPageLoader, hidePageLoader } from '../js/utils/loader-spinner.js';
+
+        // Expose loaders to global scope
+        window.startButtonLoader = startButtonLoader;
+        window.stopButtonLoader = stopButtonLoader;
 
         async function loadUsers() {
+            showPageLoader();
             try {
                 const users = await adminService.getAdminUsers();
                 const list = document.getElementById('users-list');
                 list.innerHTML = '';
                 
+                // Expose globally for onclick
+                window.confirmDelete = async (id, name) => {
+                    if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${name}" ? Cette action est irréversible.`)) {
+                        try {
+                            await adminService.deleteUser(id);
+                            loadUsers(); // Refresh list
+                        } catch (error) {
+                            alert(error.message);
+                        }
+                    }
+                };
+
                 users.forEach(u => {
                     const row = document.createElement('tr');
                     const initial = (u.nom ? u.nom[0] : '') + (u.prenom ? u.prenom[0] : '');
                     
                     row.innerHTML = `
                         <td>
-                            <div class="user-cell">
+                            <div class="user-cell flex items-center gap-3">
                                 <div class="user-avatar">${initial || '?'}</div>
-                                <div class="user-details">
-                                    <span class="user-name">${u.nom} ${u.prenom}</span>
-                                    <span class="user-email">${u.email}</span>
+                                <div class="user-details flex flex-col">
+                                    <span class="user-name font-medium text-gray-900">${u.nom} ${u.prenom}</span>
+                                    <span class="user-email text-xs text-gray-400">${u.email}</span>
                                 </div>
                             </div>
                         </td>
                         <td>
                             ${u.subscription_status === 'ACTIVE' 
-                                ? `<span class="sub-badge sub-active">${u.active_plan}</span>` 
-                                : `<span class="sub-badge sub-none">Gratuit</span>`
+                                ? `<span class="badge bg-green-100 text-green-700">${u.active_plan}</span>` 
+                                : `<span class="badge bg-gray-100 text-gray-500">Gratuit</span>`
                             }
                         </td>
                         <td class="font-medium">${u.wallet_balance} XAF</td>
                         <td><span class="text-orange-500 font-bold">${u.points}</span></td>
-                        <td><span class="ref-code">${u.code_invitation || '---'}</span></td>
-                        <td class="stats-cell text-center">${u.referral_count}</td>
+                        <td><span class="font-mono text-xs bg-gray-50 px-2 py-1 rounded border border-gray-200">${u.code_invitation || '---'}</span></td>
+                        <td class="text-center">${u.referral_count}</td>
                         <td class="text-[11px] text-gray-400">${new Date(u.created_at).toLocaleDateString()}</td>
+                        <td class="text-right">
+                            <button onclick="confirmDelete('${u.id}', '${u.nom} ${u.prenom}')" class="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Supprimer l'utilisateur">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
                     `;
                     list.appendChild(row);
                 });
-            } catch (error) { console.error(error); }
+                hidePageLoader();
+            } catch (error) { console.error(error); hidePageLoader(); }
         }
+
         loadUsers();
+    </script>
+    <script>
+        // Sidebar Toggle Management (Copied from dashboard.html)
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const adminSidebar = document.getElementById('adminSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mainContent = document.querySelector('.main');
+        function updateSidebarToggle() {
+            if (window.innerWidth <= 900) { sidebarToggle.classList.add('visible'); } 
+            else { sidebarToggle.classList.remove('visible'); adminSidebar.classList.remove('closed'); sidebarOverlay.classList.remove('active'); mainContent.style.marginLeft = '260px'; }
+        }
+        sidebarToggle.addEventListener('click', () => { adminSidebar.classList.toggle('closed'); sidebarOverlay.classList.toggle('active'); });
+        sidebarOverlay.addEventListener('click', () => { adminSidebar.classList.add('closed'); sidebarOverlay.classList.remove('active'); });
+        window.addEventListener('resize', updateSidebarToggle);
+        updateSidebarToggle();
     </script>
 </body>
 </html>

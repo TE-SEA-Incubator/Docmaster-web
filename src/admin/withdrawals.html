@@ -4,99 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin DocMaster — Retraits</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="/assets/images/favicon.png" type="image/x-icon" />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --gray-50:  #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-400: #9ca3af;
-            --gray-600: #6b7280;
-            --gray-900: #111827;
-            --accent:       #F5A64B;
-            --accent-dark:  #D48D3B;
-            --accent-light: #FFF9F0;
-            --danger-bg:    #FAECE7;
-            --danger-text:  #993C1D;
-            --success-bg:   #FFF9F0;
-            --success-text: #D48D3B;
+            --primary: #F5A64B;
+            --primary-dark: #D98A30;
+            --primary-light: #FEF0DC;
+            --green-dark: #1E3A2F;
+            --green-mid: #2D5A42;
+            --green-light: #E8F5EE;
+            --bgMain: #F4EFE6;
+            --surface: #FFFFFF;
+            --textMain: #1A1A1A;
+            --textMuted: #6B7280;
+            --borderMain: #EAE3D8;
+            --accent: #F5A64B;
         }
-
-        body { font-family: 'Inter', sans-serif; background-color: #fff; color: var(--gray-900); margin: 0; display: flex; height: 100vh; }
-
-        /* Sidebar */
-        .sidebar { width: 240px; background: #1E312B; border-right: none; height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; color: #fff; }
-        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; }
-        .logo-area span { font-weight: 600; font-size: 0.9375rem; color: #fff; }
-        .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 0.8125rem; font-weight: 500; text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
-        .nav-link i { width: 16px; text-align: center; }
-        .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
-        .nav-link.active { background: var(--accent); color: #fff; }
-
-        /* Main */
-        .main { flex: 1; overflow-y: auto; padding: 2rem 3rem; }
-        .page-header { margin-bottom: 2rem; }
-        .page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
-        .page-header p { font-size: 0.875rem; color: var(--gray-600); margin-top: 4px; }
-
-        /* Table Style */
-        .table-container { border: 0.5px solid var(--gray-200); border-radius: 12px; overflow: hidden; background: #fff; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bgMain); color: var(--textMain); margin: 0; display: flex; height: 100vh; }
+        .sidebar { width: 260px; background: #fff; border-right: 1px solid var(--borderMain); height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; transition: all 0.3s ease; position: fixed; left: 0; top: 0; z-index: 40; overflow-y: auto; }
+        .sidebar.closed { transform: translateX(-100%); }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 30; backdrop-filter: blur(2px); }
+        .sidebar-overlay.active { display: block; }
+        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; text-decoration: none; }
+        .logo-area span { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--textMain); }
+        .nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; color: var(--textMuted); font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.2s; margin-bottom: 4px; }
+        .nav-link i { width: 18px; text-align: center; font-size: 14px; }
+        .nav-link:hover { background: var(--primary-light); color: var(--primary-dark); }
+        .nav-link.active { background: var(--green-dark); color: var(--primary); font-weight: 600; box-shadow: 0 4px 12px rgba(30, 58, 47, 0.15); }
+        .sidebar-toggle { display: none; position: fixed; top: 1rem; left: 1rem; width: 2.5rem; height: 2.5rem; background: var(--primary); border: none; border-radius: 10px; color: #fff; cursor: pointer; font-size: 1.2rem; z-index: 35; box-shadow: 0 4px 12px rgba(245, 166, 75, 0.3); }
+        .sidebar-toggle.visible { display: flex; align-items: center; justify-content: center; }
+        @media (max-width: 900px) { .sidebar { position: fixed; } .sidebar-toggle.visible { display: flex; } .main { margin-left: 0; padding: 1.5rem; } }
+        .main { flex: 1; overflow-y: auto; padding: 2rem 2.5rem; margin-left: 260px; transition: all 0.3s ease; }
+        .page-header h1 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.75rem; font-weight: 800; color: var(--textMain); margin: 0; letter-spacing: -0.02em; }
+        .page-header p { font-size: 0.875rem; color: var(--textMuted); margin-top: 4px; }
+        .table-container { border: 1px solid var(--borderMain); border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
         table { width: 100%; border-collapse: collapse; }
-        th { background: var(--gray-50); padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.5px solid var(--gray-200); }
-        td { padding: 14px 16px; font-size: 0.875rem; border-bottom: 0.5px solid var(--gray-200); vertical-align: middle; }
+        th { background: #fff; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--textMuted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--borderMain); }
+        td { padding: 16px; font-size: 13px; border-bottom: 1px solid var(--borderMain); vertical-align: middle; color: var(--textMain); }
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background: var(--gray-50); }
+        tr:hover td { background: var(--bgMain); }
+        
+        /* Actions */
+        .btn-action { font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+        .btn-approve { background: var(--green-light); color: var(--green-mid); border-color: #c9e2b3; }
+        .btn-reject { background: #fdf5f2; color: #993C1D; border-color: #f5d5cc; }
 
-        .user-info { display: flex; flex-direction: column; }
-        .user-name { font-weight: 500; color: var(--gray-900); }
-        .user-email { font-size: 0.75rem; color: var(--gray-400); }
-
-        .amount { font-weight: 600; color: var(--accent-dark); }
-        .method-badge { font-size: 0.6875rem; font-weight: 500; padding: 3px 8px; border-radius: 6px; background: var(--gray-100); color: var(--gray-600); border: 0.5px solid var(--gray-200); }
-
-        .btn-action { font-size: 0.75rem; font-weight: 500; padding: 6px 12px; border-radius: 6px; border: 0.5px solid var(--gray-200); cursor: pointer; transition: all 0.15s; background: #fff; }
-        .btn-approve { color: var(--success-text); border-color: #c9e2b3; background: #f4f9f0; }
-        .btn-approve:hover { background: var(--success-bg); }
-        .btn-reject { color: var(--danger-text); border-color: #f5d5cc; background: #fdf5f2; }
-        .btn-reject:hover { background: var(--danger-bg); }
-
-        /* Modal Flat Style (Skill: Flat Admin UI) */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.4); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-        .modal-card { background: #fff; border-radius: 12px; width: 100%; max-width: 400px; padding: 1.5rem; border: 0.5px solid var(--gray-200); box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-        .modal-title { font-size: 0.9375rem; font-weight: 600; margin-bottom: 1.25rem; color: var(--gray-900); display: flex; align-items: center; gap: 8px; }
-        .modal-title::before { content: ""; width: 4px; height: 16px; background: var(--accent); border-radius: 2px; }
-        .modal-card textarea { width: 100%; background: var(--gray-50); border: 0.5px solid var(--gray-200); border-radius: 8px; padding: 12px; font-size: 0.875rem; color: var(--gray-900); margin-bottom: 1.5rem; min-height: 100px; resize: none; transition: all 0.2s; }
-        .modal-card textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(245, 166, 75, 0.1); background: #fff; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-        .btn-confirm { background: var(--accent); color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background 0.15s; }
-        .btn-confirm:hover { background: var(--accent-dark); }
-        .btn-cancel { background: #fff; border: 0.5px solid var(--gray-200); padding: 10px 24px; border-radius: 8px; font-size: 0.875rem; color: var(--gray-600); cursor: pointer; transition: all 0.15s; }
-        .btn-cancel:hover { background: var(--gray-50); border-color: var(--gray-400); }
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(2px); }
+        .modal-card { background: #fff; border-radius: 18px; width: 100%; max-width: 400px; padding: 2rem; border: 1px solid var(--borderMain); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .modal-card textarea { width: 100%; background: var(--bgMain); border: 1px solid var(--borderMain); border-radius: 12px; padding: 12px; font-size: 14px; color: var(--textMain); margin-bottom: 1.5rem; min-height: 100px; resize: none; }
     </style>
+    <script type="module" src="/js/index.js"></script>
 </head>
 <body>
-    <aside class="sidebar">
-        <div class="logo-area"><img src="../assets/images/logo.png" alt="Logo" class="h-6"><span>Admin Panel</span></div>
+    <button id="sidebarToggle" class="sidebar-toggle"><i class="fa-solid fa-bars"></i></button>
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <aside class="sidebar" id="adminSidebar">
+        <a href="dashboard.html" class="logo-area">
+            <img src="../assets/images/docmaster.png" alt="DocMaster" class="h-9 w-auto" />
+        </a>
         <nav class="flex-1">
-            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Vue d'ensemble</a>
+            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Vue d'ensemble</a>
             <a href="users.html" class="nav-link"><i class="fa-solid fa-users"></i> Utilisateurs</a>
-            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-invoice"></i> Documents</a>
-            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-crown"></i> Abonnements</a>
+            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-contract"></i> Types Docs</a>
+            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-star"></i> Abonnements</a>
             <a href="transactions.html" class="nav-link"><i class="fa-solid fa-receipt"></i> Transactions</a>
             <a href="referrals.html" class="nav-link"><i class="fa-solid fa-user-friends"></i> Parrainages</a>
             <a href="declarations.html" class="nav-link"><i class="fa-solid fa-folder-open"></i> Déclarations</a>
             <a href="withdrawals.html" class="nav-link active"><i class="fa-solid fa-money-bill-transfer"></i> Retraits</a>
+            <a href="sms.html" class="nav-link"><i class="fa-solid fa-comment-sms"></i> Gestion SMS</a>
             <a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Paramètres</a>
         </nav>
-        <div class="mt-auto pt-4 border-t border-white/10">
-            <a href="#" id="adminLogout" class="nav-link text-red-400 hover:text-red-300">
-                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
-            </a>
+        <div class="mt-auto pt-4 border-t border-borderMain">
+            <a href="#" id="adminLogout" class="nav-link text-red-500"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
         </div>
     </aside>
-
     <main class="main">
         <header class="flex items-center justify-between mb-8">
             <div class="page-header mb-0">
@@ -108,7 +93,7 @@
                     <i class="fa-solid fa-bell text-xl"></i>
                     <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
                 </button>
-                <div class="w-10 h-10 rounded-full bg-[#F5A64B] flex items-center justify-center text-white font-bold">
+                <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
                     A
                 </div>
             </div>
@@ -128,6 +113,7 @@
                 </thead>
                 <tbody id="withdrawals-list">
                     <!-- Loaded via JS -->
+                    <tr><td colspan="6" class="text-center py-8 text-gray-400">Chargement...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -135,11 +121,11 @@
 
     <div id="modal" class="modal-overlay">
         <div class="modal-card">
-            <h3 class="modal-title" id="modal-title">Action sur le retrait</h3>
+            <h3 class="font-bricolage font-bold text-lg mb-4" id="modal-title">Action sur le retrait</h3>
             <textarea id="admin-note" placeholder="Note admin (ex: ID transaction Nokash)"></textarea>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal()">Annuler</button>
-                <button class="btn-confirm" id="confirm-btn">Confirmer</button>
+            <div class="flex justify-end gap-3">
+                <button class="px-5 py-2 text-sm text-gray-500 font-medium" onclick="closeModal()">Annuler</button>
+                <button class="bg-primary text-white px-6 py-2 rounded-xl text-sm font-bold" id="confirm-btn">Confirmer</button>
             </div>
         </div>
     </div>
@@ -147,6 +133,14 @@
     <script type="module">
         import { adminService } from '../js/services/admin.js';
         import { initAdminUI } from '../js/services/admin-ui.js';
+        import { startButtonLoader, stopButtonLoader } from '../js/utils/button-loaders.js';
+        import { showPageLoader, hidePageLoader } from '../js/utils/loader-spinner.js';
+
+        // Expose loaders to global scope
+        window.startButtonLoader = startButtonLoader;
+        window.stopButtonLoader = stopButtonLoader;
+        
+        showPageLoader();
         
         const list = document.getElementById('withdrawals-list');
         const modal = document.getElementById('modal');
@@ -161,17 +155,18 @@
                 list.innerHTML = data.length ? '' : '<tr><td colspan="6" class="text-center py-10 text-gray-400">Aucune demande en attente</td></tr>';
                 data.forEach(w => {
                     const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
                     row.innerHTML = `
                         <td>
-                            <div class="user-info">
-                                <span class="user-name">${w.nom} ${w.prenom}</span>
-                                <span class="user-email">${w.email}</span>
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-sm text-gray-900">${w.nom} ${w.prenom}</span>
+                                <span class="text-[11px] text-gray-400">${w.email}</span>
                             </div>
                         </td>
-                        <td><span class="amount">${w.amount} XAF</span></td>
-                        <td><span class="method-badge">${w.payment_method}</span></td>
-                        <td class="text-[12px] text-gray-600">${w.payment_details}</td>
-                        <td class="text-[11px] text-gray-400">${new Date(w.created_at).toLocaleDateString()}</td>
+                        <td><span class="font-bold text-primary-dark">${w.amount} XAF</span></td>
+                        <td><span class="text-xs font-medium bg-gray-100 px-2 py-1 rounded">${w.payment_method}</span></td>
+                        <td class="text-xs text-gray-600">${w.payment_details}</td>
+                        <td class="text-xs text-gray-400">${new Date(w.created_at).toLocaleDateString()}</td>
                         <td>
                             <div class="flex gap-2">
                                 <button class="btn-action btn-approve" onclick="window.handleAction('${w.id}', 'approve')">Approuver</button>
@@ -181,14 +176,14 @@
                     `;
                     list.appendChild(row);
                 });
-            } catch (error) { console.error(error); }
+            } catch (error) { console.error(error); } finally { hidePageLoader(); }
         }
 
         window.handleAction = (id, action) => {
             currentId = id;
             currentAction = action;
             document.getElementById('modal-title').textContent = action === 'approve' ? 'Approuver le retrait' : 'Rejeter le retrait';
-            confirmBtn.style.background = action === 'approve' ? 'var(--accent)' : 'var(--danger-text)';
+            confirmBtn.className = action === 'approve' ? 'bg-primary text-white px-6 py-2 rounded-xl text-sm font-bold' : 'bg-red-500 text-white px-6 py-2 rounded-xl text-sm font-bold';
             adminNoteInput.value = '';
             modal.style.display = 'flex';
         };
@@ -208,6 +203,21 @@
         };
 
         loadWithdrawals();
+    </script>
+    <script>
+        // Sidebar Toggle Management (Copied from dashboard.html)
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const adminSidebar = document.getElementById('adminSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mainContent = document.querySelector('.main');
+        function updateSidebarToggle() {
+            if (window.innerWidth <= 900) { sidebarToggle.classList.add('visible'); } 
+            else { sidebarToggle.classList.remove('visible'); adminSidebar.classList.remove('closed'); sidebarOverlay.classList.remove('active'); mainContent.style.marginLeft = '260px'; }
+        }
+        sidebarToggle.addEventListener('click', () => { adminSidebar.classList.toggle('closed'); sidebarOverlay.classList.toggle('active'); });
+        sidebarOverlay.addEventListener('click', () => { adminSidebar.classList.add('closed'); sidebarOverlay.classList.remove('active'); });
+        window.addEventListener('resize', updateSidebarToggle);
+        updateSidebarToggle();
     </script>
 </body>
 </html>

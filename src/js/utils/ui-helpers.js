@@ -149,7 +149,9 @@ export async function resendPin(event) {
   event?.preventDefault();
   const prefix = event?.target?.dataset?.prefix || 'm';
   const emailInput = document.getElementById(`${prefix}-email`);
+  const phoneInput = document.getElementById(`${prefix}-phone`);
   const email = emailInput?.value.trim();
+  const telephone = phoneInput?.value.trim();
   
   if (!email) {
     showAlert('Veuillez d\'abord entrer votre adresse email.', 'error');
@@ -162,20 +164,20 @@ export async function resendPin(event) {
     btn.disabled = true;
     btn.innerText = 'Envoi...';
     
-    const result = await apiSendVerificationPin(email);
+    const result = await apiSendVerificationPin(email, telephone);
     
     btn.disabled = false;
     btn.innerText = originalText;
     
     if (result.success) {
-      showAlert('Un nouveau code a été envoyé à votre adresse email.', 'success');
+      showAlert('Un nouveau code a été envoyé.', 'success');
     } else {
       showAlert(result.message, 'error');
     }
   } else {
-    const result = await apiSendVerificationPin(email);
+    const result = await apiSendVerificationPin(email, telephone);
     if (result.success) {
-      showAlert('Un nouveau code a été envoyé à votre adresse email.', 'success');
+      showAlert('Un nouveau code a été envoyé.', 'success');
     } else {
       showAlert(result.message, 'error');
     }
@@ -193,16 +195,14 @@ export function showAlert(message, type = 'info') {
     modalContainer = document.createElement('div');
     modalContainer.id = 'global-alert-modal';
     modalContainer.innerHTML = `
-      <dialog id="alert_modal_element" class="modal fixed inset-0 w-full h-full z-[999] flex items-center justify-center p-4 border-none bg-transparent outline-none">
+      <div id="alert_modal_element" class="modal-overlay hidden fixed inset-0 w-full h-full z-[999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity duration-300">
         <div class="modal-box bg-white border-none shadow-2xl rounded-[32px] p-8 relative overflow-hidden max-w-sm w-full transform transition-all duration-300 scale-100">
           <!-- Background decoration -->
           <div class="absolute -top-24 -right-24 w-48 h-48 bg-[#f5a64b]/10 rounded-full blur-3xl"></div>
           <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-[#f5a64b]/5 rounded-full blur-3xl"></div>
 
           <!-- Close button top right -->
-          <form method="dialog">
-            <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors z-20">✕</button>
-          </form>
+          <button id="alert-close-btn" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors z-20">✕</button>
 
           <div class="flex flex-col items-center text-center gap-6 relative z-10">
             <div id="modal-icon-container" class="w-20 h-20 rounded-[24px] flex items-center justify-center text-4xl transform rotate-3 transition-transform hover:rotate-0 duration-300">
@@ -214,21 +214,26 @@ export function showAlert(message, type = 'info') {
               <p id="modal-message" class="text-gray-500 leading-relaxed text-lg max-w-[280px] mx-auto"></p>
             </div>
 
-            <div class="modal-action w-full mt-2">
-              <form method="dialog" class="w-full">
-                <button class="btn border-none w-full rounded-2xl text-white font-bold h-14 text-lg shadow-lg shadow-[#f5a64b]/20 hover:shadow-[#f5a64b]/40 transition-all duration-300" style="background-color: #f5a64b;">
-                  D'accord
-                </button>
-              </form>
+            <div class="w-full mt-2">
+              <button id="alert-ok-btn" class="btn border-none w-full rounded-2xl text-white font-bold h-14 text-lg shadow-lg shadow-[#f5a64b]/20 hover:shadow-[#f5a64b]/40 transition-all duration-300" style="background-color: #f5a64b;">
+                D'accord
+              </button>
             </div>
           </div>
         </div>
-        <form method="dialog" class="modal-backdrop fixed inset-0 bg-black/40 backdrop-blur-sm -z-10">
-          <button class="w-full h-full cursor-default outline-none">close</button>
-        </form>
-      </dialog>
+      </div>
     `;
     document.body.appendChild(modalContainer);
+    
+    // Ajout d'une fonction de fermeture explicite au cas où, 
+    // bien que notifications.js gère désormais 'modal-overlay'.
+    window.closeAlertModal = function() {
+      const el = document.getElementById('alert_modal_element');
+      if (el) el.classList.add('hidden');
+    };
+
+    document.getElementById('alert-close-btn').addEventListener('click', window.closeAlertModal);
+    document.getElementById('alert-ok-btn').addEventListener('click', window.closeAlertModal);
   }
 
   const modal = document.getElementById('alert_modal_element');
@@ -281,7 +286,7 @@ export function showAlert(message, type = 'info') {
     iconCont.classList.add('bg-[#f5a64b]/10', 'text-[#f5a64b]');
   }
 
-  modal.showModal();
+  modal.classList.remove('hidden');
 }
 
 // Make it global so it can be used easily everywhere
@@ -291,3 +296,38 @@ window.showAlert = showAlert;
 window.alert = function(message) {
   showAlert(message);
 };
+
+/**
+ * Toggle the global page loader
+ */
+export function toggleLoader(show = true) {
+  let loader = document.getElementById('page-loader');
+  
+  // Auto-inject if missing
+  if (!loader) {
+    loader = document.createElement('div');
+    loader.id = 'page-loader';
+    loader.className = 'fixed inset-0 z-[100] bg-[#F4EFE6]/80 backdrop-blur-md flex items-center justify-center transition-all duration-500 opacity-0 pointer-events-none';
+    loader.innerHTML = `
+      <div class="flex flex-col items-center gap-4">
+        <div class="relative w-16 h-16">
+          <div class="absolute inset-0 border-4 border-[#F5A64B]/20 rounded-full"></div>
+          <div class="absolute inset-0 border-4 border-[#F5A64B] rounded-full border-t-transparent animate-spin"></div>
+        </div>
+        <p class="font-bricolage text-[#F5A64B] font-bold animate-pulse">Chargement...</p>
+      </div>
+    `;
+    document.body.appendChild(loader);
+  }
+  
+  if (show) {
+    loader.classList.remove('opacity-0', 'pointer-events-none');
+    loader.classList.add('opacity-100');
+  } else {
+    loader.classList.add('opacity-0', 'pointer-events-none');
+    loader.classList.remove('opacity-100');
+  }
+}
+
+// Make it global
+window.toggleLoader = toggleLoader;

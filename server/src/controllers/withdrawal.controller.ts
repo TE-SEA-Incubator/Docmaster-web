@@ -21,11 +21,12 @@ export class WithdrawalController {
       const { id } = req.params;
       const { adminNote } = req.body;
 
-      const withdrawal = await withdrawalRepo.updateStatus(id, 'COMPLETED', adminNote);
+      const withdrawalId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const withdrawal = await withdrawalRepo.updateStatus(withdrawalId, 'COMPLETED', adminNote);
       
       // Update transaction status to SUCCESS
-      const transactions = await transactionRepo.findByUserId(withdrawal.user_id);
-      const tx = transactions.find(t => t.type === 'withdrawal' && t.metadata?.withdrawalId === id);
+      const transactions = await transactionRepo.findByUser(withdrawal.user_id);
+      const tx = transactions.find((t: any) => t.type === 'withdrawal' && t.metadata?.withdrawalId === id);
       
       if (tx) {
         await transactionRepo.updateStatus(tx.id, 'SUCCESS');
@@ -45,14 +46,15 @@ export class WithdrawalController {
       const { id } = req.params;
       const { adminNote } = req.body;
 
-      const withdrawal = await withdrawalRepo.updateStatus(id, 'REJECTED', adminNote);
+      const withdrawalId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const withdrawal = await withdrawalRepo.updateStatus(withdrawalId, 'REJECTED', adminNote);
       
       // Refund user balance
       await userRepo.updateBalance(withdrawal.user_id, Number(withdrawal.amount));
 
       // Update transaction status to FAILED
-      const transactions = await transactionRepo.findByUserId(withdrawal.user_id);
-      const tx = transactions.find(t => t.type === 'withdrawal' && t.metadata?.withdrawalId === id);
+      const transactions = await transactionRepo.findByUser(withdrawal.user_id);
+      const tx = transactions.find((t: any) => t.type === 'withdrawal' && t.metadata?.withdrawalId === id);
       
       if (tx) {
         await transactionRepo.updateStatus(tx.id, 'FAILED');

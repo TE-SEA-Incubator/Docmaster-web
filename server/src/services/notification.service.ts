@@ -1,11 +1,23 @@
 import { NotificationRepository, Notification } from '../repositories/notification.repository.ts';
 import { subscriptionService } from './subscription.service.ts';
+import { SocketService } from './socket.service.ts';
+import { MailService } from './mail.service.ts';
+import { SmsService } from './sms.service.ts';
+import { UserRepository } from '../repositories/auth.repository.ts';
 
 export class NotificationService {
   private notificationRepository: NotificationRepository;
+  private socketService: SocketService;
+  private mailService: MailService;
+  private smsService: SmsService;
+  private userRepository: UserRepository;
 
   constructor() {
     this.notificationRepository = new NotificationRepository();
+    this.socketService = SocketService.getInstance();
+    this.mailService = new MailService();
+    this.smsService = new SmsService();
+    this.userRepository = new UserRepository();
   }
 
   async createNotification(data: Notification) {
@@ -40,17 +52,56 @@ export class NotificationService {
   }
 
   /**
-   * Mocked delivery logic to external providers
+   * Actual delivery logic to external providers
    */
   private async deliverNotification(notification: any) {
-    const { channels, title, message, user_id } = notification;
+    const { channels, title, message, user_id, type, metadata } = notification;
     
-    if (channels.sms) {
-      console.log(`[SMS-PROVIDER] Sending SMS to user ${user_id}: ${title} - ${message}`);
+    // 1. Always send real-time in-app notification if user is connected
+    this.socketService.sendToUser(user_id, 'NEW_NOTIFICATION', notification);
+
+    // Fetch user details for external channels
+    const user = await this.userRepository.findById(user_id);
+    if (!user) return;
+
+    // 2. Send SMS if allowed and phone is available
+    if (channels.sms && user.telephone) {
+      console.log(`[SMS] Sending SMS to ${user.telephone}: ${title}`);
+      try {
+        let smsMessage = message;
+        // Customize SMS message if it's a match
+        if (type === 'MATCH_FOUND') {
+          const docType = metadata?.docType || 'document';
+          smsMessage = `DocMaster: Bonne nouvelle ! Votre ${docType} a été retrouvé. Connectez-vous pour voir les détails.`;
+        }
+        await this.smsService.sendSms(user.telephone, smsMessage);
+      } catch (err) {
+        console.error('Error sending notification SMS:', err);
+      }
     }
-    if (channels.email) {
-      console.log(`[EMAIL-PROVIDER] Sending Email to user ${user_id}: ${title}`);
+
+    // 3. Send Email if allowed and email is available
+    if (channels.email && user.email) {
+      console.log(`[EMAIL] Sending Email to ${user.email}: ${title}`);
+      try {
+        if (type === 'MATCH_FOUND') {
+          const docType = metadata?.docType || 'document';
+          const matchType = metadata?.matchType || 'LOST_SIDE';
+          await this.mailService.sendMatchNotificationEmail(
+            user.email, 
+            `${user.prenom} ${user.nom}`, 
+            docType, 
+            matchType as any
+          );
+        } else {
+          // General notification email (optional, can be implemented if needed)
+          console.log(`[EMAIL-PROVIDER] General email not implemented yet for type: ${type}`);
+        }
+      } catch (err) {
+        console.error('Error sending notification Email:', err);
+      }
     }
+
     if (channels.push) {
       console.log(`[PUSH-PROVIDER] Sending Push to user ${user_id}: ${title}`);
     }
@@ -146,7 +197,7 @@ export class NotificationService {
       type: 'MATCH_FOUND',
       title: 'Bonne nouvelle ! Document trouvé',
       message: `Quelqu'un a signalé avoir trouvé votre ${docType}.`,
-      metadata: { docId, matchType: 'LOST_SIDE' }
+      metadata: { docId, docType, matchType: 'LOST_SIDE' }
     });
 
     // Notify the finder
@@ -155,7 +206,7 @@ export class NotificationService {
       type: 'MATCH_FOUND',
       title: 'Correspondance trouvée !',
       message: `Le propriétaire du document ${docType} que vous avez trouvé a été identifié.`,
-      metadata: { docId, matchType: 'FOUND_SIDE' }
+      metadata: { docId, docType, matchType: 'FOUND_SIDE' }
     });
   }
 
@@ -188,10 +239,10 @@ export class NotificationService {
    */
   async notifyAdmins(title: string, message: string, type: 'ALERT' | 'INFO' = 'INFO') {
     try {
-      const { query } = await import('../config/database.ts');
-      const admins = await query("SELECT id FROM users WHERE role = 'ADMIN'");
+      const { pool } = await import('../database/db.ts');
+      const admins = await pool.query("SELECT id FROM users WHERE role = 'ADMIN'");
       
-      const promises = admins.rows.map(admin => {
+      const promises = admins.rows.map((admin: any) => {
         return this.createNotification({
           user_id: admin.id,
           title,

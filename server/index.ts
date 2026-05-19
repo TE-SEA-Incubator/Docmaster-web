@@ -11,8 +11,9 @@ import helmet from "helmet";
 import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import swaggerUi from "swagger-ui-express";
+import * as swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./src/config/swagger.ts";
+import cookieParser from "cookie-parser";
 import { pool } from "./src/database/db.js";
 import authRoutes from "./src/routes/auth.routes.ts";
 import documentRoutes from "./src/routes/document.routes.ts";
@@ -29,6 +30,7 @@ import referralRoutes from "./src/routes/referral.routes.ts";
 import documentTypeRoutes from "./src/routes/document-type.routes.ts";
 import settingRoutes from "./src/routes/setting.routes.ts";
 import withdrawalRoutes from "./src/routes/withdrawal.routes.ts";
+import smsRoutes from "./src/routes/sms.routes.ts";
 
 // Load environment variables
 dotenv.config();
@@ -53,12 +55,24 @@ export function createApp(): Application {
           "img-src": [
             "'self'",
             "data:",
+            // Local development
             "http://localhost:5000",
             "http://127.0.0.1:5000",
+            // Production
+            "http://217.154.126.24:5000",
+            "https://217.154.126.24:5000",
+            "http://217.154.126.24:3003",
+            "https://217.154.126.24:3003",
+            "https://docmaster.net",
+
+            
+            // Swagger validators
             "validator.swagger.io"
           ],
-          "script-src": ["'self'", "'unsafe-inline'"],
-          "style-src": ["'self'", "'unsafe-inline'"],
+          "script-src": ["'self'", "'unsafe-inline'", "http://217.154.126.24:5000", "https://217.154.126.24:5000"],
+          "style-src": ["'self'", "'unsafe-inline'", "http://217.154.126.24:5000", "https://217.154.126.24:5000"],
+          "font-src": ["'self'", "data:", "http://217.154.126.24:5000", "https://217.154.126.24:5000"],
+          "connect-src": ["'self'", "http://217.154.126.24:5000", "https://217.154.126.24:5000", "localhost:5000", "validator.swagger.io"],
         },
       },
     }),
@@ -69,15 +83,33 @@ export function createApp(): Application {
   // ═════════════════════════════════════════════════════════════════
 
   // Configure CORS options
+  const allowedOrigins: string[] = [
+    // Local development
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "http://localhost:3003",
+    "http://localhost:5000",
+    "http://localhost:8080",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3003",
+    "http://127.0.0.1:5000",
+    // Production (HTTP only - no HTTPS)
+    "http://217.154.126.24:3003",
+    "http://217.154.126.24:5000",
+    "http://217.154.126.24",
+    "https://docmaster.net",
+  ];
+
+  // Add custom domains from environment if set
+  if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL);
+  if (process.env.FRONTEND_DOMAIN) allowedOrigins.push(process.env.FRONTEND_DOMAIN);
+
   const corsOptions = {
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "http://localhost:8080",
-      "http://127.0.0.1:5173",
-      "http://127.0.0.1:8080",
-      "http://127.0.0.1:3000",
-    ],
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -98,6 +130,9 @@ export function createApp(): Application {
 
   // URL-encoded body parser
   app.use(express.urlencoded({ extended: true }));
+
+  // Cookie parser
+  app.use(cookieParser(process.env.COOKIE_SECRET || "docmaster_secret_key"));
 
   // ═════════════════════════════════════════════════════════════════
   // MORGAN HTTP REQUEST LOGGING
@@ -202,6 +237,7 @@ export function createApp(): Application {
   app.use("/api/document-types", documentTypeRoutes);
   app.use("/api/settings", settingRoutes);
   app.use("/api/withdrawals", withdrawalRoutes);
+  app.use("/api/sms", smsRoutes);
 
   // ═════════════════════════════════════════════════════════════════
   // ERROR HANDLING - 404 Handler

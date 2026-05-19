@@ -88,8 +88,8 @@ export class CreateDeclarationDTO {
 
   @IsString()
   @IsOptional()
-  @IsIn(['bon', 'abîmé', 'très abîmé'], { 
-    message: "etat_physique doit être 'bon', 'abîmé', ou 'très abîmé'" 
+  @IsIn(['bon', 'abîmé', 'très abîmé', 'moyen', 'abime', 'bon état', 'moyen état'], { 
+    message: "etat_physique doit être 'bon', 'moyen', 'abîmé', ou 'très abîmé'" 
   })
   etat_physique?: string;
 

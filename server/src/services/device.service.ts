@@ -8,8 +8,8 @@ class DeviceService {
   async registerDevice(deviceData: Device) {
     // 0. Check Subscription Limits
     const validation = await subscriptionService.validateAction(deviceData.user_id, 'REGISTER_OBJECT');
-    if (!validation.allowed) {
-      throw new Error(validation.reason);
+    if (!(validation as any).allowed) {
+      throw new Error((validation as any).reason);
     }
 
     if (deviceData.serial_number_imei && deviceData.serial_number_imei.trim() !== '') {

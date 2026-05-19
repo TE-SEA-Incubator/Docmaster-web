@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
 
     // 3. Load Data
+    if (window.toggleLoader) window.toggleLoader(true);
     try {
         console.log('🔄 [Recuperer] Loading data for doc:', docId);
         const result = await getDeclarationById(docId);
@@ -32,6 +33,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         console.error('❌ [Recuperer] Error:', error);
+    } finally {
+        if (window.toggleLoader) setTimeout(() => window.toggleLoader(false), 500);
     }
 });
 
@@ -203,6 +206,7 @@ async function processRecoveryPayment() {
         return;
     }
 
+    if (window.toggleLoader) window.toggleLoader(true);
     try {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Traitement...';
@@ -212,6 +216,7 @@ async function processRecoveryPayment() {
             alert("Veuillez entrer un numéro de téléphone valide.");
             btn.disabled = false;
             btn.innerText = originalText;
+            if (window.toggleLoader) window.toggleLoader(false);
             return;
         }
 
@@ -249,6 +254,8 @@ async function processRecoveryPayment() {
         alert("Erreur de connexion au serveur.");
         btn.disabled = false;
         btn.innerText = originalText;
+    } finally {
+        if (window.toggleLoader) window.toggleLoader(false);
     }
 }
 

@@ -28,15 +28,22 @@ export async function initDocDeclares() {
  */
 async function loadDeclarations() {
   const listRoot = document.getElementById('declaration-list');
-  if (listRoot) listRoot.innerHTML = '<div class="col-span-full py-12 text-center"><i class="fa-solid fa-spinner fa-spin text-2xl text-primary mb-2"></i><p class="text-sm text-textMuted">Chargement de vos déclarations...</p></div>';
+  if (window.toggleLoader) window.toggleLoader(true);
 
-  const result = await getMyDeclarations();
-  
-  if (result.success) {
-    allDeclarations = result.data;
-    renderCards();
-  } else {
-    if (listRoot) listRoot.innerHTML = `<div class="col-span-full py-12 text-center text-red-500"><i class="fa-solid fa-circle-exclamation text-2xl mb-2"></i><p>${result.message}</p></div>`;
+  try {
+    const result = await getMyDeclarations();
+    
+    if (result.success) {
+      allDeclarations = result.data;
+      renderCards();
+    } else {
+      if (listRoot) listRoot.innerHTML = `<div class="col-span-full py-12 text-center text-red-500"><i class="fa-solid fa-circle-exclamation text-2xl mb-2"></i><p>${result.message}</p></div>`;
+    }
+  } catch (error) {
+    console.error("Error loading declarations:", error);
+    if (listRoot) listRoot.innerHTML = `<div class="col-span-full py-12 text-center text-red-500"><i class="fa-solid fa-circle-exclamation text-2xl mb-2"></i><p>Erreur lors du chargement des données.</p></div>`;
+  } finally {
+    if (window.toggleLoader) setTimeout(() => window.toggleLoader(false), 600);
   }
 }
 

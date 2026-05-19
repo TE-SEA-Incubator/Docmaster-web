@@ -305,174 +305,156 @@
   </nav>
 
 
-  <!-- ═══════════════════════════════════════════
-       HERO SECTION
-  ═══════════════════════════════════════════ -->
-  <section class="bg-bgMain noise relative overflow-hidden min-h-screen flex items-center pt-[68px]">
-    <!-- Blobs -->
-    <div
-      class="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none">
-    </div>
-    <div
-      class="absolute -bottom-40 -left-40 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] pointer-events-none">
-    </div>
-    <!-- Grid pattern -->
-    <div class="absolute inset-0 opacity-[0.04]"
-      style="background-image: linear-gradient(#1A1A1A 1px, transparent 1px), linear-gradient(90deg, #1A1A1A 1px, transparent 1px); background-size: 48px 48px;">
-    </div>
+<!-- ═══════════════════════════════════════════
+     HERO SECTION - CORRIGÉE
+═══════════════════════════════════════════ -->
+<section class="bg-bgMain noise relative overflow-hidden min-h-screen flex items-center pt-[68px]">
+  <!-- Blobs -->
+  <div
+    class="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none">
+  </div>
+  <div
+    class="absolute -bottom-40 -left-40 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] pointer-events-none">
+  </div>
+  <!-- Grid pattern -->
+  <div class="absolute inset-0 opacity-[0.04]"
+    style="background-image: linear-gradient(#1A1A1A 1px, transparent 1px), linear-gradient(90deg, #1A1A1A 1px, transparent 1px); background-size: 48px 48px;">
+  </div>
 
-    <div class="relative z-10 max-w-7xl mx-auto px-5 py-16 lg:py-24 w-full">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+  <div class="relative z-10 max-w-7xl mx-auto px-5 py-16 lg:py-24 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-        <!-- Left: Copy -->
-        <div class="slide-up">
-          <div
-            class="inline-flex items-center gap-2.5 px-4 py-2 bg-primary/15 border border-primary/20 rounded-full mb-8">
-            <span class="w-2 h-2 rounded-full bg-primary pulse-dot"></span>
-            <span class="text-xs font-bold text-primary dark:text-primary uppercase tracking-widest">+2 000 documents
-              retrouvés</span>
-          </div>
-
-          <h1
-            class="font-bricolage text-[2.2rem] sm:text-[2.6rem] lg:text-[3.2rem] font-extrabold text-textMain leading-tight tracking-normal mb-8">
-            Retrouvez<br />
-            vos documents<br />
-            <span class="gradient-text">perdus.</span>
-          </h1>
-
-          <p class="text-textMuted text-[15px] leading-loose mb-10 max-w-lg tracking-wide">
-            DocMaster connecte les propriétaires de documents perdus avec des citoyens solidaires. Déclarez une perte,
-            signalez une trouvaille et récupérez ce qui compte.
-          </p>
-
-          <div class="flex flex-wrap items-center gap-4 mb-12">
-            <a href="declarer.html" id="cta-main"
-              class="inline-flex items-center gap-2.5 px-8 py-4 bg-primary text-white rounded-[18px] font-black text-[15px] shadow-xl shadow-primary/40 hover:bg-primary-dark transition-all hover:-translate-y-1 active:scale-95">
-              <i class="fa-solid fa-file-circle-plus"></i>
-              Déclarer une perte
-            </a>
-            <a href="rechercher.html" id="cta-search"
-              class="inline-flex items-center gap-2.5 px-8 py-4 bg-white border border-borderMain text-textMain rounded-[18px] font-bold text-[15px] hover:bg-white/80 transition-all hover:-translate-y-1 active:scale-95 shadow-sm">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              Rechercher
-            </a>
-          </div>
-
-          <!-- Mini stats -->
-          <div class="flex flex-wrap items-center gap-6">
-            <div class="flex items-center gap-2.5">
-              <div
-                class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <i class="fa-solid fa-file-lines text-primary text-xs"></i>
-              </div>
-              <div>
-                <p class="text-textMain font-black text-sm leading-none dynamic-doc-count">2 847</p>
-                <p class="text-textMuted text-[10px] font-bold uppercase">Déclarés</p>
-              </div>
-            </div>
-            <div class="w-px h-8 bg-borderMain"></div>
-            <div class="flex items-center gap-2.5">
-              <div
-                class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <i class="fa-solid fa-search text-primary text-xs"></i>
-              </div>
-              <div>
-                <p class="text-textMain font-black text-sm leading-none">2 156</p>
-                <p class="text-textMuted text-[10px] font-bold uppercase">Retrouvés</p>
-              </div>
-            </div>
-            <div class="w-px h-8 bg-borderMain"></div>
-            <div class="flex items-center gap-2.5">
-              <div
-                class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <i class="fa-solid fa-users text-primary text-xs"></i>
-              </div>
-              <div>
-                <p class="text-textMain font-black text-sm leading-none">1 523</p>
-                <p class="text-textMuted text-[10px] font-bold uppercase">Membres</p>
-              </div>
-            </div>
-          </div>
+      <!-- Left: Copy -->
+      <div class="slide-up">
+        <div
+          class="inline-flex items-center gap-2.5 px-4 py-2 bg-primary/15 border border-primary/20 rounded-full mb-8">
+          <span class="w-2 h-2 rounded-full bg-primary pulse-dot"></span>
+          <span class="text-xs font-bold text-primary dark:text-primary uppercase tracking-widest">+2 000 documents
+            retrouvés</span>
         </div>
 
-        <!-- Right: Visual Document Cards -->
-        <div class="relative hidden lg:flex items-center justify-center min-h-[480px]">
-          <!-- Background glow -->
-          <div class="absolute inset-0 flex items-center justify-center">
-            <div class="w-80 h-80 rounded-full bg-primary/10 blur-3xl"></div>
-          </div>
+        <h1
+          class="font-bricolage text-[2.2rem] sm:text-[2.6rem] lg:text-[3.2rem] font-extrabold text-textMain leading-tight tracking-normal mb-8">
+          Retrouvez<br />
+          vos documents<br />
+          <span class="gradient-text">perdus.</span>
+        </h1>
 
-          <!-- Card 1: CNI -->
-          <div
-            class="float-card absolute top-0 right-8 bg-white rounded-[24px] shadow-2xl p-5 w-[220px] rotate-3 border border-borderMain">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-9 h-9 rounded-xl bg-green-light flex items-center justify-center"><i
-                  class="fa-solid fa-id-card text-green-mid text-sm"></i></div>
-              <div>
-                <p class="text-[9px] font-extrabold text-textMuted uppercase tracking-wider">Document identifié</p>
-                <p class="text-[12px] font-bold text-textMain">CNI Camerounaise</p>
-              </div>
-            </div>
-            <img src="./assets/images/images.jpg" class="w-full h-24 object-cover rounded-xl mb-3" alt="CNI" />
-            <div class="flex items-center justify-between">
-              <span
-                class="text-[10px] font-bold text-green-mid bg-green-light px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Matching
-              </span>
-              <span class="text-[10px] text-textMuted">Yaoundé</span>
-            </div>
-          </div>
+        <p class="text-textMuted text-[15px] leading-loose mb-10 max-w-lg tracking-wide">
+          DocMaster connecte les propriétaires de documents perdus avec des citoyens solidaires. Déclarez une perte,
+          signalez une trouvaille et récupérez ce qui compte.
+        </p>
 
-          <!-- Card 2: Passport -->
-          <div
-            class="float-card-2 absolute bottom-8 left-0 bg-white rounded-[24px] shadow-2xl p-5 w-[200px] -rotate-2 border border-borderMain">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center"><i
-                  class="fa-solid fa-passport text-primary text-sm"></i></div>
-              <div>
-                <p class="text-[10px] font-black text-textMuted uppercase">Passeport</p>
-                <p class="text-[12px] font-bold text-textMain">République du CMR</p>
-              </div>
+        <div class="flex flex-wrap items-center gap-4 mb-12">
+          <a href="declarer.html" id="cta-main"
+            class="inline-flex items-center gap-2.5 px-8 py-4 bg-primary text-white rounded-[18px] font-black text-[15px] shadow-xl shadow-primary/40 hover:bg-primary-dark transition-all hover:-translate-y-1 active:scale-95">
+            <i class="fa-solid fa-file-circle-plus"></i>
+            Déclarer une perte
+          </a>
+          <a href="rechercher.html" id="cta-search"
+            class="inline-flex items-center gap-2.5 px-8 py-4 bg-white border border-borderMain text-textMain rounded-[18px] font-bold text-[15px] hover:bg-white/80 transition-all hover:-translate-y-1 active:scale-95 shadow-sm">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Rechercher
+          </a>
+        </div>
+
+        <!-- Mini stats -->
+        <div class="flex flex-wrap items-center gap-6">
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <i class="fa-solid fa-file-lines text-primary text-xs"></i>
             </div>
-            <img src="./assets/images/passport.jpg" class="w-full h-20 object-cover rounded-xl mb-3" alt="Passeport" />
-            <div class="flex items-center gap-2">
-              <div class="flex -space-x-2">
-                <div
-                  class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[8px] font-bold border-2 border-white">
-                  A</div>
-                <div
-                  class="w-6 h-6 rounded-full bg-green-dark text-white flex items-center justify-center text-[8px] font-bold border-2 border-white">
-                  B</div>
-              </div>
-              <span class="text-[10px] text-textMuted font-bold">2 intéressés</span>
+            <div>
+              <p class="text-textMain font-black text-sm leading-none dynamic-doc-count">2 847</p>
+              <p class="text-textMuted text-[10px] font-bold uppercase">Déclarés</p>
             </div>
           </div>
-
-          <!-- Center notification card -->
-          <div
-            class="float-card absolute bottom-1/3 right-0 bg-white rounded-[20px] shadow-2xl p-4 w-[200px] border border-borderMain">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid fa-bell text-white text-sm"></i>
-              </div>
-              <div>
-                <p class="text-[11px] font-bold text-textMain leading-tight">Document retrouvé !</p>
-                <p class="text-[9px] text-textMuted mt-0.5">Il y a 2 minutes</p>
-              </div>
+          <div class="w-px h-8 bg-borderMain"></div>
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <i class="fa-solid fa-search text-primary text-xs"></i>
+            </div>
+            <div>
+              <p class="text-textMain font-black text-sm leading-none">2 156</p>
+              <p class="text-textMuted text-[10px] font-bold uppercase">Retrouvés</p>
+            </div>
+          </div>
+          <div class="w-px h-8 bg-borderMain"></div>
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <i class="fa-solid fa-users text-primary text-xs"></i>
+            </div>
+            <div>
+              <p class="text-textMain font-black text-sm leading-none">1 523</p>
+              <p class="text-textMuted text-[10px] font-bold uppercase">Membres</p>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Scroll indicator -->
-    <div
-      class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 animate-bounce">
-      <span class="text-[10px] font-bold uppercase tracking-widest">Découvrir</span>
-      <i class="fa-solid fa-chevron-down text-xs"></i>
-    </div>
-  </section>
+      <!-- Right: Visual Document Cards - CORRECTED GRID -->
+      <div class="relative hidden lg:flex items-center justify-center min-h-[500px]">
+        <!-- Background glow -->
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-80 h-80 rounded-full bg-primary/10 blur-3xl"></div>
+        </div>
 
+        <!-- ✅ IMAGES GRID MASONRY -->
+        <div class="relative z-10 w-full h-full flex items-center justify-center">
+          <div class="grid grid-cols-2 gap-5 auto-rows-max">
+            
+            <!-- Column 1 -->
+            <div class="flex flex-col gap-5">
+              <!-- Image 1 - Top -->
+              <img src="./assets/images/images.jpg" 
+                class="w-full h-auto max-w-[260px] object-cover rounded-[16px] shadow-lg hover:shadow-xl transition-shadow duration-300" 
+                alt="Document CNI" />
+              
+              <!-- Image 3 - Middle (offset) -->
+              <img src="./assets/images/1.png" 
+                class="w-full h-auto max-w-[260px] object-cover rounded-[16px] shadow-lg hover:shadow-xl transition-shadow duration-300 mt-8" 
+                alt="Document" />
+              
+              <!-- Image 5 - Bottom -->
+              <img src="./assets/images/permis.jpg" 
+                class="w-full h-auto max-w-[260px] object-contain rounded-[16px] shadow-lg hover:shadow-xl transition-shadow duration-300 mt-8" 
+                alt="Document Passeport" />
+            </div>
+
+            <!-- Column 2 -->
+            <div class="flex flex-col gap-5 mt-12">
+              <!-- Image 2 - Top (offset from col 1) -->
+              <img src="./assets/images/passport.png" 
+                class="w-full h-auto max-w-[260px] object-cover rounded-[16px] shadow-lg hover:shadow-xl transition-shadow duration-300" 
+                alt="Document Passeport" />
+              
+              <!-- Image 4 - Middle -->
+              <img src="./assets/images/images.jpg" 
+                class="w-full h-auto max-w-[260px] object-cover rounded-[16px] shadow-lg hover:shadow-xl transition-shadow duration-300 mt-8" 
+                alt="Document" />
+              
+              <!-- Image 6 - Bottom -->
+              <img src="./assets/images/bacc.png" 
+                class="w-full h-auto max-w-[260px] object-contain rounded-[16px] shadow-lg hover:shadow-xl transition-shadow duration-300 mt-8" 
+                alt="Document" />
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div
+    class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 animate-bounce">
+    <span class="text-[10px] font-bold uppercase tracking-widest">Découvrir</span>
+    <i class="fa-solid fa-chevron-down text-xs"></i>
+  </div>
+</section>
 
   <!-- ═══════════════════════════════════════════
        DOCUMENTS RÉCENTS
@@ -1332,7 +1314,7 @@
           <div class="flex flex-col sm:flex-row gap-3 mb-10">
 
             <!-- Google Play Badge -->
-            <a href="#" id="btn-playstore"
+            <a href="https://play.google.com/store/apps/details?id=com.tesea.docmaster" target="_blank" id="btn-playstore"
               class="flex items-center gap-3.5 bg-[#111111] hover:bg-[#222] px-5 py-3.5 rounded-2xl transition-colors w-fit">
               <img src="./assets/images/Playstore.png" alt="Google Play" class="w-8 h-8 object-contain flex-shrink-0" />
               <div>
@@ -1419,7 +1401,7 @@
           <div class="flex flex-col sm:flex-row gap-3 mb-10">
 
             <!-- Google Play Badge -->
-            <a href="#" id="btn-playstore"
+            <a href="https://play.google.com/store/apps/details?id=com.tesea.docmaster" target="_blank" id="btn-playstore"
               class="flex items-center gap-3.5 bg-[#111111] hover:bg-[#222] px-5 py-3.5 rounded-2xl transition-colors w-fit">
               <img src="./assets/images/Playstore.png" alt="Google Play" class="w-8 h-8 object-contain flex-shrink-0" />
               <div>
@@ -1734,8 +1716,7 @@
     <div class="w-px h-6 bg-white/10 flex-shrink-0"></div>
 
     <!-- Play Store btn -->
-    <a href="#btn-playstore"
-      onclick="document.getElementById('btn-playstore').scrollIntoView({behavior:'smooth'}); return false;"
+    <a href="https://play.google.com/store/apps/details?id=com.tesea.docmaster" target="_blank"
       class="flex items-center gap-2 bg-primary text-[#1E3A2F] px-5 py-2 rounded-[12px] font-black text-[12px] hover:bg-primary-dark transition-all whitespace-nowrap active:scale-95 flex-shrink-0">
       <img src="./assets/images/Playstore.png" class="w-4 h-4 object-contain" alt="" />
       Google Play
@@ -1759,6 +1740,7 @@
     </button>
   </div>
 
+  
 </body>
 
 </html>

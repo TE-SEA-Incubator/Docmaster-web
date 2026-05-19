@@ -36,12 +36,12 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
       docTypeId: req.body.doc_type 
     });
 
-    if (!validation.allowed) {
+    if (!(validation as any).allowed) {
       return res.status(403).json({
         success: false,
-        message: validation.reason,
-        limit: validation.limit,
-        current: validation.current
+        message: (validation as any).reason,
+        limit: (validation as any).limit,
+        current: (validation as any).current
       });
     }
 
@@ -54,8 +54,8 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
     });
 
     // 2. Consume referral benefit if used
-    if (validation.useBenefit) {
-      await subscriptionService.consumeBenefit(validation.subscriptionId, 'declaration');
+    if ((validation as any).useBenefit) {
+      await subscriptionService.consumeBenefit((validation as any).subscriptionId, 'declaration');
     }
 
     res.status(201).json({
@@ -97,12 +97,12 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
       docTypeId: req.body.doc_type 
     });
 
-    if (!validation.allowed) {
+    if (!(validation as any).allowed) {
       return res.status(403).json({
         success: false,
-        message: validation.reason,
-        limit: validation.limit,
-        current: validation.current
+        message: (validation as any).reason,
+        limit: (validation as any).limit,
+        current: (validation as any).current
       });
     }
 
@@ -115,8 +115,8 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
     });
 
     // 2. Consume referral benefit if used
-    if (validation.useBenefit) {
-      await subscriptionService.consumeBenefit(validation.subscriptionId, 'declaration');
+    if ((validation as any).useBenefit) {
+      await subscriptionService.consumeBenefit((validation as any).subscriptionId, 'declaration');
     }
 
     res.status(201).json({

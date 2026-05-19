@@ -15,6 +15,17 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
   <script>
+    // Prévention des erreurs "ReferenceError" si l'utilisateur clique avant le chargement complet des modules JS
+    const _pendingLoadMsg = () => {
+      const msg = "Chargement en cours, veuillez patienter quelques secondes...";
+      if (window.showNotification) window.showNotification(msg, "info");
+      else alert(msg);
+    };
+    ['openNotifModal', 'setFilter', 'setView', 'openVerifyModal', 'openAddModal', 'closeConfirmLost', 'closeVerifyModal', 'startVerification', 'closeAddModal', 'selectType', 'saveDevice', 'closeDetail', 'editCurrentDevice', 'deleteCurrentDevice', 'openDetail', 'confirmFoundAppareil', 'confirmLostAppareil', 'removeFile'].forEach(f => {
+      if (!window[f]) window[f] = _pendingLoadMsg;
+    });
+  </script>
+  <script>
     tailwind.config = {
       theme: {
         extend: {
@@ -57,7 +68,7 @@
     .main-wrap{margin-left:260px;height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .3s ease}
     .main-wrap.expanded{margin-left:0}
     .topbar{flex-shrink:0;background:white;border-bottom:1px solid #E0D5C4;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;z-index:20}
-    .page-body{flex:1;min-height:0;overflow-y:auto;padding:24px}
+    .page-body{flex:1;min-height:0;overflow-y:auto;padding:24px 16px}
     @media(max-width:1024px){
        .topbar{padding: 0 16px;}
     }
@@ -190,6 +201,7 @@
       .topbar h1 { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     }
   </style>
+  <script type="module" src="/js/index.js"></script>
 </head>
 <body>
   <script type="module" src="/js/utils/ui-helpers.js"></script>
@@ -608,7 +620,9 @@ let detailId      = null;
 let selectedType  = 'telephone';
 
 async function refreshDevices() {
-  const result = await getMyDevices();
+  if (window.toggleLoader) window.toggleLoader(true);
+  try {
+    const result = await getMyDevices();
   if (result.success && Array.isArray(result.data)) {
     devices = result.data.map(d => {
       const category = (d.category || '').toLowerCase();
@@ -642,6 +656,8 @@ async function refreshDevices() {
       };
     });
     renderAll();
+  } finally {
+    if (window.toggleLoader) setTimeout(() => window.toggleLoader(false), 500);
   }
 }
 
@@ -920,6 +936,8 @@ window.saveDevice = async function() {
     return;
   }
 
+  if (window.toggleLoader) window.toggleLoader(true);
+
   const btn = document.querySelector('button[onclick="saveDevice()"]');
   const originalHtml = btn.innerHTML;
   btn.disabled = true;
@@ -954,6 +972,7 @@ window.saveDevice = async function() {
   
   btn.disabled = false;
   btn.innerHTML = originalHtml;
+  if (window.toggleLoader) window.toggleLoader(false);
 }
 
 /* ═══════════════════════════════════════
@@ -1054,12 +1073,17 @@ window.deleteCurrentDevice = async function() {
   if (!d) return;
   if (!confirm(`Supprimer "${d.nom}" ? Cette action est irréversible.`)) return;
   
-  const result = await deleteDevice(detailId);
-  if (result.success) {
-    await refreshDevices();
-    closeDetail(null, true);
-  } else {
-    alert(result.message);
+  if (window.toggleLoader) window.toggleLoader(true);
+  try {
+    const result = await deleteDevice(detailId);
+    if (result.success) {
+      await refreshDevices();
+      closeDetail(null, true);
+    } else {
+      alert(result.message);
+    }
+  } finally {
+    if (window.toggleLoader) window.toggleLoader(false);
   }
 }
 
@@ -1141,6 +1165,9 @@ window.validateAndSubmitLost = async function() {
   
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+  
+  if (window.toggleLoader) window.toggleLoader(true);
+  
   const status = document.getElementById('reportType').value;
   const result = await reportDeviceLost(pendingDeviceId, pass, status);
   
@@ -1158,6 +1185,7 @@ window.validateAndSubmitLost = async function() {
   
   btn.disabled = false;
   btn.innerHTML = 'Confirmer';
+  if (window.toggleLoader) window.toggleLoader(false);
 }
 
 window.confirmFoundAppareil = function(id, btn) {
@@ -1189,6 +1217,8 @@ window.validateAndSubmitFound = async function() {
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
   
+  if (window.toggleLoader) window.toggleLoader(true);
+
   const result = await reportDeviceFound(pendingDeviceId, pass);
   
   if (result.success) {
@@ -1205,6 +1235,7 @@ window.validateAndSubmitFound = async function() {
   
   btn.disabled = false;
   btn.innerHTML = 'Confirmer';
+  if (window.toggleLoader) window.toggleLoader(false);
 }
 
 window.openVerifyModal = function() {
@@ -1234,6 +1265,8 @@ window.startVerification = async function() {
     btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Vérification...';
     btn.disabled = true;
     resArea.style.display = 'none';
+
+    if (window.toggleLoader) window.toggleLoader(true);
 
     try {
         const result = await verifyDevice(imei);
@@ -1287,8 +1320,10 @@ window.startVerification = async function() {
     } finally {
         btn.innerHTML = oldHtml;
         btn.disabled = false;
+        if (window.toggleLoader) window.toggleLoader(false);
     }
 };
 </script>
+
 </body>
 </html>

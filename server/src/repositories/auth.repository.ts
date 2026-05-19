@@ -117,7 +117,16 @@ export class UserRepository {
   /**
    * Update user profile information
    */
-  async updateProfile(userId: string, data: { nom?: string, prenom?: string, telephone?: string, photo_url?: string }): Promise<User | null> {
+  async updateProfile(userId: string, data: { 
+    nom?: string, 
+    prenom?: string, 
+    telephone?: string, 
+    photo_url?: string,
+    ville?: string,
+    date_naissance?: string | null,
+    lieu_naissance?: string,
+    currency?: string
+  }): Promise<User | null> {
     const fields: string[] = [];
     const values: any[] = [];
     let idx = 1;
@@ -138,17 +147,23 @@ export class UserRepository {
       fields.push(`photo_url = $${idx++}`);
       values.push(data.photo_url);
     }
-    if ((data as any).date_naissance !== undefined) {
+    if (data.ville !== undefined) {
+      fields.push(`ville = $${idx++}`);
+      values.push(data.ville);
+    }
+    if (data.date_naissance !== undefined) {
       fields.push(`date_naissance = $${idx++}`);
-      values.push((data as any).date_naissance);
+      // Handle empty string as null for DATE type
+      const dateVal = data.date_naissance === "" ? null : data.date_naissance;
+      values.push(dateVal);
     }
-    if ((data as any).lieu_naissance !== undefined) {
+    if (data.lieu_naissance !== undefined) {
       fields.push(`lieu_naissance = $${idx++}`);
-      values.push((data as any).lieu_naissance);
+      values.push(data.lieu_naissance);
     }
-    if ((data as any).currency !== undefined) {
+    if (data.currency !== undefined) {
       fields.push(`currency = $${idx++}`);
-      values.push((data as any).currency);
+      values.push(data.currency);
     }
 
     if (fields.length === 0) return this.findById(userId);
@@ -279,5 +294,14 @@ export class UserRepository {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Delete a user account (Admin)
+   */
+  async deleteUser(userId: string): Promise<boolean> {
+    const query = 'DELETE FROM users WHERE id = $1';
+    const { rowCount } = await pool.query(query, [userId]);
+    return (rowCount ?? 0) > 0;
   }
 }

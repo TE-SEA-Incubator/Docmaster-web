@@ -28,6 +28,23 @@ export interface User {
 export type DeclarationType = 'LOST' | 'FOUND';
 export type DocumentStatus = 'AVAILABLE' | 'SEARCHING' | 'RETURNED' | 'MATCHED';
 
+export interface DocumentType {
+    id: string;
+    nom: string;
+    code: string;
+    description?: string;
+    prix_retrouvaille: number;
+    finder_percent: number;
+    app_percent: number;
+    points_recompense: number;
+    delai_expiration_mois: number;
+    icone?: string;
+    categorie?: string;
+    is_active: boolean;
+    created_at: Date;
+    updated_at?: Date;
+}
+
 export interface DocumentDeclaration {
     id: string;
     identifiant_doc_dm: string;
@@ -70,11 +87,15 @@ export interface UserDocument {
     numero_doc: string;
     nom_sur_doc: string;
     date_expiration?: Date;
+    date_delivrance?: Date;
+    nom_autorite?: string;
+    notes?: string;
     fingerprint: string;
     photo_recto?: string;
     photo_verso?: string;
     is_protected: boolean;
     is_lost: boolean;
+    declaration_id?: string;
     created_at: Date;
 }
 

@@ -3,42 +3,47 @@ import tailwindcss from "@tailwindcss/vite";
 import { resolve } from "path";
 import { readdirSync } from "fs";
 
-// Fonction pour récupérer dynamiquement tous les fichiers HTML dans src/
 const getHtmlEntries = () => {
   const pagesDir = resolve(__dirname, "src");
   const entries = {};
 
-  readdirSync(pagesDir).forEach((file) => {
-    if (file.endsWith(".html")) {
-      const name = file.replace(".html", "");
-      entries[name] = resolve(pagesDir, file);
-    }
-  });
+  try {
+    readdirSync(pagesDir).forEach((file) => {
+      if (file.endsWith(".html")) {
+        const name = file.replace(".html", "");
+        entries[name] = resolve(pagesDir, file);
+      }
+    });
+  } catch (e) {
+    console.error("Dossier src introuvable");
+  }
 
   return entries;
 };
 
 export default defineConfig({
-  root: "src", // Définit le dossier source comme racine
-  envDir: "../", // Cherche le .env à la racine du projet
+  root: "src",
+  envDir: "../",
   plugins: [tailwindcss()],
   build: {
-    outDir: "../dist", // Le build ira dans /dist à la racine du projet
+    outDir: "../dist",
     emptyOutDir: true,
     rollupOptions: {
       input: getHtmlEntries(),
     },
   },
   server: {
-    port: 5173,
-    open: "/index.html",
+    port: 3003, 
+    host: "0.0.0.0",
+    open: false,
+    allowedHosts: ["docmaster.net", "www.docmaster.net"],
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5000",
+        target: "http://localhost:5000", // DEV: local backend
         changeOrigin: true,
       },
       "/uploads": {
-        target: "http://127.0.0.1:5000",
+        target: "http://localhost:5000",
         changeOrigin: true,
       },
     },

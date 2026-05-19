@@ -51,41 +51,20 @@ const testimonials = [
 let currentIndex = 0;
 
 function updateCarousel() {
-  const dotsContainer = document.getElementById("dots-container");
-
-  if (!container || !quoteEl || !authorEl || !roleEl) return;
-
-  // Animation de sortie
-  if (container) container.style.opacity = 0;
-
-  setTimeout(() => {
-    const item = testimonials[currentIndex];
-    quoteEl.textContent = item.quote;
-    authorEl.textContent = item.author;
-    roleEl.textContent = item.role;
-
-    // Mise à jour des points
-    dotsContainer.innerHTML = "";
-    testimonials.forEach((_, index) => {
-      const dot = document.createElement("div");
-      dot.className = `w-3 h-3 rounded-full transition-all duration-300 ${index === currentIndex ? "bg-[#F5A64B] w-6" : "bg-gray-300"}`;
-      dotsContainer.appendChild(dot);
-    });
-
-    // Animation d'entrée
-    if (container) container.style.opacity = 1;
-  }, 300);
+  // Le carousel est géré directement dans index.html
+  // Ce code n'est pas utilisé mais reste pour compatibilité
+  return;
 }
 
 function nextBtn() {
-  currentIndex = (currentIndex + 1) % testimonials.length;
-  updateCarousel();
+  // Le carousel est géré directement dans index.html
+  return;
 }
 
 function prevBtn() {
-  currentIndex = (currentIndex - 1 + testimonials.length) % testimonials.length;
-  updateCarousel();
+  // Le carousel est géré directement dans index.html
+  return;
 }
 
 // Initialisation
-updateCarousel();
+// (Le carousel est géré directement dans index.html)

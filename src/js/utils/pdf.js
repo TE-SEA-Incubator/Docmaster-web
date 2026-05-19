@@ -40,7 +40,28 @@ export async function generateDocumentPDF(doc) {
     docPdf.text('TITULAIRE:', 20, 72);
     docPdf.setTextColor(26, 26, 26);
     docPdf.setFont('helvetica', 'bold');
-    docPdf.text(doc.nom_sur_doc || 'NON SPÉCIFIÉ', 50, 72);
+    docPdf.text(doc.nom_sur_doc || 'NON SPÉCIFIÉ', 60, 72);
+
+    docPdf.setFont('helvetica', 'normal');
+    docPdf.setTextColor(107, 114, 128);
+    docPdf.text('DÉLIVRÉ LE:', 20, 79);
+    docPdf.setTextColor(26, 26, 26);
+    docPdf.setFont('helvetica', 'bold');
+    docPdf.text(doc.date_delivrance ? new Date(doc.date_delivrance).toLocaleDateString('fr-FR') : 'NON SPÉCIFIÉ', 60, 79);
+
+    docPdf.setFont('helvetica', 'normal');
+    docPdf.setTextColor(107, 114, 128);
+    docPdf.text('EXPIRATION:', 20, 86);
+    docPdf.setTextColor(26, 26, 26);
+    docPdf.setFont('helvetica', 'bold');
+    docPdf.text(doc.date_expiration ? new Date(doc.date_expiration).toLocaleDateString('fr-FR') : 'INDÉFINIE', 60, 86);
+
+    docPdf.setFont('helvetica', 'normal');
+    docPdf.setTextColor(107, 114, 128);
+    docPdf.text('AUTORITÉ:', 20, 93);
+    docPdf.setTextColor(26, 26, 26);
+    docPdf.setFont('helvetica', 'bold');
+    docPdf.text(doc.nom_autorite || 'NON SPÉCIFIÉ', 60, 93);
 
     // Image Helper
     const loadImage = (url) => {
@@ -53,7 +74,7 @@ export async function generateDocumentPDF(doc) {
       });
     };
 
-    let yOffset = 85;
+    let yOffset = 110;
     const imgWidth = 170;
     const imgHeight = 85;
     const centerX = (210 - imgWidth) / 2;

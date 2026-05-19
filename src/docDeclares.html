@@ -58,6 +58,7 @@
     .custom-scroll::-webkit-scrollbar { width: 4px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #DDD5C8; border-radius: 10px; }
   </style>
+  <script type="module" src="/js/index.js"></script>
 </head>
 <body>
   <script type="module" src="/js/utils/ui-helpers.js"></script>
@@ -70,17 +71,33 @@
       <i class="fa-solid fa-bars"></i>
     </button>
     <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Mes déclarations</span>
-    <div class="dm-quick-search hidden"></div>
-    <div class="dm-quick-actions hidden"></div>
+    <div class="dm-quick-search"></div>
     <div class="ml-auto flex items-center gap-2">
-      <a href="declarer.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-red-600 text-[11.5px] font-bold text-white hover:bg-red-700 transition-colors">
-        <i class="fa-solid fa-triangle-exclamation text-[11px]"></i> Déclarer une perte
-      </a>
-      <a href="declarer.html?type=trouve" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] bg-green-700 text-[11.5px] font-bold text-white hover:bg-green-800 transition-colors">
-        <i class="fa-solid fa-file-circle-check text-[11px]"></i> J'ai trouvé un doc
-      </a>
+      <div class="dm-quick-actions">
+        <a href="declarer.html" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 text-red-600 text-[13px] font-bold border border-red-100 hover:bg-red-100 transition-all">
+          <i class="fa-solid fa-triangle-exclamation"></i> Déclarer une perte
+        </a>
+        <a href="declarer.html?type=trouve" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-light text-green-dark text-[13px] font-bold border border-green-100 hover:bg-green-mid hover:text-white transition-all">
+          <i class="fa-solid fa-hand-holding-hand"></i> Déclarer une trouvaille
+        </a>
+      </div>
+      <!-- Actions desktop uniquement via CSS -->
     </div>
   </header>
+
+  <style>
+    /* Garantie que les actions rapides sont masquées sur mobile */
+    @media (max-width: 1023px) {
+      .dm-quick-actions, .dm-quick-search {
+        display: none !important;
+      }
+    }
+    @media (min-width: 1024px) {
+      .dm-quick-actions, .dm-quick-search {
+        display: flex !important;
+      }
+    }
+  </style>
 
   <div class="flex-1 flex flex-col overflow-hidden">
   <main class="main-content custom-scroll p-4 sm:p-6 pb-24 md:pb-8 flex flex-col gap-4">
@@ -89,14 +106,6 @@
         <div>
           <h1 class="font-bricolage text-xl sm:text-2xl font-extrabold text-textMain">Historique de vos déclarations</h1>
           <p class="text-[12.5px] text-textMuted mt-1">Suivez l'état de vos pertes et de vos documents trouvés.</p>
-        </div>
-        <div class="flex gap-2 sm:hidden">
-          <a href="declarer.html" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[10px] bg-red-600 text-white text-[12px] font-bold">
-            <i class="fa-solid fa-triangle-exclamation text-[11px]"></i> Déclarer perte
-          </a>
-          <a href="trouverdocument.html" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[10px] bg-blue-600 text-white text-[12px] font-bold">
-            <i class="fa-solid fa-file-circle-check text-[11px]"></i> Déclarer trouvé
-          </a>
         </div>
       </div>
 
@@ -109,12 +118,33 @@
 
     <section id="declaration-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></section>
 
-    <section id="empty-state" class="hidden bg-white border border-borderMain rounded-[18px] p-8 text-center">
-      <div class="w-14 h-14 mx-auto rounded-2xl bg-bgMain border border-borderMain flex items-center justify-center mb-3">
-        <i class="fa-solid fa-folder-open text-textMuted text-xl"></i>
+    <section id="empty-state" class="hidden bg-white border border-borderMain rounded-[22px] p-10 text-center shadow-sm">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-bgMain border border-borderMain flex items-center justify-center mb-4">
+        <i class="fa-solid fa-folder-open text-textMuted text-2xl"></i>
       </div>
-      <p class="text-[15px] font-semibold text-textMain">Aucune déclaration pour ce filtre</p>
-      <p class="text-[12px] text-textMuted mt-1">Essayez un autre filtre ou créez une nouvelle déclaration.</p>
+      <p class="text-[17px] font-bold text-textMain font-bricolage">Aucune déclaration trouvée</p>
+      <p class="text-[13px] text-textMuted mt-2 mb-6 max-w-[280px] mx-auto leading-relaxed">Vous n'avez pas encore publié de déclaration. Commencez dès maintenant pour retrouver vos objets.</p>
+      <button onclick="window.location.href='declarer.html'" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+        <i class="fa-solid fa-plus"></i> Créer une déclaration
+      </button>
+    </section>
+
+    <!-- Premium CTA Banner -->
+    <section class="mt-4 lg:hidden bg-green-dark rounded-[22px] p-6 relative overflow-hidden text-white" style="background: #1E3A2F;">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+      <div class="relative z-10">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="px-2 py-0.5 rounded-md bg-primary/20 text-primary text-[10px] font-black uppercase tracking-wider">Premium</span>
+        </div>
+        <h3 class="font-bricolage text-lg font-bold mb-1">Boostez vos chances de succès</h3>
+        <p class="text-white/70 text-[12.5px] leading-relaxed mb-4">Passez au plan Pro pour bénéficier d'alertes instantanées et d'une mise en avant prioritaire de vos documents.</p>
+        <a href="Abonnement.html" class="inline-flex items-center gap-2 text-primary font-bold text-[13px] hover:gap-3 transition-all">
+          Découvrir les plans <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+      <div class="absolute bottom-4 right-6 opacity-20 transform rotate-12">
+        <i class="fa-solid fa-rocket text-6xl"></i>
+      </div>
     </section>
   </main>
 </div>

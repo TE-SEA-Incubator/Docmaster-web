@@ -81,7 +81,9 @@ router.post('/subscribe', authMiddleware, async (req: any, res: any) => {
 
         res.status(201).json({ success: true, data: sub });
     } catch (error: any) {
-        res.status(500).json({ success: false, message: error.message });
+        const statusCode = error.message.includes('Nokash:') ? 400 : 500;
+        const cleanMessage = error.message.replace('Nokash: ', '');
+        res.status(statusCode).json({ success: false, message: cleanMessage });
     }
 });
 

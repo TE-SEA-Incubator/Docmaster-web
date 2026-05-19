@@ -9,9 +9,10 @@ export class DocumentRepository {
     const query = `
       INSERT INTO my_documents (
         user_id, type_doc, numero_doc, nom_sur_doc, 
-        date_expiration, fingerprint, photo_recto, photo_verso, is_protected
+        date_expiration, date_delivrance, nom_autorite, notes,
+        fingerprint, photo_recto, photo_verso, is_protected
       ) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
       RETURNING *`;
 
     const { rows } = await pool.query(query, [
@@ -20,6 +21,9 @@ export class DocumentRepository {
       data.numero_doc,
       data.nom_sur_doc,
       data.date_expiration || null,
+      data.date_delivrance || null,
+      data.nom_autorite || null,
+      data.notes || null,
       data.fingerprint,
       data.photo_recto,
       data.photo_verso,
@@ -67,12 +71,15 @@ export class DocumentRepository {
         numero_doc = COALESCE($2, numero_doc),
         nom_sur_doc = COALESCE($3, nom_sur_doc),
         date_expiration = COALESCE($4, date_expiration),
-        fingerprint = COALESCE($5, fingerprint),
-        photo_recto = COALESCE($6, photo_recto),
-        photo_verso = COALESCE($7, photo_verso),
-        is_protected = COALESCE($8, is_protected),
-        is_lost = COALESCE($9, is_lost)
-      WHERE id = $10 AND user_id = $11
+        date_delivrance = COALESCE($5, date_delivrance),
+        nom_autorite = COALESCE($6, nom_autorite),
+        notes = COALESCE($7, notes),
+        fingerprint = COALESCE($8, fingerprint),
+        photo_recto = COALESCE($9, photo_recto),
+        photo_verso = COALESCE($10, photo_verso),
+        is_protected = COALESCE($11, is_protected),
+        is_lost = COALESCE($12, is_lost)
+      WHERE id = $13 AND user_id = $14
       RETURNING *`;
 
     const { rows } = await pool.query(query, [
@@ -80,6 +87,9 @@ export class DocumentRepository {
       data.numero_doc,
       data.nom_sur_doc,
       data.date_expiration,
+      data.date_delivrance,
+      data.nom_autorite,
+      data.notes,
       data.fingerprint,
       data.photo_recto,
       data.photo_verso,

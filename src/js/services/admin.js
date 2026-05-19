@@ -399,4 +399,24 @@ export const adminService = {
       throw error;
     }
   },
+  
+  /**
+   * Delete a user account (Admin)
+   */
+  async deleteUser(id) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/admin/users/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la suppression");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Delete User Error:", error);
+      throw error;
+    }
+  },
 };

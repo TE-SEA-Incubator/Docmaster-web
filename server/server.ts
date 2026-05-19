@@ -9,6 +9,7 @@ import 'reflect-metadata';
 import { createApp } from './index.js';
 import { initCronJobs } from './src/utils/cron.utils.ts';
 import { matchingService } from './src/services/matching.service.ts';
+import { SocketService } from './src/services/socket.service.ts';
 
 // Get configuration from environment
 const PORT = process.env.PORT || 5000;
@@ -19,6 +20,12 @@ const app = createApp();
 // Start listening on the port
 const server = app.listen(PORT, () => {
   console.log(`\n🚀 DocMaster Server (TypeScript) started on http://localhost:${PORT}`);
+  
+  // Initialize Socket.io
+  const socketService = SocketService.getInstance();
+  socketService.init(server);
+  console.log(`🔌 Real-time Socket.io initialized`);
+
   console.log(`📚 API Base: http://localhost:${PORT}/api`);
   console.log(`💚 Health Check: http://localhost:${PORT}/health`);
   console.log(`🗄️  DB Test: http://localhost:${PORT}/api/db-test\n`);

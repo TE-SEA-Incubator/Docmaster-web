@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+ import { Request, Response } from 'express';
 import { DocumentService } from '../services/document.service.ts';
 import { subscriptionService } from '../services/subscription.service.ts';
 
@@ -24,12 +24,12 @@ export const registerMyDocument = async (req: Request, res: Response) => {
     // 1. Validate subscription limits
     const validation = await subscriptionService.validateAction(userId, 'REGISTER_OBJECT');
 
-    if (!validation.allowed) {
+    if (!(validation as any).allowed) {
       return res.status(403).json({
         success: false,
-        message: validation.reason,
-        limit: validation.limit,
-        current: validation.current
+        message: (validation as any).reason,
+        limit: (validation as any).limit,
+        current: (validation as any).current
       });
     }
 
@@ -127,7 +127,8 @@ export const reportDocumentLost = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await documentService.reportDocumentLost(id, userId, password);
+    const docId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const result = await documentService.reportDocumentLost(docId, userId, password);
 
     res.json({
       success: true,

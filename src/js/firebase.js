@@ -1,7 +1,7 @@
 // ===== Configuration Firebase pour Docmaster =====
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 
 // Configuration Firebase — les clés sont lues depuis .env
@@ -20,7 +20,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
+// Configuration de l'authentification
+export const auth = getAuth(app);
+
+// Configuration de la persistance locale
+setPersistence(auth, browserLocalPersistence).catch(err => {
+  console.warn('Erreur de persistance Firebase:', err);
+});
+
+// Provider Google
+export const googleProvider = new GoogleAuthProvider();
+// Configure Google Login pour demander email et profil
+googleProvider.setCustomParameters({
+  'prompt': 'select_account'
+});
+
 // Exportation des services pour les utiliser ailleurs
 export const db = getFirestore(app);
-export const auth = getAuth(app);
 export { app, analytics };

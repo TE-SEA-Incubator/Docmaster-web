@@ -16,7 +16,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <link rel="stylesheet" href="./css/input.css" />
+  <!-- <link rel="stylesheet" href="./css/input.css" /> -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -24,6 +24,8 @@
         extend: {
           colors: {
             primary: { DEFAULT: '#F5A64B', dark: '#D98A30', light: '#FEF0DC' },
+            secondary: '#1E3A2F',
+            tertiary: '#2D5A42',
             green: { dark: '#1E3A2F', mid: '#2D5A42', light: '#E8F5EE' },
             bgMain: '#F4EFE6',
             surface: '#FFFFFF',
@@ -43,16 +45,17 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="/css/main.css" />
-  <link rel="stylesheet" href="/css/rechercher.css" />
+  <!-- <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/rechercher.css" /> -->
   <script type="module" src="/js/index.js"></script>
-  <script type="module" src="/js/fillin.js"></script>
-  <script type="module" src="/js/ui/sidebar.js"></script>
-  <script type="module" src="/js/ui/notifications.js"></script>
-  <script type="module" src="/js/services/auth.js"></script>
+  <!-- <script type="module" src="/js/fillin.js"></script> -->
+  <!-- <script type="module" src="/js/ui/sidebar.js"></script> -->
+  <!-- <script type="module" src="/js/ui/notifications.js"></script> -->
+  <!-- <script type="module" src="/js/services/auth.js"></script> -->
   <script type="module">
-    import { searchPublicFound } from './js/services/api.js';
+    import { searchPublicFound, API_BASE_URL } from './js/services/api.js';
     window.searchPublicFound = searchPublicFound;
+    window.API_BASE_URL = API_BASE_URL;
   </script>
 
 
@@ -65,6 +68,9 @@
       font-family: 'Poppins', sans-serif;
       background: #F4EFE6;
       overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
 
     h1,
@@ -176,6 +182,7 @@
     .mobile-nav {
       bottom: env(safe-area-inset-bottom, 0);
     }
+
     .blurred-info {
       filter: blur(4.5px);
       user-select: none;
@@ -201,6 +208,21 @@
       border-radius: 6px;
       box-shadow: 0 4px 10px rgba(245,166,75,0.3);
       z-index: 5;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.5s ease-in forwards;
     }
   </style>
 </head>
@@ -326,24 +348,12 @@
         <!-- Filter chips -->
         <div class="flex flex-wrap items-center gap-3">
           <span class="text-white/50 text-xs font-bold uppercase tracking-widest mr-1 hidden sm:inline">Filtrer :</span>
-          <button class="filter-chip active px-4 py-2 rounded-full border border-white/20 text-white text-[12px] font-bold bg-primary/80" data-filter="all">
-            Tous <span class="ml-1 bg-white/20 px-1.5 py-0.5 rounded-full text-[9px]" id="count-all">—</span>
-          </button>
-          <button class="filter-chip px-4 py-2 rounded-full border border-white/20 text-white/70 text-[12px] font-bold" data-filter="cni">
-            <i class="fa-solid fa-id-card text-[10px] mr-1"></i> CNI
-          </button>
-          <button class="filter-chip px-4 py-2 rounded-full border border-white/20 text-white/70 text-[12px] font-bold" data-filter="passeport">
-            <i class="fa-solid fa-passport text-[10px] mr-1"></i> Passeport
-          </button>
-          <button class="filter-chip px-4 py-2 rounded-full border border-white/20 text-white/70 text-[12px] font-bold" data-filter="diplome">
-            <i class="fa-solid fa-graduation-cap text-[10px] mr-1"></i> Diplôme
-          </button>
-          <button class="filter-chip px-4 py-2 rounded-full border border-white/20 text-white/70 text-[12px] font-bold" data-filter="permis">
-            <i class="fa-solid fa-car text-[10px] mr-1"></i> Permis
-          </button>
-          <button class="filter-chip px-4 py-2 rounded-full border border-white/20 text-white/70 text-[12px] font-bold" data-filter="appareil">
-            <i class="fa-solid fa-mobile-screen text-[10px] mr-1"></i> Appareils
-          </button>
+          <div id="filter-chips" class="flex flex-wrap items-center gap-3">
+            <!-- Chargé dynamiquement depuis le backend -->
+            <button class="filter-chip active px-4 py-2 rounded-full border border-white/20 text-white text-[12px] font-bold bg-primary/80" data-filter="all">
+              Tous <span class="ml-1 bg-white/20 px-1.5 py-0.5 rounded-full text-[9px]" id="count-all">—</span>
+            </button>
+          </div>
 
           <div class="ml-auto">
             <button id="btn-search"
@@ -360,7 +370,7 @@
   <!-- ═══════════════════════════════════════════
        RESULTS SECTION
   ═══════════════════════════════════════════ -->
-  <main class="max-w-7xl mx-auto px-5 py-12 pb-28 md:pb-12">
+  <main class="max-w-7xl mx-auto px-5 py-12 pb-28 md:pb-12 flex-1">
 
     <!-- Results header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -380,7 +390,7 @@
     </div>
 
     <!-- Skeleton loaders (shown while loading) -->
-    <div id="skeleton-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div id="skeleton-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
       <div class="bg-white rounded-[24px] p-5 border border-[#EAE3D8]">
         <div class="skeleton h-40 w-full mb-4"></div>
         <div class="skeleton h-4 w-3/4 mb-2"></div>
@@ -402,20 +412,38 @@
     </div>
 
     <!-- Documents grid -->
-    <div id="document-container" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    <div id="document-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
     <!-- Empty state -->
-    <div id="empty-state" class="hidden flex flex-col items-center justify-center py-24 text-center">
-      <div class="w-20 h-20 rounded-full bg-[#FEF0DC] flex items-center justify-center text-primary text-3xl mb-5">
-        <i class="fa-solid fa-file-circle-question"></i>
+    <div id="empty-state" class="flex flex-col items-center justify-center py-24 text-center px-5" style="display: none;">
+      <!-- Large animated icon -->
+      <div class="relative mb-8">
+        <div class="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse"></div>
+        <div class="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary text-5xl border-2 border-primary/30">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
       </div>
-      <h3 class="font-bricolage text-xl font-bold text-[#1A1A1A] mb-2">Aucun résultat trouvé</h3>
-      <p class="text-gray-500 text-sm mb-6 max-w-xs">Aucun document ne correspond à votre recherche. Essayez avec
-        d'autres mots-clés ou déclarez votre perte.</p>
-      <a href="declarer.html"
-        class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-secondary rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all">
-        <i class="fa-solid fa-file-circle-plus"></i> Déclarer une perte
-      </a>
+      
+      <!-- Title -->
+      <h3 class="font-bricolage text-2xl font-black text-[#1A1A1A] mb-3">Aucun document trouvé</h3>
+      
+      <!-- Description -->
+      <p class="text-gray-500 text-sm mb-8 max-w-md leading-relaxed">
+        Nous n'avons pas trouvé de document correspondant à votre recherche. 
+        <span class="block mt-2">Essayez avec d'autres mots-clés ou déclarez votre perte.</span>
+      </p>
+      
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4">
+        <button onclick="redirectToDeclarer()"
+          class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary text-secondary rounded-2xl font-bold text-sm shadow-lg shadow-primary/30 hover:bg-primary-dark hover:shadow-lg transition-all active:scale-95">
+          <i class="fa-solid fa-file-circle-plus text-base"></i> Déclarer une perte
+        </button>
+        <a href="index.html"
+          class="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white border-2 border-primary text-primary rounded-2xl font-bold text-sm hover:bg-primary/5 transition-all active:scale-95">
+          <i class="fa-solid fa-arrow-left text-base"></i> Retour à l'accueil
+        </a>
+      </div>
     </div>
 
     <!-- Load more -->
@@ -512,29 +540,30 @@
   </footer>
 
 
-
-
-
-  <!-- Scripts -->
+  <!-- ═══════════════════════════════════════════
+       SCRIPTS
+  ═══════════════════════════════════════════ -->
   <script type="module">
     // ── Navbar scroll ──
     window.addEventListener('scroll', () => {
       document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
     });
+
     function toggleMobileMenu() {
       document.getElementById('mobileMenu').classList.toggle('hidden');
     }
+
     document.getElementById('langButton')?.addEventListener('click', e => {
       e.stopPropagation();
       document.getElementById('langDropdown').classList.toggle('hidden');
     });
+
     document.addEventListener('click', () => document.getElementById('langDropdown')?.classList.add('hidden'));
+
     function changeLang(code, flag) {
       document.getElementById('currentFlag').src = flag;
       document.getElementById('langDropdown').classList.add('hidden');
     }
-
-
 
     // ── Search Logic (API Connected) ──
     import { searchPublicFound } from './js/services/api.js';
@@ -552,61 +581,65 @@
       btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 
       // UI States
-      document.getElementById('skeleton-container').classList.remove('hidden');
-      document.getElementById('document-container').classList.add('hidden');
-      document.getElementById('empty-state').classList.add('hidden');
-      document.getElementById('load-more-wrap').classList.add('hidden');
+      document.getElementById('skeleton-container').style.display = 'grid';
+      document.getElementById('document-container').style.display = 'none';
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('load-more-wrap').style.display = 'none';
 
       const res = await searchPublicFound(query);
       
       btn.innerHTML = orig;
-      document.getElementById('skeleton-container').classList.add('hidden');
-      document.getElementById('document-container').classList.remove('hidden');
+      document.getElementById('skeleton-container').style.display = 'none';
+      document.getElementById('document-container').style.display = 'grid';
 
       if (res.success && res.data.length > 0) {
         allDocs = res.data;
         renderResults(allDocs);
         document.getElementById('results-count').textContent = `${allDocs.length} résultat${allDocs.length > 1 ? 's' : ''} trouvé${allDocs.length > 1 ? 's' : ''}`;
       } else {
-        document.getElementById('document-container').classList.add('hidden');
-        document.getElementById('empty-state').classList.remove('hidden');
+        document.getElementById('document-container').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'flex';
         document.getElementById('results-count').textContent = '0 résultat';
       }
     }
 
     function renderResults(docs) {
       const container = document.getElementById('document-container');
-      container.style.display = 'grid';
       container.innerHTML = docs.map((doc, i) => {
         const score = Math.round((doc.score || 0) * 100);
         return `
         <div class="doc-card group bg-white border border-borderMain rounded-[24px] overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 animate-fade-in" style="animation-delay:${i * 50}ms">
           <div class="relative h-48 bg-surface2 flex items-center justify-center overflow-hidden">
             ${doc.photo_recto 
-              ? `<img src="${doc.photo_recto}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 blur-[2.5px]" />` 
+              ? `<img src="${doc.photo_recto}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 blur-[5px]" />` 
               : `<div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center"><i class="fa-solid fa-file-lines text-primary text-3xl"></i></div>`
             }
             <div class="absolute top-3 left-3">
               <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase border border-borderMain text-textMain">
-                <i class="fa-solid fa-shield-halved text-primary"></i> ${doc.doc_type}
+                <i class="fa-solid fa-shield-halved text-primary"></i> ${doc.document_type || doc.doc_type || 'Document'}
               </span>
             </div>
             ${score > 30 ? `<div class="match-score-badge">${score}% MATCH</div>` : ''}
           </div>
           <div class="p-5">
-            <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center justify-between mb-3">
               <span class="text-[10px] font-bold text-primary uppercase tracking-widest">Document trouvé</span>
-              <span class="text-[10px] text-textMuted">${new Date(doc.created_at).toLocaleDateString('fr-FR')}</span>
+              <span class="text-[10px] font-bold text-textMain">${new Date(doc.created_at || new Date()).toLocaleDateString('fr-FR')}</span>
             </div>
-            <h3 class="font-bricolage font-bold text-textMain text-[17px] mb-1 blurred-info">${doc.owner_name}</h3>
-            <p class="text-[12px] text-textMuted mb-4 flex items-center gap-1.5">
-               <i class="fa-solid fa-hashtag text-[10px] text-primary/50"></i>
-               <span class="blurred-info">${doc.document_number}</span>
-            </p>
             
-            <div class="flex items-center gap-2 mb-5 py-2 border-y border-borderMain/50">
-               <i class="fa-solid fa-location-dot text-primary text-[11px]"></i>
-               <span class="text-[12px] font-medium text-textMain">${doc.ville}, ${doc.pays}</span>
+            <!-- NOM VISIBLE (PAS FLOU) -->
+            <h3 class="font-bricolage font-bold text-textMain text-[17px] mb-4">${doc.document_owner || doc.owner_name || 'Propriétaire inconnu'}</h3>
+            
+            <!-- AUTRES INFOS FLOUTEES -->
+            <div class="space-y-2 mb-4">
+              <p class="text-[12px] text-textMuted flex items-center gap-1.5">
+                <i class="fa-solid fa-hashtag text-[10px] text-primary/50"></i>
+                <span class="blurred-info font-mono text-[11px]">${doc.document_number || 'N° non disponible'}</span>
+              </p>
+              <div class="flex items-center gap-2 py-2 border-y border-borderMain/50">
+                <i class="fa-solid fa-location-dot text-primary text-[11px]"></i>
+                <span class="blurred-info text-[12px] font-medium">${doc.location || doc.ville || 'Lieu non spécifié'}, ${doc.country || doc.pays || 'Cameroun'}</span>
+              </div>
             </div>
 
             <a href="recuperation.html?id=${doc.id}" class="flex items-center justify-center gap-2 w-full py-3 bg-primary text-secondary rounded-[14px] font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md shadow-primary/20 active:scale-95">
@@ -617,8 +650,113 @@
       }).join('');
     }
 
+    // ✅ CHARGER LES DOCUMENTS PAR DÉFAUT
+    async function loadDefaultDocuments() {
+      const skeleton = document.getElementById('skeleton-container');
+      const container = document.getElementById('document-container');
+      const resultsCount = document.getElementById('results-count');
+
+      try {
+        // Appel API pour obtenir les documents récents
+        const res = await searchPublicFound('');
+        
+        if (res.success && res.data && res.data.length > 0) {
+          allDocs = res.data;
+          renderResults(allDocs);
+          resultsCount.textContent = `${allDocs.length} résultat${allDocs.length > 1 ? 's' : ''} trouvé${allDocs.length > 1 ? 's' : ''}`;
+        } else {
+          // Afficher les documents par défaut si l'API ne retourne rien
+          showSampleDocuments();
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement:', error);
+        showSampleDocuments();
+      } finally {
+        // ✅ MASQUER LES SKELETONS ET AFFICHER LES DOCUMENTS
+        skeleton.style.display = 'none';
+        container.style.display = 'grid';
+      }
+    }
+
+    // ✅ DOCUMENTS EXEMPLES SI L'API ÉCHOUE
+    function showSampleDocuments() {
+      const sampleDocs = [
+        {
+          id: 1,
+          doc_type: 'CNI',
+          owner_name: 'Jean Dupont',
+          document_number: 'CE123456789',
+          ville: 'Yaoundé',
+          pays: 'Cameroun',
+          created_at: new Date().toISOString(),
+          score: 0.85,
+          photo_recto: './assets/images/images.jpg'
+        },
+        {
+          id: 2,
+          doc_type: 'Passeport',
+          owner_name: 'Awa Traoré',
+          document_number: 'PA987654321',
+          ville: 'Douala',
+          pays: 'Cameroun',
+          created_at: new Date().toISOString(),
+          score: 0.92,
+          photo_recto: './assets/images/passport.jpg'
+        },
+        {
+          id: 3,
+          doc_type: 'Acte de naissance',
+          owner_name: 'Marie Curie',
+          document_number: 'ACT456789123',
+          ville: 'Yaoundé',
+          pays: 'Cameroun',
+          created_at: new Date().toISOString(),
+          score: 0.78,
+          photo_recto: './assets/images/images.jpg'
+        }
+      ];
+      
+      allDocs = sampleDocs;
+      renderResults(sampleDocs);
+      document.getElementById('results-count').textContent = `${sampleDocs.length} résultats trouvés`;
+    }
+
+    // Functions for search/filter/sort
+    function filterDocuments() {
+      const query = document.getElementById('search-input').value.trim();
+      if (query.length < 2) {
+        renderResults(allDocs);
+        return;
+      }
+      const filtered = allDocs.filter(doc => 
+        (doc.document_owner || doc.owner_name || '').toLowerCase().includes(query.toLowerCase()) ||
+        (doc.location || doc.ville || '').toLowerCase().includes(query.toLowerCase())
+      );
+      renderResults(filtered);
+      document.getElementById('results-count').textContent = `${filtered.length} résultat${filtered.length > 1 ? 's' : ''} trouvé${filtered.length > 1 ? 's' : ''}`;
+    }
+
+    function sortDocuments() {
+      const order = document.getElementById('sort-select').value;
+      if (order === 'alpha') {
+        allDocs.sort((a, b) => (a.document_owner || a.owner_name || '').localeCompare(b.document_owner || b.owner_name || ''));
+      } else {
+        allDocs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      }
+      renderResults(allDocs);
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('clear-search').classList.add('hidden');
+      renderResults(allDocs);
+    }
+
     // Event listeners
     document.addEventListener('DOMContentLoaded', () => {
+      // Load document types from backend
+      loadDocumentTypes();
+      
       const searchInput = document.getElementById('search-input');
       const searchForm = searchInput.closest('form');
       if (searchForm) {
@@ -634,8 +772,141 @@
       if (q) {
         searchInput.value = q;
         handleSearch();
+      } else {
+        // ✅ CHARGER LES DOCUMENTS PAR DÉFAUT
+        loadDefaultDocuments();
       }
     });
+
+    // Export functions
+    window.handleSearch = handleSearch;
+    window.renderResults = renderResults;
+    window.loadDefaultDocuments = loadDefaultDocuments;
+    window.showSampleDocuments = showSampleDocuments;
+    window.filterDocuments = filterDocuments;
+    window.sortDocuments = sortDocuments;
+    window.clearSearch = clearSearch;
+
+    // ── Load Document Types from Backend ──
+    let documentTypes = [];
+    let selectedFilter = 'all';
+
+    async function loadDocumentTypes() {
+      try {
+        const url = `${window.API_BASE_URL || window.location.origin + '/api'}/document-types/active`;
+        const response = await fetch(url);
+        const result = await response.json();
+        
+        if (result.success && Array.isArray(result.data)) {
+          documentTypes = result.data;
+          renderFilterChips();
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des types:', error);
+      }
+    }
+
+    function renderFilterChips() {
+      const container = document.getElementById('filter-chips');
+      
+      // Garder le bouton "Tous"
+      const allBtn = container.querySelector('[data-filter="all"]');
+      container.innerHTML = '';
+      container.appendChild(allBtn);
+
+      // Ajouter les types dynamiques
+      documentTypes.forEach(type => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-chip px-4 py-2 rounded-full border border-white/20 text-white/70 text-[12px] font-bold hover:border-primary/50 transition-all';
+        btn.setAttribute('data-filter', type.id);
+        btn.innerHTML = `<i class="fa-solid fa-file-lines text-[10px] mr-1"></i> ${type.nom}`;
+        
+        btn.addEventListener('click', () => filterByDocumentType(type.id));
+        container.appendChild(btn);
+      });
+    }
+
+    function filterByDocumentType(typeId) {
+      selectedFilter = typeId;
+      
+      // Update UI
+      document.querySelectorAll('.filter-chip').forEach(btn => {
+        btn.classList.remove('active', 'bg-primary/80', 'text-white');
+        btn.classList.add('text-white/70');
+      });
+      
+      document.querySelector(`[data-filter="${typeId}"]`).classList.add('active', 'bg-primary/80', 'text-white');
+      document.querySelector('[data-filter="all"]').classList.remove('active', 'bg-primary/80', 'text-white');
+
+      // Filter documents
+      if (typeId === 'all') {
+        renderResults(allDocs);
+      } else {
+        const filtered = allDocs.filter(doc => doc.document_type_id === typeId || doc.doc_type_id === typeId);
+        renderResults(filtered);
+        document.getElementById('results-count').textContent = `${filtered.length} résultat${filtered.length > 1 ? 's' : ''} trouvé${filtered.length > 1 ? 's' : ''}`;
+      }
+    }
+
+    // ── Initialiser Flatpickr pour le date input ──
+    import('https://cdn.jsdelivr.net/npm/flatpickr').then(module => {
+      // Le module peut être soit module.default soit module lui-même
+      const flatpickr = module.default || module;
+      const dateInput = document.getElementById('custom-date');
+      
+      if (dateInput && typeof flatpickr === 'function') {
+        flatpickr(dateInput, {
+          mode: 'single',
+          dateFormat: 'd/m/Y',
+          locale: 'fr',
+          placeholder: 'Filtrer par date',
+          onChange: function(selectedDates) {
+            if (selectedDates.length > 0) {
+              const selectedDate = selectedDates[0];
+              const filtered = allDocs.filter(doc => {
+                const docDate = new Date(doc.created_at).toLocaleDateString('fr-FR');
+                const filterDate = selectedDate.toLocaleDateString('fr-FR');
+                return docDate === filterDate;
+              });
+              renderResults(filtered);
+              document.getElementById('results-count').textContent = `${filtered.length} résultat${filtered.length > 1 ? 's' : ''} trouvé${filtered.length > 1 ? 's' : ''}`;
+            }
+          }
+        });
+      }
+    });
+  </script>
+
+  <script>
+    /**
+     * Vérifier l'authentification avant de rediriger vers declarer
+     */
+    function redirectToDeclarer() {
+      const token = localStorage.getItem('docmaster_jwt_token') || getCookie('docmaster_jwt_token');
+      
+      if (!token) {
+        // Pas de token → rediriger vers login
+        window.location.href = '/login.html';
+      } else {
+        // Token valide → aller à declarer
+        window.location.href = '/declarer.html';
+      }
+    }
+
+    /**
+     * Helper pour récupérer un cookie
+     */
+    function getCookie(name) {
+      const nameEQ = name + "=";
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(nameEQ)) {
+          return cookie.substring(nameEQ.length);
+        }
+      }
+      return null;
+    }
   </script>
 
 </body>

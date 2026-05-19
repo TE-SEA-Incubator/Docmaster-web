@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    if (window.toggleLoader) window.toggleLoader(true);
     try {
         console.log('🔄 [Rendre] Loading declaration details for:', docId);
         const result = await getDeclarationById(docId);
@@ -31,6 +32,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         console.error('❌ [Rendre] Technical error:', error);
+    } finally {
+        if (window.toggleLoader) setTimeout(() => window.toggleLoader(false), 500);
     }
 });
 
@@ -207,6 +210,7 @@ async function finderValidateCode() {
         return;
     }
 
+    if (window.toggleLoader) window.toggleLoader(true);
     try {
         if (btn) {
             btn.disabled = true;
@@ -242,6 +246,8 @@ async function finderValidateCode() {
             btn.disabled = false;
             btn.innerHTML = originalContent;
         }
+    } finally {
+        if (window.toggleLoader) window.toggleLoader(false);
     }
 }
 

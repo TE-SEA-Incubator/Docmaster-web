@@ -20,7 +20,8 @@ async function seedAdmin() {
 
     const client = await pool.connect();
     try {
-        const email = 'djeutchouruxel@gmail.com';
+        const email = 'bouki.boukar@gmail.com';
+        const emailprod = 'bouki.boukar@gmail.com';
         const password = 'password1234';
         
         // 1. Check if user already exists
@@ -38,7 +39,7 @@ async function seedAdmin() {
                 VALUES ($1, $2, $3, $4, $5, $6)
             `, [
                 'Admin',
-                'Ruxel',
+                'Aboubakar',
                 email,
                 hashedPassword,
                 'ADMIN',

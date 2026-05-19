@@ -42,7 +42,7 @@ const adminMiddleware = (req: any, res: any, next: any) => {
  *               success: true
  *               data: [{ id: "premium", name: "Premium", price_monthly: 1000 }]
  */
-router.get('/', authMiddleware, getAllPlans);
+router.get('/', getAllPlans);
 
 // Admin routes
 router.get('/:id', authMiddleware, adminMiddleware, getPlanById);

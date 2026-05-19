@@ -25,18 +25,20 @@ class NokashService {
     const payment_type = country === 'CM' ? 'CM_MOBILEMONEY' : 'NG_BANKTRANSFER';
 
     const body: any = {
-      i_space_key: this.i_space_key,
-      app_space_key: this.app_space_key,
+      i_space_key: this.i_space_key?.trim(),
+      app_space_key: this.app_space_key?.trim(),
       payment_type: payment_type,
       country: country,
       payment_method: params.payment_method,
       order_id: params.order_id,
-      amount: params.amount,
+      amount: String(params.amount),
       callback_url: this.callbackUrl,
       user_data: country === 'CM' 
-        ? { user_phone: params.user_phone }
+        ? { user_phone: params.user_phone?.replace('+', '') }
         : { user_email: params.user_email, user_name: params.user_name }
     };
+
+    console.log('📡 [Nokash Request Body]', JSON.stringify(body, null, 2));
 
     try {
       const response = await fetch(`${this.baseUrl}/api-payin-request/407`, {

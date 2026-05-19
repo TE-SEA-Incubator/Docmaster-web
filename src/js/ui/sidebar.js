@@ -18,14 +18,9 @@ const SIDEBAR_NAV = {
       label: "Tableau de bord",
     },
     {
-      href: "/docDeclares.html",
-      icon: "fa-list-check",
-      label: "Mes déclarations",
-    },
-    {
       href: "/Mesdocument.html",
-      icon: "fa-folder-open",
-      label: "Mes Sauvegardes",
+      icon: "fa-list-check",
+      label: "Mes sauvegardes",
     },
     {
       href: "/Mesappareils.html",
@@ -34,6 +29,7 @@ const SIDEBAR_NAV = {
     },
   ],
   compte: [
+    
     {
       href: "/mesGains.html",
       icon: "fa-wallet",
@@ -48,6 +44,11 @@ const SIDEBAR_NAV = {
       href: "/parrainage.html?v=20260317-2",
       icon: "fa-users-gear",
       label: "Parrainage",
+    },
+    {
+      href: "/docDeclares.html",
+      icon: "fa-clock-rotate-left",
+      label: "Historique",
     },
     {
       href: "/infosProfil.html",
@@ -146,8 +147,8 @@ function _sbRender() {
       id="sidebar"
     >
       <!-- Logo -->
-      <div class="flex items-center gap-3 px-5 py-4 border-b border-white/10 flex-shrink-0">
-        <img src="./assets/images/logo.png" alt="DocMaster" class="h-9 w-auto object-contain rounded" />
+      <div class="flex items-center gap-3 px-5 py-4 border-b  border-white/10 flex-shrink-0">
+        <img src="./assets/images/docmaster.png" alt="DocMaster" class="h-14 w-auto object-contain rounded" />
         <button
           class="ml-auto text-white/40 hover:text-white lg:hidden transition-colors"
           onclick="closeSb()"
@@ -320,13 +321,15 @@ function _sbToggleTopRightControlsByViewport() {
 
   const onDesktop = window.innerWidth >= 900;
 
+  // On mobile, we keep them visible. On desktop, they are moved to sidebar.
   if (profileBtn) {
     profileBtn.style.display = onDesktop ? 'none' : 'flex';
+    profileBtn.classList.add('transition-all', 'active:scale-95');
   }
 
   if (notifBtn) {
-    notifBtn.style.display = '';
-    if (getComputedStyle(notifBtn).display === 'none') notifBtn.style.display = 'flex';
+    notifBtn.style.display = 'flex';
+    notifBtn.classList.add('transition-all', 'active:scale-95');
   }
 }
 
@@ -341,8 +344,8 @@ function _sbInjectMobileBottomNav() {
       <span class="text-[10px] font-bold uppercase tracking-tight">Accueil</span>
     </a>
      <a href="javascript:void(0)" onclick="toggleDeclModal()" class="nav-plus flex-1 flex flex-col items-center gap-1.5 py-1 transition-all text-textMuted hover:text-primary active:scale-90">
-      <i class="fa-solid fa-circle-plus text-2xl text-primary"></i>
-      <span class="text-[10px] font-bold uppercase tracking-tight text-primary">Déclaration</span>
+      <i class="fa-solid fa-circle-plus text-2xl"></i>
+      <span class="text-[10px] font-bold uppercase tracking-tight">Déclaration</span>
     </a>
     <a href="Mesdocument.html" class="nav-documents flex-1 flex flex-col items-center gap-1.5 py-1 transition-all text-textMuted hover:text-primary active:scale-90">
       <i class="fa-solid fa-folder-open text-xl"></i>
@@ -409,6 +412,26 @@ function _sbInjectDeclarationModal() {
           </div>
           <i class="fa-solid fa-chevron-right text-blue-300"></i>
         </a>
+        <a href="docDeclares.html" class="flex items-center gap-4 p-4 rounded-2xl bg-orange-50 border border-orange-100 active:scale-[0.98] transition-all">
+          <div class="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center text-white text-xl">
+            <i class="fa-solid fa-file"></i>
+          </div>
+          <div class="flex-1">
+            <p class="font-bold text-textMain text-[15px]">Mes declarations</p>
+            <p class="text-[11px] text-red-600/70 font-medium font-poppins">Voir mes declarations</p>
+          </div>
+          <i class="fa-solid fa-chevron-right text-red-300"></i>
+        </a>
+          <a href="recherche-auth.html" class="flex items-center gap-4 p-4 rounded-2xl bg-orange-50 border border-orange-100 active:scale-[0.98] transition-all">
+          <div class="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center text-white text-xl">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <div class="flex-1">
+            <p class="font-bold text-textMain text-[15px]">Recherche</p>
+            <p class="text-[11px] text-red-600/70 font-medium font-poppins">Rechercher un document</p>
+          </div>
+          <i class="fa-solid fa-chevron-right text-red-300"></i>
+        </a>
       </div>
       <button onclick="toggleDeclModal()" class="w-full mt-6 py-4 text-sm font-bold text-textMuted uppercase tracking-widest font-poppins">Annuler</button>
     </div>
@@ -422,20 +445,26 @@ function _sbSetBottomNavItemState(link, isActive) {
   if (isActive) {
     link.classList.remove('text-textMuted');
     link.classList.add('text-primary', 'font-black');
-    // Add a glow effect to the icon
+    // Add a glow effect only to the active icon
     const icon = link.querySelector('i');
+    const span = link.querySelector('span');
     if (icon) {
+      icon.classList.add('text-primary');
       icon.style.filter = 'drop-shadow(0 0 8px rgba(245, 166, 75, 0.6))';
       icon.style.transform = 'scale(1.1)';
     }
+    if (span) span.classList.add('text-primary');
   } else {
     link.classList.remove('text-primary', 'font-black');
     link.classList.add('text-textMuted');
     const icon = link.querySelector('i');
+    const span = link.querySelector('span');
     if (icon) {
+      icon.classList.remove('text-primary');
       icon.style.filter = '';
       icon.style.transform = '';
     }
+    if (span) span.classList.remove('text-primary');
   }
 }
 
@@ -473,6 +502,7 @@ function _sbApplyMobileBottomNavActiveState() {
 window.openSb = openSb;
 window.closeSb = closeSb;
 window.toggleSb = toggleSb;
+window.toggleDeclModal = toggleDeclModal;
 
 // ── Injection dans le DOM + listeners (après que le DOM est prêt) ─────────────
 document.addEventListener("DOMContentLoaded", function () {
@@ -491,10 +521,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const style = document.createElement("style");
   style.id = "sb-desktop-slide-style";
   style.textContent = `
-        body {
-          display: flex !important;
-          height: 100vh !important;
-          overflow: hidden !important;
+        @media (min-width: 900px) {
+          body {
+            display: flex !important;
+            height: 100vh !important;
+            overflow: hidden !important;
+          }
         }
         .sb-overlay {
           display: none;
@@ -533,8 +565,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         @media (min-width: 900px) {
-          .sidebar-open .main-wrapper, .sidebar-open .main-wrap {
+          .sidebar-open .main-wrapper, .sidebar-open .main-wrap, .main-wrapper, .main-wrap {
             margin-left: 0 !important; /* Flexbox handles the spacing */
+            flex: 1 !important;
+            min-width: 0 !important;
+            width: 100%;
           }
           .sidebar {
             position: relative;

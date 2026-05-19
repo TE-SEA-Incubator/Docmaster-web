@@ -51,11 +51,13 @@ export async function nextStep(prefix, currentStep) {
 
     // SEND VERIFICATION PIN
     const email = document.getElementById(`${prefix}-email`)?.value.trim();
+    const telephone = document.getElementById(`${prefix}-phone`)?.value.trim();
+    
     if (email) {
       const btn = document.getElementById(`${prefix}-step2-btn`);
       if (btn) startButtonLoader(btn);
       
-      const result = await apiSendVerificationPin(email);
+      const result = await apiSendVerificationPin(email, telephone);
       
       if (btn) stopButtonLoader(btn);
       

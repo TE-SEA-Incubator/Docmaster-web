@@ -22,6 +22,7 @@ import {
   validateDocumentFile,
   initDatePickers
 } from '../utils/index.js';
+import { getToken } from '../utils/cookie.js';
 
 // Global initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -224,45 +225,51 @@ export async function initDocumentList() {
 
   if (!grid && !hasStats) return;
 
-  // Show skeleton loader — use aspect-ratio padding trick to match card-thumb CSS
-  const skeletons = Array(3).fill(0).map(() => `
-    <div class="doc-card animate-pulse">
-      <div style="aspect-ratio:16/9" class="w-full bg-slate-200"></div>
-      <div class="p-4 space-y-3">
-        <div class="h-4 bg-slate-200 rounded w-3/4"></div>
-        <div class="h-3 bg-slate-200 rounded w-1/2"></div>
-        <div class="h-8 bg-slate-100 rounded-xl"></div>
+  if (window.toggleLoader) window.toggleLoader(true);
+  
+  try {
+    // Show skeleton loader
+    const skeletons = Array(3).fill(0).map(() => `
+      <div class="doc-card animate-pulse">
+        <div style="aspect-ratio:16/9" class="w-full bg-slate-200"></div>
+        <div class="p-4 space-y-3">
+          <div class="h-4 bg-slate-200 rounded w-3/4"></div>
+          <div class="h-3 bg-slate-200 rounded w-1/2"></div>
+          <div class="h-8 bg-slate-100 rounded-xl"></div>
+        </div>
       </div>
-    </div>
-  `).join('');
-  
-  // Keep the "Add new" button if it exists
-  const addBtn = grid ? (grid.querySelector('button[onclick="openModal()"]')?.parentElement || grid.querySelector('button[onclick="openModal()"]')) : null;
-  const addBtnHtml = addBtn ? addBtn.outerHTML : '';
-  
-  if (grid) grid.innerHTML = skeletons + addBtnHtml;
+    `).join('');
+    
+    const addBtn = grid ? (grid.querySelector('button[onclick="openModal()"]')?.parentElement || grid.querySelector('button[onclick="openModal()"]')) : null;
+    const addBtnHtml = addBtn ? addBtn.outerHTML : '';
+    
+    if (grid) grid.innerHTML = skeletons + addBtnHtml;
 
-  const result = await getMyDocuments();
-  
-  if (result.success) {
-    renderDocuments(result.data, result.count);
-  } else if (grid) {
-    grid.innerHTML = `
-      <div class="col-span-full py-8 text-center text-red-500">
-        <p>${result.message}</p>
-        <button onclick="initDocumentList()" class="mt-2 text-sm font-bold underline">Réessayer</button>
-      </div>
-      ${addBtnHtml}
-    `;
+    const result = await getMyDocuments();
+    
+    if (result.success) {
+      renderDocuments(result.data, result.count);
+    } else if (grid) {
+      grid.innerHTML = `
+        <div class="col-span-full py-8 text-center text-red-500">
+          <p>${result.message}</p>
+          <button onclick="initDocumentList()" class="mt-2 text-sm font-bold underline">Réessayer</button>
+        </div>
+        ${addBtnHtml}
+      `;
+    }
+  } finally {
+    if (window.toggleLoader) setTimeout(() => window.toggleLoader(false), 500);
   }
 }
 
-// Auto-init on load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initDocumentList);
-} else {
-  initDocumentList();
-}
+// Auto-init on load if on appropriate page
+document.addEventListener('DOMContentLoaded', () => {
+  const isDocPage = !!(document.getElementById('docs-grid') || document.getElementById('dashboardTotalDocs'));
+  if (isDocPage) {
+    initDocumentList();
+  }
+});
 
 window.initDocumentList = initDocumentList;
 
@@ -323,6 +330,7 @@ export async function submitDocumentForm() {
   }
 
   // UI States
+  if (window.toggleLoader) window.toggleLoader(true);
   progressWrap.classList.remove('hidden');
   submitBtn.disabled = true;
   const originalHtml = submitBtn.innerHTML;
@@ -378,6 +386,8 @@ export async function submitDocumentForm() {
     submitBtn.disabled = false;
     submitBtn.innerHTML = originalHtml;
     progressWrap.classList.add('hidden');
+  } finally {
+    if (window.toggleLoader) window.toggleLoader(false);
   }
 }
 
@@ -446,17 +456,26 @@ export function fillRecap() {
   const recapName = document.getElementById('recap-name');
   const recapType = document.getElementById('recap-type');
   const recapNumber = document.getElementById('recap-number');
+  const recapIssued = document.getElementById('recap-issued');
   const recapExpiry = document.getElementById('recap-expiry');
+  const recapAuthority = document.getElementById('recap-authority');
   const recapFiles = document.getElementById('recap-files');
   
   if (recapName) recapName.textContent = document.getElementById('doc-name')?.value || '—';
   if (recapType) recapType.textContent = typeLabels[window.selectedType] || '—';
   if (recapNumber) recapNumber.textContent = document.getElementById('doc-number')?.value || '—';
   
+  const issued = document.getElementById('doc-issued')?.value;
+  if (recapIssued) {
+    recapIssued.textContent = issued ? new Date(issued).toLocaleDateString('fr-FR') : 'Non renseignée';
+  }
+
   const expiry = document.getElementById('doc-expiry')?.value;
   if (recapExpiry) {
-    recapExpiry.textContent = expiry ? new Date(expiry).toLocaleDateString('fr-FR') : 'Aucune';
+    recapExpiry.textContent = expiry ? new Date(expiry).toLocaleDateString('fr-FR') : 'Indéfinie';
   }
+
+  if (recapAuthority) recapAuthority.textContent = document.getElementById('doc-authority')?.value || '—';
   
   if (recapFiles) recapFiles.textContent = fileCount + ' fichier(s)';
 }
@@ -561,12 +580,7 @@ window.closeModal = closeModal;
 window.resetModal = resetModal;
 window.initDocumentList = initDocumentList;
 
-// Auto-initialize if on the right page
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('docs-grid') || document.getElementById('dashboardTotalDocs')) {
-    initDocumentList();
-  }
-});
+
 
 /**
  * ────────────────────────────────────────────────────────────────
@@ -732,9 +746,8 @@ let documentToMarkLost = null;
 let lastCreatedDeclarationId = null;
 
 export function confirmLost(id) {
-  documentToMarkLost = id;
-  const modal = document.getElementById('confirmLostModal');
-  if (modal) modal.classList.remove('hidden');
+  // Redirection vers la page de déclaration avec l'ID du document pour pré-remplissage
+  window.location.href = `declarer.html?prefillDocId=${id}`;
 }
 
 export function closeConfirmLost() {
@@ -765,6 +778,8 @@ export async function validateAndSubmitLost() {
   btn.disabled = true;
   const originalHtml = btn.innerHTML;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement…';
+
+  if (window.toggleLoader) window.toggleLoader(true);
 
   try {
     const result = await apiReportLost(documentToMarkLost, pwd);
@@ -799,6 +814,8 @@ export async function validateAndSubmitLost() {
     showErrorModal('Erreur', 'Une erreur est survenue lors de la déclaration.');
     btn.disabled = false;
     btn.innerHTML = originalHtml;
+  } finally {
+    if (window.toggleLoader) window.toggleLoader(false);
   }
 }
 
@@ -808,8 +825,16 @@ export function downloadDeclarationPdf() {
     return;
   }
   
-  const url = `http://localhost:5000/api/declarations/${lastCreatedDeclarationId}/pdf`;
-  const token = localStorage.getItem('docmaster_jwt_token');
+  // Dynamic URL detection (same as api.js)
+  const origin = window.location.origin;
+  let backendUrl = 'http://localhost:5000';
+  if (!origin.includes('localhost') && !origin.includes('127.0.0.1')) {
+    // Production: replace port 3003 with 5000
+    backendUrl = origin.replace(':3003', ':5000');
+  }
+  
+  const url = `${backendUrl}/api/declarations/${lastCreatedDeclarationId}/pdf`;
+  const token = getToken();
   
   // Open in new tab or download
   const link = document.createElement('a');

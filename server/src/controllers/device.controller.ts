@@ -24,12 +24,12 @@ export const registerMyDevice = async (req: Request, res: Response) => {
     // 1. Validate subscription limits
     const validation = await subscriptionService.validateAction(userId, 'REGISTER_OBJECT');
 
-    if (!validation.allowed) {
+    if (!(validation as any).allowed) {
       return res.status(403).json({
         success: false,
-        message: validation.reason,
-        limit: validation.limit,
-        current: validation.current
+        message: (validation as any).reason,
+        limit: (validation as any).limit,
+        current: (validation as any).current
       });
     }
 

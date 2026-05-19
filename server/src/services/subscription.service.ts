@@ -55,8 +55,19 @@ class SubscriptionService {
 
       console.log('🚀 [Nokash Response]', JSON.stringify(nokashRes, null, 2));
 
-      if (nokashRes.status !== 'REQUEST_OK') {
-        throw new Error(`Nokash: ${nokashRes.message || 'Erreur lors de l\'initialisation'}`);
+      if (nokashRes.status !== 'REQUEST_OK' && nokashRes.status !== 'SUCCESS') {
+        const rawMsg = nokashRes.message || (nokashRes.data && nokashRes.data.message) || '';
+        let userFriendlyMsg = "Le service de paiement est temporairement indisponible. Veuillez réessayer plus tard.";
+
+        if (rawMsg.includes("pas encore intégré cette méthode")) {
+          userFriendlyMsg = "Ce mode de paiement n'est pas encore disponible pour ce plan. Veuillez en choisir un autre.";
+        } else if (rawMsg.includes("montant") || rawMsg.includes("amount")) {
+          userFriendlyMsg = "Le montant de la transaction est invalide.";
+        } else if (rawMsg.includes("phone") || rawMsg.includes("numéro")) {
+          userFriendlyMsg = "Le numéro de téléphone fourni est incorrect ou mal formaté.";
+        }
+
+        throw new Error(`Nokash: ${userFriendlyMsg}`);
       }
 
       // Create PENDING transaction
@@ -107,7 +118,8 @@ class SubscriptionService {
     }
 
     const dateFin = new Date(dateDebut);
-    dateFin.setMonth(dateFin.getMonth() + months);
+    const planDuration = plan.duration_months || 1;
+    dateFin.setMonth(dateFin.getMonth() + (planDuration * months));
 
     const newSub = await subscriptionRepository.create({
       user_id: userId,

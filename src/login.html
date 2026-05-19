@@ -176,10 +176,10 @@
       <!-- ═══════════ MOBILE HEADER ═══════════ -->
       <div class="p-[48px_28px_32px] md:hidden">
         <div class="flex items-center gap-2.5 mb-5">
-          <div class="w-10 h-10 bg-green-dark rounded-v12 flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-file-shield text-primary text-[18px]"></i>
-          </div>
-          <span class="font-bricolage text-[22px] font-extrabold text-textMain">DocMaster</span>
+          <!-- Logo -->
+      <a href="index.html" class="flex items-center gap-2.5 flex-shrink-0">
+        <img src="./assets/images/docmaster.png" alt="DocMaster" class="h-9 w-auto brightness-0 invert" />
+      </a>
         </div>
         <h2 class="font-bricolage text-[28px] font-extrabold text-textMain leading-[1.2] tracking-tight mb-1.5">Retrouvez vos documents perdus</h2>
         <p class="text-[13.5px] text-textMuted leading-[1.55] font-medium">La plateforme qui connecte ceux qui perdent avec ceux qui trouvent.</p>
@@ -227,7 +227,7 @@
           </button>
           <div class="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-black/10 after:content-[''] after:flex-1 after:h-[1px] after:bg-black/10">ou continuer avec</div>
           <div class="flex gap-2.5">
-            <button type="button" class="flex-1 p-[13px_12px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all">
+            <button type="button" class="flex-1 p-[13px_12px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all google-login-btn" onclick="loginWithGoogle()" title="Continuer avec Google">
               <i class="fa-brands fa-google text-[#db4437]"></i> Google
             </button>
             <button type="button" class="flex-1 p-[13px_12px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all">
@@ -260,7 +260,7 @@
 
             <!-- Social register -->
             <div class="flex gap-2.5">
-              <button type="button" class="flex-1 p-[13px_12px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all">
+              <button type="button" class="flex-1 p-[13px_12px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all google-login-btn" onclick="loginWithGoogle()" title="Continuer avec Google">
                 <i class="fa-brands fa-google text-[#db4437]"></i> Google
               </button>
               <button type="button" class="flex-1 p-[13px_12px] bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-v14 text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all">
@@ -457,10 +457,10 @@
         <!-- LEFT PANEL -->
         <aside class="w-[300px] shrink-0 bg-green-dark p-[44px_36px] flex flex-col justify-between relative overflow-hidden panel-left-desktop">
           <div class="flex items-center gap-2.5 relative z-10">
-            <div class="w-9 h-9 bg-primary/20 rounded-v12 flex items-center justify-center shrink-0">
-              <i class="fa-solid fa-file-shield text-primary text-[16px]"></i>
-            </div>
-            <span class="font-bricolage text-[20px] font-extrabold text-white">DocMaster</span>
+         <!-- Logo -->
+      <a href="index.html" class="flex items-center gap-2.5 flex-shrink-0">
+        <img src="./assets/images/docmaster.png" alt="DocMaster" class="h-14 w-auto brightness-0 invert" />
+      </a>
           </div>
           <div class="relative z-10">
             <h2 class="font-bricolage text-[26px] font-extrabold text-white leading-[1.25] mb-3 tracking-tight">Retrouvez vos documents perdus</h2>
@@ -527,7 +527,7 @@
               <button type="button" class="flex-1 p-[12px] bg-[#faf8f5] border-[1.5px] border-borderMain rounded-v14 text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
                 <i class="fa-brands fa-facebook text-blue-500"></i>Facebook
               </button>
-              <button type="button" class="flex-1 p-[12px] bg-[#faf8f5] border-[1.5px] border-borderMain rounded-v14 text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
+              <button type="button" class="flex-1 p-[12px] bg-[#faf8f5] border-[1.5px] border-borderMain rounded-v14 text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]" onclick="loginWithGoogle()">
                 <i class="fa-brands fa-google text-[#db4437]"></i> Google
               </button>
               <button type="button" class="flex-1 p-[12px] bg-[#faf8f5] border-[1.5px] border-borderMain rounded-v14 text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
@@ -563,7 +563,7 @@
                 <button type="button" class="flex-1 p-[12px] bg-[#faf8f5] border-[1.5px] border-borderMain rounded-v14 text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
                   <i class="fa-brands fa-facebook text-blue-500"></i> Facebook
                 </button>
-                <button type="button" class="flex-1 p-[12px] bg-[#faf8f5] border-[1.5px] border-borderMain rounded-v14 text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
+                <button type="button" class="flex-1 p-[12px] bg-[#faf8f5] border-[1.5px] border-borderMain rounded-v14 text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]" onclick="loginWithGoogle()">
                   <i class="fa-brands fa-google text-[#db4437]"></i> Google
                 </button>
                 <button type="button" class="flex-1 p-[12px] bg-[#faf8f5] border-[1.5px] border-borderMain rounded-v14 text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
@@ -767,6 +767,7 @@
       }
     });
     </script>
+    
     <!-- Forgot Password Modal -->
     <dialog id="forgot_modal" class="modal modal-bottom sm:modal-middle">
       <div class="modal-box bg-white border-none shadow-2xl rounded-[32px] p-8 relative overflow-hidden">
@@ -774,9 +775,8 @@
         <div class="absolute -top-24 -right-24 w-48 h-48 bg-[#f5a64b]/10 rounded-full blur-3xl"></div>
         <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-[#f5a64b]/5 rounded-full blur-3xl"></div>
 
-        <form method="dialog">
-          <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors">✕</button>
-        </form>
+        <!-- Close button -->
+        <button id="btn-close-forgot" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors z-20">✕</button>
 
         <div class="flex flex-col gap-6 relative z-10">
           <div class="w-16 h-16 bg-[#f5a64b]/10 rounded-2xl flex items-center justify-center text-primary text-3xl">
@@ -790,6 +790,15 @@
             </p>
           </div>
 
+          <!-- Success state (hidden by default) -->
+          <div id="forgot-success" class="hidden flex flex-col items-center gap-4 text-center py-2">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-500 text-3xl">
+              <i class="fa-solid fa-envelope-circle-check"></i>
+            </div>
+            <p class="text-gray-700 font-semibold">Email envoyé ! Vérifiez votre boîte mail.</p>
+            <p class="text-gray-400 text-sm">Le lien expire dans 24h. Vérifiez vos spams si vous ne le trouvez pas.</p>
+          </div>
+
           <form id="forgot-pw-form" class="flex flex-col gap-4" onsubmit="handleForgotPassword(event)">
             <div class="flex flex-col">
               <label class="field-label ml-1">Votre email</label>
@@ -799,15 +808,79 @@
               </div>
             </div>
 
-            <button type="submit" id="btn-forgot-submit" class="btn border-none w-full rounded-2xl text-white font-bold h-14 text-lg shadow-lg shadow-[#f5a64b]/20 hover:shadow-[#f5a64b]/40 transition-all duration-300" style="background-color: #f5a64b;" data-loading-text="Envoi en cours...">
-              Envoyer le lien
+            <button type="submit" id="btn-forgot-submit" class="btn border-none w-full rounded-2xl text-white font-bold h-14 text-lg shadow-lg shadow-[#f5a64b]/20 hover:shadow-[#f5a64b]/40 transition-all duration-300" style="background-color: #f5a64b;">
+              <i class="fa-solid fa-paper-plane mr-2"></i> Envoyer le lien
             </button>
           </form>
         </div>
       </div>
       <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-sm">
-        <button class="cursor-default outline-none">close</button>
+        <button class="cursor-default outline-none w-full h-full">close</button>
       </form>
     </dialog>
+
+    <script type="module">
+      import { requestPasswordReset } from '/js/services/api.js';
+      import { loginWithGoogle } from '/js/services/auth.js';
+
+      // ── Expose functions to global scope ──
+      window.loginWithGoogle = loginWithGoogle;
+
+      // ── Ouvrir le modal forgot password ──
+      window.openForgotModal = function() {
+        const modal = document.getElementById('forgot_modal');
+        if (modal) {
+          // Réinitialise l'état du formulaire
+          document.getElementById('forgot-pw-form').classList.remove('hidden');
+          document.getElementById('forgot-success').classList.add('hidden');
+          document.getElementById('forgot-email').value = '';
+          const btn = document.getElementById('btn-forgot-submit');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Envoyer le lien';
+          modal.showModal();
+        }
+      };
+
+      // ── Fermer le modal forgot password ──
+      window.closeForgotModal = function() {
+        const modal = document.getElementById('forgot_modal');
+        if (modal) modal.close();
+      };
+
+      // ── Bouton ✕ explicite ──
+      document.getElementById('btn-close-forgot').addEventListener('click', function() {
+        window.closeForgotModal();
+      });
+
+      // ── Soumettre la demande de réinitialisation ──
+      window.handleForgotPassword = async function(event) {
+        event.preventDefault();
+        const email = document.getElementById('forgot-email').value.trim();
+        if (!email) return;
+
+        const btn = document.getElementById('btn-forgot-submit');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Envoi en cours...';
+
+        console.log('[ForgotPassword] Envoi de la demande pour:', email);
+
+        const result = await requestPasswordReset(email);
+
+        console.log('[ForgotPassword] Résultat:', result);
+
+        if (result.success) {
+          // Affiche le message de succès
+          document.getElementById('forgot-pw-form').classList.add('hidden');
+          document.getElementById('forgot-success').classList.remove('hidden');
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> Envoyer le lien';
+          if (window.showAlert) {
+            window.showAlert(result.message || 'Erreur lors de l\'envoi. Vérifiez l\'adresse email.', 'error');
+          }
+        }
+      };
+    </script>
+
 </body>
 </html>

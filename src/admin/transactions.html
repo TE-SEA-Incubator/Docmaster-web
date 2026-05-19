@@ -4,76 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin DocMaster — Transactions</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="/assets/images/favicon.png" type="image/x-icon" />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --gray-50:  #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-400: #9ca3af;
-            --gray-600: #6b7280;
-            --gray-900: #111827;
-            --accent:       #F5A64B;
-            --accent-dark:  #D48D3B;
-            --accent-light: #FFF9F0;
+            --primary: #F5A64B;
+            --primary-dark: #D98A30;
+            --primary-light: #FEF0DC;
+            --green-dark: #1E3A2F;
+            --green-mid: #2D5A42;
+            --green-light: #E8F5EE;
+            --bgMain: #F4EFE6;
+            --surface: #FFFFFF;
+            --textMain: #1A1A1A;
+            --textMuted: #6B7280;
+            --borderMain: #EAE3D8;
+            --accent: #F5A64B;
         }
-
-        body { font-family: 'Inter', sans-serif; background-color: #fff; color: var(--gray-900); margin: 0; display: flex; height: 100vh; }
-
-        /* Sidebar */
-        .sidebar { width: 240px; background: #1E312B; border-right: none; height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; color: #fff; }
-        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; }
-        .logo-area span { font-weight: 600; font-size: 0.9375rem; color: #fff; }
-        .nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 0.8125rem; font-weight: 500; text-decoration: none; transition: all 0.15s; margin-bottom: 2px; }
-        .nav-link i { width: 16px; text-align: center; }
-        .nav-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
-        .nav-link.active { background: var(--accent); color: #fff; }
-
-        /* Main */
-        .main { flex: 1; overflow-y: auto; padding: 2rem 3rem; }
-        .page-header { margin-bottom: 2rem; }
-        .page-header h1 { font-size: 1.5rem; font-weight: 600; margin: 0; }
-        .page-header p { font-size: 0.875rem; color: var(--gray-600); margin-top: 4px; }
-
-        /* Table Style */
-        .table-container { border: 0.5px solid var(--gray-200); border-radius: 12px; overflow: hidden; background: #fff; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bgMain); color: var(--textMain); margin: 0; display: flex; height: 100vh; }
+        .sidebar { width: 260px; background: #fff; border-right: 1px solid var(--borderMain); height: 100vh; display: flex; flex-direction: column; padding: 1.5rem 1rem; flex-shrink: 0; transition: all 0.3s ease; position: fixed; left: 0; top: 0; z-index: 40; overflow-y: auto; }
+        .sidebar.closed { transform: translateX(-100%); }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 30; backdrop-filter: blur(2px); }
+        .sidebar-overlay.active { display: block; }
+        .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding: 0 0.5rem; text-decoration: none; }
+        .logo-area span { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--textMain); }
+        .nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; color: var(--textMuted); font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.2s; margin-bottom: 4px; }
+        .nav-link i { width: 18px; text-align: center; font-size: 14px; }
+        .nav-link:hover { background: var(--primary-light); color: var(--primary-dark); }
+        .nav-link.active { background: var(--green-dark); color: var(--primary); font-weight: 600; box-shadow: 0 4px 12px rgba(30, 58, 47, 0.15); }
+        .sidebar-toggle { display: none; position: fixed; top: 1rem; left: 1rem; width: 2.5rem; height: 2.5rem; background: var(--primary); border: none; border-radius: 10px; color: #fff; cursor: pointer; font-size: 1.2rem; z-index: 35; box-shadow: 0 4px 12px rgba(245, 166, 75, 0.3); }
+        .sidebar-toggle.visible { display: flex; align-items: center; justify-content: center; }
+        @media (max-width: 900px) { .sidebar { position: fixed; } .sidebar-toggle.visible { display: flex; } .main { margin-left: 0; padding: 1.5rem; } }
+        .main { flex: 1; overflow-y: auto; padding: 2rem 2.5rem; margin-left: 260px; transition: all 0.3s ease; }
+        .page-header h1 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.75rem; font-weight: 800; color: var(--textMain); margin: 0; letter-spacing: -0.02em; }
+        .page-header p { font-size: 0.875rem; color: var(--textMuted); margin-top: 4px; }
+        .table-container { border: 1px solid var(--borderMain); border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
         table { width: 100%; border-collapse: collapse; }
-        th { background: var(--gray-50); padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.5px solid var(--gray-200); }
-        td { padding: 14px 16px; font-size: 0.875rem; border-bottom: 0.5px solid var(--gray-200); vertical-align: middle; }
+        th { background: #fff; padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--textMuted); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--borderMain); }
+        td { padding: 16px; font-size: 13px; border-bottom: 1px solid var(--borderMain); vertical-align: middle; color: var(--textMain); }
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background: var(--gray-50); }
-
-        .status-badge { font-size: 0.625rem; font-weight: 600; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
-        .status-success { background: #FFF9F0; color: #D48D3B; }
-        .status-pending { background: #FAEEDA; color: #BA7517; }
-        .status-failed  { background: #FAECE7; color: #993C1D; }
-
-        .type-badge { font-size: 0.6875rem; color: var(--gray-600); }
+        tr:hover td { background: var(--bgMain); }
+        .badge { font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; }
     </style>
+    <script type="module" src="/js/index.js"></script>
 </head>
 <body>
-    <aside class="sidebar">
-        <div class="logo-area"><img src="../assets/images/logo.png" alt="Logo" class="h-6"><span>Admin Panel</span></div>
+    <button id="sidebarToggle" class="sidebar-toggle"><i class="fa-solid fa-bars"></i></button>
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    <aside class="sidebar" id="adminSidebar">
+        <a href="dashboard.html" class="logo-area">
+            <img src="../assets/images/docmaster.png" alt="DocMaster" class="h-9 w-auto" />
+        </a>
         <nav class="flex-1">
-            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Vue d'ensemble</a>
+            <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Vue d'ensemble</a>
             <a href="users.html" class="nav-link"><i class="fa-solid fa-users"></i> Utilisateurs</a>
-            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-invoice"></i> Documents</a>
-            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-crown"></i> Abonnements</a>
+            <a href="document-types.html" class="nav-link"><i class="fa-solid fa-file-contract"></i> Types Docs</a>
+            <a href="subscriptions.html" class="nav-link"><i class="fa-solid fa-star"></i> Abonnements</a>
             <a href="transactions.html" class="nav-link active"><i class="fa-solid fa-receipt"></i> Transactions</a>
             <a href="referrals.html" class="nav-link"><i class="fa-solid fa-user-friends"></i> Parrainages</a>
             <a href="declarations.html" class="nav-link"><i class="fa-solid fa-folder-open"></i> Déclarations</a>
             <a href="withdrawals.html" class="nav-link"><i class="fa-solid fa-money-bill-transfer"></i> Retraits</a>
+            <a href="sms.html" class="nav-link"><i class="fa-solid fa-comment-sms"></i> Gestion SMS</a>
             <a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Paramètres</a>
         </nav>
-        <div class="mt-auto pt-4 border-t border-white/10">
-            <a href="#" id="adminLogout" class="nav-link text-red-400 hover:text-red-300">
-                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
-            </a>
+        <div class="mt-auto pt-4 border-t border-borderMain">
+            <a href="#" id="adminLogout" class="nav-link text-red-500"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
         </div>
     </aside>
-
     <main class="main">
         <header class="flex items-center justify-between mb-8">
             <div class="page-header mb-0">
@@ -85,7 +84,7 @@
                     <i class="fa-solid fa-bell text-xl"></i>
                     <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
                 </button>
-                <div class="w-10 h-10 rounded-full bg-[#F5A64B] flex items-center justify-center text-white font-bold">
+                <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
                     A
                 </div>
             </div>
@@ -99,22 +98,29 @@
                         <th>Utilisateur</th>
                         <th>Montant</th>
                         <th>Type</th>
-                        <th>Status</th>
+                        <th>Statut</th>
                         <th>Date</th>
                     </tr>
                 </thead>
                 <tbody id="tx-list">
                     <!-- Loaded via JS -->
+                    <tr><td colspan="6" class="text-center py-8 text-gray-400">Chargement...</td></tr>
                 </tbody>
             </table>
         </div>
     </main>
-
     <script type="module">
         import { adminService } from '../js/services/admin.js';
         import { initAdminUI } from '../js/services/admin-ui.js';
+        import { startButtonLoader, stopButtonLoader } from '../js/utils/button-loaders.js';
+        import { showPageLoader, hidePageLoader } from '../js/utils/loader-spinner.js';
+
+        // Expose loaders to global scope
+        window.startButtonLoader = startButtonLoader;
+        window.stopButtonLoader = stopButtonLoader;
 
         async function loadTransactions() {
+            showPageLoader();
             try {
                 const transactions = await adminService.getAllTransactions();
                 const list = document.getElementById('tx-list');
@@ -122,26 +128,44 @@
                 
                 transactions.forEach(t => {
                     const row = document.createElement('tr');
-                    const statusClass = t.status === 'SUCCESS' ? 'status-success' : (t.status === 'PENDING' ? 'status-pending' : 'status-failed');
+                    row.className = 'hover:bg-gray-50';
+                    const statusClass = t.status === 'SUCCESS' ? 'bg-green-100 text-green-700' : (t.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700');
                     
                     row.innerHTML = `
                         <td class="text-xs font-mono text-gray-400">${t.id.substring(0,8)}...</td>
                         <td>
-                            <div class="font-medium">${t.nom} ${t.prenom}</div>
+                            <div class="font-semibold text-sm text-gray-900">${t.nom} ${t.prenom}</div>
                             <div class="text-[11px] text-gray-400">${t.email}</div>
                         </td>
-                        <td class="font-semibold ${t.amount < 0 ? 'text-red-500' : 'text-green-600'}">
+                        <td class="font-bold ${t.amount < 0 ? 'text-red-500' : 'text-green-600'}">
                             ${t.amount > 0 ? '+' : ''}${t.amount} XAF
                         </td>
-                        <td><span class="type-badge">${t.type}</span></td>
-                        <td><span class="status-badge ${statusClass}">${t.status}</span></td>
+                        <td><span class="text-xs font-medium text-gray-500">${t.type}</span></td>
+                        <td><span class="badge ${statusClass}">${t.status}</span></td>
                         <td class="text-xs text-gray-400">${new Date(t.created_at).toLocaleString()}</td>
                     `;
                     list.appendChild(row);
                 });
-            } catch (error) { console.error(error); }
+                hidePageLoader();
+            } catch (error) { console.error(error); hidePageLoader(); }
         }
+
         loadTransactions();
+    </script>
+    <script>
+        // Sidebar Toggle Management (Copied from dashboard.html)
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const adminSidebar = document.getElementById('adminSidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const mainContent = document.querySelector('.main');
+        function updateSidebarToggle() {
+            if (window.innerWidth <= 900) { sidebarToggle.classList.add('visible'); } 
+            else { sidebarToggle.classList.remove('visible'); adminSidebar.classList.remove('closed'); sidebarOverlay.classList.remove('active'); mainContent.style.marginLeft = '260px'; }
+        }
+        sidebarToggle.addEventListener('click', () => { adminSidebar.classList.toggle('closed'); sidebarOverlay.classList.toggle('active'); });
+        sidebarOverlay.addEventListener('click', () => { adminSidebar.classList.add('closed'); sidebarOverlay.classList.remove('active'); });
+        window.addEventListener('resize', updateSidebarToggle);
+        updateSidebarToggle();
     </script>
 </body>
 </html>

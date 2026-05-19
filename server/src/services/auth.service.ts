@@ -5,6 +5,7 @@ import { User } from '../types/database.ts';
 import { generateToken } from '../config/jwt.ts';
 import { ReferralService } from './referral.service.ts';
 import { MailService } from './mail.service.ts';
+import { SmsService } from './sms.service.ts';
 import { DeclarationRepository } from '../repositories/declaration.repository.ts';
 import { ReferralRepository } from '../repositories/referral.repository.ts';
 import { SettingRepository } from '../repositories/setting.repository.ts';
@@ -13,6 +14,7 @@ import { DocumentTypeRepository } from '../repositories/document-type.repository
 export class UserService {
   private userRepository = new UserRepository();
   private mailService = new MailService();
+  private smsService = new SmsService();
 
   /**
    * Generate a unique referral code
@@ -130,6 +132,13 @@ export class UserService {
   }
 
   /**
+   * Delete user account (Admin)
+   */
+  async deleteUser(userId: string): Promise<boolean> {
+    return await this.userRepository.deleteUser(userId);
+  }
+
+  /**
    * Reset password with token
    */
   async resetPassword(token: string, newPassword: string): Promise<User> {
@@ -159,7 +168,8 @@ export class UserService {
     prenom?: string, 
     telephone?: string, 
     photo_url?: string,
-    date_naissance?: string,
+    ville?: string,
+    date_naissance?: string | null,
     lieu_naissance?: string,
     currency?: string
   }): Promise<User> {
@@ -185,6 +195,13 @@ export class UserService {
   }
 
   /**
+   * Get user by Email
+   */
+  async getUserByEmail(email: string): Promise<User | null> {
+    return await this.userRepository.findByEmail(email);
+  }
+
+  /**
    * Get all users for admin
    */
   async getAllUsersForAdmin(): Promise<any[]> {
@@ -192,17 +209,37 @@ export class UserService {
   }
 
   /**
-   * Send verification PIN to email
+   * Send verification PIN with SMS priority and Email fallback
    */
-  async sendVerificationPin(email: string): Promise<void> {
+  async sendVerificationPin(email: string, telephone?: string): Promise<{ method: 'SMS' | 'EMAIL', target: string }> {
     // Generate 6-digit PIN
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Store in DB
+    // Store in DB (linked to email for verification)
     await this.userRepository.storeVerificationCode(email, pin);
     
-    // Send email
+    let smsSent = false;
+
+    // 1. Try SMS if telephone is provided
+    if (telephone) {
+      try {
+        console.log(`📱 Attempting to send OTP via SMS to ${telephone}...`);
+        smsSent = await this.smsService.sendOtp(telephone, pin);
+        if (smsSent) {
+          console.log(`✅ OTP sent via SMS to ${telephone}`);
+          return { method: 'SMS', target: telephone };
+        } else {
+          console.warn(`⚠️ SMS dispatch returned failure status for ${telephone}`);
+        }
+      } catch (err: any) {
+        console.error(`❌ Error during SMS dispatch to ${telephone}:`, err.message);
+      }
+    }
+
+    // 2. Fallback to Email if SMS failed or was not attempted
+    console.log(`📧 Sending OTP via Email to ${email} (Fallback or Primary)...`);
     await this.mailService.sendVerificationEmail(email, pin);
+    return { method: 'EMAIL', target: email };
   }
 
   /**
