@@ -39,114 +39,174 @@ export class DeclarationService {
   /**
    * Create a new declaration
    */
-  async createDeclaration(
-    data: Partial<DocumentDeclaration>,
-    options: { bypassLimits?: boolean } = {}
-  ): Promise<DocumentDeclaration> {
-    // 1. Generate unique DocMaster ID (Nomenclature: DM_YYMM_N)
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // getMonth() is 0-indexed
+ async createDeclaration(
+  data: Partial<DocumentDeclaration>,
+  options: { bypassLimits?: boolean } = {}
+): Promise<DocumentDeclaration> {
+  
+  console.log('📝 [DeclarationService.createDeclaration] === DÉBUT ===');
+  console.log('📝 [DeclarationService.createDeclaration] Données reçues:', JSON.stringify({
+    doc_type: data.doc_type,
+    owner_name: data.owner_name,
+    document_number: data.document_number,
+    ville: data.ville,
+    region: data.region,
+    pays: data.pays,
+    date_perte: data.date_perte,
+    mode_contact: data.mode_contact,
+    etat_physique: data.etat_physique,
+    found_location: data.found_location,
+    declaration_type: data.declaration_type,
+    reporter_id: data.reporter_id
+  }, null, 2));
+  
+  // 1. Generate unique DocMaster ID (Nomenclature: DM_YYMM_N)
+  console.log('🔵 [1] Génération ID DocMaster...');
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
 
-    // Get count for current month to generate N
-    const count = await this.declarationRepository.countByMonth(year, month);
-    const n = count + 1;
+  const count = await this.declarationRepository.countByMonth(year, month);
+  const n = count + 1;
 
-    // Format: DOC_2604_1 (for LOST) or DM_2604_1 (for FOUND)
-    const yy = String(year).slice(-2);
-    const mm = String(month).padStart(2, "0");
-    const prefix = data.declaration_type === "LOST" ? "DOC" : "DM";
-    data.identifiant_doc_dm = `${prefix}_${yy}${mm}_${n}`;
+  const yy = String(year).slice(-2);
+  const mm = String(month).padStart(2, "0");
+  const prefix = data.declaration_type === "LOST" ? "DOC" : "DM";
+  data.identifiant_doc_dm = `${prefix}_${yy}${mm}_${n}`;
+  console.log(`🟢 [1] ID généré: ${data.identifiant_doc_dm}`);
 
-    // 2. Resolve Document Type and validate
-    let docType = null;
-    if (data.doc_type) {
-      // Try to find by ID first, then by code
-      if (this.isUuid(data.doc_type)) {
-        docType = await this.docTypeRepository.findById(data.doc_type);
-      }
-      
-      if (!docType) {
-        docType = await this.docTypeRepository.findByCode(data.doc_type);
-      }
-
-      if (!docType) {
-        throw new Error(`Type de document invalide: ${data.doc_type}`);
-      }
-
-      // Ensure we store the ID for future-proofing and relational integrity
-      data.doc_type = docType.id;
+  // 2. Resolve Document Type and validate
+  console.log('🔵 [2] Résolution type de document...');
+  let docType = null;
+  if (data.doc_type) {
+    console.log(`🔵 [2] doc_type reçu: ${data.doc_type}, isUuid: ${this.isUuid(data.doc_type)}`);
+    
+    if (this.isUuid(data.doc_type)) {
+      console.log('🔵 [2] Recherche par ID...');
+      docType = await this.docTypeRepository.findById(data.doc_type);
+      console.log(`🔵 [2] Résultat findByID: ${docType ? 'TROUVÉ' : 'NON TROUVÉ'}`);
+    }
+    
+    if (!docType) {
+      console.log('🔵 [2] Recherche par code...');
+      docType = await this.docTypeRepository.findByCode(data.doc_type);
+      console.log(`🔵 [2] Résultat findByCode: ${docType ? 'TROUVÉ' : 'NON TROUVÉ'}`);
     }
 
-    // 2.5 Check Subscription Limits
-    if (data.reporter_id && !options.bypassLimits) {
+    if (!docType) {
+      console.error(`🔴 [2] Type de document invalide: ${data.doc_type}`);
+      throw new Error(`Type de document invalide: ${data.doc_type}`);
+    }
+
+    console.log(`🟢 [2] Type trouvé: ${docType.nom} (ID: ${docType.id})`);
+    data.doc_type = docType.id;
+  } else {
+    console.log('🔴 [2] Pas de doc_type fourni');
+    throw new Error('doc_type est requis');
+  }
+
+  // 2.5 Check Subscription Limits
+  console.log('🔵 [3] Vérification limites abonnement...');
+  if (data.reporter_id && !options.bypassLimits) {
+    console.log(`🔵 [3] reporter_id: ${data.reporter_id}, bypassLimits: false`);
+    try {
       const validation = await subscriptionService.validateAction(
         data.reporter_id, 
         'CREATE_DECLARATION', 
         { docTypeId: data.doc_type }
       );
+      console.log('🟢 [3] Résultat validation:', JSON.stringify(validation, null, 2));
 
       if (!(validation as any).allowed) {
+        console.error(`🔴 [3] Action non autorisée: ${(validation as any).reason}`);
         throw new Error((validation as any).reason);
       }
 
-      // If allowed via a specific benefit (like referral free declaration), consume it
       if ((validation as any).useBenefit && (validation as any).subscriptionId) {
+        console.log('🟢 [3] Consommation bénéfice...');
         await subscriptionService.consumeBenefit((validation as any).subscriptionId, 'declaration');
       }
+    } catch (error) {
+      console.error('🔴 [3] Erreur validation abonnement:', error);
+      throw error;
     }
+  } else {
+    console.log('🟡 [3] Skip validation abonnement (reporter_id manquant ou bypassLimits=true)');
+  }
 
-    // 3. Generate fingerprint and check for duplicates
-    if (docType && data.document_number) {
-      data.fingerprint = calculateDocumentFingerprint(
-        docType.code, // Use the canonical code for fingerprinting
-        data.document_number,
+  // 3. Generate fingerprint and check for duplicates
+  console.log('🔵 [4] Génération fingerprint et vérification doublons...');
+  if (docType && data.document_number) {
+    console.log(`🔵 [4] docType.code: ${docType.code}, document_number: ${data.document_number}`);
+    data.fingerprint = calculateDocumentFingerprint(
+      docType.code,
+      data.document_number,
+    );
+    console.log(`🟢 [4] Fingerprint généré: ${data.fingerprint}`);
+
+    const existing = await this.declarationRepository.checkDuplicate(
+      data.fingerprint,
+      data.declaration_type!,
+    );
+    if (existing) {
+      console.error(`🔴 [4] Doublon trouvé: ${existing.id}`);
+      throw new Error(
+        `Une déclaration de type ${data.declaration_type === "LOST" ? "PERTE" : "TROUVAILLE"} existe déjà pour ce numéro.`,
       );
-
-      // Prevent duplicates of the SAME type (duplicate prevention)
-      const existing = await this.declarationRepository.checkDuplicate(
-        data.fingerprint,
-        data.declaration_type!,
-      );
-      if (existing) {
-        throw new Error(
-          `Une déclaration de type ${data.declaration_type === "LOST" ? "PERTE" : "TROUVAILLE"} existe déjà pour ce numéro.`,
-        );
-      }
     }
+    console.log('🟢 [4] Pas de doublon');
+  } else {
+    console.log('🟡 [4] Skip fingerprint (docType ou document_number manquant)');
+  }
 
-    // 4. Set default status based on type
-    if (data.declaration_type === "LOST") {
-      data.status = "SEARCHING";
-    } else {
-      data.status = "AVAILABLE";
-    }
+  // 4. Set default status based on type
+  console.log('🔵 [5] Définition du statut...');
+  if (data.declaration_type === "LOST") {
+    data.status = "SEARCHING";
+  } else {
+    data.status = "AVAILABLE";
+  }
+  console.log(`🟢 [5] Statut défini: ${data.status}`);
 
-    // 5. Save to DB
+  // 5. Save to DB
+  console.log('🔵 [6] Sauvegarde en base de données...');
+  try {
     const declaration = await this.declarationRepository.create(data);
-
+    console.log(`🟢 [6] Déclaration créée avec ID: ${declaration.id}`);
+    
     // 6. Notify user
     if (declaration.reporter_id) {
+      console.log(`🔵 [7] Notification utilisateur ${declaration.reporter_id}...`);
       await this.notificationService.notifyDeclarationCreated(
         declaration.reporter_id,
         declaration.declaration_type,
         docType ? docType.nom : declaration.doc_type,
       );
+      console.log('🟢 [7] Notification envoyée');
     }
 
-    // 7. Check for matches using the new scoring algorithm
+    // 7. Check for matches
+    console.log('🔵 [8] Vérification des matches...');
     matchingService
       .findAndNotifyMatches(declaration)
       .catch((err) => console.error("Error checking matches:", err));
+    console.log('🟢 [8] Vérification matches lancée (async)');
 
-    // 8. Award Points (based on setting)
+    // 8. Award Points
     if (declaration.reporter_id) {
+      console.log(`🔵 [9] Attribution points à ${declaration.reporter_id}...`);
       const points = await this.settingRepository.getByKey('points_per_declaration');
       await this.awardPoints(declaration.reporter_id, Number(points) || 5);
+      console.log(`🟢 [9] ${points} points attribués`);
     }
 
+    console.log('✅ [DeclarationService.createDeclaration] === FIN SUCCÈS ===');
     return declaration;
+  } catch (error) {
+    console.error('🔴 [6] Erreur sauvegarde DB:', error);
+    throw error;
   }
+}
 
   /**
    * Award points to a user

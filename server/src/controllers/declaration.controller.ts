@@ -27,6 +27,25 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
       });
     }
 
+    // 🔥 CONTOURNEMENT MANUEL & SÉCURISÉ DE FOUND_LOCATION
+    if (req.body.found_location) {
+      if (typeof req.body.found_location === 'string') {
+        try {
+          req.body.found_location = JSON.parse(req.body.found_location);
+        } catch (e) {
+          console.error('❌ Erreur parsing found_location manuel (Lost):', e);
+          req.body.found_location = undefined;
+        }
+      }
+
+      if (req.body.found_location && typeof req.body.found_location === 'object') {
+        const loc = req.body.found_location;
+        if (loc.lng && !loc.long) loc.long = loc.lng;
+        if (loc.lat) loc.lat = parseFloat(loc.lat);
+        if (loc.long) loc.long = parseFloat(loc.long);
+      }
+    }
+
     // Extract files
     const photo_recto = files?.photo_recto?.[0]?.path;
     const photo_verso = files?.photo_verso?.[0]?.path;
@@ -71,33 +90,83 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
 
 export const createFoundDeclaration = async (req: Request, res: Response) => {
   try {
+    console.log('🔵 [Controller] === DÉBUT createFoundDeclaration ===');
+    
     const userId = (req as any).user?.id;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
+    console.log('🔵 [Controller] userId:', userId);
+    console.log('🔵 [Controller] files reçus:', files ? Object.keys(files) : 'aucun');
+
     if (!userId) {
+      console.log('🔴 [Controller] Pas de userId - non authentifié');
       return res.status(401).json({ success: false, message: 'Non authentifié' });
     }
 
+    // Afficher le body brut reçu
+    console.log('🔵 [Controller] req.body (brut):', JSON.stringify(req.body, null, 2));
+
     // Validate DTO
+    console.log('🔵 [Controller] Validation DTO...');
     const validationErrors = await validateDTO(req.body, CreateDeclarationDTO);
     if (validationErrors) {
+      console.log('🔴 [Controller] Erreurs validation DTO:', JSON.stringify(validationErrors, null, 2));
       return res.status(400).json({
         success: false,
         message: 'Validation échouée',
         errors: validationErrors
       });
     }
+    console.log('🟢 [Controller] Validation DTO OK');
+
+    // 🔥 CONTOURNEMENT MANUEL & SÉCURISÉ DE FOUND_LOCATION
+    if (req.body.found_location) {
+      if (typeof req.body.found_location === 'string') {
+        try {
+          req.body.found_location = JSON.parse(req.body.found_location);
+          console.log('🟢 [Controller] found_location parsé manuellement avec succès');
+        } catch (e) {
+          console.error('❌ [Controller] Erreur parsing found_location manuel:', e);
+          req.body.found_location = undefined;
+        }
+      }
+
+      // Nettoyage et uniformisation des types de l'objet de géolocalisation
+      if (req.body.found_location && typeof req.body.found_location === 'object') {
+        const loc = req.body.found_location;
+        if (loc.lng && !loc.long) loc.long = loc.lng;
+        if (loc.lat) loc.lat = parseFloat(loc.lat);
+        if (loc.long) loc.long = parseFloat(loc.long);
+        
+        // Validation basique de secours
+        if (!loc.city || isNaN(loc.lat) || isNaN(loc.long)) {
+          console.log('🔴 [Controller] Échec validation manuelle de found_location structure');
+          return res.status(400).json({
+            success: false,
+            message: 'Validation échouée',
+            errors: { "found_location": ["La localisation est mal formée (city, lat et long requis)"] }
+          });
+        }
+      }
+    }
 
     // Extract files
     const photo_recto = files?.photo_recto?.[0]?.path;
     const photo_verso = files?.photo_verso?.[0]?.path;
+    console.log('🟢 [Controller] Photos:', { photo_recto, photo_verso });
 
     // 1. Validate subscription limits
+    console.log('🔵 [Controller] Vérification abonnement...');
+    console.log('🔵 [Controller] Paramètres:', { userId, docTypeId: req.body.doc_type });
+    
     const validation = await subscriptionService.validateAction(userId, 'CREATE_DECLARATION', { 
       docTypeId: req.body.doc_type 
     });
+    
+    console.log('🟢 [Controller] Résultat validation abonnement:', JSON.stringify(validation, null, 2));
 
     if (!(validation as any).allowed) {
+      console.log('🔴 [Controller] Abonnement: action non autorisée -', (validation as any).reason);
       return res.status(403).json({
         success: false,
         message: (validation as any).reason,
@@ -105,7 +174,11 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
         current: (validation as any).current
       });
     }
+    console.log('🟢 [Controller] Abonnement validé');
 
+    // Appel au service
+    console.log('🔵 [Controller] Appel declarationService.createDeclaration...');
+    
     const result = await declarationService.createDeclaration({
       ...req.body,
       declaration_type: 'FOUND',
@@ -114,22 +187,27 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
       photo_verso
     });
 
+    console.log('🟢 [Controller] Déclaration créée avec succès, ID:', result.id);
+
     // 2. Consume referral benefit if used
     if ((validation as any).useBenefit) {
+      console.log('🔵 [Controller] Consommation bénéfice...');
       await subscriptionService.consumeBenefit((validation as any).subscriptionId, 'declaration');
+      console.log('🟢 [Controller] Bénéfice consommé');
     }
 
+    console.log('✅ [Controller] === FIN SUCCÈS ===');
     res.status(201).json({
       success: true,
       message: 'Déclaration de document trouvé enregistrée',
       data: result
     });
   } catch (error: any) {
-    console.error('❌ Erreur création déclaration trouvaille:', error);
+    console.error('🔴 [Controller] === ERREUR ===');
+    console.error('🔴 [Controller] Message:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 export const getMyDeclarations = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;

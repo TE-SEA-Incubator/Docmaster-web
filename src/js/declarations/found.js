@@ -1,9 +1,6 @@
-import { createFoundDeclaration, getActiveDocumentTypes } from '../services/api.js';
+// found.js - Version corrigée avec logs détaillés
 
-/**
- * Found Declaration Module
- * Handles UI interactions and API submission for found documents.
- */
+import { createFoundDeclaration, getActiveDocumentTypes } from '../services/api.js';
 
 // State
 let selectedType = null;
@@ -15,6 +12,12 @@ let selectedLocation = null;
 
 // Metadata for document types (will be loaded from API)
 let DOC_TYPES = [];
+
+// Helper to check if a string is a valid UUID
+function isValidUUID(str) {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
 
 /**
  * Render document type cards grouped by expiration
@@ -33,16 +36,14 @@ function renderDocTypes() {
     const iconWrap = d.icone === 'id-card' ? 'bg-green-light' : (d.icone === 'passport' ? 'bg-blue-50' : 'bg-primary/10');
     
     const html = `
-      <button class="doc-type-card" onclick="selectDocType(this,'${d.id}')">
+      <button class="doc-type-card" data-doc-type-id="${d.id}" data-doc-type-code="${d.code}" onclick="selectDocType(this,'${d.id}','${d.code}')">
         <div class="w-9 h-9 rounded-[10px] ${iconWrap} flex items-center justify-center mx-auto mb-2">
           <i class="fa-solid fa-${d.icone || 'file-lines'} ${iconCls} text-lg"></i>
         </div>
         <div class="text-[12px] font-bold text-textMain">${d.nom}</div>
-      
       </button>
     `;
     
-    // Logic for expiration grid grouping if needed, or just append to one
     expGrid.insertAdjacentHTML('beforeend', html);
   });
 }
@@ -51,6 +52,8 @@ function renderDocTypes() {
  * Initialize the found declaration page
  */
 export function initFoundDeclaration() {
+  console.log('🚀 [found.js] Initialisation de la page de déclaration de trouvaille');
+  
   // Navigation
   window.goToStep = goToStep;
   window.selectDocType = selectDocType;
@@ -75,15 +78,17 @@ export function initFoundDeclaration() {
 
   // Render types (async)
   getActiveDocumentTypes().then(res => {
+    console.log('📄 [found.js] Types de documents reçus:', res);
     if (res.success && Array.isArray(res.data) && res.data.length > 0) {
       DOC_TYPES = res.data;
       renderDocTypes();
+      console.log('✅ [found.js] Types de documents chargés:', DOC_TYPES.length);
     } else {
-      console.warn('Document types not available or invalid format:', res.data);
+      console.warn('⚠️ [found.js] Types de documents non disponibles:', res.data);
       DOC_TYPES = res.data || [];
     }
   }).catch(err => {
-    console.error('Failed to load document types:', err);
+    console.error('❌ [found.js] Erreur chargement types documents:', err);
     DOC_TYPES = [];
   });
 
@@ -162,16 +167,20 @@ function goToStep(n) {
 /**
  * Document type selection
  */
-function selectDocType(btn, type) {
+function selectDocType(btn, typeId, typeCode) {
+  console.log('📌 [found.js] Type sélectionné - ID:', typeId, 'Code:', typeCode);
+  
   document.querySelectorAll(".doc-type-card").forEach(b => b.classList.remove("selected"));
   btn.classList.add("selected");
-  selectedType = type;
+  
+  // Store the UUID for API submission (CRITICAL FIX)
+  selectedType = typeId;
   
   const btnNext = document.getElementById("btn-s1");
   if (btnNext) btnNext.disabled = false;
   
   const autreInput = document.getElementById("autre-input");
-  if (autreInput) autreInput.classList.toggle("hidden", type !== "autre");
+  if (autreInput) autreInput.classList.toggle("hidden", typeId !== "autre");
 }
 
 /**
@@ -267,20 +276,26 @@ function fillRecap() {
 }
 
 /**
- * Submit to API
+ * Submit to API - VERSION CORRIGÉE AVEC LOGS DÉTAILLÉS
  */
 async function submitDeclaration() {
+  console.log('📤 [submitDeclaration] Début de la soumission');
+  
   const consent = document.getElementById("consent-found");
   if (!consent || !consent.checked) {
     alert("Veuillez accepter les conditions d'utilisation.");
     return;
   }
 
+  // Validate selected type
+  if (!selectedType) {
+    alert("Veuillez sélectionner un type de document.");
+    return;
+  }
+
   const btn = document.getElementById("btn-submit");
   const wrap = document.getElementById("prog-wrap");
   const bar = document.getElementById("upload-bar");
-  const pct = document.getElementById("prog-pct");
-  const lbl = document.getElementById("prog-label");
 
   if (wrap) wrap.classList.remove("hidden");
   if (btn) {
@@ -290,87 +305,174 @@ async function submitDeclaration() {
 
   // Build FormData
   const formData = new FormData();
-  const details = document.getElementById('doc-details').value;
   
-  // Use the ID directly
-  formData.append('doc_type', selectedType);
-  formData.append('owner_name', document.getElementById('owner-name').value);
-  formData.append('document_number', document.getElementById('doc-num').value);
-  
+  // Get form values
+  const ownerName = document.getElementById('owner-name').value.trim();
+  const documentNumber = document.getElementById('doc-num').value.trim() || '';
   const etat = document.querySelector('input[name="etat"]:checked');
-  formData.append('etat_physique', etat ? etat.value : 'bon');
-  
-  formData.append('description', `${details}\n\nMots-clés: ${tags.join(', ')}`);
-  
-  const ville = document.getElementById('lieu-adresse').value || 'Cameroun';
-  formData.append('ville', ville);
-  
-  // Add region and pays
-  formData.append('region', document.getElementById('userRegion')?.value || 'Non spécifiée');
-  formData.append('pays', document.getElementById('userCountry')?.value || 'Cameroun');
-  
-  // Add date found
-  const dateFound = document.getElementById('lieu-date')?.value;
-  if(dateFound) formData.append('date_perte', dateFound); // Use date_perte for found date too
-  
+  const details = document.getElementById('doc-details').value.trim() || '';
+  const ville = document.getElementById('lieu-adresse').value.trim() || '';
+  const dateFound = document.getElementById('lieu-date')?.value || new Date().toISOString().split('T')[0];
   const contactMode = document.querySelector('input[name="contact-mode"]:checked');
+  const phoneEl = document.getElementById('contact-tel');
+  const emailEl = document.querySelector('input[type="email"]');
+  
+  // CRITICAL: Use the UUID for doc_type, not the name
+  console.log('🔍 [submitDeclaration] selectedType (UUID):', selectedType);
+  console.log('🔍 [submitDeclaration] ownerName:', ownerName);
+  console.log('🔍 [submitDeclaration] documentNumber:', documentNumber);
+  console.log('🔍 [submitDeclaration] ville:', ville);
+  
+  // Validate required fields
+  if (!ownerName) {
+    alert("Veuillez entrer le nom du propriétaire.");
+    if (btn) btn.disabled = false;
+    if (wrap) wrap.classList.add("hidden");
+    return;
+  }
+  
+  if (!ville) {
+    alert("Veuillez préciser la ville ou le quartier.");
+    if (btn) btn.disabled = false;
+    if (wrap) wrap.classList.add("hidden");
+    return;
+  }
+  
+  // Append fields according to backend expectations
+  formData.append('doc_type', selectedType);  // UUID format
+  formData.append('owner_name', ownerName);
+  formData.append('document_number', documentNumber);
+  formData.append('etat_physique', etat ? etat.value : 'bon');
+  formData.append('ville', ville);
+  formData.append('region', 'Non spécifiée');
+  formData.append('pays', 'Cameroun');
+  formData.append('date_perte', dateFound);  // For FOUND declarations, date_perte is used as date found
   formData.append('mode_contact', contactMode ? contactMode.value : 'APP_CHAT');
   
+  // Build description with tags
+  let description = details;
+  if (tags.length > 0) {
+    description = description ? `${description}\n\nMots-clés: ${tags.join(', ')}` : `Mots-clés: ${tags.join(', ')}`;
+  }
+  formData.append('description', description);
+  
   // Add contact info if available
-  const phoneEl = document.getElementById('contact-tel') || document.getElementById('contactPhone') || document.querySelector('input[type="tel"]');
-  const emailEl = document.getElementById('contact-email') || document.getElementById('contactEmail') || document.querySelector('input[type="email"]');
-  if(phoneEl?.value) formData.append('telephone_contact', phoneEl.value);
-  if(emailEl?.value) formData.append('email_contact', emailEl.value);
+  if (phoneEl?.value) {
+    formData.append('telephone_contact', phoneEl.value);
+  }
+  if (emailEl?.value) {
+    formData.append('email_contact', emailEl.value);
+  }
 
   // Files
   const fileMain = document.getElementById('file-main').files[0];
-  if (fileMain) formData.append('photo_recto', fileMain);
+  if (fileMain) {
+    console.log('📷 [submitDeclaration] Photo recto ajoutée:', fileMain.name, fileMain.size, fileMain.type);
+    formData.append('photo_recto', fileMain);
+  } else {
+    console.warn('⚠️ [submitDeclaration] Aucune photo recto');
+  }
   
   const fileExtra1 = document.getElementById('file-extra1').files[0];
-  if (fileExtra1) formData.append('photo_verso', fileExtra1);
-
-  // Map Location
-  if (selectedLocation) {
-    if (!selectedLocation.city) selectedLocation.city = ville;
-    formData.append('found_location', JSON.stringify(selectedLocation));
+  if (fileExtra1) {
+    console.log('📷 [submitDeclaration] Photo verso ajoutée:', fileExtra1.name);
+    formData.append('photo_verso', fileExtra1);
   }
 
-  // Progress animation simulation (actual upload progress is harder without axios/xhr hooks here, but let's keep the UI alive)
+  // Version alternative - envoyer les coordonnées séparément
+// Remplacer la section des lignes 382-395 par ceci :
+
+  // Version alternative - envoyer les coordonnées séparément
+  if (selectedLocation) {
+    if (!selectedLocation.city) selectedLocation.city = ville;
+    
+    // Normaliser les clés (gérer à la fois 'lng' et 'long')
+    const lat = selectedLocation.lat;
+    const lng = selectedLocation.long || selectedLocation.lng;
+    const city = selectedLocation.city;
+    
+    // Vérifier que les valeurs sont valides
+    if (lat === undefined || lng === undefined) {
+      console.error('❌ [submitDeclaration] Coordonnées invalides:', selectedLocation);
+    } else {
+      // Option 1: Envoyer en JSON string
+      const locationObj = { lat, long: lng, city };
+      formData.append('found_location', JSON.stringify(locationObj));
+      
+      // Option 2: Ajouter aussi les champs individuels comme fallback
+      formData.append('found_location_lat', lat.toString());
+      formData.append('found_location_long', lng.toString());
+      formData.append('found_location_city', city);
+      
+      console.log('📍 [submitDeclaration] Location ajoutée:', locationObj);
+    }
+  }
+
+  // Log all formData entries for debugging
+  console.log('📋 [submitDeclaration] Contenu du FormData:');
+  for (let pair of formData.entries()) {
+    if (pair[0].includes('photo')) {
+      console.log(`  ${pair[0]}: [FILE] ${pair[1] instanceof File ? pair[1].name : pair[1]}`);
+    } else {
+      console.log(`  ${pair[0]}: ${pair[1]}`);
+    }
+  }
+
+  // Progress animation simulation
   let p = 0;
   const interval = setInterval(() => {
     p += 10;
     if (p > 90) clearInterval(interval);
     if (bar) bar.style.width = p + "%";
-    if (pct) pct.textContent = p + "%";
   }, 200);
 
-  const result = await createFoundDeclaration(formData);
+  try {
+    console.log('🚀 [submitDeclaration] Appel API createFoundDeclaration...');
+    const result = await createFoundDeclaration(formData);
+    console.log('📡 [submitDeclaration] Réponse API:', result);
 
-  clearInterval(interval);
-  if (bar) bar.style.width = "100%";
-  if (pct) pct.textContent = "100%";
+    clearInterval(interval);
+    if (bar) bar.style.width = "100%";
 
-  if (result.success) {
-    document.getElementById("panel-5").classList.add("hidden");
-    const successPanel = document.getElementById("panel-success");
-    successPanel.classList.remove("hidden");
-    successPanel.classList.add("panel-content");
-    
-    // Set ref
-    document.getElementById("decl-ref").textContent = result.data.identifiant_doc_dm || "DOC-FND-SUCCESS";
-    
-    // Update steps
-    for (let i = 1; i <= 5; i++) {
-      const sc = document.getElementById("sc-" + i);
-      if (sc) {
-        sc.className = "step-circle done";
-        sc.innerHTML = '<i class="fa-solid fa-check text-[9px]"></i>';
+    if (result.success) {
+      console.log('✅ [submitDeclaration] Succès!');
+      document.getElementById("panel-5").classList.add("hidden");
+      const successPanel = document.getElementById("panel-success");
+      successPanel.classList.remove("hidden");
+      successPanel.classList.add("panel-content");
+      
+      // Set ref
+      document.getElementById("decl-ref").textContent = result.data.identifiant_doc_dm || "DOC-FND-SUCCESS";
+      
+      // Update steps
+      for (let i = 1; i <= 5; i++) {
+        const sc = document.getElementById("sc-" + i);
+        if (sc) {
+          sc.className = "step-circle done";
+          sc.innerHTML = '<i class="fa-solid fa-check text-[9px]"></i>';
+        }
+        const si = document.getElementById("si-" + i);
+        if (si) si.className = "step-item done";
       }
-      const si = document.getElementById("si-" + i);
-      if (si) si.className = "step-item done";
+    } else {
+      console.error('❌ [submitDeclaration] Erreur API:', result.message, result.errors);
+      let errorMessage = result.message || 'Erreur lors de la publication.';
+      if (result.errors && Object.keys(result.errors).length > 0) {
+        errorMessage += '\n\nDétails:\n' + Object.entries(result.errors)
+          .map(([key, val]) => `- ${key}: ${val}`)
+          .join('\n');
+      }
+      alert(errorMessage);
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane text-[12px]"></i> Réessayer';
+      }
+      if (wrap) wrap.classList.add("hidden");
     }
-  } else {
-    alert(result.message);
+  } catch (error) {
+    console.error('💥 [submitDeclaration] Exception:', error);
+    clearInterval(interval);
+    alert('Erreur de connexion au serveur. Veuillez vérifier votre connexion et réessayer.');
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = '<i class="fa-solid fa-paper-plane text-[12px]"></i> Réessayer';
@@ -384,7 +486,6 @@ async function submitDeclaration() {
  */
 function initInlineMap() {
   if (map) {
-    // Already initialized, just refresh layout
     setTimeout(() => {
       map.invalidateSize();
     }, 200);
@@ -394,26 +495,21 @@ function initInlineMap() {
   const mapContainer = document.getElementById('map-inline-container');
   if (!mapContainer) return;
 
-  // Default coordinates (Douala, Cameroon)
   const lat = 4.0511;
   const lng = 9.7679;
 
-  // Initialize Map
   map = L.map('map-inline-container', {
-    zoomControl: false, // Custom position below
+    zoomControl: false,
     attributionControl: false
   }).setView([lat, lng], 14);
 
-  // Google Maps Style Tiles (Roadmap with POIs and Businesses)
   L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
     maxZoom: 20,
     attribution: '&copy; Google Maps'
   }).addTo(map);
 
-  // Reposition zoom control
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-  // Add Marker
   marker = L.marker([lat, lng], { 
     draggable: true,
     icon: L.icon({
@@ -424,21 +520,17 @@ function initInlineMap() {
     })
   }).addTo(map);
 
-  // Map Click Logic
   map.on('click', (e) => {
     marker.setLatLng(e.latlng);
     updateSelection(e.latlng);
   });
 
-  // Marker Drag Logic
   marker.on('dragend', () => {
     updateSelection(marker.getLatLng());
   });
 
-  // Initial selection
   updateSelection({ lat, lng });
 
-  // Hide loader
   const loader = document.getElementById('map-loader');
   if (loader) {
     loader.style.opacity = '0';
@@ -493,7 +585,6 @@ async function updateSelection(latlng) {
     city: ''
   };
 
-  // Update floating badge
   const badge = document.getElementById('location-badge');
   const coordsText = document.getElementById('selected-coords-text');
   const addrText = document.getElementById('selected-address-text');
@@ -501,7 +592,6 @@ async function updateSelection(latlng) {
   if (badge) badge.classList.remove('hidden');
   if (coordsText) coordsText.textContent = `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
   
-  // Reverse Geocode
   if (addrText) addrText.textContent = 'Identification du lieu...';
   
   try {
@@ -514,7 +604,6 @@ async function updateSelection(latlng) {
     if (addrText) addrText.textContent = address;
     selectedLocation.city = city;
     
-    // Auto-fill input (Always update to ensure sync with map)
     const cityInput = document.getElementById('lieu-adresse');
     if (cityInput) cityInput.value = city;
   } catch (err) {
@@ -536,7 +625,6 @@ async function searchLocation() {
   resultsBox.classList.remove('hidden');
 
   try {
-    // Search restricted to Cameroon (countrycodes=cm)
     const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=cm&limit=5`);
     const data = await res.json();
     
@@ -585,7 +673,7 @@ function debounce(func, wait) {
   };
 }
 
-// Helper: Close search results on outside click
+// Close search results on outside click
 document.addEventListener('click', (e) => {
   const box = document.getElementById('map-search-results');
   const input = document.getElementById('map-search-input');

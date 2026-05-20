@@ -1,3 +1,5 @@
+// declaration.dto.ts
+
 import {
   IsString,
   IsOptional,
@@ -9,27 +11,17 @@ import {
   MaxLength,
   IsEmail,
   Matches,
-  IsIn,
-  IsObject,
-  ValidateNested
+  IsIn
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
 
 export type DeclarationType = 'LOST' | 'FOUND';
 export type ReasonTypeType = 'DUPLICATE' | 'INCORRECT_DATA' | 'NO_LONGER_NEEDED' | 'PRIVACY' | 'OTHER';
 
-export class LocationDTO {
-  @IsString()
-  @IsNotEmpty({ message: 'La ville de la localisation est requise' })
-  city!: string;
-
-  @IsNumber()
-  @IsNotEmpty({ message: 'La latitude est requise' })
-  lat!: number;
-
-  @IsNumber()
-  @IsNotEmpty({ message: 'La longitude est requise' })
-  long!: number;
+// Interface simple pour votre typage de base de données / service
+export interface ILocation {
+  city: string;
+  lat: number;
+  long: number;
 }
 
 /**
@@ -38,7 +30,7 @@ export class LocationDTO {
 export class CreateDeclarationDTO {
   @IsString()
   @IsNotEmpty({ message: 'Le type de document est requis' })
-  doc_type!: string; // cni, passeport, permis, acte, banque, titre, diplome, autre
+  doc_type!: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Le nom du titulaire est requis' })
@@ -127,12 +119,9 @@ export class CreateDeclarationDTO {
   @MaxLength(100)
   transactions_id?: string;
 
+  // 🔥 CONTOURNEMENT : On accepte soit une String JSON (FormData) soit un Objet, sans forcer la sous-validation lourde
   @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => LocationDTO)
-  @Transform(({ value }) => typeof value === 'string' ? JSON.parse(value) : value)
-  found_location?: LocationDTO;
+  found_location?: string | any;
 }
 
 /**
@@ -170,7 +159,7 @@ export class UpdateDeclarationDTO {
 
   @IsString()
   @IsOptional()
-  @IsIn(['bon', 'abîmé', 'très abîmé'])
+  @IsIn(['bon', 'abîmé', 'très abîmé', 'moyen', 'abime', 'bon état', 'moyen état'])
   etat_physique?: string;
 
   @IsString()
@@ -196,11 +185,7 @@ export class UpdateDeclarationDTO {
   email_contact?: string;
 
   @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => LocationDTO)
-  @Transform(({ value }) => typeof value === 'string' ? JSON.parse(value) : value)
-  found_location?: LocationDTO;
+  found_location?: string | any;
 }
 
 /**
