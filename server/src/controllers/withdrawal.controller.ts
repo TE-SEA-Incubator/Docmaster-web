@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { WithdrawalRepository } from '../repositories/withdrawal.repository.ts';
-import { SettingRepository } from '../repositories/setting.repository.ts';
-import { UserRepository } from '../repositories/auth.repository.ts';
-import { TransactionRepository } from '../repositories/transaction.repository.ts';
-import { notificationService } from '../services/notification.service.ts';
-import { pool } from '../database/db.ts';
+import { WithdrawalRepository } from '../repositories/withdrawal.repository.js';
+import { SettingRepository } from '../repositories/setting.repository.js';
+import { UserRepository } from '../repositories/auth.repository.js';
+import { TransactionRepository } from '../repositories/transaction.repository.js';
+import { notificationService } from '../services/notification.service.js';
+import { pool } from '../database/db.js';
 
 const withdrawalRepo = new WithdrawalRepository();
 const settingRepo = new SettingRepository();
