@@ -19,6 +19,12 @@ export function initDatePickers(selector = 'input[type="date"], .datepicker, #cu
     // Avoid double initialization
     if (input._flatpickr) return;
 
+    if (input.type === 'date') {
+      input.type = 'text';
+    }
+
+    input.classList.add('datepicker');
+
     const options = {
       locale: French,
       dateFormat: "Y-m-d",
@@ -47,6 +53,7 @@ export function initSingleDatePicker(el, options = {}) {
   if (!target) return;
 
   target.type = 'text';
+  target.classList.add('datepicker');
 
   return flatpickr(target, {
     locale: French,

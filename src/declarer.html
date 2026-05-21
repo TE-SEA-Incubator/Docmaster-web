@@ -150,11 +150,97 @@
     .section-badge-text{font-size:11px;font-weight:700;color:#D98A30;text-transform:uppercase;letter-spacing:.05em}
     .section-card{background:white;border-radius:18px;padding:22px 24px;border:1px solid #EDE7DB;box-shadow:0 2px 12px rgba(0,0,0,.04);flex-shrink:0;margin:0 20px}
 
-    /* ── Wizard ── */
-    .form-step{display:none} .form-step.active{display:block}
-    #stepActions{display:none} #stepActions.active{display:block}
+    /* ── Topbar mobile/desktop ── */
+    .topbar-mobile-name { display: none; }
+    .topbar-desktop-title { display: block; }
 
-    /* ── Urgency ── */
+    /* ── Mobile Strict Vertical Layout (8px Grid) ── */
+    @media(max-width:1023px){
+      html, body { width: 100% !important; max-width: 100% !important; overflow-x: hidden !important; }
+      body { background: #F4EFE6 !important; padding: 0 !important; }
+      .main-wrap { margin-left: 0 !important; width: 100% !important; max-width: 100% !important; }
+      
+      .topbar { 
+        background: #FFFFFF !important; 
+        padding: 0 16px !important; 
+        height: 60px !important; 
+        display: flex !important; 
+        align-items: center !important; 
+        justify-content: space-between !important;
+        border-bottom: 1px solid #EAE3D8 !important;
+        position: relative !important;
+        box-shadow: 0 1px 8px rgba(0,0,0,.04) !important;
+      }
+      /* Cacher titre desktop + avatar sur mobile */
+      .topbar-desktop-title { display: none !important; }
+      .topbar-avatar { display: none !important; }
+      /* Nom DocMaster centré */
+      .topbar-mobile-name {
+        display: block !important;
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        font-family: 'Bricolage Grotesque', sans-serif !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        color: #1A1A1A !important;
+        pointer-events: none !important;
+        white-space: nowrap !important;
+      }
+      
+      #pageBody { 
+        width: 100% !important;
+        padding: 16px !important; 
+        display: flex !important; 
+        flex-direction: column !important; 
+        gap: 16px !important; 
+        padding-bottom: 120px !important; 
+      }
+      
+      .mobile-title {
+        display: block !important;
+        font-family: 'Bricolage Grotesque', sans-serif !important;
+        font-size: 22px !important;
+        line-height: 1.05 !important;
+        font-weight: 800 !important;
+        color: #1A1A1A !important;
+        margin: 2px 0 0 !important;
+        letter-spacing: -0.03em !important;
+      }
+
+      .field-input {
+        height: 48px !important;
+        background: #FFFFFF !important;
+        border: 1px solid #EAE3D8 !important;
+        border-radius: 12px !important;
+        padding: 0 16px !important;
+      }
+      
+      .footer-actions {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: #F4EFE6 !important;
+        padding: 16px 24px calc(16px + env(safe-area-inset-bottom)) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        border-top: 1px solid #EAE3D8 !important;
+      }
+      .btn-next {
+        height: 48px !important;
+        background: #1E3A2F !important;
+        color: white !important;
+        border-radius: 12px !important;
+        font-weight: 500 !important;
+      }
+      .btn-prev {
+        height: 48px !important;
+        color: #374151 !important;
+        font-size: 14px !important;
+      }
+    }
     .urgency-btn{flex:1;padding:10px 12px;border-radius:10px;border:1.5px solid #E0D5C4;background:white;font-family:'Poppins',sans-serif;font-size:12.5px;font-weight:600;color:#6B7280;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
     .urgency-btn:hover{border-color:#F5A64B}
     .urgency-btn.sel-low{border-color:#22c55e;background:#f0fdf4;color:#16a34a}
@@ -178,131 +264,94 @@
     .place-tag:hover{border-color:#F5A64B;background:#FEF0DC;color:#D98A30}
     .place-tag.active{border-color:#F5A64B;background:#F5A64B;color:white}
 
-    /* ── Modals Responsives ── */
-    .success-overlay {
+    /* ── Modals Responsives (Premium Bottom Sheet) ── */
+    .success-overlay, .confirm-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(6px);
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
       z-index: 100;
-      align-items: flex-end;        /* ← Bottom sheet */
+      align-items: flex-end;
       justify-content: center;
-      padding: 16px;
-      padding-bottom: env(safe-area-inset-bottom, 16px);
     }
 
-    .success-overlay.show {
+    .success-overlay.show, .confirm-overlay.show {
       display: flex;
       animation: fadeIn 0.3s ease;
     }
 
-    .success-card {
+    .success-card, .confirm-card {
       background: white;
-      border-radius: 24px 24px 0 0;  /* ← Arrondi du bas seulement */
-      padding: 32px 24px;
+      border-radius: 32px 32px 0 0; /* Apple/Airbnb Standard */
+      padding: 12px 24px 40px;
       max-width: 100%;
       width: 100%;
-      max-height: 90vh;
+      max-height: 92vh;
       text-align: center;
-      animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       overflow-y: auto;
+      position: relative;
+      box-shadow: 0 -10px 25px rgba(0,0,0,0.05);
     }
 
-    /* Drag handle (mobile only) */
-    .success-card::before {
-      content: '';
-      display: block;
-      width: 36px;
-      height: 4px;
-      background: #E0D5C4;
-      border-radius: 2px;
-      margin: 0 auto 16px;
+    /* Native Drag Handle Indicator */
+    .sheet-handle {
+      width: 40px;
+      height: 5px;
+      background: #E5E7EB;
+      border-radius: 99px;
+      margin: 0 auto 24px;
+      flex-shrink: 0;
     }
 
-    .confirm-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(30, 58, 47, 0.85);
-      backdrop-filter: blur(8px);
-      z-index: 90;
-      align-items: flex-end;        /* ← Bottom sheet */
-      justify-content: center;
-      padding: 16px;
-      padding-bottom: env(safe-area-inset-bottom, 16px);
-    }
-
-    .confirm-overlay.show {
+    /* Selection List Items (Touch Targets) */
+    .sheet-item {
+      height: 56px;
       display: flex;
-      animation: fadeIn 0.2s ease;
+      align-items: center;
+      gap: 16px;
+      padding: 0 4px;
+      border-bottom: 1px solid #F9FAFB;
+      font-size: 16px;
+      font-weight: 500;
+      color: #1F2937;
+      transition: background 0.2s;
+      cursor: pointer;
+      text-align: left;
+    }
+    .sheet-item:active {
+      background: #F3F4F6;
+    }
+    .sheet-item:last-child {
+      border-bottom: none;
+    }
+    .sheet-item-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6B7280;
+      font-size: 18px;
     }
 
-    .confirm-card {
-      background: white;
-      border-radius: 24px 24px 0 0;  /* ← Arrondi du bas seulement */
-      padding: 32px 24px;
-      max-width: 100%;
-      width: 100%;
-      max-height: 90vh;
-      text-align: center;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-      animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow-y: auto;
-    }
-
-    /* Drag handle (mobile only) */
-    .confirm-card::before {
-      content: '';
-      display: block;
-      width: 36px;
-      height: 4px;
-      background: #E0D5C4;
-      border-radius: 2px;
-      margin: 0 auto 16px;
-    }
-
-    /* DESKTOP (640px+) */
+    /* DESKTOP (640px+) Overrides */
     @media (min-width: 640px) {
-      .success-overlay {
-        align-items: center;        /* ← Centré */
-        justify-content: center;
+      .success-overlay, .confirm-overlay {
+        align-items: center;
         padding: 20px;
-        padding-bottom: 20px;
       }
 
-      .success-card {
-        border-radius: 24px;        /* ← Arrondi partout */
+      .success-card, .confirm-card {
+        border-radius: 24px;
         padding: 44px 40px;
         max-width: 420px;
-        max-height: 80vh;
+        max-height: 85vh;
         animation: popUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       }
 
-      /* Retirer drag handle sur desktop */
-      .success-card::before {
-        display: none;
-      }
-
-      .confirm-overlay {
-        align-items: center;        /* ← Centré */
-        justify-content: center;
-        padding: 20px;
-        padding-bottom: 20px;
-      }
-
-      .confirm-card {
-        border-radius: 22px;        /* ← Arrondi partout */
-        padding: 32px 40px;
-        max-width: 400px;
-        max-height: 80vh;
-        animation: popUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
-
-      /* Retirer drag handle sur desktop */
-      .confirm-card::before {
-        display: none;
-      }
+      .sheet-handle { display: none; }
     }
 
     .success-icon{width:80px;height:80px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px}
@@ -315,11 +364,165 @@
 
     #wizardControls{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;background:white;border:1px solid #EDE7DB;border-radius:14px;padding:10px 14px}
 
-    @media(max-width:768px){
-      .sidebar{transform:translateX(-100%)} .sidebar.open{transform:translateX(0)}
-      .main-wrap{margin-left:0} #pageBody{padding:12px 14px 0}
-      #formGrid{grid-template-columns:1fr} #formRight{display:none!important}
-      .section-card{padding:18px 16px}
+    @media(max-width:1023px){
+      /* ── Mobile Immersive Mode ── */
+      html, body, #pageBody {
+        background: #F4EFE6 !important;
+        height: auto !important;
+        overflow-y: auto !important;
+      }
+      .main-wrap { margin-left: 0 !important; }
+      
+      /* Topbar mobile déjà géré dans le bloc précédent */
+      .topbar {
+        background: #FFFFFF !important;
+        border-bottom: 1px solid #EAE3D8 !important;
+        height: 60px !important;
+        padding: 0 16px !important;
+        position: relative !important;
+      }
+      
+      #menuBtn {
+        position: static !important;
+        color: #1A1A1A !important;
+        font-size: 20px !important;
+      }
+      
+      /* New Mobile Title */
+      /* .mobile-title {
+        display: block !important;
+        font-family: 'Bricolage Grotesque', sans-serif;
+        font-size: 28px !important;
+        font-weight: 800 !important;
+        color: #1A1A1A !important;
+        margin: 20px 0 10px 10px !important;
+        letter-spacing: -0.02em !important;
+      } */
+
+      #formGrid { grid-template-columns: 1fr !important; gap: 0 !important; }
+      #formRight, #alertBanner, .section-badge { display: none !important; }
+      
+      /* Accordion-like Section Layout */
+      .section-card {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        margin: 0 !important;
+        padding: 20px 16px !important;
+        border-bottom: 1px solid #EAEAEA !important;
+        border-radius: 0 !important;
+        display: none !important; /* Hide by default */
+      }
+      .section-card.active { 
+        display: block !important; 
+        animation: slideUp 0.4s ease forwards;
+      }
+
+      /* Doc type grid : 3 colonnes sur mobile */
+      #docTypeGrid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+      }
+      .doc-type-card {
+        padding: 10px 6px !important;
+      }
+      .doc-type-card .card-label {
+        font-size: 10px !important;
+      }
+
+      /* Grilles de champs : 2 colonnes sur mobile */
+      .section-card > div[style*="grid-template-columns:1fr 1fr"],
+      .section-card > div[style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+      }
+
+      /* Inputs plus compacts sur mobile */
+      .field-input {
+        background: #FFFFFF !important;
+        border: 1px solid #EAEAEA !important;
+        border-radius: 12px !important;
+        padding: 11px 11px 11px 38px !important;
+        font-size: 13px !important;
+        height: 46px !important;
+      }
+      textarea.field-input {
+        height: auto !important;
+        padding: 11px 11px !important;
+      }
+      .field-label {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: #6B7280 !important;
+        margin-bottom: 8px !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+      }
+      .field-icon { top: 50% !important; transform: translateY(-50%) !important; }
+
+      /* Ergonomic Split Footer */
+      #wizardControls {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        z-index: 100 !important;
+        background: rgba(247, 247, 249, 0.9) !important;
+        backdrop-filter: blur(12px) !important;
+        border-radius: 0 !important;
+        border: none !important;
+        border-top: 1px solid #EAEAEA !important;
+        padding: 12px 20px calc(12px + env(safe-area-inset-bottom)) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+      }
+      
+      #nextStepBtn, .submit-btn {
+        flex: 1 !important; /* Occupy remaining space */
+        width: auto !important; 
+        height: 50px !important;
+        border-radius: 25px !important; /* Pill shape */
+        background: #1E3A2F !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 12px rgba(30,58,47,0.15) !important;
+        white-space: nowrap !important; /* Prevent text wrapping */
+        padding: 0 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      
+      #prevStepBtn {
+        width: auto !important;
+        height: 50px !important;
+        padding: 0 10px !important;
+        background: transparent !important;
+        border: none !important;
+        color: #6B7280 !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        text-decoration: underline !important;
+        text-underline-offset: 4px !important;
+      }
+      #prevStepBtn i { display: none !important; }
+      
+      #stepCounter {
+        position: absolute !important;
+        top: -24px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        background: transparent !important;
+        color: #9CA3AF !important;
+        box-shadow: none !important;
+        font-size: 10px !important;
+        padding: 0 !important;
+      }
+      
+      #pageBody { padding-bottom: 100px !important; }
     }
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     @keyframes popUp{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
@@ -367,7 +570,7 @@
         <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/mesGains.html"><i class="fa-solid fa-wallet w-4 text-center"></i> Mes Gains</a>
         <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/Abonnement.html"><i class="fa-solid fa-crown w-4 text-center"></i> Abonnement</a>
         <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/infosProfil.html"><i class="fa-solid fa-user w-4 text-center"></i> Mon Profil</a>
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400" href="#" data-logout="true"  ><i class="fa-solid fa-right-from-bracket w-4 text-center"></i> data-logout="true">Déconnexion</a> 
+        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400" href="#" data-logout="true"><i class="fa-solid fa-right-from-bracket w-4 text-center"></i> Déconnexion</a>
       </nav>
     </div>
 
@@ -391,27 +594,22 @@
 
   <!-- TOPBAR -->
   <header class="topbar">
-    <div style="display:flex;align-items:center;gap:14px;">
+    <div style="display:flex;align-items:center;gap:14px;flex:1;">
       <button id="menuBtn" onclick="toggleSb()" style="display:flex;background:none;border:none;color:#374151;font-size:18px;cursor:pointer;padding:4px;"><i class="fa-solid fa-bars"></i></button>
-      <div>
-        <nav style="font-size:11.5px;color:#9CA3AF;font-weight:500;display:flex;align-items:center;gap:5px;">
-          <a href="dashboard.html" style="color:#9CA3AF;text-decoration:none;">Accueil</a>
-          <i class="fa-solid fa-chevron-right" style="font-size:9px;"></i>
-          <span style="color:#1E3A2F;font-weight:600;">Déclarer une perte</span>
-        </nav>
-        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:#1A1A1A;margin-top:1px;">Déclarer un document perdu</h1>
-      </div>
+      <span class="topbar-title">Déclaration de perte</span>
     </div>
+
+    
     <div style="display:flex;align-items:center;gap:10px;">
-      <button class="icon-btn" onclick="openNotifModal()" aria-label="Ouvrir les notifications">
+      <button class="icon-btn" onclick="openNotifModal()" aria-label="Notifications" style="position:relative;width:38px;height:38px;border-radius:10px;background:#F2EBD9;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#374151;font-size:16px;">
         <i class="fa-solid fa-bell"></i>
-        <div id="notifDot" style="position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;border:2px solid white;transition:background 0.3s;"></div>
+        <div id="notifDot" style="position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;border:2px solid white;transition:background 0.3s;"></div>
       </button>
-      <div style="width:36px;height:36px;border-radius:10px;background:#1E3A2F;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:800;color:#F5A64B;cursor:pointer;">JD</div>
     </div>
   </header>
 
   <div id="pageBody">
+
 
     <!-- Alerte -->
     <div id="alertBanner" class="animate-in" style="background:linear-gradient(135deg,#FEF0DC,#FFF8F0);border:1.5px solid rgba(245,166,75,.3);border-radius:12px;padding:9px 14px;display:flex;align-items:center;gap:10px;">
@@ -503,10 +701,10 @@
           <div class="section-badge"><div class="section-badge-num">4</div><span class="section-badge-text">Lieu &amp; date de perte</span></div>
           <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1A1A1A;margin-bottom:4px;">Où et quand ?</h2>
           <p style="font-size:12.5px;color:#6B7280;margin-bottom:16px;">Ces informations s'appliquent à tous vos documents perdus.</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="flex flex-col gap-4">
             <div class="field-group">
               <label class="field-label"><i class="fa-solid fa-calendar-days" style="color:#F5A64B;font-size:10px;"></i> Date de perte</label>
-              <div class="field-wrapper"><i class="fa-regular fa-calendar-minus field-icon"></i><input type="date" class="field-input" id="lossDate"/></div>
+              <div class="field-wrapper"><i class="fa-regular fa-calendar-minus field-icon"></i><input type="text" class="field-input datepicker" id="lossDate"/></div>
             </div>
             <div class="field-group">
               <label class="field-label"><i class="fa-solid fa-clock" style="color:#F5A64B;font-size:10px;"></i> Heure approximative <span class="opt-badge">Optionnel</span></label>
@@ -564,9 +762,9 @@
           <div style="margin-top:16px;">
             <label class="field-label" style="margin-bottom:8px;"><i class="fa-solid fa-gauge" style="color:#F5A64B;font-size:10px;"></i> Niveau d'urgence</label>
             <div style="display:flex;gap:8px;">
-              <button type="button" class="urgency-btn" onclick="setUrgency('low',this)"><i class="fa-solid fa-circle" style="font-size:7px;color:#22c55e;"></i> Faible</button>
-              <button type="button" class="urgency-btn sel-medium" onclick="setUrgency('medium',this)"><i class="fa-solid fa-circle" style="font-size:7px;color:#f59e0b;"></i> Modérée</button>
-              <button type="button" class="urgency-btn" onclick="setUrgency('high',this)"><i class="fa-solid fa-circle" style="font-size:7px;color:#ef4444;"></i> Urgente</button>
+              <button type="button" class="urgency-btn" data-urgency="Basse" onclick="setUrgency('low',this)"><i class="fa-solid fa-circle" style="font-size:7px;color:#22c55e;"></i> Faible</button>
+              <button type="button" class="urgency-btn sel-medium" data-urgency="Modérée" data-selected="true" onclick="setUrgency('medium',this)"><i class="fa-solid fa-circle" style="font-size:7px;color:#f59e0b;"></i> Modérée</button>
+              <button type="button" class="urgency-btn" data-urgency="Haute" onclick="setUrgency('high',this)"><i class="fa-solid fa-circle" style="font-size:7px;color:#ef4444;"></i> Urgente</button>
             </div>
             <p style="font-size:11px;color:#9CA3AF;margin-top:7px;" id="urgencyDesc">Document important mais situation gérable sous quelques jours.</p>
           </div>
@@ -588,23 +786,23 @@
               <div class="field-wrapper"><i class="fa-solid fa-franc-sign field-icon" style="left:12px;font-size:12px;"></i><input type="number" class="field-input" placeholder="Montant en FCFA" style="padding-left:34px;" min="0" step="500"/><span style="position:absolute;right:14px;font-size:11.5px;font-weight:600;color:#9CA3AF;">FCFA</span></div>
             </div>
           </div>
-        </div>
 
-        <!-- Soumettre -->
-        <div id="stepActions" class="animate-in d4" style="flex-shrink:0;">
-          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:14px;">
-            <div style="flex-shrink:0;margin-top:1px;"><div id="checkboxUI" onclick="toggleCheckbox()" style="width:19px;height:19px;border:2px solid #E0D5C4;border-radius:5px;background:white;display:flex;align-items:center;justify-content:center;transition:all .2s;cursor:pointer;"><i class="fa-solid fa-check" style="font-size:9px;color:white;display:none;" id="checkIcon"></i></div></div>
-            <p style="font-size:12px;color:#6B7280;line-height:1.6;">Je certifie que les informations fournies sont exactes et j'accepte les <a href="#"  style="color:#F5A64B;font-weight:600;text-decoration:none;">Conditions d'utilisation</a>.</p>
-          </label>
-          <button type="button" class="submit-btn" onclick="submitDeclaration()"><i class="fa-solid fa-paper-plane"></i> Soumettre ma déclaration</button>
-          <p style="font-size:11px;color:#9CA3AF;text-align:center;margin-top:8px;"><i class="fa-solid fa-shield-halved" style="color:#F5A64B;margin-right:4px;"></i>Vos données sont protégées.</p>
+          <!-- Soumettre — apparaît à la dernière étape -->
+          <div id="stepActions" style="margin-top:24px;">
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:14px;">
+              <div style="flex-shrink:0;margin-top:1px;"><div id="checkboxUI" onclick="toggleCheckbox()" style="width:19px;height:19px;border:2px solid #E0D5C4;border-radius:5px;background:white;display:flex;align-items:center;justify-content:center;transition:all .2s;cursor:pointer;"><i class="fa-solid fa-check" style="font-size:9px;color:white;display:none;" id="checkIcon"></i></div></div>
+              <p style="font-size:12px;color:#6B7280;line-height:1.6;">Je certifie que les informations fournies sont exactes et j'accepte les <a href="#" style="color:#F5A64B;font-weight:600;text-decoration:none;">Conditions d'utilisation</a>.</p>
+            </label>
+            <button type="button" class="submit-btn" onclick="submitDeclaration()"><i class="fa-solid fa-paper-plane"></i> Soumettre ma déclaration</button>
+            <p style="font-size:11px;color:#9CA3AF;text-align:center;margin-top:8px;"><i class="fa-solid fa-shield-halved" style="color:#F5A64B;margin-right:4px;"></i>Vos données sont protégées.</p>
+          </div>
         </div>
 
         <!-- Wizard nav -->
         <div id="wizardControls">
           <button type="button" id="prevStepBtn" onclick="goToPrevStep()" style="padding:9px 16px;border:1.5px solid #E0D5C4;background:white;border-radius:10px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;color:#374151;cursor:pointer;display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-arrow-left" style="font-size:11px;"></i> Précédent</button>
           <p id="stepCounter" style="font-size:12px;font-weight:700;color:#6B7280;">Étape 1 / 5</p>
-          <button type="button" id="nextStepBtn" onclick="goToNextStep()" style="padding:9px 16px;border:none;background:#1E3A2F;border-radius:10px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:white;cursor:pointer;display:flex;align-items:center;gap:6px;">Suivant <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></button>
+          <button type="button" id="nextStepBtn" onclick="handlePrimaryAction()" style="padding:9px 16px;border:none;background:#1E3A2F;border-radius:10px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:white;cursor:pointer;display:flex;align-items:center;gap:6px;">Suivant <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i></button>
         </div>
 
       </div><!-- /formLeft -->
@@ -660,6 +858,7 @@
 <!-- CONFIRMATION MODAL -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-card animate-in">
+    <div class="sheet-handle"></div>
     <div style="width:60px;height:60px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
       <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;font-size:24px;"></i>
     </div>
@@ -674,7 +873,7 @@
       </p>
     </div>
     
-    <form onsubmit="return false" autocomplete="on">
+    <form id="confirmForm" onsubmit="event.preventDefault(); validateAndSubmit();" autocomplete="on">
       <div class="field-group" style="margin-bottom:24px;">
         <div class="field-wrapper">
           <i class="fa-solid fa-lock field-icon"></i>
@@ -685,7 +884,7 @@
     </form>
 
     <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
-      <button id="finalSubmitBtn" onclick="validateAndSubmit()" style="width:100%;padding:12px 16px;background:#1E3A2F;color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;">
+      <button id="finalSubmitBtn" type="submit" form="confirmForm" style="width:100%;padding:12px 16px;background:#1E3A2F;color:white;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;">
         Confirmer
       </button>
       <button onclick="closeConfirmModal()" style="width:100%;padding:12px 16px;background:#F2EBD9;color:#374151;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;">
@@ -698,6 +897,7 @@
 <!-- SUCCESS -->
 <div class="success-overlay" id="successOverlay">
   <div class="success-card">
+    <div class="sheet-handle"></div>
     <div class="success-icon"><i class="fa-solid fa-check" style="color:#2D5A42;"></i></div>
     <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:23px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">Déclaration enregistrée !</h2>
     <p style="font-size:13px;color:#6B7280;line-height:1.6;margin-bottom:14px;">Votre déclaration a été publiée. Vous serez notifié dès qu'un match est trouvé.</p>

@@ -468,7 +468,7 @@
         <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/mesGains.html"><i class="fa-solid fa-wallet w-4 text-center"></i> Mes Gains</a>
         <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/Abonnement.html"><i class="fa-solid fa-crown w-4 text-center"></i> Abonnement</a>
         <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/infosProfil.html"><i class="fa-solid fa-user w-4 text-center"></i> Mon Profil</a>
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400" href="#" data-logout="true"  ><i class="fa-solid fa-right-from-bracket w-4 text-center"></i> data-logout="true">Déconnexion</a> 
+        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400" href="#" data-logout="true"><i class="fa-solid fa-right-from-bracket w-4 text-center"></i> Déconnexion</a>
       </nav>
     </div>
 
@@ -497,10 +497,11 @@
         onclick="toggleSb()"><i class="fa-solid fa-bars"></i></button>
       <span class="font-bricolage text-base font-bold text-textMain tracking-tight">Mes Documents</span>
       <div class="ml-auto flex items-center gap-2">
-        <!-- Desktop add btn -->
         <button onclick="openModal()"
-          class="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary text-white text-[13px] font-bold rounded-[10px] hover:bg-primary-dark transition-all active:scale-95">
-          <i class="fa-solid fa-plus text-[11px]"></i> Enregistrer un document
+          class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary text-white text-[12px] sm:text-[13px] font-bold rounded-[10px] hover:bg-primary-dark transition-all active:scale-95 shrink-0">
+          <i class="fa-solid fa-plus text-[11px]"></i>
+          <span class="sm:hidden">Ajouter</span>
+          <span class="hidden sm:inline">Enregistrer un document</span>
         </button>
         <div
           class="relative w-9 h-9 rounded-[9px] bg-surface2 border border-borderMain flex items-center justify-center text-sm text-textMain cursor-pointer hover:border-primary hover:text-primary transition-all"
@@ -572,7 +573,10 @@
         <div
           class="flex items-center bg-white border border-borderMain rounded-[11px] overflow-hidden flex-1 max-w-sm focus-within:border-primary transition-colors">
           <i class="fa-solid fa-search px-3 text-textMuted text-xs flex-shrink-0"></i>
-          <input type="text" placeholder="Rechercher un document…"
+          <!-- Protection anti-autofill -->
+          <input type="text" style="display:none" name="fake-autocomplete-user">
+          <input type="password" style="display:none" name="fake-autocomplete-pass">
+          <input type="text" placeholder="Rechercher un document…" autocomplete="off" id="searchInput"
             class="flex-1 py-2.5 pr-3 bg-transparent border-none outline-none font-poppins text-[13.5px] text-textMain placeholder:text-textMuted">
         </div>
         <div class="flex items-center gap-2 flex-wrap">
@@ -634,7 +638,7 @@
         <label class="form-label">Mot de passe</label>
         <div class="relative">
           <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-textMuted text-xs"></i>
-          <input type="password" id="confirmPassword" class="form-input !pl-9" placeholder="Votre mot de passe" autocomplete="current-password">
+          <input type="password" id="confirmPassword" class="form-input !pl-9" placeholder="Votre mot de passe" autocomplete="new-password">
         </div>
         <p id="passwordError" class="hidden text-[11px] text-red-500 font-semibold mt-1">Mot de passe incorrect</p>
       </div>
@@ -748,7 +752,7 @@
             <input type="text" id="doc-number" class="form-input" placeholder="Ex: 123456789CM">
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="form-label">Date de délivrance</label>
               <div class="relative">

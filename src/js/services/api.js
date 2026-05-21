@@ -446,14 +446,39 @@ export async function revokeShare(shareId) {
  * @param {Object|FormData} deviceData - Device data
  */
 export async function registerMyDevice(deviceData) {
+  console.log('🔁 [API] registerMyDevice called');
   try {
+    // If it's a FormData, log a brief summary before sending
+    if (deviceData instanceof FormData) {
+      try {
+        const summary = {};
+        for (const pair of deviceData.entries()) {
+          if (pair[0].startsWith('photo_')) continue;
+          summary[pair[0]] = pair[1];
+        }
+        console.log('📡 [API] registerMyDevice payload summary:', summary);
+      } catch (e) {
+        console.warn('Could not summarize deviceData FormData', e);
+      }
+    } else {
+      console.log('📡 [API] registerMyDevice payload object:', deviceData);
+    }
+
     const response = await apiClient.post('devices', deviceData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
+    console.log('✅ [API] registerMyDevice response status:', response.status);
     return { success: true, data: response.data };
   } catch (error) {
+    console.error('❌ [API] registerMyDevice error:', error?.response || error);
     const message = error.response?.data?.message || 'Erreur lors de l\'enregistrement de l\'appareil.';
-    return { success: false, message };
+    return {
+      success: false,
+      message,
+      limit: error.response?.data?.limit,
+      current: error.response?.data?.current,
+      data: error.response?.data
+    };
   }
 }
 

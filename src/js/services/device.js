@@ -177,6 +177,18 @@ export async function submitDeviceForm() {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Enregistrement...';
 
     const formData = new FormData(form);
+    // Debug: collect a plaintext summary of the payload (exclude large files)
+    try {
+      const debugPayload = {};
+      for (const pair of formData.entries()) {
+        const [k, v] = pair;
+        if (k.startsWith('photo_')) continue;
+        debugPayload[k] = v;
+      }
+      console.log('📤 [Device] submitDeviceForm payload:', debugPayload);
+    } catch (e) {
+      console.warn('Unable to build debug payload for device submission', e);
+    }
     
     // Add photos from the camera/file selection logic
     // (Assuming window.capturedBlobs or similar for photos)
@@ -187,15 +199,24 @@ export async function submitDeviceForm() {
     }
 
     const result = await registerMyDevice(formData);
-
+    console.log('📥 [Device] registerMyDevice response:', result);
     if (result.success) {
       closeAddDeviceModal();
       showSuccessModal('Succès', 'Votre appareil a été enregistré avec succès.');
       initDeviceList();
     } else {
-      throw new Error(result.message);
+      // Show server message directly to the user instead of throwing
+      const quotaInfo = (typeof result.limit !== 'undefined' && typeof result.current !== 'undefined')
+        ? ` (${result.current}/${result.limit})`
+        : '';
+      const serverMsg = `${result.message || 'Erreur lors de l\'enregistrement de l\'appareil.'}${quotaInfo}`;
+      console.warn('⚠️ [Device] server responded with non-success:', serverMsg);
+      showErrorModal('Erreur', serverMsg);
+      // stop further processing
+      return;
     }
   } catch (error) {
+    console.error('❌ [Device] submitDeviceForm error:', error);
     const msg = getFriendlyErrorMessage(error);
     showErrorModal('Erreur', msg);
   } finally {

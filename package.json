@@ -3,6 +3,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test:e2e": "npx playwright test",
     "db:clean": "npm run --prefix server db:clean",
     "start": "npm run dev"
   },
@@ -20,6 +21,7 @@
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/vite": "^4.2.4",
     "vite": "^8.0.10"
   }

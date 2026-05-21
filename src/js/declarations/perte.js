@@ -45,11 +45,11 @@ function saveDeclarationDraft() {
   const etatEl = document.querySelector('input[name="etat"]:checked');
   if (etatEl) draft.fields['etat'] = etatEl.value;
 
-  const contactModeEl = document.querySelector('input[name="contact-mode"]:checked');
-  if (contactModeEl) draft.fields['contact-mode'] = contactModeEl.value;
+    const contactModeEl = document.querySelector('input[name="contact-mode"]:checked');
+    if (contactModeEl?.value) draft.fields['contact-mode'] = contactModeEl.value;
 
-  const urgEl = document.querySelector('.urgency-btn.sel-low, .urgency-btn.sel-medium, .urgency-btn.sel-high');
-  if (urgEl) draft.fields['urgency'] = urgEl.textContent.trim();
+    const urgEl = document.querySelector('.urgency-btn.sel-low, .urgency-btn.sel-medium, .urgency-btn.sel-high');
+    if (urgEl) draft.fields['urgency'] = urgEl.dataset.urgency || 'Modérée';
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
   console.log('💾 Brouillon sauvegardé');
@@ -67,11 +67,22 @@ function restoreDeclarationDraft() {
     
     // Restaurer les champs
     for (const [key, value] of Object.entries(draft.fields)) {
+      if (key === 'urgency') {
+        const urgencyBtn = Array.from(document.querySelectorAll('.urgency-btn')).find(btn => btn.dataset.urgency === value);
+        if (urgencyBtn && typeof window.setUrgency === 'function') {
+          const level = urgencyBtn.classList.contains('sel-low') ? 'low' : urgencyBtn.classList.contains('sel-high') ? 'high' : 'medium';
+          window.setUrgency(level, urgencyBtn);
+        }
+        continue;
+      }
+
       const input = document.getElementById(key) || document.querySelector(`[name="${key}"]`) || document.querySelector(`[placeholder*="${key}"]`);
       
       if (input) {
         if (input.type === 'checkbox' || input.type === 'radio') {
           input.checked = (input.value === value);
+        } else if (input._flatpickr) {
+          input._flatpickr.setDate(value, true, 'Y-m-d');
         } else {
           input.value = value;
         }
@@ -270,8 +281,8 @@ export function initLostDeclaration() {
 
   // Pre-fill contact if session exists
   if (window.USER_SESSION) {
-    const phoneInput = document.querySelector('input[type="tel"]');
-    const emailInput = document.querySelector('input[type="email"]');
+    const phoneInput = document.getElementById('contactPhone');
+    const emailInput = document.getElementById('contactEmail');
     if (phoneInput && window.USER_SESSION.telephone) phoneInput.value = window.USER_SESSION.telephone;
     if (emailInput && window.USER_SESSION.email) emailInput.value = window.USER_SESSION.email;
   }
@@ -477,9 +488,8 @@ function buildStep2(direction){
   const container = document.getElementById('dynamicFields');
   const animClass = direction === 'left' ? 'slide-left' : 'slide-right';
   
-  let html = `<div class="${animClass}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">`;
-  let inGrid = true;
-  
+  let html = `<div class="${animClass}"><div class="declaration-fields-stack">`;
+
   meta.fields.forEach(f => {
     let defaultValue = '';
     if (!isThirdParty && window.USER_SESSION) {
@@ -489,15 +499,9 @@ function buildStep2(direction){
       }
     }
 
-    if(f.type === 'textarea'){
-      if(inGrid){ html += '</div>'; inGrid=false; }
-      html += buildField(f, 'margin-top:14px;', defaultValue, id);
-    } else {
-      if(!inGrid){ html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">'; inGrid=true; }
-      html += buildField(f, '', defaultValue, id);
-    }
+    html += buildField(f, '', defaultValue, id);
   });
-  if(inGrid) html += '</div></div>';
+  html += '</div></div>';
   container.innerHTML = html;
 
   if (typeof flatpickr !== 'undefined') {
@@ -520,24 +524,24 @@ function buildField(f, extra, defaultValue = '', docId = ''){
 
   if(f.type === 'select'){
     const opts = (f.options || []).map(o => `<option value="${o}" ${o===defaultValue?'selected':''}>${o}</option>`).join('');
-    return `<div class="field-group" style="${extra}">
-      <label class="field-label"><i class="fa-solid ${f.icon}" style="color:#F5A64B;font-size:10px;"></i> ${f.label} ${optBadge}</label>
-      <div class="field-wrapper">
+    return `<div class="declaration-field w-full flex flex-col gap-2 mb-4" style="${extra}">
+      <label class="field-label w-full flex justify-between items-center gap-3"><span class="flex items-center gap-2 min-w-0">${f.icon ? `<i class="fa-solid ${f.icon}" style="color:#F5A64B;font-size:10px;"></i>` : ''}<span class="min-w-0 wrap-break-word">${f.label}</span></span>${optBadge}</label>
+      <div class="field-wrapper w-full">
         ${iconHtml}
-        <select class="field-input" id="${fieldId}" name="${fieldId}"><option value="">Sélectionner…</option>${opts}</select>
+        <select class="field-input h-12 w-full" id="${fieldId}" name="${fieldId}"><option value="">Sélectionner…</option>${opts}</select>
         <i class="fa-solid fa-chevron-down" style="position:absolute;right:14px;color:#C4BAB0;font-size:11px;pointer-events:none;"></i>
       </div>
     </div>`;
   }
   if(f.type === 'textarea'){
-    return `<div class="field-group" style="${extra}">
-      <label class="field-label">${f.icon ? `<i class="fa-solid ${f.icon}" style="color:#F5A64B;font-size:10px;"></i>` : ''} ${f.label} ${optBadge}</label>
-      <div class="field-wrapper"><textarea class="field-input no-icon" id="${fieldId}" name="${fieldId}" placeholder="${f.placeholder}">${defaultValue}</textarea></div>
+    return `<div class="declaration-field w-full flex flex-col gap-2 mb-4" style="${extra}">
+      <label class="field-label w-full flex justify-between items-center gap-3"><span class="flex items-center gap-2 min-w-0">${f.icon ? `<i class="fa-solid ${f.icon}" style="color:#F5A64B;font-size:10px;"></i>` : ''}<span class="min-w-0 wrap-break-word">${f.label}</span></span>${optBadge}</label>
+      <div class="field-wrapper w-full"><textarea class="field-input no-icon h-24 w-full" id="${fieldId}" name="${fieldId}" placeholder="${f.placeholder}">${defaultValue}</textarea></div>
     </div>`;
   }
-  return `<div class="field-group" style="${extra}">
-    <label class="field-label">${f.icon ? `<i class="fa-solid ${f.icon}" style="color:#F5A64B;font-size:10px;"></i>` : ''} ${f.label} ${optBadge}</label>
-    <div class="field-wrapper">${iconHtml}<input type="${f.type}" class="field-input${noIcon}" id="${fieldId}" name="${fieldId}" placeholder="${f.placeholder||''}" ${valAttr}/></div>
+  return `<div class="declaration-field w-full flex flex-col gap-2 mb-4" style="${extra}">
+    <label class="field-label w-full flex justify-between items-center gap-3"><span class="flex items-center gap-2 min-w-0">${f.icon ? `<i class="fa-solid ${f.icon}" style="color:#F5A64B;font-size:10px;"></i>` : ''}<span class="min-w-0 wrap-break-word">${f.label}</span></span>${optBadge}</label>
+    <div class="field-wrapper w-full">${iconHtml}<input type="${f.type}" class="field-input${noIcon} h-12 w-full" id="${fieldId}" name="${fieldId}" placeholder="${f.placeholder||''}" ${valAttr}/></div>
   </div>`;
 }
 
@@ -562,6 +566,17 @@ function showStep(step){
   // Restaurer les données sauvegardées après un délai (pour laisser le DOM se construire)
   setTimeout(() => restoreDeclarationDraft(), 100);
 }
+
+function handlePrimaryAction() {
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  if (isMobile && currentStep === totalSteps) {
+    submitDeclaration();
+    return;
+  }
+  goToNextStep();
+}
+
+window.handlePrimaryAction = handlePrimaryAction;
 
 /**
  * Gère le pré-remplissage à partir d'un document existant
@@ -631,10 +646,21 @@ function updateProgressUI(){
   const wizardControls=document.getElementById('wizardControls');
   const isMobile=window.matchMedia('(max-width: 768px)').matches;
   prev.disabled=currentStep===1; prev.style.opacity=currentStep===1?'0.45':'1';
-  next.style.display=currentStep===totalSteps?'none':'flex';
-  actions.classList.toggle('active',currentStep===totalSteps);
+  const isFinalStep = currentStep===totalSteps;
   if (wizardControls) {
-    wizardControls.style.display = isMobile && currentStep === totalSteps ? 'none' : 'flex';
+    wizardControls.style.display = 'flex';
+  }
+
+  if (isMobile && isFinalStep) {
+    next.style.display = 'flex';
+    next.innerHTML = 'Soumettre <i class="fa-solid fa-paper-plane" style="font-size:11px;"></i>';
+    actions.classList.remove('active');
+    actions.style.display = 'none';
+  } else {
+    next.style.display = isFinalStep ? 'none' : 'flex';
+    next.innerHTML = 'Suivant <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>';
+    actions.classList.toggle('active',isFinalStep);
+    actions.style.display = '';
   }
 }
 
@@ -803,7 +829,13 @@ function submitDeclaration() {
     setTimeout(() => ui.style.borderColor = '#E0D5C4', 2000);
     return;
   }
-  document.getElementById('confirmOverlay').classList.add('show');
+  const confirmOverlay = document.getElementById('confirmOverlay');
+  confirmOverlay.classList.add('show');
+  const passInput = document.getElementById('confirmPassword');
+  if (passInput) {
+    passInput.value = '';
+    setTimeout(() => passInput.focus(), 50);
+  }
 }
 
 function closeConfirmModal() {
@@ -934,14 +966,14 @@ async function validateAndSubmit() {
     }
 
     // ⑦ Contact - téléphone
-    const phoneInput = document.querySelector('input[type="tel"]');
+    const phoneInput = document.getElementById('contactPhone');
     if (phoneInput?.value?.trim()) {
       console.log('✓ telephone_contact:', phoneInput.value.trim());
       formData.append('telephone_contact', phoneInput.value.trim());
     }
     
     // ⑧ Contact - email
-    const emailInput = document.querySelector('input[type="email"]');
+    const emailInput = document.getElementById('contactEmail');
     if (emailInput?.value?.trim()) {
       console.log('✓ email_contact:', emailInput.value.trim());
       formData.append('email_contact', emailInput.value.trim());
@@ -962,8 +994,8 @@ async function validateAndSubmit() {
     // ⑪ Niveau urgence (optionnel)
     const urgEl = document.querySelector('.urgency-btn[data-selected="true"]');
     if (urgEl) {
-       // Maps the class name suffix (low, medium, high) back to label if needed, or just textContent
-       formData.append('urgence_niveau', urgEl.textContent.trim());
+       const urgencyValue = urgEl.dataset.urgency || (urgEl.classList.contains('sel-low') ? 'Basse' : urgEl.classList.contains('sel-medium') ? 'Modérée' : 'Haute');
+       formData.append('urgence_niveau', urgencyValue);
     }
 
     // ⑫ Montant récompense (optionnel)

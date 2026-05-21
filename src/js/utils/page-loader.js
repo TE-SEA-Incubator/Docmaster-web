@@ -1,5 +1,9 @@
 // page-loader.js - Centralized Page loader utilities
 
+import { initDatePickers } from './datepicker.js';
+// Expose minimal API helpers to pages that use inline scripts
+import * as api from '../services/api.js';
+
 /**
  * Ensures the loader element exists, creates it if not.
  * We use 'dm-global-page-loader' ID to avoid collisions.
@@ -51,7 +55,18 @@ export function togglePageLoader(show = true) {
     else hidePageLoader();
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    initDatePickers();
+});
+
 // Global window access
 window.toggleLoader = togglePageLoader;
 window.showPageLoader = showPageLoader;
 window.hidePageLoader = hidePageLoader;
+
+// Expose selected API functions for legacy inline pages
+window.registerMyDevice = api.registerMyDevice;
+window.getMyDevices = api.getMyDevices;
+window.reportDeviceLost = api.reportDeviceLost;
+window.deleteDevice = api.deleteDevice;
+window.verifyDevice = api.verifyDevice;

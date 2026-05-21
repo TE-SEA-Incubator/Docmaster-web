@@ -5,6 +5,12 @@ import { nokashService } from './nokash.service.ts';
 import { v4 as uuidv4 } from 'uuid';
 
 class SubscriptionService {
+  private resolveObjectsLimit(features: any) {
+    const rawLimit = features?.objects ?? features?.objects_limit ?? 0;
+    const parsed = Number(rawLimit);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }
+
   async getAllSubscriptions() {
     return await subscriptionRepository.findAll();
   }
@@ -151,8 +157,8 @@ class SubscriptionService {
 
     if (!activeSub) {
       const freePlan = await query("SELECT * FROM plans WHERE id = 'free'");
-      planData = freePlan.rows[0];
-      features = planData.features;
+      planData = freePlan.rows[0] || { name: 'Gratuit', features: { docs_per_type: 1, objects: 2, alerts: ['email'] } };
+      features = planData.features || { docs_per_type: 1, objects: 2, alerts: ['email'] };
     } else {
       planData = activeSub; // Contains plan_name, etc.
       features = activeSub.features;
@@ -162,7 +168,7 @@ class SubscriptionService {
     const docsCountRes = await query(`SELECT COUNT(*) FROM my_documents WHERE user_id = $1`, [userId]);
     const devicesCountRes = await query(`SELECT COUNT(*) FROM my_devices WHERE user_id = $1`, [userId]);
     const currentObjects = parseInt(docsCountRes.rows[0].count) + parseInt(devicesCountRes.rows[0].count);
-    const objectsLimit = features.objects || 0;
+    const objectsLimit = this.resolveObjectsLimit(features) || 2;
 
     // 2. Declarations Usage (Current active declarations)
     const declCountRes = await query(`SELECT COUNT(*) FROM declarations WHERE reporter_id = $1 AND status != 'RECOVERED'`, [userId]);
@@ -213,7 +219,7 @@ class SubscriptionService {
     if (!activeSub) {
       // If no subscription, we might want to fetch the FREE plan features from the DB
       const freePlan = await query("SELECT * FROM plans WHERE id = 'free'");
-      const features = freePlan.rows[0]?.features || {};
+      const features = freePlan.rows[0]?.features || { docs_per_type: 1, objects: 2, alerts: ['email'] };
       return this.checkLimits(userId, action, features, null, metadata);
     }
 
@@ -279,7 +285,10 @@ class SubscriptionService {
         
         const currentCount = parseInt(docsCountRes.rows[0].count) + parseInt(devicesCountRes.rows[0].count);
 
-        const limit = features.objects || 0;
+        const limit = this.resolveObjectsLimit(features);
+        if (limit <= 0) {
+          return { allowed: true };
+        }
         if (currentCount >= limit) {
           return { 
             allowed: false, 

@@ -120,7 +120,7 @@
         <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/mesGains.html"><i class="fa-solid fa-wallet w-4 text-center"></i> Mes Gains</a>
         <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/Abonnement.html"><i class="fa-solid fa-crown w-4 text-center"></i> Abonnement</a>
         <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/infosProfil.html"><i class="fa-solid fa-user w-4 text-center"></i> Mon Profil</a>
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400" href="#" data-logout="true"  ><i class="fa-solid fa-right-from-bracket w-4 text-center"></i> data-logout="true">Déconnexion</a> 
+        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400" href="#" data-logout="true"><i class="fa-solid fa-right-from-bracket w-4 text-center"></i> Déconnexion</a>
       </nav>
     </div>
 
@@ -229,7 +229,7 @@
                                     <div class="grid md:grid-cols-2 gap-4">
                                         <div>
                                             <label class="text-[11px] font-bold text-[#4B5563] uppercase tracking-wide mb-1.5 block">Date de naissance</label>
-                                            <input id="profile-birth-date" class="profile-input" type="date" />
+                                            <input id="profile-birth-date" class="profile-input datepicker" type="text" />
                                         </div>
                                         <div>
                                             <label class="text-[11px] font-bold text-[#4B5563] uppercase tracking-wide mb-1.5 block">Lieu de naissance</label>
@@ -255,6 +255,20 @@
                                 </div>
                             </form>
                         </div>
+                    </div>
+
+                    <!-- NATIVE LOGOUT ROW (MOBILE FIRST) -->
+                    <div class="mt-8 mb-12">
+                        <button data-logout="true" class="w-full flex items-center gap-4 px-5 py-4 bg-white border border-[#EAE3D8] rounded-2xl hover:bg-red-50 active:scale-[0.98] transition-all group">
+                            <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                                <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                            </div>
+                            <div class="flex-1 text-left">
+                                <p class="text-[15px] font-semibold text-red-500" data-i18n="logout">Déconnexion</p>
+                                <p class="text-[11px] text-gray-400 font-medium">Fermer votre session actuelle</p>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-gray-300 group-hover:translate-x-1 transition-transform"></i>
+                        </button>
                     </div>
                 </div>
             </div>

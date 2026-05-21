@@ -33,6 +33,21 @@ export const registerMyDevice = async (req: Request, res: Response) => {
       });
     }
 
+    // Log incoming device registration request (avoid logging file binaries)
+    try {
+      console.log('📥 [Controller] registerMyDevice request from user:', userId, {
+        brand: data.brand,
+        model: data.model,
+        serial: data.serial_number_imei,
+        color: data.color,
+        assurance: data.assurance,
+        purchase_date: data.purchase_date
+      });
+      console.log('📁 [Controller] attached photos count:', Object.keys(files || {}).reduce((c, k) => c + (files[k]?.length || 0), 0));
+    } catch (e) {
+      console.warn('Failed to log registerMyDevice payload summary', e);
+    }
+
     const result = await deviceService.registerDevice({
       ...data,
       user_id: userId,

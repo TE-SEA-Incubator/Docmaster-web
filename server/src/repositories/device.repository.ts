@@ -13,6 +13,7 @@ export interface Device {
   currency: string;
   where_buy: string;
   garantie_end: string;
+  assurance?: string;
   photos: string[];
   status: 'SAFE' | 'LOST' | 'STOLEN';
   notes?: string;
@@ -24,8 +25,8 @@ class DeviceRepository {
     const query = `
       INSERT INTO my_devices (
         user_id, category, brand, model, serial_number_imei, color, 
-        purchase_date, purchase_value, currency, where_buy, garantie_end, photos, status, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        purchase_date, purchase_value, currency, where_buy, garantie_end, assurance, photos, status, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *
     `;
     const values = [
@@ -40,6 +41,7 @@ class DeviceRepository {
       device.currency || 'XAF',
       device.where_buy || '',
       device.garantie_end || null,
+      device.assurance || 'non',
       JSON.stringify(device.photos || []),
       device.status || 'SAFE',
       device.notes || ''

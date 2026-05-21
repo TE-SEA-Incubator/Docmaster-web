@@ -7,6 +7,18 @@ const userService = new UserService();
 class DeviceService {
   async registerDevice(deviceData: Device) {
     // 0. Check Subscription Limits
+    // Log minimal payload for debugging (avoid exposing sensitive fields)
+    try {
+      console.log('🔧 [Service] registerDevice called for user:', deviceData.user_id, {
+        brand: deviceData.brand,
+        model: deviceData.model,
+        serial: deviceData.serial_number_imei,
+        color: deviceData.color,
+        assurance: deviceData.assurance
+      });
+    } catch (e) {
+      console.warn('Failed to log registerDevice payload summary', e);
+    }
     const validation = await subscriptionService.validateAction(deviceData.user_id, 'REGISTER_OBJECT');
     if (!(validation as any).allowed) {
       throw new Error((validation as any).reason);
@@ -18,7 +30,11 @@ class DeviceService {
         throw new Error('Un appareil avec ce numéro IMEI/Série est déjà enregistré sur la plateforme.');
       }
     }
-    return await deviceRepository.create(deviceData);
+    const created = await deviceRepository.create(deviceData);
+    try {
+      console.log('✅ [Service] device created with id:', created?.id || created?.ID || '<unknown>');
+    } catch (e) {}
+    return created;
   }
 
   async getUserDevices(userId: string) {

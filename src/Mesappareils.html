@@ -3,7 +3,7 @@
 <head>
   <script type="module" src="/js/utils/page-loader.js"></script>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>DocMaster – Mes Appareils</title>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -76,7 +76,7 @@
   </script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html,body{font-family:'Poppins',sans-serif;background:#F2EBD9;height:100vh;overflow:hidden;color:#1A1A1A}
+    html,body{font-family:'Poppins',sans-serif;background:#F2EBD9;height:100vh;overflow:hidden;color:#1A1A1A;display:flex;flex-direction:column}
 
     /* ── Sidebar ── */
     .sidebar{width:260px;height:100vh;background:#1E3A2F;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:40;transform:translateX(0);transition:transform .3s ease}
@@ -92,7 +92,7 @@
     .main-wrap{margin-left:260px;height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:margin-left .3s ease}
     .main-wrap.expanded{margin-left:0}
     .topbar{flex-shrink:0;background:white;border-bottom:1px solid #E0D5C4;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;z-index:20}
-    .page-body{flex:1;min-height:0;overflow-y:auto;padding:24px 16px}
+    .page-body{flex:1;min-height:0;overflow-y:auto;padding:24px 16px;display:flex;flex-direction:column}
     @media(max-width:1024px){
        .topbar{padding: 0 16px;}
     }
@@ -112,80 +112,107 @@
         gap: 12px;
       }
     }
-    @media(max-width: 900px) {
-      #statsRow {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
-      }
-    }
     
     .stat-card{background:white;border-radius:16px;padding:18px 20px;border:1px solid #EDE7DB;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.04);transition:transform .2s,box-shadow .2s}
     .stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.07)}
     .stat-icon{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
 
     /* ── Device cards ── */
-    .device-card{background:white;border-radius:18px;border:1.5px solid #EDE7DB;padding:0;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.05);transition:all .25s;cursor:pointer;position:relative}
+    .device-card{background:white;border-radius:18px;border:1.5px solid #EDE7DB;padding:0;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.04);transition:all .25s;cursor:pointer;position:relative}
     .device-card:hover {
-      border-color: #ef4444;
-      box-shadow: 0 8px 28px rgba(239, 68, 68, .18);
+      border-color: #F5A64B;
+      box-shadow: 0 8px 28px rgba(245, 166, 75, .12);
       transform: translateY(-3px)
     }
     .device-card.is-lost {
       border-color: #ef4444 !important;
       background: #fff1f2;
     }
-    .device-card-header{padding:20px 20px 14px;display:flex;align-items:flex-start;gap:14px}
-    .device-avatar{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-    .device-card-body{padding:0 20px 16px}
-    .device-card-footer{padding:10px 20px;background:#F9F6F1;border-top:1px solid #EDE7DB;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-    .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:10.5px;font-weight:600}
-
-    /* ── Buttons text visibility ── */
-    .verify-text, .add-text {
-      display: none;
-    }
-    @media(min-width: 640px) {
-      .verify-text, .add-text {
-        display: inline;
-      }
-    }
+    .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.02em;}
 
     /* ── Filters ── */
     .filter-btn{padding:6px 14px;border-radius:99px;border:1.5px solid #E0D5C4;background:white;font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#6B7280;cursor:pointer;transition:all .2s;white-space:nowrap}
     .filter-btn:hover{border-color:#F5A64B;color:#D98A30}
     .filter-btn.active{border-color:#F5A64B;background:#F5A64B;color:white}
 
+    @media (max-width: 1023px) {
+      #deviceGrid { gap: 8px !important; }
+    }
+
     /* ── Search ── */
     .search-wrap{position:relative;flex:1;max-width:320px}
-    .search-wrap input{width:100%;padding:9px 14px 9px 38px;border:1.5px solid #E0D5C4;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13px;background:white;outline:none;transition:all .2s;color:#1A1A1A}
+    .search-wrap input{width:100%;padding:10px 14px 10px 38px;border:1.5px solid #E0D5C4;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13px;background:white;outline:none;transition:all .2s;color:#1A1A1A}
     .search-wrap input:focus{border-color:#F5A64B;box-shadow:0 0 0 4px rgba(245,166,75,.12)}
-    .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#C4BAB0;font-size:13px;pointer-events:none}
+    .search-wrap i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#C4BAB0;font-size:13px;pointer-events:none}
 
-    /* ── Modale ── */
-    .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center;padding:16px}
+    /* ── Modale & Bottom Sheets ── */
+    .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:100;align-items:center;justify-content:center;padding:16px}
     .modal-bg.show{display:flex;animation:fadeIn .25s ease}
-    .modal{background:white;border-radius:22px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;animation:popUp .35s cubic-bezier(.34,1.56,.64,1)}
+    .modal{background:white;border-radius:22px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;animation:popUp .35s cubic-bezier(.34,1.56,.64,1);position:relative}
+    
+    @media(max-width:1023px){
+      .modal-bg { align-items: flex-end !important; padding: 0 !important; }
+      .modal { 
+        border-radius: 32px 32px 0 0 !important; 
+        max-width: 100% !important; 
+        max-height: 94vh !important; 
+        animation: slideUpBottom 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+      }
+      .modal-header { 
+        padding: 12px 20px 16px !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        border-bottom: none !important;
+      }
+      .modal-header button { position: absolute !important; right: 16px; top: 16px; background: #F3F4F6 !important; border: none !important; border-radius: 50% !important; }
+      .modal-body { padding: 0 20px 24px !important; }
+    }
     .modal::-webkit-scrollbar{width:4px}
-    .modal::-webkit-scrollbar-thumb{background:#D0C6B8;border-radius:99px}
     .modal-header{padding:26px 28px 0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:white;z-index:2;padding-bottom:14px;border-bottom:1px solid #F0EAE0}
     .modal-body{padding:20px 28px 28px}
 
-    /* ── Fields in modal ── */
-    .field-group{display:flex;flex-direction:column;gap:6px}
-    .field-label{font-size:11.5px;font-weight:700;color:#6B7280;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px}
-    .field-input{width:100%;padding:11px 14px 11px 40px;background:#F9F6F1;border:1.5px solid #E0D5C4;border-radius:11px;font-family:'Poppins',sans-serif;font-size:13.5px;color:#1A1A1A;outline:none;transition:all .2s}
-    .field-input::placeholder{color:#C4BAB0}
-    .field-input:focus{border-color:#F5A64B;background:white;box-shadow:0 0 0 4px rgba(245,166,75,.12)}
+    /* ── Fields in modal (Flat Style) ── */
+    .field-group{display:flex;flex-direction:column;gap:8px}
+    .field-label{font-size:11.5px;font-weight:700;color:#94A3B8;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+    .field-input{
+      width:100%;
+      padding:14px 14px 14px 42px;
+      background:#F3F4F6; /* Modern Flat Grey */
+      border:none;
+      border-radius:12px;
+      font-family:'Poppins',sans-serif;
+      font-size:14px;
+      color:#1A1A1A;
+      outline:none;
+      transition:all .2s;
+    }
+    .field-input::placeholder{color:#9CA3AF}
+    .field-input:focus{background:white;box-shadow:0 0 0 2px #1E3A2F}
     .field-input.no-icon{padding-left:14px}
     .field-wrapper{position:relative;display:flex;align-items:center}
-    .field-icon{position:absolute;left:13px;color:#D98A30;font-size:13px;pointer-events:none}
-    .field-wrapper:focus-within .field-icon{color:#F5A64B}
+    .field-icon{position:absolute;left:14px;color:#9CA3AF;font-size:14px;pointer-events:none}
+    .field-wrapper:focus-within .field-icon{color:#1E3A2F}
     select.field-input{appearance:none;cursor:pointer}
-    textarea.field-input{padding:11px 14px;resize:vertical;min-height:72px;line-height:1.6}
+    textarea.field-input{padding:14px;resize:vertical;min-height:80px;line-height:1.6}
 
     /* ── Upload zone modal ── */
-    .upload-zone{border:2px dashed #D0C6B8;border-radius:13px;background:#F9F6F1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:20px 16px;cursor:pointer;transition:all .22s;text-align:center}
-    .upload-zone:hover,.upload-zone.dragover{border-color:#F5A64B;background:#FEF8F0}
+    .upload-zone{
+      border:1.5px dashed #D1D5DB;
+      border-radius:14px;
+      background:#F3F4F6;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:24px 16px;
+      cursor:pointer;
+      transition:all .2s;
+      text-align:center;
+    }
+    .upload-zone:hover,.upload-zone.dragover{border-color:#1E3A2F;background:#E8F5EE}
     .upload-zone.has-file{border-color:#1E3A2F;background:#E8F5EE;border-style:solid}
     .file-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:#1E3A2F;color:white;border-radius:8px;font-size:11.5px;font-weight:600;margin-top:6px}
 
@@ -196,23 +223,54 @@
     .type-option .type-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;background:#F2EBD9;color:#D98A30;transition:background .2s}
     .type-option.selected .type-icon{background:rgba(245,166,75,.25)}
 
-    /* ── Detail panel ── */
-    .detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(5px);z-index:90;align-items:center;justify-content:flex-end}
-    .detail-overlay.show{display:flex;animation:fadeIn .25s ease}
-    .detail-panel{width:100%;max-width:420px;height:100vh;background:white;overflow-y:auto;animation:slideFromRight .3s ease;box-shadow:-10px 0 40px rgba(0,0,0,.15)}
-    @media (max-width: 480px) {
-      .detail-panel { max-width: 100%; }
+    /* ── Detail panel (Premium Bottom Sheet) ── */
+    .detail-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 150;
+      align-items: flex-end;
+      justify-content: center;
     }
-    .detail-panel::-webkit-scrollbar{width:4px}
-    .detail-panel::-webkit-scrollbar-thumb{background:#D0C6B8;border-radius:99px}
+    .detail-overlay.show {
+      display: flex;
+      animation: fadeIn 0.3s ease;
+    }
+    .detail-panel {
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      border-radius: 32px 32px 0 0;
+      padding: 12px 24px 40px;
+      max-height: 92vh;
+      overflow-y: auto;
+      animation: slideUpBottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      box-shadow: 0 -10px 25px rgba(0,0,0,0.05);
+    }
+    
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: #E5E7EB;
+      border-radius: 99px;
+      margin: 0 auto 16px;
+    }
 
-    /* ── Empty state ── */
-    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center}
+    /* Desktop Override */
+    @media (min-width: 1024px) {
+      .detail-overlay { align-items: center; justify-content: flex-end; padding: 0; }
+      .detail-panel { max-width: 420px; height: 100vh; border-radius: 0; animation: slideFromRight 0.3s ease; padding: 24px; }
+      .sheet-handle { display: none; }
+    }
 
     /* ── Animations ── */
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     @keyframes popUp{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
     @keyframes slideFromRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
+    @keyframes slideUpBottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
     @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     .card-appear{animation:slideUp .3s ease both}
 
@@ -220,115 +278,86 @@
     .view-btn{width:32px;height:32px;border-radius:8px;border:1.5px solid #E0D5C4;background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#6B7280;font-size:13px;transition:all .2s}
     .view-btn.active{background:#1E3A2F;border-color:#1E3A2F;color:white}
 
-    /* ── Grid / List toggle ── */
-    #deviceGrid.list-view{display:flex;flex-direction:column;gap:10px}
-    #deviceGrid.list-view .device-card{display:flex;flex-direction:row;border-radius:14px}
-    #deviceGrid.list-view .device-card-header{flex:1;padding:14px 18px;border-bottom:none}
-    #deviceGrid.list-view .device-card-body{display:none}
-    #deviceGrid.list-view .device-card-footer{border-top:none;border-left:1px solid #EDE7DB;border-radius:0;padding:14px 18px;flex-direction:column;align-items:flex-end;gap:6px;min-width:150px}
-
-    /* MOBILE FIXES */
-    @media(max-width:900px){
+    /* ── Mobile UI Fixes (8px Grid) ── */
+    @media(max-width:1023px){
       .sidebar{transform:translateX(-100%)} 
       .sidebar.open{transform:translateX(0)}
       .main-wrap{margin-left:0} 
-      .page-body{padding:16px 12px 80px}
-      .detail-panel{width:100%;max-width:100%}
+      .page-body{padding:16px 12px 100px !important;} /* pb-100 to clear footer */
       
-      /* Header & Title adjustments for mobile */
-      .topbar h1 { font-size: 15px !important; }
-      .topbar nav { display: none !important; }
-      .topbar { padding: 0 12px !important; }
-      
-      .stat-card { padding: 14px 12px; font-size: 12px; }
-      .stat-card p { font-size: 11px; }
-      
-      /* Toolbar adjustments */
-      .toolbar-main { flex-direction: column; align-items: stretch !important; gap: 8px; }
-      .search-wrap { max-width: none !important; }
-      .filter-container { overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; gap: 6px; }
-      .filter-container::-webkit-scrollbar { display: none; }
-      .filter-btn { padding: 5px 10px; font-size: 11px; }
-      .actions-container { justify-content: flex-start; gap: 8px; flex-wrap: wrap; }
-      .actions-container button {
-        padding: 10px 12px !important;
-        font-size: 13px !important;
-        gap: 6px !important;
+      .topbar { padding: 0 16px !important; height: 64px !important; border-bottom: none !important; background: #F7F7F9 !important; }
+      .topbar > div:first-child nav { display: none !important; }
+      .topbar h1 { font-size: 16px !important; }
+
+      /* Invisible Icons Fix */
+      .top-actions-mobile {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
       }
-      .actions-container button i {
-        font-size: 16px !important;
-      }
-      
-      #deviceGrid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; gap: 12px !important; }
-      .device-card-header { padding: 14px 14px 10px; gap: 10px; }
-      .device-avatar { width: 44px; height: 44px; font-size: 18px; }
-      .device-card-body { padding: 0 14px 12px; font-size: 10px; }
-      .device-card-footer { padding: 8px 14px; font-size: 9px; }
-      .tag { padding: 2px 6px; font-size: 9px; }
-    }
-    
-    @media(max-width:600px){
-      #statsRow { 
-        grid-template-columns: repeat(2, 1fr) !important; 
-      }
-      .stat-card { padding: 12px 10px; gap: 10px; }
-      .stat-icon { width: 40px; height: 40px; font-size: 16px; }
-      
-      .topbar { height: 56px; }
-      .topbar h1 { font-size: 13px !important; }
-      
-      .page-body { padding: 12px 10px 80px; }
-      
-      .modal { max-width: 95vw; max-height: 95vh; }
-      .modal-header { padding: 20px 16px 0; }
-      .modal-body { padding: 16px; }
-      
-      .detail-panel { max-width: 100vw; }
-    }
-    
-    @media(max-width:480px){
-      #statsRow { 
-        grid-template-columns: repeat(2, 1fr) !important; 
-        gap: 6px !important;
-      }
-      .stat-card { padding: 10px 8px !important; gap: 8px !important; }
-      .stat-icon { width: 36px !important; height: 36px !important; font-size: 14px !important; }
-      .stat-card p { font-size: 10px !important; }
-      
-      .topbar h1 { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px !important; }
-      
-      .toolbar-main { gap: 6px; }
-      .search-wrap input { font-size: 12px; padding: 8px 12px 8px 32px; }
-      
-      #deviceGrid { grid-template-columns: 1fr !important; }
-      .device-card-footer { padding: 8px 12px; }
-      
-      .actions-container { 
-        gap: 6px; 
-        width: 100%;
+      .icon-action-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
         justify-content: center;
+        color: #4B5563; /* Dark Gray */
+        font-size: 18px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s;
       }
-      .actions-container button { 
-        padding: 12px 16px !important;
-        font-size: 13px !important;
-        gap: 8px !important;
+      .icon-action-btn:active { background: rgba(0,0,0,0.05); }
+
+      /* Sticky Bottom Bar */
+      .sticky-bottom-bar {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid #F3F4F6;
+        padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+        gap: 12px;
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.03);
+      }
+      
+      .btn-primary-mobile {
         flex: 1;
-        max-width: 160px;
+        height: 48px;
+        background: #1A1A1A;
+        color: white;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
       }
-      .actions-container button i {
-        font-size: 16px !important;
+      
+      .btn-secondary-mobile {
+        flex: 1;
+        height: 48px;
+        background: white;
+        color: #374151;
+        border: 1.5px solid #E5E7EB;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
       }
-      
-      .modal { padding: 0; }
-      .modal-header { padding: 16px 14px 0; }
-      .modal-body { padding: 12px 14px 16px; }
-      
-      .field-input { font-size: 13px; padding: 10px 12px 10px 34px; }
-      textarea.field-input { min-height: 60px; }
-      
-      .type-option { padding: 10px 6px; font-size: 10px; }
-      .type-option .type-icon { width: 32px; height: 32px; font-size: 14px; }
+
+      /* Hide toolbar actions on mobile */
+      .toolbar-main .actions-container { display: none !important; }
+      .search-wrap { max-width: none !important; margin-bottom: 8px; }
+      #statsRow { gap: 8px !important; margin-bottom: 16px !important; }
     }
+    
+    /* Default Hidden States */
+    .top-actions-mobile, .sticky-bottom-bar { display: none; }
   </style>
   <script src="/js/loader.js"></script>
   <script type="module" src="/js/index.js"></script>
@@ -342,439 +371,176 @@
 
   <script type="module" src="/js/utils/ui-helpers.js"></script>
 
-<!-- SIDEBAR -->
-  <!-- Overlay mobile -->
+  <!-- SIDEBAR -->
   <div class="sb-overlay page-fade-in" id="overlay" onclick="closeSb()"></div>
-
-  <!-- Sidebar -->
-  <aside class="sidebar w-[var(--sidebar,260px)] bg-green-dark flex flex-col page-fade-in" id="sidebar">
-    <!-- Logo -->
+  <aside class="sidebar" id="sidebar">
     <div class="flex items-center gap-3 px-5 py-4 border-b border-white/10 flex-shrink-0">
       <img src="./assets/images/docmaster.png" alt="DocMaster" class="h-14 w-auto object-contain rounded" />
-      <button class="ml-auto text-white/40 hover:text-white lg:hidden transition-colors" onclick="closeSb()" aria-label="Fermer le menu">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+      <button class="ml-auto text-white/40 hover:text-white lg:hidden transition-colors" onclick="closeSb()"><i class="fa-solid fa-xmark"></i></button>
     </div>
-
-    <!-- Nav links -->
     <div class="flex-1 overflow-y-auto py-2 custom-scroll">
       <div class="px-5 pt-4 pb-1 text-[9.5px] font-bold text-white/30 uppercase tracking-widest">Principal</div>
       <nav class="flex flex-col gap-0.5 px-2">
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/dashboard.html"><i class="fa-solid fa-house w-4 text-center"></i> Tableau de bord</a>
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/Mesdocument.html"><i class="fa-solid fa-list-check w-4 text-center"></i> Mes sauvegardes</a>
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/Mesappareils.html"><i class="fa-solid fa-mobile-screen-button w-4 text-center"></i> Mes appareils</a>
+        <a class="nav-item" href="/dashboard.html"><div class="nav-icon"><i class="fa-solid fa-house"></i></div> Tableau de bord</a>
+        <a class="nav-item" href="/Mesdocument.html"><div class="nav-icon"><i class="fa-solid fa-list-check"></i></div> Mes sauvegardes</a>
+        <a class="nav-item active" href="/Mesappareils.html"><div class="nav-icon"><i class="fa-solid fa-mobile-screen-button"></i></div> Mes appareils</a>
       </nav>
       <div class="px-5 pt-5 pb-1 text-[9.5px] font-bold text-white/30 uppercase tracking-widest">Compte</div>
       <nav class="flex flex-col gap-0.5 px-2">
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/docDeclares.html"><i class="fa-solid fa-clock-rotate-left w-4 text-center"></i> Historique</a>
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/mesGains.html"><i class="fa-solid fa-wallet w-4 text-center"></i> Mes Gains</a>
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/Abonnement.html"><i class="fa-solid fa-crown w-4 text-center"></i> Abonnement</a>
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/5 hover:text-white/90" href="/infosProfil.html"><i class="fa-solid fa-user w-4 text-center"></i> Mon Profil</a>
-        <a class="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400" href="#" data-logout="true"  ><i class="fa-solid fa-right-from-bracket w-4 text-center"></i> data-logout="true">Déconnexion</a> 
+        <a class="nav-item" href="/docDeclares.html"><div class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></div> Historique</a>
+        <a class="nav-item" href="/mesGains.html"><div class="nav-icon"><i class="fa-solid fa-wallet"></i></div> Mes Gains</a>
+        <a class="nav-item" href="/Abonnement.html"><div class="nav-icon"><i class="fa-solid fa-crown"></i></div> Abonnement</a>
+        <a class="nav-item" href="/infosProfil.html"><div class="nav-icon"><i class="fa-solid fa-user"></i></div> Mon Profil</a>
+        <a class="nav-item text-red-400/70" href="#" data-logout="true"><div class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></div> Déconnexion</a> 
       </nav>
-    </div>
-
-    <!-- User footer -->
-    <div class="px-2 py-3 border-t border-white/10">
-      <div class="flex items-center gap-2.5 px-3 py-2 rounded-[10px] cursor-pointer hover:bg-white/5 transition-colors">
-        <div class="w-[30px] h-[30px] rounded-[8px] bg-primary flex items-center justify-center font-bricolage text-[10px] font-extrabold text-white">
-          <span id="userInitial">JM</span>
-        </div>
-        <div>
-          <div class="text-[12.5px] font-semibold text-white leading-tight" id="userName">Jean-Marc D.</div>
-          <div class="text-[10.5px] text-white/40">Plan Standard</div>
-        </div>
-      </div>
     </div>
   </aside>
 
-
-<!-- MAIN -->
-<div class="main-wrap" id="mainWrap">
-
-  <!-- TOPBAR -->
-  <header class="topbar">
-    <div style="display:flex;align-items:center;gap:14px;min-width:0;flex:1;">
-      <button id="menuBtn" onclick="window.toggleSb()" style="display:flex;background:none;border:none;color:#374151;font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;"><i class="fa-solid fa-bars"></i></button>
-      <div style="min-width:0;">
-        <nav style="font-size:11.5px;color:#9CA3AF;font-weight:500;display:flex;align-items:center;gap:5px;">
-          <a href="dashboard.html" style="color:#9CA3AF;text-decoration:none;">Accueil</a>
-          <i class="fa-solid fa-chevron-right" style="font-size:9px;"></i>
-          <span style="color:#1E3A2F;font-weight:600;">Mes appareils</span>
-        </nav>
-        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:#1A1A1A;margin-top:1px;">Mes appareils &amp; équipements</h1>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-      <button onclick="window.openNotifModal()" style="width:36px;height:36px;border-radius:10px;border:1.5px solid #E0D5C4;background:white;color:#6B7280;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;" onmouseover="this.style.borderColor='#F5A64B';this.style.color='#F5A64B'" onmouseout="this.style.borderColor='#E0D5C4';this.style.color='#6B7280'">
-        <i class="fa-solid fa-bell"></i>
-        <div id="notifDot" style="position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;border:2px solid white;transition:background 0.3s;"></div>
-      </button>
-      <div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border:1.5px solid #E0D5C4;border-radius:10px;background:white;flex-shrink:0;">
-        <div id="topInitial" style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1E3A2F,#2D5A42);display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:12px;font-weight:800;color:white;cursor:pointer;">JM</div>
-        <span id="topName" style="font-size:12.5px;font-weight:600;color:#1A1A1A;display:none;white-space:nowrap;">Jean-Marc</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- PAGE BODY -->
-  <div class="page-body">
-
-    <!-- STATS -->
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:24px;" id="statsRow">
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#EEF2FF;color:#6366F1;"><i class="fa-solid fa-laptop"></i></div>
-        <div>
-          <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider">Appareils</p>
-          <p class="font-bricolage text-xl md:text-2xl font-extrabold text-textMain" id="statTotal">0</p>
+  <!-- MAIN -->
+  <div class="main-wrap" id="mainWrap">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:14px;min-width:0;flex:1;">
+        <button id="menuBtn" onclick="window.toggleSb()" style="display:flex;background:none;border:none;color:#374151;font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;"><i class="fa-solid fa-bars"></i></button>
+        <div style="min-width:0;">
+          <nav style="font-size:11.5px;color:#9CA3AF;font-weight:500;display:flex;align-items:center;gap:5px;" class="hidden md:flex">
+            <a href="dashboard.html" style="color:#9CA3AF;text-decoration:none;">Accueil</a>
+            <i class="fa-solid fa-chevron-right" style="font-size:9px;"></i>
+            <span style="color:#1E3A2F;font-weight:600;">Mes appareils</span>
+          </nav>
+          <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:#1A1A1A;margin-top:1px;">Mes appareils</h1>
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#E8F5EE;color:#1E3A2F;"><i class="fa-solid fa-file-invoice"></i></div>
-        <div>
-          <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider">Factures</p>
-          <p class="font-bricolage text-xl md:text-2xl font-extrabold text-textMain" id="statFact">0</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#FEF0DC;color:#D98A30;"><i class="fa-solid fa-shield-halved"></i></div>
-        <div>
-          <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider">Assurés</p>
-          <p class="font-bricolage text-xl md:text-2xl font-extrabold text-textMain" id="statAssure">0</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#fef2f2;color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div>
-          <p class="text-[10px] font-bold text-textMuted uppercase tracking-wider">Garantie</p>
-          <p class="font-bricolage text-xl md:text-2xl font-extrabold text-textMain" id="statExp">0</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- TOOLBAR -->
-    <div class="toolbar-main flex flex-col md:flex-row md:items-center gap-4 mb-6">
-      <div class="search-wrap">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" placeholder="Rechercher…" id="searchInput" oninput="window.filterDevices()" autocomplete="off"/>
       </div>
       
-      <div class="filter-container flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
-        <button class="filter-btn active" onclick="window.setFilter('all',this)">Tous</button>
-        <button class="filter-btn" onclick="window.setFilter('telephone',this)"><i class="fa-solid fa-mobile-screen-button mr-1 text-[10px]"></i>Téléphones</button>
-        <button class="filter-btn" onclick="window.setFilter('ordinateur',this)"><i class="fa-solid fa-laptop mr-1 text-[10px]"></i>Ordinateurs</button>
-        <button class="filter-btn" onclick="window.setFilter('tablette',this)"><i class="fa-solid fa-tablet-screen-button mr-1 text-[10px]"></i>Tablettes</button>
-        <button class="filter-btn" onclick="window.setFilter('autre',this)"><i class="fa-solid fa-box mr-1 text-[10px]"></i>Autres</button>
-      </div>
-
-      <div class="actions-container ml-auto flex items-center gap-3">
-        <div class="flex items-center gap-1.5 bg-white border border-borderMain rounded-xl p-1">
-          <div class="view-btn active" id="btnGrid" onclick="window.setView('grid')" title="Vue grille"><i class="fa-solid fa-grid-2"></i></div>
-          <div class="view-btn" id="btnList" onclick="window.setView('list')" title="Vue liste"><i class="fa-solid fa-list-ul"></i></div>
-        </div>
-        <button onclick="window.openVerifyModal()" 
-          title="Vérifier un appareil"
-          style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#F5A64B;color:white;border:none;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;" 
-          onmouseover="this.style.background='#D98A30'" 
-          onmouseout="this.style.background='#F5A64B'">
-          <i class="fa-solid fa-shield-halved" style="font-size:14px;"></i> <span style="display:none;" class="verify-text">Vérifier</span>
+      <!-- Mobile Action Icons -->
+      <div class="top-actions-mobile">
+        <button class="icon-action-btn" onclick="window.refreshDevices()" title="Rafraîchir">
+          <i class="fa-solid fa-arrows-rotate"></i>
         </button>
-        <button onclick="window.openAddModal()" 
-          style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#1E3A2F;color:white;border:none;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;" 
-          onmouseover="this.style.background='#2D5A42'" 
-          onmouseout="this.style.background='#1E3A2F'">
-          <i class="fa-solid fa-plus" style="font-size:16px;"></i> <span style="display:none;" class="add-text">Ajouter</span>
+        <button class="icon-action-btn" onclick="window.openAddModal()" title="Ajouter">
+          <i class="fa-solid fa-plus"></i>
         </button>
       </div>
-    </div>
 
-    <!-- DEVICE GRID -->
-    <div id="deviceGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;"></div>
-
-    <!-- EMPTY STATE -->
-    <div id="emptyState" class="empty-state" style="display:none;">
-      <div style="width:80px;height:80px;border-radius:20px;background:#F2EBD9;display:flex;align-items:center;justify-content:center;font-size:34px;margin-bottom:18px;">📱</div>
-      <h3 style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">Aucun appareil enregistré</h3>
-      <p style="font-size:13px;color:#9CA3AF;max-width:300px;line-height:1.6;margin-bottom:22px;">Ajoutez vos appareils pour conserver vos factures, numéros de série et garanties en un seul endroit.</p>
-      <button onclick="window.openAddModal()" style="padding:11px 22px;background:#1E3A2F;border:none;border-radius:12px;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:800;color:white;cursor:pointer;display:flex;align-items:center;gap:7px;" onmouseover="this.style.background='#2D5A42'" onmouseout="this.style.background='#1E3A2F'">
-        <i class="fa-solid fa-plus"></i> Ajouter mon premier appareil
-      </button>
-    </div>
-
-  </div><!-- /page-body -->
-</div><!-- /main-wrap -->
-
-<!-- CONFIRMATION MODAL -->
-<div class="modal-bg" id="confirmLostModal" style="background:rgba(30,58,47,.85); backdrop-filter:blur(8px); z-index:200;">
-  <div class="modal animate-in" style="max-width:400px; text-align:center; padding:32px;">
-    <div style="width:60px;height:60px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-      <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;font-size:24px;"></i>
-    </div>
-    <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">Signaler un problème</h2>
-    <p style="font-size:13px;color:#6B7280;line-height:1.6;margin-bottom:12px;">Voulez-vous déclarer cet appareil comme perdu ou volé ?</p>
-    
-    <div style="background:#fff7ed; border-radius:12px; padding:12px; margin-bottom:20px; text-align:left; border:1px solid #ffedd5;">
-      <form onsubmit="event.preventDefault(); window.validateAndSubmitLost();" style="margin-top:10px;">
-        <div class="field-group" style="margin-bottom:15px;">
-          <label class="field-label">Type de signalement</label>
-          <select id="reportType" class="field-input">
-            <option value="LOST">Perdu (Oubli, perte)</option>
-            <option value="STOLEN">Volé (Vol avec agression ou effraction)</option>
-          </select>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;" class="hidden md:flex">
+        <button onclick="window.openNotifModal()" style="width:36px;height:36px;border-radius:10px;border:1.5px solid #E0D5C4;background:white;color:#6B7280;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;" onmouseover="this.style.borderColor='#F5A64B';this.style.color='#F5A64B'" onmouseout="this.style.borderColor='#E0D5C4';this.style.color='#6B7280'">
+          <i class="fa-solid fa-bell"></i>
+          <div id="notifDot" style="position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;border:2px solid white;transition:background 0.3s;"></div>
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border:1.5px solid #E0D5C4;border-radius:10px;background:white;flex-shrink:0;">
+          <div id="topInitial" style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1E3A2F,#2D5A42);display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:12px;font-weight:800;color:white;cursor:pointer;">JM</div>
         </div>
-        <p style="font-size:11.5px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Confirmer avec votre mot de passe</p>
-        <div class="field-wrapper">
-          <i class="fa-solid fa-lock field-icon"></i>
-          <input type="password" id="confirmPassword" class="field-input" placeholder="Votre mot de passe" autocomplete="current-password">
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div id="statsRow" class="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 mb-6">
+        <div class="stat-card"><div class="stat-icon bg-[#EEF2FF] text-[#6366F1]"><i class="fa-solid fa-laptop"></i></div><div><p class="text-[9px] font-bold text-gray-400 uppercase">Appareils</p><p class="font-bricolage text-xl font-extrabold" id="statTotal">0</p></div></div>
+        <div class="stat-card"><div class="stat-icon bg-[#E8F5EE] text-[#1E3A2F]"><i class="fa-solid fa-file-invoice"></i></div><div><p class="text-[9px] font-bold text-gray-400 uppercase">Factures</p><p class="font-bricolage text-xl font-extrabold" id="statFact">0</p></div></div>
+        <div class="stat-card"><div class="stat-icon bg-[#FEF0DC] text-[#D98A30]"><i class="fa-solid fa-shield-halved"></i></div><div><p class="text-[9px] font-bold text-gray-400 uppercase">Assurés</p><p class="font-bricolage text-xl font-extrabold" id="statAssure">0</p></div></div>
+        <div class="stat-card"><div class="stat-icon bg-[#fef2f2] text-[#ef4444]"><i class="fa-solid fa-triangle-exclamation"></i></div><div><p class="text-[9px] font-bold text-gray-400 uppercase">Garantie</p><p class="font-bricolage text-xl font-extrabold" id="statExp">0</p></div></div>
+      </div>
+
+      <!-- TOOLBAR -->
+      <div class="toolbar-main flex flex-col md:flex-row md:items-center gap-4 mb-6">
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="Rechercher…" id="searchInput" oninput="window.filterDevices()" autocomplete="off"/>
         </div>
-        <p id="passwordError" style="display:none;font-size:11px;color:#ef4444;margin-top:6px;font-weight:600;"><i class="fa-solid fa-circle-exclamation"></i> Mot de passe incorrect ou trop court.</p>
         
-        <button type="submit" id="finalSubmitBtn" style="width:100%;margin-top:20px;padding:14px;background:#ef4444;border:none;border-radius:12px;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:800;color:white;cursor:pointer;box-shadow:0 10px 25px rgba(239,68,68,.3);transition:all .2s;">Confirmer la déclaration</button>
-      </form>
-    </div>
-
-    <div style="display:flex;gap:10px;">
-      <button onclick="window.closeConfirmLost()" style="flex:1;padding:12px;border:1.5px solid #E0D5C4;background:white;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;color:#374151;cursor:pointer;">Annuler</button>
-    </div>
-  </div>
-</div>
-
-<!-- SUCCESS MODAL -->
-<div class="modal-bg" id="successOverlay" style="background:rgba(30,58,47,.85); backdrop-filter:blur(8px); z-index:300;">
-  <div class="modal animate-in" style="max-width:400px; text-align:center; padding:32px; border-radius:24px;">
-    <div style="width:70px;height:70px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:32px;">
-      <i class="fa-solid fa-check" style="color:#10B981;"></i>
-    </div>
-    <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">Appareil déclaré perdu !</h2>
-    <p style="font-size:13px;color:#6B7280;line-height:1.6;margin-bottom:24px;">L'appareil a été marqué comme perdu dans votre inventaire. Nous vous tiendrons informé.</p>
-    <button onclick="document.getElementById('successOverlay').classList.remove('show')" style="width:100%;padding:14px;background:#1E3A2F;color:white;border:none;border-radius:14px;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:800;cursor:pointer;">D'accord</button>
-  </div>
-</div>
-
-<!-- MODALE VÉRIFICATION -->
-<div class="modal-bg" id="verifyModal">
-  <div class="modal animate-in" style="max-width:450px; text-align:center; padding:32px; border-radius:24px;">
-    <div style="width:70px;height:70px;border-radius:20px;background:#FEF0DC;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-      <i class="fa-solid fa-shield-halved" style="color:#F5A64B;font-size:32px;"></i>
-    </div>
-    <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;color:#1A1A1A;margin-bottom:12px;">Vérifier un appareil</h2>
-    <p style="font-size:13.5px;color:#6B7280;line-height:1.6;margin-bottom:24px;">
-      Vous souhaitez acheter un appareil d'occasion ? Vérifiez si l'appareil n'a pas été déclaré <strong>volé ou perdu</strong>.
-    </p>
-    
-    <div style="margin-bottom:24px; text-align:left;">
-        <label class="field-label" style="margin-bottom:8px;">Numéro de série / IMEI</label>
-        <div class="field-wrapper">
-            <i class="fa-solid fa-barcode field-icon"></i>
-            <input type="text" id="verifyImei" class="field-input" placeholder="Saisissez l'IMEI ou N° de série">
+        <div class="filter-container flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+          <button class="filter-btn active" onclick="window.setFilter('all',this)">Tous</button>
+          <button class="filter-btn" onclick="window.setFilter('telephone',this)"><i class="fa-solid fa-mobile-screen-button mr-1 text-[10px]"></i>Téléphones</button>
+          <button class="filter-btn" onclick="window.setFilter('ordinateur',this)"><i class="fa-solid fa-laptop mr-1 text-[10px]"></i>Ordinateurs</button>
+          <button class="filter-btn" onclick="window.setFilter('tablette',this)"><i class="fa-solid fa-tablet-screen-button mr-1 text-[10px]"></i>Tablettes</button>
         </div>
-    </div>
 
-    <!-- Verification Result Area -->
-    <div id="verifyResult" style="display:none; margin-bottom:24px; padding:16px; border-radius:14px; text-align:left; animation:fadeIn 0.3s ease;">
-    </div>
-
-    <div style="display:flex;gap:10px;">
-      <button onclick="window.closeVerifyModal()" style="flex:1;padding:14px;border:1.5px solid #E0D5C4;background:white;border-radius:14px;font-family:'Poppins',sans-serif;font-size:14px;font-weight:600;color:#374151;cursor:pointer;">Annuler</button>
-      <button onclick="window.startVerification()" style="flex:1.5;padding:14px;background:#F5A64B;color:white;border:none;border-radius:14px;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-        <i class="fa-solid fa-magnifying-glass"></i> Vérifier
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- MODALE AJOUT / ÉDITION -->
-<div class="modal-bg" id="addModal">
-  <div class="modal" id="modalBox">
-    <div class="modal-header">
-      <div>
-        <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:19px;font-weight:800;color:#1A1A1A;" id="modalTitle">Ajouter un appareil</h2>
-        <p style="font-size:12px;color:#9CA3AF;margin-top:2px;">Conservez toutes les infos importantes</p>
-      </div>
-      <button onclick="window.closeAddModal()" style="width:34px;height:34px;border-radius:9px;border:1.5px solid #E0D5C4;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6B7280;font-size:14px;transition:all .15s;flex-shrink:0;" onmouseover="this.style.borderColor='#ef4444';this.style.color='#ef4444'" onmouseout="this.style.borderColor='#E0D5C4';this.style.color='#6B7280'"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="modal-body">
-
-      <!-- Type d'appareil -->
-      <div style="margin-bottom:20px;">
-        <p class="field-label" style="margin-bottom:10px;"><i class="fa-solid fa-shapes" style="color:#F5A64B;"></i> Type d'appareil</p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;" id="typeSelector">
-          <div class="type-option selected" onclick="window.selectType(this,'telephone')" data-type="telephone">
-            <div class="type-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>Téléphone
+        <div class="actions-container ml-auto hidden md:flex items-center gap-3">
+          <div class="flex items-center gap-1.5 bg-white border border-borderMain rounded-xl p-1">
+            <div class="view-btn active" id="btnGrid" onclick="window.setView('grid')" title="Vue grille"><i class="fa-solid fa-grid-2"></i></div>
+            <div class="view-btn" id="btnList" onclick="window.setView('list')" title="Vue liste"><i class="fa-solid fa-list-ul"></i></div>
           </div>
-          <div class="type-option" onclick="window.selectType(this,'ordinateur')" data-type="ordinateur">
-            <div class="type-icon"><i class="fa-solid fa-laptop"></i></div>Ordinateur
-          </div>
-          <div class="type-option" onclick="window.selectType(this,'tablette')" data-type="tablette">
-            <div class="type-icon"><i class="fa-solid fa-tablet-screen-button"></i></div>Tablette
-          </div>
-          <div class="type-option" onclick="window.selectType(this,'tv')" data-type="tv">
-            <div class="type-icon"><i class="fa-solid fa-tv"></i></div>TV
-          </div>
-          <div class="type-option" onclick="window.selectType(this,'autre')" data-type="autre">
-            <div class="type-icon"><i class="fa-solid fa-box"></i></div>Autre
-          </div>
+          <button onclick="window.openVerifyModal()" 
+            class="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white border-none rounded-xl font-semibold text-sm transition-all shadow-sm">
+            <i class="fa-solid fa-shield-halved"></i> <span>Vérifier</span>
+          </button>
+          <button onclick="window.openAddModal()" 
+            class="flex items-center gap-2 px-4 py-2.5 bg-green-dark hover:bg-green-mid text-white border-none rounded-xl font-semibold text-sm transition-all shadow-sm">
+            <i class="fa-solid fa-plus"></i> <span>Ajouter</span>
+          </button>
         </div>
       </div>
 
-      <!-- Infos de base -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-        <div class="field-group" style="grid-column:1/-1;">
-          <label class="field-label"><i class="fa-solid fa-tag" style="color:#F5A64B;font-size:10px;"></i> Nom de l'appareil <span style="color:#ef4444;">*</span></label>
-          <div class="field-wrapper"><i class="fa-solid fa-tag field-icon"></i><input type="text" class="field-input" id="fNom" placeholder="Ex: iPhone 14 Pro, MacBook Air M2…"/></div>
-        </div>
-        <div class="field-group">
-          <label class="field-label"><i class="fa-solid fa-building" style="color:#F5A64B;font-size:10px;"></i> Marque</label>
-          <div class="field-wrapper"><i class="fa-solid fa-building field-icon"></i>
-            <select class="field-input" id="fMarque">
-              <option value="">Sélectionner…</option>
-              <optgroup label="Téléphones / Tablettes">
-                <option>Apple</option><option>Samsung</option><option>Xiaomi</option>
-                <option>Oppo</option><option>Tecno</option><option>Infinix</option>
-                <option>Itel</option><option>Huawei</option><option>OnePlus</option>
-              </optgroup>
-              <optgroup label="Ordinateurs">
-                <option>Apple</option><option>Dell</option><option>HP</option>
-                <option>Lenovo</option><option>Asus</option><option>Acer</option><option>MSI</option>
-              </optgroup>
-              <optgroup label="TV / Audio">
-                <option>Samsung</option><option>LG</option><option>Sony</option>
-                <option>TCL</option><option>Hisense</option>
-              </optgroup>
-              <option value="autre">Autre…</option>
-            </select>
-          </div>
-        </div>
-        <div class="field-group">
-          <label class="field-label"><i class="fa-solid fa-code-branch" style="color:#F5A64B;font-size:10px;"></i> Modèle</label>
-          <div class="field-wrapper"><i class="fa-solid fa-code-branch field-icon"></i><input type="text" class="field-input" id="fModele" placeholder="Ex: Galaxy S23…"/></div>
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-        <div class="field-group">
-          <label class="field-label"><i class="fa-solid fa-barcode" style="color:#F5A64B;font-size:10px;"></i> N° série / IMEI</label>
-          <div class="field-wrapper"><i class="fa-solid fa-barcode field-icon"></i><input type="text" class="field-input" id="fSerial" placeholder="SN ou IMEI"/></div>
-        </div>
-        <div class="field-group">
-          <label class="field-label"><i class="fa-solid fa-palette" style="color:#F5A64B;font-size:10px;"></i> Couleur</label>
-          <div class="field-wrapper"><i class="fa-solid fa-palette field-icon"></i><input type="text" class="field-input" id="fCouleur" placeholder="Ex: Noir, Space Gray…"/></div>
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
-        <div class="field-group">
-          <label class="field-label"><i class="fa-solid fa-calendar-plus" style="color:#F5A64B;font-size:10px;"></i> Date d'achat</label>
-          <div class="field-wrapper"><i class="fa-solid fa-calendar field-icon"></i><input type="date" class="field-input" id="fDateAchat"/></div>
-        </div>
-        <div class="field-group">
-          <label class="field-label"><i class="fa-solid fa-calendar-xmark" style="color:#F5A64B;font-size:10px;"></i> Fin garantie</label>
-          <div class="field-wrapper"><i class="fa-solid fa-calendar-xmark field-icon"></i><input type="date" class="field-input" id="fGarantie"/></div>
-        </div>
-        <div class="field-group">
-          <label class="field-label"><i class="fa-solid fa-franc-sign" style="color:#F5A64B;font-size:10px;"></i> Prix</label>
-          <div class="field-wrapper"><i class="fa-solid fa-franc-sign field-icon" style="font-size:11px;"></i><input type="number" class="field-input" id="fPrix" placeholder="FCFA" min="0" step="500"/></div>
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-        <div class="field-group">
-          <label class="field-label"><i class="fa-solid fa-store" style="color:#F5A64B;font-size:10px;"></i> Lieu d'achat</label>
-          <div class="field-wrapper"><i class="fa-solid fa-store field-icon"></i><input type="text" class="field-input" id="fLieu" placeholder="Ex: Orange Digital Center…"/></div>
-        </div>
-        <div class="field-group">
-          <label class="field-label"><i class="fa-solid fa-shield-halved" style="color:#F5A64B;font-size:10px;"></i> Assurance</label>
-          <div class="field-wrapper"><i class="fa-solid fa-shield-halved field-icon"></i>
-            <select class="field-input" id="fAssurance">
-              <option value="">Non assuré</option>
-              <option value="oui">Assuré</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="field-group" style="margin-bottom:18px;">
-        <label class="field-label"><i class="fa-solid fa-comment-dots" style="color:#F5A64B;font-size:10px;"></i> Notes</label>
-        <div class="field-wrapper"><textarea class="field-input no-icon" id="fNotes" placeholder="État, accessoires inclus…"></textarea></div>
-      </div>
-
-      <!-- Facture -->
-      <div style="margin-bottom:20px;">
-        <p class="field-label" style="margin-bottom:8px;"><i class="fa-solid fa-file-invoice" style="color:#F5A64B;"></i> Facture / Ticket</p>
-        <div class="upload-zone" id="factureZone" onclick="document.getElementById('factureInput').click()" ondragover="window.dzOver(event,this)" ondragleave="window.dzLeave(this)" ondrop="window.dzDrop(event,this)">
-          <div style="width:44px;height:44px;border-radius:11px;background:#F2EBD9;display:flex;align-items:center;justify-content:center;" id="factureZoneIcon">
-            <i class="fa-solid fa-cloud-arrow-up" style="color:#C4BAB0;font-size:20px;"></i>
-          </div>
-          <div id="factureZoneText">
-            <p style="font-size:12.5px;font-weight:600;color:#374151;">Glisser-déposer ou cliquer</p>
-            <p style="font-size:11px;color:#9CA3AF;">PDF, JPG, PNG · Max 10 Mo</p>
-          </div>
-          <div id="factureChips" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;"></div>
-        </div>
-        <input type="file" id="factureInput" accept=".pdf,image/*" multiple style="display:none;" onchange="window.handleFactureFiles(this.files)"/>
-      </div>
-
-      <!-- Photo appareil -->
-      <div style="margin-bottom:24px;">
-        <p class="field-label" style="margin-bottom:8px;"><i class="fa-solid fa-camera" style="color:#F5A64B;"></i> Photos</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div style="position:relative;">
-            <div class="upload-zone" style="min-height:90px;" onclick="document.getElementById('photoInput').click()">
-              <img id="photoPreview" src="" alt="" style="display:none;max-height:80px;border-radius:8px;object-fit:cover;"/>
-              <div id="photoPlaceholder"><i class="fa-solid fa-image" style="color:#C4BAB0;font-size:22px;margin-bottom:4px;"></i><p style="font-size:11px;color:#9CA3AF;">Photo recto</p></div>
-            </div>
-            <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="window.previewPhoto(this,'photoPreview','photoPlaceholder')"/>
-          </div>
-          <div>
-            <div class="upload-zone" style="min-height:90px;" onclick="document.getElementById('photoSerialInput').click()">
-              <img id="photoSerialPreview" src="" alt="" style="display:none;max-height:80px;border-radius:8px;object-fit:cover;"/>
-              <div id="photoSerialPlaceholder"><i class="fa-solid fa-barcode" style="color:#C4BAB0;font-size:22px;margin-bottom:4px;"></i><p style="font-size:11px;color:#9CA3AF;">Photo N° série</p></div>
-            </div>
-            <input type="file" id="photoSerialInput" accept="image/*" style="display:none;" onchange="window.previewPhoto(this,'photoSerialPreview','photoSerialPlaceholder')"/>
-          </div>
-        </div>
-      </div>
-
-      <!-- Boutons -->
-      <div style="display:flex;gap:10px;">
-        <button onclick="window.closeAddModal()" style="flex:1;padding:13px;border:1.5px solid #E0D5C4;background:white;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;color:#374151;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#F9F6F1'" onmouseout="this.style.background='white'">Annuler</button>
-        <button onclick="window.saveDevice()" style="flex:2;padding:13px;background:#1E3A2F;border:none;border-radius:12px;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:800;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#2D5A42'" onmouseout="this.style.background='#1E3A2F'">
-          <i class="fa-solid fa-floppy-disk"></i> <span id="saveBtnTxt">Enregistrer</span>
+      <div id="deviceGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;"></div>
+      <div id="emptyState" class="hidden flex-col items-center justify-center text-center w-full px-6 py-12">
+        <div class="w-20 h-20 rounded-2xl bg-[#F2EBD9] flex items-center justify-center text-4xl mb-4">📱</div>
+        <h3 class="text-gray-900 font-bold text-lg leading-tight mb-2">Aucun appareil enregistré</h3>
+        <p class="text-gray-500 text-sm max-w-xs leading-relaxed mb-6">Centralisez vos factures et numéros de série en un lieu sûr.</p>
+        <button onclick="window.openAddModal()" class="h-12 w-full max-w-[280px] bg-[#1E3A2F] text-white rounded-xl font-bold flex items-center justify-center">
+          Ajouter mon premier appareil
         </button>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- PANNEAU DETAIL -->
-<div class="detail-overlay" id="detailOverlay" onclick="window.closeDetail(event)">
-  <div class="detail-panel" id="detailPanel">
-    <div style="padding:22px 22px 0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px;">
-        <button onclick="window.closeDetail(null,true)" style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;font-family:'Poppins',sans-serif;font-size:12.5px;font-weight:600;color:#6B7280;transition:color .15s;" onmouseover="this.style.color='#1A1A1A'" onmouseout="this.style.color='#6B7280'"><i class="fa-solid fa-arrow-left" style="font-size:11px;"></i> Retour</button>
-        <div style="display:flex;gap:7px;flex-wrap:wrap;">
-          <button id="detailEditBtn" onclick="window.editCurrentDevice()" style="padding:7px 14px;border:1.5px solid #E0D5C4;background:white;border-radius:9px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#374151;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;" onmouseover="this.style.borderColor='#F5A64B'" onmouseout="this.style.borderColor='#E0D5C4'"><i class="fa-solid fa-pen-to-square" style="font-size:11px;"></i> Modifier</button>
-          <button onclick="window.deleteCurrentDevice()" style="padding:7px 14px;border:1.5px solid #FECACA;background:#fef2f2;border-radius:9px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#ef4444;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;" onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='#fef2f2'"><i class="fa-solid fa-trash" style="font-size:11px;"></i> Supprimer</button>
+    <!-- STICKY MOBILE FOOTER -->
+    <div class="sticky-bottom-bar">
+      <button class="btn-secondary-mobile" onclick="window.openVerifyModal()">
+        Vérifier
+      </button>
+      <button class="btn-primary-mobile" onclick="window.openAddModal()">
+        Ajouter
+      </button>
+    </div>
+
+  </div><!-- /main-wrap -->
+
+  <!-- MODALS -->
+  <div class="modal-bg" id="verifyModal" style="z-index: 100;">
+    <div class="modal p-6 animate-in">
+      <div class="sheet-handle lg:hidden"></div>
+      <h2 class="font-bricolage text-xl font-extrabold mb-2">Vérifier un appareil</h2>
+      <p class="text-sm text-gray-500 mb-6">Saisissez l'IMEI ou le N° de série pour vérifier s'il est déclaré perdu ou volé.</p>
+      <div class="field-group text-left mb-4">
+        <label class="field-label">IMEI / N° de série</label>
+        <div class="field-wrapper">
+          <i class="fa-solid fa-barcode field-icon"></i>
+          <input type="text" id="verifyImei" class="field-input" placeholder="Ex: 35XXXXXXXXXXXXX" />
         </div>
       </div>
-      <div id="detailContent"></div>
+      <div id="verifyResult" style="display:none;"></div>
+      <button onclick="window.startVerification()" class="w-full py-4 bg-orange-500 text-white rounded-2xl font-bold mb-3 active:scale-[0.98]">
+        Lancer la vérification
+      </button>
+      <button onclick="window.closeVerifyModal()" class="w-full py-3 text-gray-500 font-semibold">Fermer</button>
     </div>
   </div>
-</div>
+
+  <div class="modal-bg" id="confirmLostModal">
+<div class="modal p-6 text-center"><div class="sheet-handle lg:hidden"></div><div class="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-triangle-exclamation text-red-500 text-2xl"></i></div><h2 class="font-bricolage text-xl font-extrabold mb-2">Signaler un problème</h2><p class="text-sm text-gray-500 mb-6">Voulez-vous déclarer cet appareil comme perdu ou volé ?</p><form onsubmit="event.preventDefault(); window.validateAndSubmitLost();"><div class="field-group text-left mb-4"><label class="field-label">Type de signalement</label><select id="reportType" class="field-input no-icon"><option value="LOST">Perdu</option><option value="STOLEN">Volé</option></select></div><div class="field-group text-left mb-6"><label class="field-label">Code secret</label><div class="field-wrapper"><i class="fa-solid fa-lock field-icon"></i><input type="password" id="confirmPassword" class="field-input" placeholder="••••" /></div></div><button type="submit" id="finalSubmitBtn" class="w-full py-4 bg-red-500 text-white rounded-2xl font-bold mb-3">Confirmer</button><button type="button" onclick="window.closeConfirmLost()" class="w-full py-3 text-gray-500 font-semibold">Annuler</button></form></div></div>
+
+  <div class="modal-bg" id="addModal">
+    <div class="modal">
+      <div class="lg:hidden"><div class="sheet-handle !mt-4"></div></div>
+      <div class="modal-header"><div><h2 class="font-bricolage text-lg font-extrabold" id="modalTitle">Ajouter un appareil</h2><p class="text-xs text-gray-400">Conservez toutes les infos importantes</p></div><button onclick="window.closeAddModal()" class="w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button></div>
+      <div class="modal-body">
+        <div class="mb-6"><p class="field-label mb-3">Type d'appareil</p><div class="grid grid-cols-5 gap-2" id="typeSelector"><div class="type-option selected" onclick="window.selectType(this,'telephone')" data-type="telephone"><div class="type-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>Phone</div><div class="type-option" onclick="window.selectType(this,'ordinateur')" data-type="ordinateur"><div class="type-icon"><i class="fa-solid fa-laptop"></i></div>PC</div><div class="type-option" onclick="window.selectType(this,'tablette')" data-type="tablette"><div class="type-icon"><i class="fa-solid fa-tablet-screen-button"></i></div>Tab</div><div class="type-option" onclick="window.selectType(this,'tv')" data-type="tv"><div class="type-icon"><i class="fa-solid fa-tv"></i></div>TV</div><div class="type-option" onclick="window.selectType(this,'autre')" data-type="autre"><div class="type-icon"><i class="fa-solid fa-box"></i></div>Autre</div></div></div>
+        <div class="grid grid-cols-2 gap-4 mb-4"><div class="field-group col-span-2"><label class="field-label">Nom <span class="text-red-500">*</span></label><div class="field-wrapper"><i class="fa-solid fa-tag field-icon"></i><input type="text" class="field-input" id="fNom" placeholder="iPhone 14..."/></div></div><div class="field-group"><label class="field-label">Marque</label><div class="field-wrapper"><i class="fa-solid fa-building field-icon"></i><select class="field-input" id="fMarque"><option value="">Sélectionner</option><option>Apple</option><option>Samsung</option><option>Xiaomi</option><option>Huawei</option><option>Autre</option></select></div></div><div class="field-group"><label class="field-label">Modèle</label><div class="field-wrapper"><i class="fa-solid fa-code-branch field-icon"></i><input type="text" class="field-input" id="fModele" /></div></div></div>
+        <div class="grid grid-cols-2 gap-4 mb-4"><div class="field-group"><label class="field-label">IMEI / N° Série</label><div class="field-wrapper"><i class="fa-solid fa-barcode field-icon"></i><input type="text" class="field-input" id="fSerial" /></div></div><div class="field-group"><label class="field-label">Couleur</label><div class="field-wrapper"><i class="fa-solid fa-palette field-icon"></i><input type="text" class="field-input" id="fCouleur" /></div></div></div>
+        <div class="grid grid-cols-3 gap-3 mb-4"><div class="field-group"><label class="field-label">Achat</label><div class="field-wrapper"><i class="fa-solid fa-calendar field-icon"></i><input type="text" class="field-input datepicker" id="fDateAchat"/></div></div><div class="field-group"><label class="field-label">Garantie</label><div class="field-wrapper"><i class="fa-solid fa-calendar-xmark field-icon"></i><input type="text" class="field-input datepicker" id="fGarantie"/></div></div><div class="field-group"><label class="field-label">Prix</label><div class="field-wrapper"><i class="fa-solid fa-franc-sign field-icon"></i><input type="number" class="field-input" id="fPrix"/></div></div></div>
+        <div class="grid grid-cols-2 gap-4 mb-4"><div class="field-group"><label class="field-label">Lieu Achat</label><div class="field-wrapper"><i class="fa-solid fa-store field-icon"></i><input type="text" class="field-input" id="fLieu" /></div></div><div class="field-group"><label class="field-label">Assurance</label><div class="field-wrapper"><i class="fa-solid fa-shield-halved field-icon"></i><select class="field-input" id="fAssurance"><option value="">Non</option><option value="oui">Oui</option></select></div></div></div>
+        <div class="field-group mb-6"><label class="field-label">Notes</label><div class="field-wrapper"><textarea class="field-input no-icon" id="fNotes"></textarea></div></div>
+        <div class="mb-6"><p class="field-label mb-2">Facture / Ticket</p><div class="upload-zone" id="factureZone" onclick="document.getElementById('factureInput').click()"><div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center mb-2"><i class="fa-solid fa-cloud-arrow-up text-gray-400"></i></div><p class="text-xs font-bold">Cliquer pour uploader</p><div id="factureChips"></div></div><input type="file" id="factureInput" class="hidden" multiple /></div>
+        <div class="mb-8"><p class="field-label mb-2">Photos</p><div class="grid grid-cols-2 gap-3"><div class="upload-zone min-h-[90px]" onclick="document.getElementById('photoInput').click()"><img id="photoPreview" class="hidden h-16 rounded-lg object-cover"/><div id="photoPlaceholder"><i class="fa-solid fa-image text-gray-300 text-xl"></i><p class="text-[10px]">Photo recto</p></div><input type="file" id="photoInput" class="hidden" /></div><div class="upload-zone min-h-[90px]" onclick="document.getElementById('photoSerialInput').click()"><img id="photoSerialPreview" class="hidden h-16 rounded-lg object-cover"/><div id="photoSerialPlaceholder"><i class="fa-solid fa-barcode text-gray-300 text-xl"></i><p class="text-[10px]">N° série</p></div><input type="file" id="photoSerialInput" class="hidden" /></div></div></div>
+        <div class="flex flex-col lg:flex-row gap-3"><button onclick="window.saveDevice()" class="w-full py-4 bg-green-dark text-white rounded-2xl font-bold order-1 lg:flex-2">Enregistrer</button><button onclick="window.closeAddModal()" class="w-full py-4 border border-gray-200 text-gray-600 rounded-2xl font-semibold order-2 lg:flex-1 lg:order-none">Annuler</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-overlay" id="detailOverlay" onclick="window.closeDetail(event)"><div class="detail-panel" onclick="event.stopPropagation()"><div class="lg:hidden"><div class="sheet-handle"></div><p class="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">Détails de l'appareil</p></div><div class="hidden lg:flex items-center justify-between mb-8"><button onclick="window.closeDetail(null,true)" class="text-gray-500 font-semibold text-sm">← Retour</button><div class="flex gap-2"><button id="detailEditBtn" onclick="window.editCurrentDevice()" class="px-4 py-2 border border-gray-200 rounded-xl text-sm font-semibold">Modifier</button><button onclick="window.deleteCurrentDevice()" class="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-semibold">Supprimer</button></div></div><div id="detailContent"></div><div class="mt-8 flex flex-col gap-3 lg:hidden"><button onclick="window.editCurrentDevice()" class="w-full h-12 bg-gray-100 text-gray-800 rounded-2xl font-bold">Modifier</button><button onclick="window.deleteCurrentDevice()" class="w-full h-12 bg-red-50 text-red-600 rounded-2xl font-bold">Supprimer l'appareil</button></div></div></div>
 
 <script type="module">
-import { 
-  registerMyDevice, 
-  getMyDevices, 
-  reportDeviceLost,
-  reportDeviceFound,
-  deleteDevice,
-  verifyDevice 
-} from './js/services/api.js';
+import { registerMyDevice, getMyDevices, reportDeviceLost, reportDeviceFound, deleteDevice, verifyDevice } from './js/services/api.js';
 
-// ══════════════════════════════════════
-// CONSTANTES
-// ══════════════════════════════════════
 const TYPE_META = {
   telephone:  { label:'Téléphone',   icon:'fa-mobile-screen-button', color:'#3B82F6', bg:'#EFF6FF' },
   ordinateur: { label:'Ordinateur',  icon:'fa-laptop',               color:'#8B5CF6', bg:'#F5F3FF' },
@@ -783,509 +549,137 @@ const TYPE_META = {
   autre:      { label:'Autre',       icon:'fa-box',                  color:'#6B7280', bg:'#F9FAFB' },
 };
 
-// ══════════════════════════════════════
-// FONCTIONS PUBLIQUES (window)
-// ══════════════════════════════════════
-
 window.refreshDevices = async function() {
   if (window.toggleLoader) window.toggleLoader(true);
   try {
     const result = await getMyDevices();
     if (result.success && Array.isArray(result.data)) {
       window._appState.devices = result.data.map(d => {
-        const category = (d.category || '').toLowerCase();
-        let type = 'autre';
-        if (category.includes('phone') || category.includes('téléphone')) type = 'telephone';
-        else if (category.includes('laptop') || category.includes('ordinateur')) type = 'ordinateur';
-        else if (category.includes('tablet') || category.includes('tablette')) type = 'tablette';
-        else if (category.includes('tv')) type = 'tv';
-
-        let photos = d.photos;
-        if (typeof photos === 'string') {
-          try { photos = JSON.parse(photos); } catch(e) { photos = []; }
-        }
-        if (!Array.isArray(photos)) photos = [];
-
-        return {
-          ...d,
-          type: type,
-          nom: d.model || 'Sans nom',
-          marque: d.brand || '',
-          modele: d.model || '',
-          serial: d.serial_number_imei || '',
-          couleur: d.color || '',
-          dateAchat: d.purchase_date || '',
-          garantie: d.garantie_end || '',
-          prix: d.purchase_value || 0,
-          lieu: d.where_buy || '',
-          notes: d.notes || '',
-          photo: photos.length > 0 ? (photos[0].startsWith('http') ? photos[0] : '/' + photos[0]) : null,
-          files: photos.map(p => ({ name: p.split('/').pop(), data: p.startsWith('http') ? p : '/' + p }))
-        };
+        const cat = (d.category || '').toLowerCase();
+        let type = cat.includes('phone')?'telephone':cat.includes('laptop')?'ordinateur':cat.includes('tablet')?'tablette':cat.includes('tv')?'tv':'autre';
+        let photos = []; try { photos = JSON.parse(d.photos || '[]'); } catch(e) {}
+        return { ...d, type, nom: d.model || 'Sans nom', marque: d.brand || '', modele: d.model || '', serial: d.serial_number_imei || '', color: d.color || '', dateAchat: d.purchase_date || '', garantie: d.garantie_end || '', assurance: d.assurance || 'non', prix: d.purchase_value || 0, currency: d.currency || 'XAF', lieu: d.where_buy || '', notes: d.notes || '', photo: photos.length > 0 ? (photos[0].startsWith('http') ? photos[0] : '/' + photos[0]) : null, files: photos.map(p => ({ name: p.split('/').pop(), data: p.startsWith('http') ? p : '/' + p })) };
       });
       renderAll();
     }
-  } finally {
-    if (window.toggleLoader) setTimeout(() => window.toggleLoader(false), 500);
-  }
+  } finally { if (window.toggleLoader) setTimeout(() => window.toggleLoader(false), 500); }
 }
 
-window.setFilter = function(f, btn) {
-  window._appState.currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderAll();
-}
-
+window.setFilter = function(f, btn) { window._appState.currentFilter = f; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderAll(); }
 window.filterDevices = function() { renderAll(); }
-
-window.setView = function(v) {
-  window._appState.currentView = v;
-  const grid = document.getElementById('deviceGrid');
-  document.getElementById('btnGrid').classList.toggle('active', v==='grid');
-  document.getElementById('btnList').classList.toggle('active', v==='list');
-  if (v === 'list') {
-    grid.classList.add('list-view');
-    grid.style.gridTemplateColumns = '1fr';
-  } else {
-    grid.classList.remove('list-view');
-    grid.style.gridTemplateColumns = 'repeat(auto-fill,minmax(270px,1fr))';
-  }
-}
+window.setView = function(v) { window._appState.currentView = v; const grid = document.getElementById('deviceGrid'); document.getElementById('btnGrid').classList.toggle('active', v==='grid'); document.getElementById('btnList').classList.toggle('active', v==='list'); if (v === 'list') { grid.classList.remove('grid', 'grid-cols-2', 'lg:grid-cols-4'); grid.classList.add('flex', 'flex-col'); } else { grid.classList.add('grid', 'grid-cols-2', 'lg:grid-cols-4'); grid.classList.remove('flex', 'flex-col'); } }
 
 window.openAddModal = function(id) {
   window._appState.editingId = id || null;
-  window._appState.selectedFiles = [];
-  window._appState.photoBlob = null;
-  window._appState.photoSerialBlob = null;
-  document.getElementById('photoPreview').style.display = 'none';
-  document.getElementById('photoPlaceholder').style.display = 'block';
-  document.getElementById('photoSerialPreview').style.display = 'none';
-  document.getElementById('photoSerialPlaceholder').style.display = 'block';
-  document.getElementById('factureChips').innerHTML = '';
-  document.getElementById('factureZoneText').style.display = 'block';
-  document.getElementById('factureZone').classList.remove('has-file');
+  document.getElementById('photoPreview').style.display='none'; document.getElementById('photoPlaceholder').style.display='block';
+  document.getElementById('photoSerialPreview').style.display='none'; document.getElementById('photoSerialPlaceholder').style.display='block';
   document.getElementById('modalTitle').textContent = id ? 'Modifier l\'appareil' : 'Ajouter un appareil';
-  document.getElementById('saveBtnTxt').textContent = id ? 'Modifications' : 'Enregistrer';
-
   if (id) {
-    const d = window._appState.devices.find(x => x.id === id);
-    if (!d) return;
+    const d = window._appState.devices.find(x => x.id === id); if (!d) return;
     window.selectType(document.querySelector(`[data-type="${d.type}"]`), d.type);
-    document.getElementById('fNom').value      = d.nom || '';
-    document.getElementById('fMarque').value   = d.marque || '';
-    document.getElementById('fModele').value   = d.modele || '';
-    document.getElementById('fSerial').value   = d.serial || '';
-    document.getElementById('fCouleur').value  = d.couleur || '';
-    document.getElementById('fDateAchat').value= d.dateAchat || '';
-    document.getElementById('fGarantie').value = d.garantie || '';
-    document.getElementById('fPrix').value     = d.prix || '';
-    document.getElementById('fLieu').value     = d.lieu || '';
-    document.getElementById('fAssurance').value= d.assurance || '';
-    document.getElementById('fNotes').value    = d.notes || '';
-    if (d.photo) {
-      document.getElementById('photoPreview').src = d.photo;
-      document.getElementById('photoPreview').style.display = 'block';
-      document.getElementById('photoPlaceholder').style.display = 'none';
-    }
+    document.getElementById('fNom').value=d.nom; document.getElementById('fMarque').value=d.marque; document.getElementById('fModele').value=d.modele; document.getElementById('fSerial').value=d.serial; document.getElementById('fCouleur').value=d.color; setModalDateField('fDateAchat', d.dateAchat); setModalDateField('fGarantie', d.garantie); document.getElementById('fPrix').value=d.prix; document.getElementById('fLieu').value=d.lieu; document.getElementById('fAssurance').value=d.assurance; document.getElementById('fNotes').value=d.notes;
+    if (d.photo) { document.getElementById('photoPreview').src = d.photo; document.getElementById('photoPreview').style.display = 'block'; document.getElementById('photoPlaceholder').style.display = 'none'; }
   } else {
-    document.getElementById('fNom').value='';document.getElementById('fMarque').value='';
-    document.getElementById('fModele').value='';document.getElementById('fSerial').value='';
-    document.getElementById('fCouleur').value='';document.getElementById('fDateAchat').value='';
-    document.getElementById('fGarantie').value='';document.getElementById('fPrix').value='';
-    document.getElementById('fLieu').value='';document.getElementById('fAssurance').value='';
-    document.getElementById('fNotes').value='';
+    document.getElementById('fNom').value=''; document.getElementById('fMarque').value=''; document.getElementById('fModele').value=''; document.getElementById('fSerial').value=''; document.getElementById('fCouleur').value=''; setModalDateField('fDateAchat', ''); setModalDateField('fGarantie', ''); document.getElementById('fPrix').value=''; document.getElementById('fLieu').value=''; document.getElementById('fAssurance').value=''; document.getElementById('fNotes').value='';
     window.selectType(document.querySelector('[data-type="telephone"]'), 'telephone');
   }
   document.getElementById('addModal').classList.add('show');
 }
-
-window.closeAddModal = function() { 
-  document.getElementById('addModal').classList.remove('show'); 
-}
-
-window.selectType = function(el, type) {
-  if (!el) return;
-  document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
-  window._appState.selectedType = type;
-}
-
-window.handleFactureFiles = function(files) {
-  Array.from(files).forEach(f => {
-    window._appState.selectedFiles.push(f);
-  });
-  renderFileChips();
-}
-
-window.removeFile = function(i, e) {
-  e.stopPropagation();
-  window._appState.selectedFiles.splice(i, 1);
-  renderFileChips();
-}
-
-window.dzOver = function(e, z) { e.preventDefault(); z.classList.add('dragover'); }
-window.dzLeave = function(z) { z.classList.remove('dragover'); }
-window.dzDrop = function(e, z) { 
-  e.preventDefault(); 
-  z.classList.remove('dragover'); 
-  window.handleFactureFiles(e.dataTransfer.files); 
-}
+window.closeAddModal = () => document.getElementById('addModal').classList.remove('show');
 
 window.previewPhoto = function(input, previewId, placeholderId) {
   const file = input.files[0];
-  if (!file) return;
-  if (previewId === 'photoPreview') window._appState.photoBlob = file;
-  if (previewId === 'photoSerialPreview') window._appState.photoSerialBlob = file;
-  
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById(previewId).src = e.target.result;
-    document.getElementById(previewId).style.display = 'block';
-    document.getElementById(placeholderId).style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-}
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const preview = document.getElementById(previewId);
+      const placeholder = document.getElementById(placeholderId);
+      if (preview && placeholder) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+};
 
 window.saveDevice = async function() {
-  const nom = document.getElementById('fNom').value.trim();
-  if (!nom) {
-    document.getElementById('fNom').focus();
-    document.getElementById('fNom').style.borderColor = '#ef4444';
-    setTimeout(() => document.getElementById('fNom').style.borderColor = '', 1800);
-    return;
-  }
-
+  const nom = document.getElementById('fNom').value.trim(); if (!nom) return;
   if (window.toggleLoader) window.toggleLoader(true);
-  const btn = document.querySelector('button[onclick="window.saveDevice()"]');
-  const originalHtml = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> En cours...';
-
   const formData = new FormData();
-  formData.append('category', window._appState.selectedType.toUpperCase() === 'TELEPHONE' ? 'PHONE' : 
-                             window._appState.selectedType.toUpperCase() === 'ORDINATEUR' ? 'LAPTOP' : 
-                             window._appState.selectedType.toUpperCase() === 'TABLETTE' ? 'TABLET' : 'OTHER');
+  formData.append('category', window._appState.selectedType.toUpperCase()==='TELEPHONE'?'PHONE':window._appState.selectedType.toUpperCase()==='ORDINATEUR'?'LAPTOP':window._appState.selectedType.toUpperCase()==='TABLETTE'?'TABLET':'OTHER');
   formData.append('brand', document.getElementById('fMarque').value);
   formData.append('model', document.getElementById('fModele').value.trim() || nom);
   formData.append('serial_number_imei', document.getElementById('fSerial').value.trim());
   formData.append('color', document.getElementById('fCouleur').value.trim());
   formData.append('purchase_date', document.getElementById('fDateAchat').value);
   formData.append('purchase_value', document.getElementById('fPrix').value);
+  formData.append('currency', 'XAF');
   formData.append('where_buy', document.getElementById('fLieu').value.trim());
+  formData.append('garantie_end', document.getElementById('fGarantie').value);
+  formData.append('assurance', document.getElementById('fAssurance').value || 'non');
   formData.append('notes', document.getElementById('fNotes').value.trim());
-  
-  if (window._appState.photoBlob) formData.append('photo_face', window._appState.photoBlob);
-  if (window._appState.photoSerialBlob) formData.append('photo_serial', window._appState.photoSerialBlob);
-  if (window._appState.selectedFiles.length > 0) formData.append('photo_facture', window._appState.selectedFiles[0]);
-
-  const result = await registerMyDevice(formData);
-
-  if (result.success) {
-    await window.refreshDevices();
-    window.closeAddModal();
-  } else {
-    alert(result.message || 'Erreur lors de l\'enregistrement');
-  }
-  
-  btn.disabled = false;
-  btn.innerHTML = originalHtml;
+  const res = await registerMyDevice(formData);
+  if (res.success) { await window.refreshDevices(); window.closeAddModal(); }
   if (window.toggleLoader) window.toggleLoader(false);
 }
 
 window.openDetail = function(id) {
-  const d = window._appState.devices.find(x => String(x.id) === String(id));
-  if (!d) return;
+  const d = window._appState.devices.find(x => String(x.id) === String(id)); if (!d) return;
   window._appState.detailId = id;
   const meta = TYPE_META[d.type] || TYPE_META.autre;
-  const expWarn = isExpired(d.garantie);
-
-  let filesHTML = '';
-  if (d.files && d.files.length) {
-    filesHTML = `
-    <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px;">
-      ${d.files.map((f, i) => `
-        <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#F9F6F1;border-radius:10px;border:1px solid #EDE7DB;">
-          <i class="fa-solid fa-file-image" style="color:#3B82F6;font-size:16px;flex-shrink:0;"></i>
-          <div style="flex:1;min-width:0;">
-            <p style="font-size:12px;font-weight:600;color:#1A1A1A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(f.name)}</p>
-          </div>
-          <a href="${f.data}" target="_blank" style="padding:5px 10px;background:#1E3A2F;border-radius:7px;font-size:11px;font-weight:600;color:white;text-decoration:none;display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap;"><i class="fa-solid fa-eye" style="font-size:9px;"></i> Voir</a>
-        </div>`).join('')}
-    </div>`;
-  }
-
-  const infoRow = (icon, label, val) => val ? `
-    <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #F0EAE0;">
-      <div style="width:34px;height:34px;border-radius:10px;background:#FEF0DC;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fa-solid ${icon}" style="color:#D98A30;font-size:14px;"></i>
-      </div>
-      <div style="flex:1;">
-        <p style="font-size:10px;font-weight:800;color:#94A3B8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">${label}</p>
-        <p style="font-size:13.5px;font-weight:600;color:#1A1A1A;line-height:1.45;white-space:pre-wrap;word-break:break-word;">${esc(val)}</p>
-      </div>
-    </div>` : '';
-
+  const infoRow = (label, val, isStatus = false) => {
+    if (!val && !isStatus) return '';
+    let vHtml = `<span class="text-[14px] lg:text-sm font-semibold text-gray-900">${esc(val)}</span>`;
+    if (isStatus) {
+      const s = val || 'Actif'; const rep = ['LOST','STOLEN','PERDU'].includes(s.toUpperCase());
+      vHtml = `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase" style="background:${rep?'#fef2f2':'#E8F5EE'}; color:${rep?'#ef4444':'#1E3A2F'};">${esc(s)}</span>`;
+    }
+    return `<div class="flex justify-between items-center py-3.5 border-b border-gray-50 last:border-0"><span class="text-[13px] lg:text-xs text-gray-500 font-medium">${label}</span>${vHtml}</div>`;
+  };
   document.getElementById('detailContent').innerHTML = `
-    <div style="background:linear-gradient(135deg,${meta.bg},white);border-radius:16px;padding:20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;border:1px solid ${meta.color}30;">
-      <div style="width:64px;height:64px;border-radius:16px;background:white;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;color:${meta.color};box-shadow:0 4px 14px ${meta.color}20;overflow:hidden;">
-        ${d.photo ? `<img src="${d.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;"/>` : `<i class="fa-solid ${meta.icon}"></i>`}
-      </div>
-      <div style="flex:1;min-width:0;">
-        <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:#1A1A1A;word-break:break-word;">${esc(d.nom)}</p>
-        <p style="font-size:12.5px;color:#6B7280;word-break:break-word;">${esc(d.marque||'')} ${esc(d.modele||'')}</p>
-        <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;">
-          <span style="padding:2px 9px;border-radius:99px;background:${meta.bg};color:${meta.color};font-size:10.5px;font-weight:700;">${meta.label}</span>
-          ${d.assurance==='oui' ? `<span style="padding:2px 9px;border-radius:99px;background:#FEF0DC;color:#D98A30;font-size:10.5px;font-weight:700;"><i class="fa-solid fa-shield-halved" style="font-size:8px;"></i> Assuré</span>` : ''}
-          ${d.garantie ? `<span style="padding:2px 9px;border-radius:99px;background:${expWarn?'#fef2f2':'#E8F5EE'};color:${expWarn?'#ef4444':'#1E3A2F'};font-size:10.5px;font-weight:700;">${expWarn ? 'Exp.' : 'Valide'}</span>` : ''}
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:20px;">
-      <p style="font-size:10.5px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;padding-left:2px;">Détails</p>
-      ${infoRow('barcode', 'Numéro de série', d.serial)}
-      ${infoRow('palette', 'Couleur', d.couleur)}
-      ${infoRow('calendar', 'Date d\'achat', d.dateAchat ? formatDate(d.dateAchat) : '')}
-      ${infoRow('calendar-xmark','Fin garantie', d.garantie ? formatDate(d.garantie) : '')}
-      ${infoRow('franc-sign', 'Prix d\'achat', d.prix ? Number(d.prix).toLocaleString('fr') + ' FCFA' : '')}
-      ${infoRow('store', 'Lieu d\'achat', d.lieu)}
-      ${infoRow('comment-dots','Notes', d.notes)}
-    </div>
-
-    ${d.files && d.files.length ? `
-    <div>
-      <p style="font-size:10.5px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Factures (${d.files.length})</p>
-      ${filesHTML}
-    </div>` : ''}
+    <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl mb-6"><div class="w-14 h-14 rounded-xl bg-white flex items-center justify-center text-2xl shadow-sm overflow-hidden flex-shrink-0">${d.photo?`<img src="${d.photo}" class="w-full h-full object-cover"/>`:`<i class="fa-solid ${meta.icon}" style="color:${meta.color}"></i>`}</div><div class="min-w-0"><h3 class="font-bricolage text-base font-extrabold text-gray-900 truncate">${esc(d.nom)}</h3><p class="text-xs text-gray-500 font-medium">${esc(d.marque)} ${esc(d.modele)}</p></div></div>
+    <div class="space-y-0">${infoRow('Marque', d.marque)}${infoRow('Modèle', d.modele)}${infoRow('Série / IMEI', d.serial)}${infoRow('Statut', d.status, true)}${infoRow('Achat', d.dateAchat ? formatDate(d.dateAchat) : '')}${infoRow('Prix', d.prix ? Number(d.prix).toLocaleString('fr') + ' F' : '')}</div>
+    ${d.notes?`<div class="mt-6 p-4 bg-gray-50 rounded-xl"><p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Notes</p><p class="text-xs text-gray-600 leading-relaxed">${esc(d.notes)}</p></div>`:''}
   `;
-
   document.getElementById('detailOverlay').classList.add('show');
 }
+window.closeDetail = (e, f) => { if (f || (e && e.target === document.getElementById('detailOverlay'))) document.getElementById('detailOverlay').classList.remove('show'); };
 
-window.closeDetail = function(e, force) {
-  if (force || (e && e.target === document.getElementById('detailOverlay'))) {
-    document.getElementById('detailOverlay').classList.remove('show');
-    window._appState.detailId = null;
-  }
-}
+window.editCurrentDevice = () => { window.closeDetail(null, true); setTimeout(() => window.openAddModal(window._appState.detailId), 200); };
+window.deleteCurrentDevice = async () => { if (!window._appState.detailId || !confirm('Supprimer ?')) return; const res = await deleteDevice(window._appState.detailId); if (res.success) { await window.refreshDevices(); window.closeDetail(null, true); } };
 
-window.editCurrentDevice = function() {
-  window.closeDetail(null, true);
-  setTimeout(() => window.openAddModal(window._appState.detailId), 200);
-}
+window.confirmLostAppareil = (id) => { window._appState.pendingDeviceId = id; document.getElementById('confirmLostModal').classList.add('show'); };
+window.closeConfirmLost = () => document.getElementById('confirmLostModal').classList.remove('show');
+window.validateAndSubmitLost = async () => {
+  const p = document.getElementById('confirmPassword').value; if(p.length<4) return;
+  const res = await reportDeviceLost(window._appState.pendingDeviceId, p, document.getElementById('reportType').value);
+  if (res.success) { await window.refreshDevices(); window.closeConfirmLost(); }
+};
 
-window.deleteCurrentDevice = async function() {
-  if (!window._appState.detailId) return;
-  const d = window._appState.devices.find(x => x.id === window._appState.detailId);
-  if (!d) return;
-  if (!confirm(`Supprimer "${d.nom}" ? Cette action est irréversible.`)) return;
-  
-  if (window.toggleLoader) window.toggleLoader(true);
-  try {
-    const result = await deleteDevice(window._appState.detailId);
-    if (result.success) {
-      await window.refreshDevices();
-      window.closeDetail(null, true);
-    } else {
-      alert(result.message);
-    }
-  } finally {
-    if (window.toggleLoader) window.toggleLoader(false);
-  }
-}
+window.openVerifyModal = () => document.getElementById('verifyModal').classList.add('show');
+window.closeVerifyModal = () => document.getElementById('verifyModal').classList.remove('show');
+window.startVerification = async () => {
+  const imei = document.getElementById('verifyImei').value.trim(); if(!imei) return;
+  const res = await verifyDevice(imei);
+  const area = document.getElementById('verifyResult'); area.style.display='block';
+  if(res.success && res.data.success){ const dev = res.data.data; area.className='p-4 rounded-xl mb-4 bg-green-50 border border-green-100'; area.innerHTML=`<p class="text-sm font-bold text-green-800">Appareil sûr</p><p class="text-xs text-green-700">${dev.brand} ${dev.model}</p>`; }
+  else { area.className='p-4 rounded-xl mb-4 bg-gray-50 border border-gray-100'; area.innerHTML=`<p class="text-sm font-bold text-gray-800">Inconnu</p>`; }
+};
 
-window.confirmLostAppareil = function(id, btn) {
-  window._appState.pendingDeviceId = id;
-  window._appState.pendingBtn = btn;
-  const card = btn.closest('.device-card');
-  if(card) card.classList.add('is-lost');
-  document.getElementById('confirmLostModal').classList.add('show');
-  document.getElementById('confirmPassword').value = '';
-  document.getElementById('passwordError').style.display = 'none';
-  document.getElementById('confirmPassword').focus();
-}
+function esc(s) { return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatDate(s) { if(!s) return ''; return new Date(s).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'}); }
+function isExpired(d) { return d ? new Date(d) < new Date() : false; }
 
-window.closeConfirmLost = function() {
-  if(window._appState.pendingBtn) {
-    const card = window._appState.pendingBtn.closest('.device-card');
-    if(card) card.classList.remove('is-lost');
-  }
-  document.getElementById('confirmLostModal').classList.remove('show');
-  window._appState.pendingDeviceId = null;
-}
-
-window.validateAndSubmitLost = async function() {
-  const pass = document.getElementById('confirmPassword').value;
-  const btn = document.getElementById('finalSubmitBtn');
-  
-  if(pass.length < 4) {
-    document.getElementById('passwordError').style.display = 'block';
+function setModalDateField(id, value) {
+  const input = document.getElementById(id);
+  if (!input) return;
+  if (input._flatpickr) {
+    input._flatpickr.setDate(value || null, true, 'Y-m-d');
     return;
   }
-  
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-  if (window.toggleLoader) window.toggleLoader(true);
-  
-  const status = document.getElementById('reportType').value;
-  const result = await reportDeviceLost(window._appState.pendingDeviceId, pass, status);
-  
-  if (result.success) {
-    await window.refreshDevices();
-    window.closeConfirmLost();
-    document.getElementById('successOverlay').classList.add('show');
-  } else {
-    alert(result.message);
-  }
-  
-  btn.disabled = false;
-  btn.innerHTML = 'Confirmer';
-  if (window.toggleLoader) window.toggleLoader(false);
-}
-
-window.confirmFoundAppareil = function(id, btn) {
-  window._appState.pendingDeviceId = id;
-  window._appState.pendingBtn = btn;
-  const modal = document.getElementById('confirmLostModal');
-  modal.querySelector('h2').textContent = 'Confirmer la trouvaille ?';
-  modal.querySelector('p').textContent = 'Marquer cet appareil comme sécurisé ?';
-  modal.querySelector('#reportType').parentElement.parentElement.style.display = 'none';
-  modal.querySelector('#finalSubmitBtn').onclick = window.validateAndSubmitFound;
-  modal.querySelector('#finalSubmitBtn').style.background = '#059669';
-  modal.classList.add('show');
-  document.getElementById('confirmPassword').value = '';
-  document.getElementById('passwordError').style.display = 'none';
-  document.getElementById('confirmPassword').focus();
-}
-
-window.validateAndSubmitFound = async function() {
-  const pass = document.getElementById('confirmPassword').value;
-  const btn = document.getElementById('finalSubmitBtn');
-  
-  if(pass.length < 4) {
-    document.getElementById('passwordError').style.display = 'block';
-    return;
-  }
-  
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-  if (window.toggleLoader) window.toggleLoader(true);
-
-  const result = await reportDeviceFound(window._appState.pendingDeviceId, pass);
-  
-  if (result.success) {
-    await window.refreshDevices();
-    window.closeConfirmLost();
-    document.getElementById('successOverlay').classList.add('show');
-  } else {
-    alert(result.message);
-  }
-  
-  btn.disabled = false;
-  btn.innerHTML = 'Confirmer';
-  if (window.toggleLoader) window.toggleLoader(false);
-}
-
-window.openVerifyModal = function() {
-  document.getElementById('verifyModal').classList.add('show');
-}
-
-window.closeVerifyModal = function() {
-  document.getElementById('verifyModal').classList.remove('show');
-  document.getElementById('verifyImei').value = '';
-  const resArea = document.getElementById('verifyResult');
-  resArea.style.display = 'none';
-  resArea.innerHTML = '';
-}
-
-window.startVerification = async function() {
-  const imeiInput = document.getElementById('verifyImei');
-  const imei = imeiInput.value.trim();
-  if (!imei) {
-    alert('Veuillez saisir un numéro IMEI ou de série.');
-    return;
-  }
-
-  const btn = event.currentTarget;
-  const oldHtml = btn.innerHTML;
-  const resArea = document.getElementById('verifyResult');
-  
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Vérification...';
-  btn.disabled = true;
-  resArea.style.display = 'none';
-  if (window.toggleLoader) window.toggleLoader(true);
-
-  try {
-    const result = await verifyDevice(imei);
-    resArea.style.display = 'block';
-    if (result.success && result.data.success) {
-      const device = result.data.data;
-      const isReported = device.is_reported;
-      resArea.style.background = isReported ? '#fef2f2' : '#f0fdf4';
-      resArea.style.border = `1px solid ${isReported ? '#fecaca' : '#bbf7d0'}`;
-      resArea.innerHTML = `
-        <div style="display:flex; gap:12px;">
-          <div style="width:40px; height:40px; border-radius:50%; background:${isReported ? '#ef4444' : '#22c55e'}; display:flex; align-items:center; justify-content:center; color:white; flex-shrink:0;">
-            <i class="fa-solid ${isReported ? 'fa-triangle-exclamation' : 'fa-check'}"></i>
-          </div>
-          <div>
-            <p style="font-weight:800; color:${isReported ? '#991b1b' : '#166534'}; font-size:14px; margin-bottom:2px;">
-              ${isReported ? 'Attention !' : 'Appareil sûr'}
-            </p>
-            <p style="font-size:12px; color:${isReported ? '#b91c1c' : '#15803d'}; line-height:1.4;word-break:break-word;">
-              ${isReported ? 
-                `${device.brand} ${device.model} - Signalé ${device.status}` : 
-                `${device.brand} ${device.model} - Sûr`
-              }
-            </p>
-          </div>
-        </div>
-      `;
-    } else {
-      resArea.style.background = '#f8fafc';
-      resArea.style.border = '1px solid #e2e8f0';
-      resArea.innerHTML = `
-        <div style="display:flex; gap:12px;">
-          <div style="width:40px; height:40px; border-radius:50%; background:#64748b; display:flex; align-items:center; justify-content:center; color:white; flex-shrink:0;">
-            <i class="fa-solid fa-question"></i>
-          </div>
-          <div>
-            <p style="font-weight:800; color:#1e293b; font-size:14px; margin-bottom:2px;">Inconnu</p>
-            <p style="font-size:12px; color:#475569; line-height:1.4;">Non enregistré dans notre base.</p>
-          </div>
-        </div>
-      `;
-    }
-  } catch (error) {
-    console.error(error);
-    alert('Une erreur est survenue.');
-  } finally {
-    btn.innerHTML = oldHtml;
-    btn.disabled = false;
-    if (window.toggleLoader) window.toggleLoader(false);
-  }
-}
-
-// ══════════════════════════════════════
-// HELPERS PRIVÉES
-// ══════════════════════════════════════
-function esc(s) { 
-  return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); 
-}
-
-function formatDate(s) { 
-  if(!s) return '';
-  try { 
-    return new Date(s).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'}); 
-  } catch(e) { 
-    return s; 
-  } 
-}
-
-function isExpired(d) { 
-  if(!d) return false; 
-  return new Date(d) < new Date(); 
+  input.value = value || '';
 }
 
 function renderAll() {
@@ -1314,113 +708,56 @@ function renderAll() {
 
 function deviceCardHTML(d, i) {
   const meta = TYPE_META[d.type] || TYPE_META.autre;
-  const expWarn = isExpired(d.garantie);
+  const isReported = ['LOST', 'STOLEN', 'VOLE', 'PERDU'].includes(d.status?.toUpperCase());
   const delay = Math.min(i, 5) * 0.05;
 
-  const isReported = ['LOST', 'STOLEN', 'VOLE', 'PERDU'].includes(d.status?.toUpperCase());
-  const cardClass = isReported ? 'device-card card-appear is-lost' : 'device-card card-appear';
-
-  const garantieTag = d.garantie ? `
-    <span class="tag" style="background:${expWarn ? '#fef2f2' : '#E8F5EE'};color:${expWarn ? '#ef4444' : '#1E3A2F'};">
-      <i class="fa-solid ${expWarn ? 'fa-triangle-exclamation' : 'fa-shield-check'}" style="font-size:9px;"></i>
-      ${expWarn ? 'Exp' : 'OK'}
-    </span>` : '';
-
-  const assureTag = d.assurance === 'oui' ?
-    `<span class="tag" style="background:#FEF0DC;color:#D98A30;"><i class="fa-solid fa-shield-halved" style="font-size:9px;"></i> Assuré</span>` : '';
+  const cardClass = isReported ? 'border-red-500 bg-red-50/30' : 'border-[#EDE7DB] bg-white';
 
   return `
-  <div class="${cardClass}" style="animation-delay:${delay}s;" onclick="window.openDetail('${d.id}')">
-    <div class="device-card-header">
-      <div class="device-avatar" style="background:${isReported ? '#fee2e2' : meta.bg};color:${isReported ? '#ef4444' : meta.color};">
-        ${d.photo ? `<img src="${d.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;"/>` : `<i class="fa-solid ${meta.icon}"></i>`}
+  <div class="device-card card-appear ${cardClass} p-5 rounded-2xl border shadow-sm transition-all hover:shadow-md cursor-pointer" style="animation-delay:${delay}s;" onclick="window.openDetail('${d.id}')">
+    <!-- Header -->
+    <div class="flex items-start gap-4 mb-4">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style="background:${isReported ? '#FEE2E2' : meta.bg}; color:${isReported ? '#EF4444' : meta.color};">
+        ${d.photo ? `<img src="${d.photo}" class="w-full h-full object-cover rounded-xl"/>` : `<i class="fa-solid ${meta.icon}"></i>`}
       </div>
-      <div style="flex:1;min-width:0;">
-        <p style="font-family:'Bricolage Grotesque',sans-serif;font-size:14.5px;font-weight:800;color:#1A1A1A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;word-break:break-word;">${esc(d.nom)}</p>
-        <p style="font-size:11.5px;color:#6B7280;margin-top:1px;overflow:hidden;text-overflow:ellipsis;">${esc(d.marque||'')} ${esc(d.modele||'')}</p>
+      <div class="min-w-0 flex-1">
+        <h3 class="text-lg font-bold text-gray-900 tracking-wide uppercase line-clamp-1">${esc(d.marque || 'Appareil')}</h3>
+        <p class="text-sm text-gray-500 mt-0.5 line-clamp-1">${esc(d.nom || d.modele || '')}</p>
       </div>
-      <div style="width:7px;height:7px;border-radius:50%;background:${isReported ? '#ef4444' : '#22c55e'};flex-shrink:0;margin-top:4px;"></div>
-    </div>
-    <div class="device-card-body">
-      ${d.serial ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;overflow:hidden;"><i class="fa-solid fa-barcode" style="color:#C4BAB0;font-size:11px;width:14px;flex-shrink:0;"></i><span style="font-size:11.5px;color:#6B7280;font-family:monospace;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;">${esc(d.serial)}</span></div>` : ''}
-      ${d.dateAchat ? `<div style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-calendar" style="color:#C4BAB0;font-size:11px;width:14px;flex-shrink:0;"></i><span style="font-size:11.5px;color:#6B7280;">Acheté le ${formatDate(d.dateAchat)}</span></div>` : ''}
-    </div>
-    <div class="device-card-footer">
-      <div style="display:flex;gap:5px;flex-wrap:wrap;">
-        ${isReported ? `<span class="tag" style="background:#ef4444;color:white;"><i class="fa-solid fa-bell"></i> Signalé</span>` : ''}
-        ${garantieTag}${assureTag}
+      <div class="flex items-center gap-1.5 mt-1">
+        <div class="w-2 h-2 rounded-full ${isReported ? 'bg-red-500' : 'bg-emerald-500'}"></div>
+        <span class="text-[11px] font-bold text-gray-400 uppercase">${isReported ? 'Signalé' : 'Actif'}</span>
       </div>
-      ${d.prix ? `<span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:#1A1A1A;white-space:nowrap;">${(Number(d.prix) || 0).toLocaleString('fr')} FCFA</span>` : ''}
     </div>
-    <div style="padding:0 20px 16px">
-      ${isReported ? `
-        <button onclick="event.stopPropagation(); window.confirmFoundAppareil('${d.id}', this)" class="w-full py-2 bg-green-600 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-green-600/20">
-          <i class="fa-solid fa-check-circle"></i> Retrouvé
-        </button>
-      ` : `
-        <button onclick="event.stopPropagation(); window.confirmLostAppareil('${d.id}', this)" class="w-full py-2 bg-red-500 text-white rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-red-500/20">
-          <i class="fa-solid fa-triangle-exclamation"></i> Signaler
-        </button>
-      `}
+
+    <!-- Info List -->
+    <div class="space-y-3 mb-6">
+      <div class="flex items-center gap-3 text-sm text-gray-600">
+        <i class="fa-solid fa-barcode w-4 text-center text-gray-400"></i>
+        <span>N° Série : <span class="font-semibold text-gray-900">${esc(d.serial) || '—'}</span></span>
+      </div>
+      <div class="flex items-center gap-3 text-sm text-gray-600">
+        <i class="fa-solid fa-calendar-days w-4 text-center text-gray-400"></i>
+        <span>Acheté le <span class="font-semibold text-gray-900">${d.dateAchat ? formatDate(d.dateAchat) : '—'}</span></span>
+      </div>
+    </div>
+
+    <!-- Footer: Price & Action -->
+    <div class="border-t border-gray-100 pt-4">
+      <div class="text-base font-bold text-gray-900 mb-4">${d.prix ? Number(d.prix).toLocaleString('fr') + ' FCFA' : '—'}</div>
+      
+      <button onclick="event.stopPropagation(); window.${isReported ? 'confirmFoundAppareil' : 'confirmLostAppareil'}('${d.id}', this)" 
+              class="w-full h-12 bg-[#DF1C1C] text-white rounded-xl font-semibold text-sm uppercase tracking-wide flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+        <i class="fa-solid fa-triangle-exclamation"></i> ${isReported ? 'Retrouvé' : 'Signaler'}
+      </button>
     </div>
   </div>`;
 }
 
-function renderFileChips() {
-  const chips = document.getElementById('factureChips');
-  const zone = document.getElementById('factureZone');
-  if (window._appState.selectedFiles.length) {
-    document.getElementById('factureZoneText').style.display = 'none';
-    zone.classList.add('has-file');
-    chips.innerHTML = window._appState.selectedFiles.map((f, i) => `
-      <div class="file-chip">
-        <i class="fa-solid ${f.type==='application/pdf' ? 'fa-file-pdf' : 'fa-image'}" style="font-size:10px;"></i>
-        <span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(f.name)}</span>
-        <span style="cursor:pointer;opacity:.6;" onclick="window.removeFile(${i},event)"><i class="fa-solid fa-xmark" style="font-size:9px;"></i></span>
-      </div>`).join('');
-  } else {
-    document.getElementById('factureZoneText').style.display = 'block';
-    zone.classList.remove('has-file');
-    chips.innerHTML = '';
-  }
-}
+function updateStats() { document.getElementById('statTotal').textContent = window._appState.devices.length; document.getElementById('statFact').textContent = window._appState.devices.filter(d => d.files && d.files.length).length; document.getElementById('statAssure').textContent = window._appState.devices.filter(d => d.assurance === 'oui').length; document.getElementById('statExp').textContent = window._appState.devices.filter(d => isExpired(d.garantie)).length; }
 
-function updateStats() {
-  document.getElementById('statTotal').textContent = window._appState.devices.length;
-  document.getElementById('statFact').textContent = window._appState.devices.filter(d => d.files && d.files.length).length;
-  document.getElementById('statAssure').textContent = window._appState.devices.filter(d => d.assurance === 'oui').length;
-  document.getElementById('statExp').textContent = window._appState.devices.filter(d => isExpired(d.garantie)).length;
-}
-
-// ══════════════════════════════════════
-// INIT
-// ══════════════════════════════════════
-document.addEventListener('DOMContentLoaded', async function() {
-  const searchInput = document.getElementById('searchInput');
-  if (searchInput) searchInput.value = '';
-  
-  if (typeof flatpickr !== 'undefined') {
-    flatpickr('input[type="date"]', {
-      locale: "fr",
-      dateFormat: "Y-m-d",
-    });
-  }
-  
-  await window.refreshDevices();
-});
-
+document.addEventListener('DOMContentLoaded', async function() { await window.refreshDevices(); });
 </script>
-
-
-  <script>
-    window.addEventListener("load", function() {
-        var loader = document.getElementById("dm-global-page-loader");
-        if(loader) {
-            loader.style.opacity = "0";
-            loader.style.transition = "opacity 0.5s";
-            setTimeout(function() { loader.remove(); }, 500);
-        }
-    });
-  </script>
+<script>window.addEventListener("load", function() { var l = document.getElementById("dm-global-page-loader"); if(l) { l.style.opacity = "0"; l.style.transition = "opacity 0.5s"; setTimeout(function() { l.remove(); }, 500); } });</script>
 </body>
 </html>

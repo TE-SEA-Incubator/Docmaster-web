@@ -55,12 +55,6 @@ const SIDEBAR_NAV = {
       icon: "fa-user",
       label: "Mon Profil",
     },
-    {
-      href: "#",
-      icon: "fa-right-from-bracket",
-      label: "Déconnexion",
-      isLogout: true,
-    },
   ],
 };
 
@@ -557,14 +551,23 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         @media (min-width: 900px) {
+          body {
+            display: flex;
+            flex-direction: row;
+            min-height: 100vh;
+            overflow: hidden;
+          }
           .sidebar-open .main-wrapper, .sidebar-open .main-wrap, .main-wrapper, .main-wrap {
-            margin-left: 0 !important; 
+            margin-left: var(--sidebar,260px) !important;
             flex: 1 !important;
             min-width: 0 !important;
-            width: 100%;
+            width: calc(100% - var(--sidebar,260px));
           }
           .sidebar {
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
             transform: translateX(0) !important;
           }
           .sidebar.closed {
@@ -635,12 +638,17 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // 4. Gestion du logout depuis le sidebar
-  document.querySelectorAll('[data-logout="true"]').forEach(function (btn) {
-    btn.addEventListener("click", function (e) {
+  // 4. Gestion du logout (Global)
+  document.addEventListener("click", function (e) {
+    const logoutBtn = e.target.closest('[data-logout="true"]');
+    if (logoutBtn) {
       e.preventDefault();
-      if (typeof logout === "function") logout();
-    });
+      if (typeof window.logout === "function") {
+        window.logout();
+      } else if (typeof logout === "function") {
+        logout();
+      }
+    }
   });
 
   window.addEventListener("resize", function () {

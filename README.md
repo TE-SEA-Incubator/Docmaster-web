@@ -1,86 +1,21 @@
-# DocMaster - Gestion de Documents Perdus & Trouvés
+A mobile application screen for the "declarer un document perdu" declarer page, designed on a non-white cream background (#F4EFE6) and strictly following a 1-column layout. Horizontal scrolling is completely disabled; all content wraps vertically. The top bar is perfectly integrated and contains only three elements: a left-aligned minimalist back arrow (←); a centered text title "Déclarer un document perdu" (text-base, font-semibold, color #1F2937); and a right-aligned notification bell icon (#4B5563, 20px). The profile icon has been removed. Below the top bar, the header area has been scaled back, featuring only the bold black title "Où et quand ?" and a 16px bottom margin. The entire form is presented as a strict single vertical column, optimized for a narrow portrait screen without horizontal content bleed.
 
-DocMaster est une plateforme innovante permettant de centraliser les déclarations de documents perdus ou retrouvés, tout en récompensant les citoyens honnêtes et en facilitant la récupération sécurisée.
+All form fields are condensed and reflowed into a strict single column.
 
-## 📋 Table des Matières
-- [Acteurs & Rôles](#acteurs--rôles)
-- [Flux de Travail (Use Cases)](#flux-de-travail-use-cases)
-- [Système de Récompenses & Points](#système-de-récompenses--points)
-- [Gestion Financière (Wallet)](#gestion-financière-wallet)
-- [Matching Intelligent](#matching-intelligent)
+The first section groups 'Date de perte' and 'Heure approximative' in a vertical column, using compact white input fields with 12px rounded corners. The date picker and time picker icons remain.
 
----
+The second section, stacked below, groups 'Ville' and 'Quartier' (marked 'Optionnel') in a single column. Inputs are white with 12px rounded corners and preserved placeholder text.
 
-## 👥 Acteurs & Rôles
+The third stacked section includes 'Lieu précis' (marked 'Optionnel') and the 'Suggestions rapides' group. All fields use line-clamp-2 and text-xs (11px) with leading-tight to ensure text wraps to a maximum of two lines. Suggestion tags (Marché, Transport, etc.) are arranged in compact multi-line grids, with tags wrapping intelligently within the screen width. No horizontal scrolling is allowed.
 
-1. **Le Perdeur (Propriétaire)** : Déclare ses documents perdus, recherche dans la base et paie les frais de récupération.
-2. **Le Trouveur (Finder)** : Déclare les documents ramassés, effectue les mises en relation (matching) et reçoit une récompense.
-3. **L'Administrateur** : Supervise les transactions, valide les types de documents et gère les paramètres globaux.
+The 'Circonstances' field (marked 'Optionnel') is stacked below, maintaining a clean white text input field with full vertical alignment.
 
----
+The entire form uses the 8px grid system for spacing.
 
-## 🚀 Flux de Travail (Use Cases)
+Paddings: Strict 24px padding on left, right, and bottom (p-6).
 
-### 1. Déclaration de Perte
-- **Action** : L'utilisateur publie une annonce pour un document égaré.
-- **Technique** : Création d'une entrée `LOST` dans la table `declarations`.
-- **Récompense** : +5 points de fidélité.
+Spacings: Multiples of 8px (4px, 8px, 16px, 24px, 32px, 48px).
 
-### 2. Déclaration de Trouvaille
-- **Action** : Un citoyen déclare avoir trouvé un document.
-- **Technique** : Création d'une entrée `FOUND` dans la table `declarations`.
-- **Récompense** : +5 points de fidélité.
+Heights: Form inputs and buttons are exactly 48px high.
 
-### 3. Le Processus de Récupération (Claim)
-1. **Paiement** : Le propriétaire paie les frais de retrouvaille via Mobile Money (Nokash).
-2. **Code de Vérification** : Un code unique à 6 chiffres est généré pour le propriétaire.
-3. **Récompense Finder** : Le portefeuille (Wallet) du trouveur est automatiquement crédité de sa commission (ex: 80% du prix).
-4. **Validation Finale** : Le propriétaire remet le code au trouveur lors de la rencontre physique. Le trouveur saisit le code pour clore le dossier.
-
----
-
-## 💎 Système de Récompenses & Points
-
-Le score de fidélité est calculé dynamiquement et synchronisé avec la base de données à chaque consultation du profil.
-
-| Action | Points Gagnés |
-| :--- | :--- |
-| Publication d'une annonce | 5 pts |
-| Remise réussie d'un document | Selon le type (ex: 10-20 pts) |
-| Parrainage validé | 10 pts |
-
-### Niveaux de Fidélité
-- **Argent** : Moins de 500 points.
-- **Or** : 500 points et plus (débloque des avantages exclusifs).
-
----
-
-## 💰 Gestion Financière (Wallet)
-
-DocMaster intègre un système de portefeuille virtuel pour les trouveurs :
-- **Entrées** : Commissions sur les documents rendus, bonus de parrainage (500 XAF).
-- **Sorties** : Retraits vers Mobile Money (Cameroun : MTN/Orange).
-- **Historique** : Chaque mouvement d'argent génère une transaction de type `finder_payout`, `referral_reward` ou `withdrawal`.
-
----
-
-## 🔍 Matching Intelligent
-
-Le système effectue des comparaisons automatiques basées sur :
-- **Le numéro de document** (ex: Numéro CNI).
-- **Le fingerprint** (Empreinte numérique des données du document).
-- **Le type et le nom** du propriétaire.
-
-Dès qu'une correspondance est trouvée, les deux parties reçoivent une notification instantanée.
-
----
-
-## 🛠️ Stack Technique
-- **Frontend** : HTML5, Vanilla CSS, JavaScript (Vite).
-- **Backend** : Node.js, Express, TypeScript.
-- **Base de données** : PostgreSQL.
-- **Notifications** : Système interne + Email (Nodemailer).
-- **Paiements** : Nokash API.
-
----
-*Développé avec ❤️ pour faciliter la vie des citoyens.*
+The bottom action bar is fixed, containing the pagination indicator 'Étape 4 / 5' (centered, text-sm, gray-500) and the two primary navigation buttons: 'Précédent' (minimalist text button, centered, text-gray-700) and 'Suivant →' (full-width solid dark green button, centered text white, text-medium).
