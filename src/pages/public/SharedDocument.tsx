@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useI18n } from "../../context/I18nContext";
 import { useDocumentShare } from "../../hooks/useDocuments";
 
 function getFullImageUrl(url?: string): string {
@@ -13,6 +14,7 @@ function getFullImageUrl(url?: string): string {
 }
 
 export default function SharedDocument() {
+  const { t } = useI18n();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
 
@@ -27,9 +29,9 @@ export default function SharedDocument() {
         </div>
         <div className="bg-white rounded-[32px] border border-borderMain shadow-2xl p-12 text-center max-w-md w-full">
           <i className="fa-solid fa-circle-notch fa-spin text-4xl text-primary mb-4" />
-          <p className="font-bold text-textMain">Chargement du document...</p>
+          <p className="font-bold text-textMain">{t("shared_loading")}</p>
           <p className="text-textMuted text-xs mt-2 leading-relaxed">
-            Nous récupérons les informations de partage de manière sécurisée.
+            {t("shared_loading_desc")}
           </p>
         </div>
       </div>
@@ -46,16 +48,16 @@ export default function SharedDocument() {
           <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
             <i className="fa-solid fa-triangle-exclamation" />
           </div>
-          <h2 className="text-xl font-bold mb-2 text-textMain">Lien invalide ou expiré</h2>
+          <h2 className="text-xl font-bold mb-2 text-textMain">{t("shared_invalid_link")}</h2>
           <p className="text-textMuted text-sm mb-8 leading-relaxed">
-            {error || "Ce lien de partage est invalide, a expiré ou a été révoqué par son propriétaire."}
+            {error || t("shared_invalid_link_desc")}
           </p>
           <Link
             to="/"
             className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#1E3A2F] text-white rounded-2xl font-bold text-sm hover:bg-[#2D5A42] transition-all"
           >
             <i className="fa-solid fa-house text-xs" />
-            Retour à l'accueil
+            {t("shared_back_home")}
           </Link>
         </div>
       </div>
@@ -76,9 +78,9 @@ export default function SharedDocument() {
           <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-4 hover:scale-105 transition-transform">
             <img src="/assets/images/logo.png" alt="DocMaster" className="w-10 h-10" />
           </div>
-          <h1 className="font-bricolage text-3xl font-extrabold mb-2 tracking-tight">Document Partagé</h1>
+          <h1 className="font-bricolage text-3xl font-extrabold mb-2 tracking-tight">{t("shared_title")}</h1>
           <p className="text-textMuted text-sm leading-relaxed max-w-md">
-            Ce document vous a été partagé de manière sécurisée via DocMaster.
+            {t("shared_subtitle")}
           </p>
         </div>
 
@@ -105,7 +107,7 @@ export default function SharedDocument() {
                 className="absolute bottom-4 right-4 px-4 py-2.5 rounded-full bg-black/60 backdrop-blur-md text-white font-bold text-[11px] flex items-center gap-2 hover:bg-primary hover:scale-105 transition-all shadow-lg active:scale-95"
               >
                 <i className="fa-solid fa-arrows-rotate animate-spin-slow" />
-                {showingVerso ? "VOIR RECTO" : "VOIR VERSO"}
+                {showingVerso ? t("shared_see_recto") : t("shared_see_verso")}
               </button>
             )}
           </div>
@@ -115,41 +117,41 @@ export default function SharedDocument() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
                 <span className="text-[10px] font-black text-primary uppercase tracking-widest">
-                  {doc.type_doc ? "Document Officiel" : "Document Enregistré"}
+                  {doc.type_doc ? t("shared_official_doc") : t("shared_registered_doc")}
                 </span>
                 <h2 className="font-bricolage text-2xl font-black text-textMain mt-1 capitalize">
-                  {doc.type_doc || "Autre Document"}
+                  {doc.type_doc || t("shared_other_doc")}
                 </h2>
                 <p className="text-textMuted text-sm mt-1">
-                  Propriétaire :{" "}
+                  {t("shared_owner")} :{" "}
                   <span className="text-textMain font-bold">
-                    {doc.owner_name || doc.nom_sur_doc || "Utilisateur"}
+                    {doc.owner_name || doc.nom_sur_doc || t("shared_user")}
                   </span>
                 </p>
               </div>
               <div className="px-4 py-1.5 bg-green-light text-green-mid border border-[#D5EADF] rounded-full text-[12px] font-bold flex items-center gap-2 self-start sm:self-center">
                 <i className="fa-solid fa-shield-check" />
-                VÉRIFIÉ
+                {t("shared_verified")}
               </div>
             </div>
 
             {/* Info Fields Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
               <div className="p-4 bg-surface2 rounded-2xl border border-borderMain hover:border-primary/20 transition-all">
-                <p className="text-[9.5px] font-bold text-textMuted uppercase tracking-widest mb-1">
-                  Numéro du document
-                </p>
-                <p className="text-[15px] font-extrabold text-textMain font-mono">
-                  {doc.numero_doc || "N° non disponible"}
-                </p>
+                  <p className="text-[9.5px] font-bold text-textMuted uppercase tracking-widest mb-1">
+                    {t("shared_doc_number")}
+                  </p>
+                  <p className="text-[15px] font-extrabold text-textMain font-mono">
+                    {doc.numero_doc || t("shared_number_unavailable")}
+                  </p>
               </div>
               <div className="p-4 bg-surface2 rounded-2xl border border-borderMain hover:border-primary/20 transition-all">
-                <p className="text-[9.5px] font-bold text-textMuted uppercase tracking-widest mb-1">
-                  Nom sur document
-                </p>
-                <p className="text-[15px] font-extrabold text-textMain">
-                  {doc.nom_sur_doc || "Non spécifié"}
-                </p>
+                  <p className="text-[9.5px] font-bold text-textMuted uppercase tracking-widest mb-1">
+                    {t("shared_name_on_doc")}
+                  </p>
+                  <p className="text-[15px] font-extrabold text-textMain">
+                    {doc.nom_sur_doc || t("shared_not_specified")}
+                  </p>
               </div>
             </div>
 
@@ -158,7 +160,7 @@ export default function SharedDocument() {
               <div className="border-t border-borderMain/60 pt-6 mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {doc.date_delivrance && (
                   <div className="text-[13px]">
-                    <span className="text-textMuted block">Délivré le :</span>
+                    <span className="text-textMuted block">{t("shared_issued_on")} :</span>
                     <strong className="text-textMain">
                       {new Date(doc.date_delivrance).toLocaleDateString("fr-FR")}
                     </strong>
@@ -166,7 +168,7 @@ export default function SharedDocument() {
                 )}
                 {doc.date_expiration && (
                   <div className="text-[13px]">
-                    <span className="text-textMuted block">Expire le :</span>
+                    <span className="text-textMuted block">{t("shared_expires_on")} :</span>
                     <strong className="text-textMain">
                       {new Date(doc.date_expiration).toLocaleDateString("fr-FR")}
                     </strong>
@@ -182,11 +184,10 @@ export default function SharedDocument() {
               </div>
               <div>
                 <p className="text-[13px] font-bold text-textMain mb-1">
-                  Authenticité Garantie
+                  {t("shared_authenticity")}
                 </p>
                 <p className="text-[11.5px] text-textMuted leading-relaxed">
-                  Ce document est certifié authentique par DocMaster. Il a été chiffré et stocké
-                  en toute sécurité par son propriétaire légitime.
+                  {t("shared_authenticity_desc")}
                 </p>
               </div>
             </div>
@@ -195,19 +196,19 @@ export default function SharedDocument() {
           {/* Call To Action Footer */}
           <div className="p-8 border-t border-borderMain bg-[#FAF7F2] text-center">
             <p className="text-[13px] text-textMuted mb-4 leading-relaxed">
-              Vous aussi, protégez et archivez vos documents en toute sécurité.
+              {t("shared_cta_text")}
             </p>
             <Link
               to="/login"
               className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-xl font-bold text-[13.5px] shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all transform active:scale-95"
             >
-              Créer mon compte gratuit
+              {t("shared_create_account")}
             </Link>
           </div>
         </div>
 
         <p className="text-center text-[12px] text-textMuted mt-8">
-          &copy; 2026 DocMaster. Protection et Sécurisation de Documents au Cameroun.
+          {t("shared_copyright")}
         </p>
       </div>
     </div>

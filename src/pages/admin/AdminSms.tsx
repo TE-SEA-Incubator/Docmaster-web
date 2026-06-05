@@ -1,107 +1,258 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useI18n } from "../../context/I18nContext";
 import apiClient from "../../services/api";
 
-export default function AdminSms() {
-  const [form, setForm] = useState({ recipients: "", message: "", type: "all" });
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+interface SmsBalance {
+  availableUnits: number;
+  country: string;
+  status: string;
+  expirationDate: string;
+}
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSending(true);
-    try {
-      await apiClient.post("sms/send", form);
-      setSent(true);
-      setForm({ recipients: "", message: "", type: "all" });
-      setTimeout(() => setSent(false), 3000);
-    } catch {
-      // error
-    } finally {
-      setSending(false);
-    }
-  };
+interface CountryStat {
+  appid: string;
+  usage: number;
+  nbEnforcements: number;
+}
+
+interface Purchase {
+  purchaseDate: string;
+  bundleDescription: string;
+  price: number;
+  currency: string;
+  newAvailableUnits: number;
+  oldAvailableUnits: number;
+  paymentMode: string;
+}
+
+export default function AdminSms() {
+  const { t } = useI18n();
+  const [balance, setBalance] = useState<SmsBalance | null>(null);
+  const [usage, setUsage] = useState<CountryStat[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [usageCountry, setUsageCountry] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      apiClient.get("sms/balance").then((r) => {
+        const d = r.data;
+        if (d.success && d.data?.length > 0) setBalance(d.data[0]);
+      }).catch(() => {}),
+      apiClient.get("sms/usage").then((r) => {
+        const d = r.data;
+        if (d.success && d.data?.partnerStatistics?.statistics?.[0]?.serviceStatistics?.[0]) {
+          const svc = d.data.partnerStatistics.statistics[0].serviceStatistics[0];
+          setUsageCountry(svc.country);
+          setUsage(svc.countryStatistics || []);
+        }
+      }).catch(() => {}),
+      apiClient.get("sms/purchases").then((r) => {
+        const d = r.data;
+        if (d.success && d.data?.length > 0) setPurchases(d.data);
+      }).catch(() => {}),
+    ]).finally(() => setLoading(false));
+  }, []);
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-6">
-        <h1 className="font-bricolage text-2xl font-black text-gray-900">Gestion SMS</h1>
-        <p className="text-gray-400 text-[13px] font-medium mt-1">Envoyez des SMS aux utilisateurs</p>
+    <div>
+      <div className="flex items-center justify-between mb-8">
+        <div className="page-header">
+          <h1 className="font-bricolage text-2xl font-black text-gray-900">
+            {t("admin_sms_title")}
+          </h1>
+          <p className="text-gray-400 text-[13px] font-medium mt-1">
+            {t("admin_sms_subtitle")}
+          </p>
+        </div>
       </div>
 
-      {sent && (
-        <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-700 text-[12px] font-semibold flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
-            <i className="fa-solid fa-check-circle text-emerald-600 text-sm" />
-          </div>
-          SMS envoyé avec succès
-        </div>
-      )}
-
-      <div className="bg-white rounded-2xl border border-gray-200/60 p-6 shadow-sm">
-        <form onSubmit={handleSend} className="space-y-5">
-          <div>
-            <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Type de destinataires</label>
-            <select
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value })}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-            >
-              <option value="all">Tous les utilisateurs</option>
-              <option value="active">Utilisateurs actifs</option>
-              <option value="subscribed">Abonnés</option>
-              <option value="custom">Liste personnalisée</option>
-            </select>
-          </div>
-
-          {form.type === "custom" && (
-            <div>
-              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Numéros (séparés par des virgules)</label>
-              <textarea
-                value={form.recipients}
-                onChange={(e) => setForm({ ...form, recipients: e.target.value })}
-                rows={3}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none"
-                placeholder="+237612345678, +237698765432"
-              />
-            </div>
-          )}
-
-          <div>
-            <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Message</label>
-            <textarea
-              value={form.message}
-              onChange={(e) => setForm({ ...form, message: e.target.value })}
-              rows={5}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none"
-              placeholder="Votre message SMS..."
-              required
-              maxLength={160}
-            />
-            <div className="flex items-center justify-between mt-1.5">
-              <p className="text-[11px] text-gray-400">
-                {form.message.length}/160 caractères
-              </p>
-              <p className={`text-[11px] font-semibold ${
-                form.message.length > 140 ? "text-amber-500" : "text-gray-400"
-              }`}>
-                {Math.ceil(form.message.length / 160)} SMS
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={sending || !form.message}
-            className="px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-bold text-[13px] hover:shadow-lg hover:shadow-primary/20 transition-all disabled:opacity-60 flex items-center gap-2"
-          >
-            {sending ? (
-              <i className="fa-solid fa-spinner fa-spin" />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-sm">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+            {t("admin_sms_balance")}
+          </span>
+          <div className="font-bricolage text-2xl font-extrabold text-gray-900">
+            {loading ? (
+              <span className="text-gray-300">---</span>
             ) : (
-              <i className="fa-solid fa-paper-plane" />
+              balance?.availableUnits ?? <span className="text-gray-300">---</span>
             )}
-            {sending ? "Envoi en cours..." : "Envoyer le SMS"}
-          </button>
-        </form>
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-sm">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+            {t("admin_sms_country")}
+          </span>
+          <div className="font-bricolage text-2xl font-extrabold text-gray-900">
+            {loading ? (
+              <span className="text-gray-300">---</span>
+            ) : (
+              balance?.country ?? <span className="text-gray-300">---</span>
+            )}
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-sm">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+            {t("admin_sms_status")}
+          </span>
+          <div className="mt-2">
+            {loading ? (
+              <span className="text-gray-300 text-sm font-semibold">---</span>
+            ) : balance?.status ? (
+              <span
+                className={`text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider ${
+                  balance.status === "ACTIVE"
+                    ? "bg-green-50 text-green-700"
+                    : "bg-red-50 text-red-700"
+                }`}
+              >
+                {balance.status === "ACTIVE"
+                  ? t("admin_sms_active")
+                  : t("admin_sms_inactive")}
+              </span>
+            ) : (
+              <span className="text-gray-300 text-sm font-semibold">---</span>
+            )}
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-sm">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+            {t("admin_sms_expiration")}
+          </span>
+          <div className="font-bricolage text-lg font-extrabold text-gray-900">
+            {loading ? (
+              <span className="text-gray-300">---</span>
+            ) : balance?.expirationDate ? (
+              new Date(balance.expirationDate).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })
+            ) : (
+              <span className="text-gray-300">---</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Usage Statistics */}
+      <div className="bg-white border border-gray-200/60 rounded-2xl p-6 mb-8 shadow-sm">
+        <h3 className="font-bricolage font-bold text-gray-900 mb-6">
+          {t("admin_sms_usage_title")}
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead>
+              <tr>
+                <th className="py-3 px-4 font-bold text-[11px] text-gray-400 uppercase">
+                  {t("admin_sms_usage_appid")}
+                </th>
+                <th className="py-3 px-4 font-bold text-[11px] text-gray-400 uppercase">
+                  {t("admin_sms_country")}
+                </th>
+                <th className="py-3 px-4 font-bold text-[11px] text-gray-400 uppercase">
+                  {t("admin_sms_usage_sent")}
+                </th>
+                <th className="py-3 px-4 font-bold text-[11px] text-gray-400 uppercase">
+                  {t("admin_sms_usage_enforcements")}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50 text-gray-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="py-4 text-center text-gray-400">
+                    {t("admin_sms_loading")}
+                  </td>
+                </tr>
+              ) : usage.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-4 text-center text-gray-400">
+                    {t("admin_sms_no_data")}
+                  </td>
+                </tr>
+              ) : (
+                usage.map((row, i) => (
+                  <tr key={i} className="hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-4 font-mono text-xs">{row.appid}</td>
+                    <td className="py-3 px-4">{usageCountry}</td>
+                    <td className="py-3 px-4 font-bold text-primary">
+                      {row.usage}
+                    </td>
+                    <td className="py-3 px-4">{row.nbEnforcements}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Purchase History */}
+      <div className="bg-white border border-gray-200/60 rounded-2xl p-6 shadow-sm">
+        <h3 className="font-bricolage font-bold text-gray-900 mb-6">
+          {t("admin_sms_purchase_title")}
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead>
+              <tr>
+                <th className="py-3 px-4 font-bold text-[11px] text-gray-400 uppercase">
+                  {t("admin_sms_purchase_date")}
+                </th>
+                <th className="py-3 px-4 font-bold text-[11px] text-gray-400 uppercase">
+                  {t("admin_sms_purchase_desc")}
+                </th>
+                <th className="py-3 px-4 font-bold text-[11px] text-gray-400 uppercase">
+                  {t("admin_sms_purchase_price")}
+                </th>
+                <th className="py-3 px-4 font-bold text-[11px] text-gray-400 uppercase">
+                  {t("admin_sms_purchase_units")}
+                </th>
+                <th className="py-3 px-4 font-bold text-[11px] text-gray-400 uppercase">
+                  {t("admin_sms_purchase_payment")}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50 text-gray-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-4 text-center text-gray-400">
+                    {t("admin_sms_loading")}
+                  </td>
+                </tr>
+              ) : purchases.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-4 text-center text-gray-400">
+                    {t("admin_sms_no_purchases")}
+                  </td>
+                </tr>
+              ) : (
+                purchases.map((p, i) => (
+                  <tr key={i} className="hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-4 text-gray-400 text-xs">
+                      {new Date(p.purchaseDate).toLocaleString("fr-FR")}
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-gray-900">
+                      {p.bundleDescription}
+                    </td>
+                    <td className="py-3 px-4 font-semibold">
+                      {p.price} {p.currency}
+                    </td>
+                    <td className="py-3 px-4 text-green-600 font-bold">
+                      +{p.newAvailableUnits - p.oldAvailableUnits}
+                    </td>
+                    <td className="py-3 px-4 text-xs text-gray-400">
+                      {p.paymentMode}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

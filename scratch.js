@@ -1,19 +1,10 @@
-    const dialogElement = document.getElementById('alert_modal_element');
-    if (!dialogElement) return;
-    
-    // Fermeture avec les boutons D'accord et Croix
-    const btns = dialogElement.querySelectorAll('form[method="dialog"] button');
-    btns.forEach(btn => {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dialogElement.close();
-      });
-    });
-
-    // Également gérer le clic sur le backdrop explicitement
-    dialogElement.addEventListener('click', function(e) {
-      if (e.target === dialogElement) {
-        dialogElement.close();
-      }
-    });
+const { chromium } = require('playwright');
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+  page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
+  await page.goto('http://localhost:3003/');
+  await page.waitForTimeout(2000);
+  await browser.close();
+})();

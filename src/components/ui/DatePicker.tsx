@@ -20,6 +20,7 @@ export default function DatePicker({ value, onChange, className, placeholder, ic
     fpRef.current = flatpickr(ref.current!, {
       locale: French,
       dateFormat: "Y-m-d",
+      disableMobile: true,
       defaultDate: value || undefined,
       onChange: (dates) => {
         if (dates[0]) {
@@ -54,6 +55,8 @@ export default function DatePicker({ value, onChange, className, placeholder, ic
         type="text"
         placeholder={placeholder}
         readOnly
+        autoComplete="off"
+        inputMode="none"
         className={className || "w-full px-4 py-3 bg-bgMain border border-borda rounded-xl text-textMain text-[14px] outline-none focus:border-primary transition-colors"}
       />
     </div>

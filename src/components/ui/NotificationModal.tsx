@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { useI18n } from "../../context/I18nContext";
 import { useNotifications } from "../../hooks/useNotifications";
 import { socketService } from "../../services/socket";
 
 export default function NotificationModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   const { notifications, loading, unreadCount, markAsRead, markAllAsRead, fetch } = useNotifications();
   const [liveNotifs, setLiveNotifs] = useState<any[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -55,12 +57,12 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
   };
 
   const formatTimeAgo = (dateString?: string) => {
-    if (!dateString) return "Récemment";
+    if (!dateString) return t("notification_recently");
     const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-    if (diff < 60) return "À l'instant";
-    if (diff < 3600) return `Il y a ${Math.floor(diff / 60)}m`;
-    if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`;
-    if (diff < 604800) return `Il y a ${Math.floor(diff / 86400)}j`;
+    if (diff < 60) return t("notification_just_now");
+    if (diff < 3600) return t("notification_min_ago").replace("{}", String(Math.floor(diff / 60)));
+    if (diff < 86400) return t("notification_hour_ago").replace("{}", String(Math.floor(diff / 3600)));
+    if (diff < 604800) return t("notification_day_ago").replace("{}", String(Math.floor(diff / 86400)));
     return new Date(dateString).toLocaleDateString("fr-FR");
   };
 
@@ -86,8 +88,8 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
               <i className="fa-solid fa-bell text-primary text-sm" />
             </div>
             <div>
-              <h2 className="font-bricolage text-[15px] font-bold text-textMain leading-tight">Notifications</h2>
-              <p className="text-[11px] text-textMuted">{unreadCount} non lue{unreadCount > 1 ? "s" : ""}</p>
+              <h2 className="font-bricolage text-[15px] font-bold text-textMain leading-tight">{t("notification_title")}</h2>
+              <p className="text-[11px] text-textMuted">{unreadCount} {t("notification_unread")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -96,7 +98,7 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
                 onClick={markAllAsRead}
                 className="text-[11px] font-bold text-primary hover:underline"
               >
-                Tout lu
+                {t("notification_mark_all_read")}
               </button>
             )}
             <button
@@ -117,7 +119,7 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
           ) : allNotifs.length === 0 ? (
             <div className="py-10 text-center text-textMuted">
               <i className="fa-regular fa-bell-slash text-3xl opacity-30 mb-3" />
-              <p className="text-sm font-medium">Aucune notification</p>
+              <p className="text-sm font-medium">{t("notification_empty")}</p>
             </div>
           ) : (
             <div className="divide-y divide-borda">
@@ -144,7 +146,7 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
                         {n.message || ""}
                       </div>
                       <div className="text-[10.5px] text-textMuted font-medium italic mt-0.5">
-                        {n._live ? "À l'instant" : formatTimeAgo(n.created_at)}
+                        {n._live ? t("notification_just_now") : formatTimeAgo(n.created_at)}
                       </div>
                     </div>
                   </div>
@@ -160,7 +162,7 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
             onClick={fetch}
             className="text-[11.5px] font-semibold text-primary hover:underline"
           >
-            <i className="fa-solid fa-rotate mr-1" /> Actualiser
+            <i className="fa-solid fa-rotate mr-1" /> {t("notification_refresh")}
           </button>
         </div>
       </div>

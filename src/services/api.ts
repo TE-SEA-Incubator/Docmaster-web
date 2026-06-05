@@ -1,15 +1,19 @@
 import axios from "axios";
 import { getToken, saveToken, deleteToken } from "../utils/cookie";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (() => {
-    const origin = window.location.origin;
-    if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
-      return "http://localhost:5000/api/";
-    }
-    return origin.replace(":3003", ":5000") + "/api/";
-  })();
+const resolveBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BACKEND_URL_PROD;
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, "") + "/api/";
+  }
+  const origin = window.location.origin;
+  if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+    return "http://localhost:5000/api/";
+  }
+  return "/api/";
+};
+
+const API_BASE_URL = resolveBaseUrl();
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

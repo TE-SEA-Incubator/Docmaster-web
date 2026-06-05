@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
 import Topbar from "../../layout/Topbar";
+import { useI18n } from "../../context/I18nContext";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -18,9 +19,10 @@ interface LocationData {
   city: string;
 }
 
-const STEP_LABELS = ["Type", "Infos", "Lieu", "Photos", "Contact"];
+const STEP_LABELS = ["trouver_step_type", "trouver_step_infos", "trouver_step_location", "trouver_step_photos", "trouver_step_contact"];
 
 export default function Trouver() {
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -139,7 +141,7 @@ export default function Trouver() {
 
     const resultsBox = document.getElementById("map-search-results")!;
     resultsBox.innerHTML =
-      '<div class="p-3 text-[12px] text-textMuted italic flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin"></i> Recherche...</div>';
+      `<div class="p-3 text-[12px] text-textMuted italic flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin"></i> ${t("trouver_searching")}</div>`;
     resultsBox.classList.remove("hidden");
 
     try {
@@ -150,7 +152,7 @@ export default function Trouver() {
 
       if (data.length === 0) {
         resultsBox.innerHTML =
-          '<div class="p-3 text-[12px] text-red-500 italic">Aucun résultat trouvé au Cameroun.</div>';
+          `<div class="p-3 text-[12px] text-red-500 italic">${t("trouver_no_results")}</div>`;
         return;
       }
 
@@ -166,7 +168,7 @@ export default function Trouver() {
         .join("");
     } catch {
       resultsBox.innerHTML =
-        '<div class="p-3 text-[12px] text-red-500 italic">Erreur de connexion.</div>';
+        `<div class="p-3 text-[12px] text-red-500 italic">${t("trouver_connection_error")}</div>`;
     }
   }, []);
 
@@ -190,22 +192,22 @@ export default function Trouver() {
 
   const goToStep = (n: number) => {
     if (n === 2 && !selectedType) {
-      alert("Veuillez sélectionner un type de document.");
+      alert(t("trouver_select_type"));
       return;
     }
     if (n > step && step === 2 && n === 3) {
       if (!ownerName || ownerName.trim().length < 2) {
-        alert("Veuillez entrer le nom du propriétaire (ou 'Inconnu' si illisible).");
+        alert(t("trouver_enter_owner"));
         return;
       }
       if (docNum && !/\d/.test(docNum)) {
-        alert("Le numéro du document doit contenir au moins un chiffre.");
+        alert(t("trouver_digit_required"));
         return;
       }
     }
     if (n > step && step === 3 && n === 4) {
       if (!ville || ville.trim().length < 2) {
-        alert("Veuillez préciser la ville ou le quartier.");
+        alert(t("trouver_enter_city"));
         return;
       }
       if (dateFound) {
@@ -213,7 +215,7 @@ export default function Trouver() {
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         if (d > today) {
-          alert("La date de découverte ne peut pas être dans le futur.");
+          alert(t("trouver_future_date"));
           return;
         }
       }
@@ -264,7 +266,7 @@ export default function Trouver() {
 
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("La géolocalisation n'est pas supportée par votre navigateur.");
+      alert(t("trouver_geolocation_not_supported"));
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -277,30 +279,30 @@ export default function Trouver() {
         marker.setLatLng(latlng);
         updateLocation(latlng);
       },
-      () => alert("Impossible de récupérer votre position."),
+      () => alert(t("trouver_position_failed")),
       { enableHighAccuracy: true }
     );
   };
 
   const submitDeclaration = async () => {
     if (!consent) {
-      alert("Veuillez accepter les conditions d'utilisation.");
+      alert(t("trouver_accept_terms"));
       return;
     }
     if (!selectedType) {
-      alert("Veuillez sélectionner un type de document.");
+      alert(t("trouver_select_type"));
       return;
     }
     if (!ownerName) {
-      alert("Veuillez entrer le nom du propriétaire.");
+      alert(t("trouver_enter_owner_short"));
       return;
     }
     if (!ville) {
-      alert("Veuillez préciser la ville ou le quartier.");
+      alert(t("trouver_enter_city"));
       return;
     }
     if (docNum && !/\d/.test(docNum)) {
-      alert("Le numéro du document doit contenir au moins un chiffre.");
+      alert(t("trouver_digit_required"));
       return;
     }
     if (dateFound) {
@@ -308,7 +310,7 @@ export default function Trouver() {
       const today = new Date();
       today.setHours(23, 59, 59, 999);
       if (d > today) {
-        alert("La date de découverte ne peut pas être dans le futur.");
+        alert(t("trouver_future_date"));
         return;
       }
     }
@@ -321,8 +323,8 @@ export default function Trouver() {
     formData.append("document_number", docNum);
     formData.append("etat_physique", etat);
     formData.append("ville", ville);
-    formData.append("region", "Non spécifiée");
-    formData.append("pays", "Cameroun");
+    formData.append("region", t("trouver_region_not_specified"));
+    formData.append("pays", t("trouver_country_cameroon"));
     formData.append("date_perte", dateFound);
     formData.append("mode_contact", contactMode);
     formData.append("telephone_contact", contactTel);
@@ -330,8 +332,8 @@ export default function Trouver() {
     let description = details;
     if (tags.length > 0) {
       description = description
-        ? `${description}\n\nMots-clés: ${tags.join(", ")}`
-        : `Mots-clés: ${tags.join(", ")}`;
+        ? `${description}\n\n${t("trouver_keywords_prefix")}: ${tags.join(", ")}`
+        : `${t("trouver_keywords_prefix")}: ${tags.join(", ")}`;
     }
     formData.append("description", description);
 
@@ -360,13 +362,14 @@ export default function Trouver() {
         setRefNumber(result.data?.identifiant_doc_dm || "DOC-FND-SUCCESS");
         setSuccess(true);
       } else {
-        alert(result.message || "Erreur lors de la publication.");
+        alert(result.message || t("trouver_publish_error"));
         setSubmitting(false);
         setProgress(0);
       }
-    } catch {
+    } catch (e: any) {
       clearInterval(interval);
-      alert("Erreur de connexion au serveur.");
+      const msg = e.response?.data?.message || e.response?.data?.error || t("trouver_server_error");
+      alert(msg);
       setSubmitting(false);
       setProgress(0);
     }
@@ -386,12 +389,11 @@ export default function Trouver() {
     return (
       <div className="flex flex-col h-full">
         <Topbar
-          title="J'ai trouvé un document"
-          breadcrumbs={[{ label: "Objets trouvés", to: "/trouver" }, { label: "Succès" }]}
+          title={t("trouver_title")}
+          breadcrumbs={[{ label: t("trouver_breadcrumb_found"), to: "/trouver" }, { label: t("trouver_success") }]}
         />
         <div
-          className="p-4 sm:p-6 lg:p-8 custom-scrollbar"
-          style={{ height: "calc(100vh - 64px)", overflowY: "auto" }}
+          className="p-4 sm:p-6 lg:p-8 custom-scrollbar max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto pb-24 md:pb-0"
         >
           <div className="max-w-lg mx-auto">
             <div className="bg-white border border-borderMain rounded-[16px] p-5 text-center">
@@ -399,11 +401,11 @@ export default function Trouver() {
                 <i className="fa-solid fa-circle-check text-green-mid text-3xl"></i>
               </div>
               <h2 className="font-bricolage text-xl font-extrabold text-textMain mb-1">
-                Déclaration publiée !
+                {t("trouver_declaration_published")}
               </h2>
               <div className="p-3 bg-bgMain border border-borderMain rounded-[12px] mb-4 text-left">
                 <p className="text-[10px] font-bold text-textMuted uppercase mb-1.5">
-                  Numéro de déclaration
+                  {t("trouver_declaration_number")}
                 </p>
                 <div className="flex items-center gap-2">
                   <span className="font-bricolage text-lg font-extrabold text-textMain tracking-widest flex-1">
@@ -415,7 +417,7 @@ export default function Trouver() {
                     }}
                     className="px-2.5 py-1.5 bg-primary text-white text-[11px] font-bold rounded-[7px] hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95"
                   >
-                    Copier
+                    {t("trouver_copy")}
                   </button>
                 </div>
               </div>
@@ -423,15 +425,15 @@ export default function Trouver() {
                 <button
                   onClick={() => window.location.reload()}
                   className="py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-primary hover:text-primary hover:shadow-sm transition-all active:scale-95"
-                >
-                  Nouvelle
-                </button>
+                  >
+                    {t("trouver_new")}
+                  </button>
                 <button
                   onClick={() => navigate("/mes-declarations")}
                   className="py-2.5 rounded-[12px] bg-primary text-white font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95"
-                >
-                  Mes déclarations
-                </button>
+                  >
+                    {t("trouver_my_declarations")}
+                  </button>
               </div>
             </div>
           </div>
@@ -443,12 +445,11 @@ export default function Trouver() {
   return (
     <div className="flex flex-col h-full">
       <Topbar
-        title="J'ai trouvé un document"
-        breadcrumbs={[{ label: "Objets trouvés", to: "/trouver" }, { label: "J'ai trouvé" }]}
+        title={t("trouver_title")}
+        breadcrumbs={[{ label: t("trouver_breadcrumb_found"), to: "/trouver" }, { label: t("trouver_breadcrumb_current") }]}
       />
       <div
-        className="p-4 sm:p-6 lg:p-8 custom-scrollbar"
-        style={{ height: "calc(100vh - 64px)", overflowY: "auto" }}
+        className="p-4 sm:p-6 lg:p-8 custom-scrollbar max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto pb-24 md:pb-0"
       >
         <div className="max-w-4xl mx-auto space-y-4">
           {/* Hero */}
@@ -458,10 +459,10 @@ export default function Trouver() {
             </div>
             <div>
               <h1 className="font-bricolage text-[17px] font-extrabold text-textMain tracking-tight leading-tight">
-                Vous avez trouvé un document ?
+                {t("trouver_hero_title")}
               </h1>
               <p className="text-[12px] text-textMuted leading-snug">
-                Merci pour votre geste civique — aidez le propriétaire à le retrouver.
+                {t("trouver_hero_desc")}
               </p>
             </div>
           </div>
@@ -501,7 +502,7 @@ export default function Trouver() {
                         <span>{idx}</span>
                       )}
                     </div>
-                    <span className={`text-[10px] whitespace-nowrap ${labelCls}`}>{label}</span>
+                    <span className={`text-[10px] whitespace-nowrap ${labelCls}`}>{t(label)}</span>
                   </div>
                 );
               })}
@@ -516,13 +517,13 @@ export default function Trouver() {
                   <i className="fa-solid fa-tag text-primary text-xs"></i>
                 </div>
                 <h2 className="font-bricolage text-[15px] font-bold text-textMain">
-                  Quel type de document avez-vous trouvé ?
+                  {t("trouver_step1_title")}
                 </h2>
               </div>
 
               <div className="mb-4">
                 <p className="text-[11px] font-bold text-textMain mb-2 uppercase tracking-wider opacity-60">
-                  Types de documents
+                  {t("trouver_doc_types")}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
                   {docTypes.map((d) => {
@@ -553,13 +554,13 @@ export default function Trouver() {
               </div>
 
               <div className={`${selectedType !== "autre" ? "hidden" : ""} mb-4`}>
-                <label className="form-label">Précisez le type</label>
+                <label className="form-label">{t("trouver_specify_type")}</label>
                 <input
                   type="text"
                   value={autreType}
                   onChange={(e) => setAutreType(e.target.value)}
                   className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(245,166,75,0.1)]"
-                  placeholder="Ex: Carte grise, Attestation..."
+                  placeholder={t("trouver_specify_type_placeholder")}
                 />
               </div>
 
@@ -568,7 +569,7 @@ export default function Trouver() {
                 disabled={!selectedType}
                 className="w-full py-3 rounded-[12px] bg-primary text-white font-bricolage text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-dark transition-all active:scale-[.98]"
               >
-                Continuer <i className="fa-solid fa-arrow-right ml-1 text-[12px]"></i>
+                {t("trouver_continue")} <i className="fa-solid fa-arrow-right ml-1 text-[12px]"></i>
               </button>
             </div>
           )}
@@ -582,10 +583,10 @@ export default function Trouver() {
                 </div>
                 <div>
                   <h2 className="font-bricolage text-[15px] font-bold text-textMain">
-                    Informations visibles
+                    {t("trouver_step2_title")}
                   </h2>
                   <p className="text-[11px] text-textMuted">
-                    Ne notez que ce qui est clairement lisible.
+                    {t("trouver_step2_desc")}
                   </p>
                 </div>
               </div>
@@ -594,43 +595,42 @@ export default function Trouver() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                      Nom <span className="text-textMuted font-normal">(si lisible)</span>
+                      {t("trouver_owner_name")} <span className="text-textMuted font-normal">({t("trouver_if_readable")})</span>
                     </label>
                     <input
                       type="text"
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
                       className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(245,166,75,0.1)]"
-                      placeholder="Ex: MBANG Alice"
+                      placeholder={t("trouver_owner_name_placeholder")}
                     />
                     <p className="text-[10.5px] text-[#9ca3af] mt-1">
-                      <i className="fa-solid fa-eye-slash text-[10px]"></i> Partagé uniquement avec
-                      DocMaster
+                      <i className="fa-solid fa-eye-slash text-[10px]"></i> {t("trouver_shared_only")}
                     </p>
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                      Numéro <span className="text-textMuted font-normal">(si visible)</span>
+                      {t("trouver_doc_number")} <span className="text-textMuted font-normal">({t("trouver_if_visible")})</span>
                     </label>
                     <input
                       type="text"
                       value={docNum}
                       onChange={(e) => setDocNum(e.target.value)}
                       className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(245,166,75,0.1)]"
-                      placeholder="Ex: 123456789CM"
+                      placeholder={t("trouver_doc_number_placeholder")}
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                    État du document
+                    {t("trouver_doc_condition")}
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { value: "bon", label: "Bon état", icon: "fa-circle-check", cls: "text-green-500" },
-                      { value: "moyen", label: "Moyen", icon: "fa-triangle-exclamation", cls: "text-amber-500" },
-                      { value: "abime", label: "Abîmé", icon: "fa-circle-xmark", cls: "text-red-400" },
+                      { value: "bon", label: t("trouver_condition_good"), icon: "fa-circle-check", cls: "text-green-500" },
+                      { value: "moyen", label: t("trouver_condition_fair"), icon: "fa-triangle-exclamation", cls: "text-amber-500" },
+                      { value: "abime", label: t("trouver_condition_damaged"), icon: "fa-circle-xmark", cls: "text-red-400" },
                     ].map((opt) => (
                       <div key={opt.value} className="radio-pill">
                         <input
@@ -660,23 +660,23 @@ export default function Trouver() {
 
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                    Détails que vous pouvez partager
+                    {t("trouver_details_share")}
                   </label>
                   <textarea
                     rows={2}
                     value={details}
                     onChange={(e) => setDetails(e.target.value)}
                     className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(245,166,75,0.1)] resize-none"
-                    placeholder="Ex: CNI avec photo d'une femme d'environ 30 ans, document plastifié..."
+                    placeholder={t("trouver_details_placeholder")}
                   />
                   <p className="text-[10.5px] text-[#9ca3af] mt-1">
-                    Ne mentionnez pas d'informations trop précises qui permettraient l'usurpation.
+                    {t("trouver_details_warning")}
                   </p>
                 </div>
 
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                    Mots-clés <span className="text-textMuted font-normal">(Entrée pour ajouter)</span>
+                    {t("trouver_keywords")} <span className="text-textMuted font-normal">({t("trouver_enter_to_add")})</span>
                   </label>
                   <div
                     className="flex flex-wrap items-center gap-1.5 p-2 border-[1.5px] border-[#eae3d8] rounded-[11px] bg-[#faf7f2] min-h-[40px] cursor-text"
@@ -704,7 +704,7 @@ export default function Trouver() {
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={handleTagKeyDown}
-                      placeholder="femme, jeune, photo floue..."
+                      placeholder={t("trouver_keywords_placeholder")}
                       className="bg-transparent outline-none border-none text-[12.5px] text-textMain placeholder:text-textMuted flex-1 min-w-[100px]"
                     />
                   </div>
@@ -716,13 +716,13 @@ export default function Trouver() {
                   onClick={() => goToStep(1)}
                   className="px-4 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors flex items-center gap-1.5"
                 >
-                  <i className="fa-solid fa-arrow-left text-[11px]"></i> Retour
+                  <i className="fa-solid fa-arrow-left text-[11px]"></i> {t("trouver_back")}
                 </button>
                 <button
                   onClick={() => goToStep(3)}
                   className="flex-1 py-2.5 rounded-[12px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]"
                 >
-                  Continuer <i className="fa-solid fa-arrow-right ml-1 text-[11px]"></i>
+                  {t("trouver_continue")} <i className="fa-solid fa-arrow-right ml-1 text-[11px]"></i>
                 </button>
               </div>
             </div>
@@ -737,10 +737,10 @@ export default function Trouver() {
                 </div>
                 <div>
                   <h2 className="font-bricolage text-[15px] font-bold text-textMain">
-                    Où avez-vous trouvé le document ?
+                    {t("trouver_step3_title")}
                   </h2>
                   <p className="text-[11px] text-textMuted">
-                    Indiquez le lieu précis sur la carte ou recherchez une adresse.
+                    {t("trouver_step3_desc")}
                   </p>
                 </div>
               </div>
@@ -765,7 +765,7 @@ export default function Trouver() {
                   <input
                     id="map-search-input"
                     type="text"
-                    placeholder="Rechercher une ville, une rue..."
+                    placeholder={t("trouver_search_placeholder")}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") searchLocation();
                     }}
@@ -782,7 +782,7 @@ export default function Trouver() {
                     className="absolute -bottom-12 right-0 bg-white border border-borderMain rounded-xl px-3 py-2 text-[11px] font-bold text-textMain hover:border-primary hover:text-primary transition-all shadow-sm flex items-center gap-1.5 z-[1002]"
                   >
                     <i className="fa-solid fa-location-crosshairs text-primary"></i>
-                    Ma position actuelle
+                    {t("trouver_my_location")}
                   </button>
                   <div
                     id="map-search-results"
@@ -801,10 +801,10 @@ export default function Trouver() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-bold text-green-mid uppercase tracking-wider">
-                      Lieu de découverte
+                      {t("trouver_found_location")}
                     </p>
                     <p className="text-[12px] text-textMain font-bold truncate">
-                      {locationData?.city || "Chargement de l'adresse..."}
+                      {locationData?.city || t("trouver_loading_address")}
                     </p>
                   </div>
                   <div className="text-[10px] font-mono text-textMuted bg-white px-2 py-1 rounded border border-borderMain shadow-sm">
@@ -818,19 +818,19 @@ export default function Trouver() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                    Ville / Quartier <span className="text-textMuted font-normal">(Auto-rempli)</span>
+                    {t("trouver_city_district")} <span className="text-textMuted font-normal">({t("trouver_auto_filled")})</span>
                   </label>
                   <input
                     type="text"
                     value={ville}
                     onChange={(e) => setVille(e.target.value)}
                     className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(245,166,75,0.1)]"
-                    placeholder="Ex: Akwa, Douala"
+                    placeholder={t("trouver_city_placeholder")}
                   />
                 </div>
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                    Date de la découverte
+                    {t("trouver_date_found")}
                   </label>
                   <input
                     type="date"
@@ -846,13 +846,13 @@ export default function Trouver() {
                   onClick={() => goToStep(2)}
                   className="px-4 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors flex items-center gap-1.5"
                 >
-                  <i className="fa-solid fa-arrow-left text-[11px]"></i> Retour
+                  <i className="fa-solid fa-arrow-left text-[11px]"></i> {t("trouver_back")}
                 </button>
                 <button
                   onClick={() => goToStep(4)}
                   className="flex-1 py-2.5 rounded-[12px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]"
                 >
-                  Continuer <i className="fa-solid fa-arrow-right ml-1 text-[11px]"></i>
+                  {t("trouver_continue")} <i className="fa-solid fa-arrow-right ml-1 text-[11px]"></i>
                 </button>
               </div>
             </div>
@@ -866,14 +866,14 @@ export default function Trouver() {
                   <i className="fa-solid fa-camera text-primary text-xs"></i>
                 </div>
                 <h2 className="font-bricolage text-[15px] font-bold text-textMain">
-                  Photos du document
+                  {t("trouver_step4_title")}
                 </h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                    Photo principale (Recto) *
+                    {t("trouver_photo_recto")}
                   </label>
                   <div
                     className="border-2 border-dashed border-[#eae3d8] rounded-[12px] p-4 text-center cursor-pointer hover:border-primary hover:bg-[#fef0dc] transition-all"
@@ -904,13 +904,13 @@ export default function Trouver() {
                       <img
                         src={previewRecto}
                         className="w-full max-h-28 object-contain rounded-[8px] mb-1.5 mx-auto"
-                        alt="Recto"
+                        alt={t("trouver_alt_recto")}
                       />
                     ) : (
                       <>
                         <i className="fa-solid fa-cloud-arrow-up text-2xl text-textMuted mb-1 block"></i>
                         <p className="text-[13px] font-bold text-textMain">
-                          Glissez ou cliquez (Recto)
+                          {t("trouver_drag_recto")}
                         </p>
                       </>
                     )}
@@ -918,7 +918,7 @@ export default function Trouver() {
                 </div>
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                    Photo du Verso <span className="text-textMuted font-normal">(Optionnel)</span>
+                    {t("trouver_photo_verso")} <span className="text-textMuted font-normal">({t("trouver_optional")})</span>
                   </label>
                   <div
                     className="border-2 border-dashed border-[#eae3d8] rounded-[12px] p-4 text-center cursor-pointer hover:border-primary hover:bg-[#fef0dc] transition-all"
@@ -949,13 +949,13 @@ export default function Trouver() {
                       <img
                         src={previewVerso}
                         className="w-full max-h-28 object-contain rounded-[8px] mb-1.5 mx-auto"
-                        alt="Verso"
+                        alt={t("trouver_alt_verso")}
                       />
                     ) : (
                       <>
                         <i className="fa-solid fa-rotate-right text-2xl text-textMuted mb-1 block"></i>
                         <p className="text-[13px] font-bold text-textMain">
-                          Glissez ou cliquez (Verso)
+                          {t("trouver_drag_verso")}
                         </p>
                       </>
                     )}
@@ -968,13 +968,13 @@ export default function Trouver() {
                   onClick={() => goToStep(3)}
                   className="px-4 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors flex items-center gap-1.5"
                 >
-                  <i className="fa-solid fa-arrow-left text-[11px]"></i> Retour
+                  <i className="fa-solid fa-arrow-left text-[11px]"></i> {t("trouver_back")}
                 </button>
                 <button
                   onClick={() => goToStep(5)}
                   className="flex-1 py-2.5 rounded-[12px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]"
                 >
-                  Continuer <i className="fa-solid fa-arrow-right ml-1 text-[11px]"></i>
+                  {t("trouver_continue")} <i className="fa-solid fa-arrow-right ml-1 text-[11px]"></i>
                 </button>
               </div>
             </div>
@@ -988,7 +988,7 @@ export default function Trouver() {
                   <i className="fa-solid fa-handshake text-primary text-xs"></i>
                 </div>
                 <h2 className="font-bricolage text-[15px] font-bold text-textMain">
-                  Vos coordonnées & récompense
+                  {t("trouver_step5_title")}
                 </h2>
               </div>
 
@@ -998,17 +998,17 @@ export default function Trouver() {
                   value={contactTel}
                   onChange={(e) => setContactTel(e.target.value)}
                   className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(245,166,75,0.1)]"
-                  placeholder="Votre téléphone..."
+                  placeholder={t("trouver_phone_placeholder")}
                 />
 
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                    Mode de contact
+                    {t("trouver_contact_mode")}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: "APP_CHAT", label: "Via l'app" },
-                      { value: "PHONE", label: "Appel" },
+                      { value: "APP_CHAT", label: t("trouver_contact_app") },
+                      { value: "PHONE", label: t("trouver_contact_phone") },
                     ].map((opt) => (
                       <div key={opt.value} className="radio-pill">
                         <input
@@ -1037,21 +1037,21 @@ export default function Trouver() {
 
                 <div className="p-3 bg-bgMain border border-borderMain rounded-[12px]">
                   <p className="text-[10px] font-bold text-textMuted uppercase mb-2">
-                    Récapitulatif
+                    {t("trouver_summary")}
                   </p>
                   <div className="text-[12px] flex flex-col gap-1">
                     <div className="flex justify-between">
-                      <span className="text-textMuted">Type</span>
+                      <span className="text-textMuted">{t("trouver_summary_type")}</span>
                       <span className="font-bold">
                         {selectedDoc?.nom || autreType || "—"}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-textMuted">Lieu</span>
+                      <span className="text-textMuted">{t("trouver_summary_location")}</span>
                       <span className="font-bold">{ville || "—"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-textMuted">Date</span>
+                      <span className="text-textMuted">{t("trouver_summary_date")}</span>
                       <span className="font-bold">
                         {dateFound
                           ? new Date(dateFound).toLocaleDateString("fr-FR")
@@ -1059,7 +1059,7 @@ export default function Trouver() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-textMuted">Photos</span>
+                      <span className="text-textMuted">{t("trouver_summary_photos")}</span>
                       <span className="font-bold text-green-mid">{photoCount}</span>
                     </div>
                   </div>
@@ -1077,7 +1077,7 @@ export default function Trouver() {
                     htmlFor="consent-found"
                     className="text-[11.5px] text-textMain cursor-pointer"
                   >
-                    Je certifie avoir trouvé ce document.
+                    {t("trouver_certify")}
                   </label>
                 </div>
               </div>
@@ -1108,10 +1108,10 @@ export default function Trouver() {
                 >
                   {submitting ? (
                     <>
-                      <i className="fa-solid fa-spinner fa-spin text-[12px]"></i> Publication...
+                      <i className="fa-solid fa-spinner fa-spin text-[12px]"></i> {t("trouver_publishing")}
                     </>
                   ) : (
-                    "Publier"
+                    t("trouver_publish")
                   )}
                 </button>
               </div>

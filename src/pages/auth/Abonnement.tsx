@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { subscriptionsService } from "../../services/subscriptionsService";
 import { paymentsService } from "../../services/paymentsService";
+import { useI18n } from "../../context/I18nContext";
 import Topbar from "../../layout/Topbar";
 import PaymentModal from "../../components/modals/PaymentModal";
 import type { Plan, Transaction } from "../../types/api";
 
 export default function Abonnement() {
   const { user } = useAuth();
+  const { t } = useI18n();
 
   // Plans
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -55,8 +57,8 @@ export default function Abonnement() {
       if (usageRes.success && usageRes.data) setUsage(usageRes.data);
       if ((txRes as { success: boolean; data?: Transaction[] }).success && (txRes as { success: boolean; data?: Transaction[] }).data)
         setTransactions((txRes as { success: boolean; data?: Transaction[] }).data!);
-    } catch {
-      // ignore
+    } catch (e: any) {
+      console.error("[Abonnement] loadData error:", e?.response?.data || e);
     } finally {
       setLoadingPlans(false);
       setLoadingUsage(false);
@@ -93,13 +95,14 @@ export default function Abonnement() {
         paymentMethod,
       });
       if (result.success) {
-        setPollingStatus("En attente de validation sur votre téléphone...");
+        setPollingStatus(t("abonnement_payment_pending"));
         startPolling();
       } else {
-        setPayError(result.message || "Erreur lors de la souscription.");
+        setPayError(result.message || t("abonnement_subscribe_error"));
       }
-    } catch {
-      setPayError("Erreur lors de la souscription.");
+    } catch (e: any) {
+      const msg = e.response?.data?.message || e.response?.data?.error || t("abonnement_subscribe_error");
+      setPayError(msg);
     } finally {
       setProcessing(false);
     }
@@ -111,19 +114,19 @@ export default function Abonnement() {
         const res = await subscriptionsService.getUsage();
         if (res.success && res.data?.subscription_id) {
           clearInterval(interval);
-          alert("Félicitations ! Votre abonnement est maintenant actif.");
+          alert(t("abonnement_success"));
           closeSubscribeModal();
           loadData();
         }
-      } catch {
-        // ignore
-      }
+        } catch (e: any) {
+          console.error("[Abonnement] polling error:", e?.response?.data || e);
+        }
     }, 5000);
     setTimeout(() => clearInterval(interval), 300000);
   };
 
   // ── Helpers ──
-  const currentPlan = usage?.plan_name || "Gratuit";
+  const currentPlan = usage?.plan_name || t("abonnement_plan_free");
   const currentPlanObj = plans.find((p) => p.name?.toLowerCase() === currentPlan.toLowerCase());
   const percentage = usage?.percentage || 0;
 
@@ -131,25 +134,53 @@ export default function Abonnement() {
     ? plans.map((p) => ({ ...p, price: Math.round((p.price || 0) * 12 * 0.8) }))
     : plans;
 
-  function normalizeFeatures(raw: any): { label: string; value: string }[] {
+  function normalizeFeatures(raw: any): { label: string; value: string; icon?: string }[] {
     if (!raw) return [];
-    if (Array.isArray(raw)) {
-      return raw.map((f: any) => {
-        if (typeof f === "string") return { label: "", value: f };
-        return { label: f?.label || "", value: f?.valeur || f?.name || "" };
+    
+    // If it's the standard features object from DB
+    if (typeof raw === "object" && !Array.isArray(raw)) {
+      const featureMap: Record<string, { label: string; icon: string }> = {
+        objects: { label: "Appareils & Objets", icon: "fa-mobile-screen" },
+        docs_per_type: { label: "Documents par type", icon: "fa-file-shield" },
+        vault: { label: "Coffre-fort numérique", icon: "fa-vault" },
+        prioritaire: { label: "Support Prioritaire", icon: "fa-headset" },
+        certification: { label: "Certification DocMaster", icon: "fa-certificate" },
+        ads: { label: "Publicité", icon: "fa-rectangle-ad" },
+        matching_speed: { label: "Vitesse Matching", icon: "fa-bolt" },
+        notifications: { label: "Alertes Temps Réel", icon: "fa-bell" }
+      };
+
+      return Object.entries(raw).map(([key, val]) => {
+        const meta = featureMap[key];
+        let value = String(val);
+        if (val === true) value = "Inclus";
+        if (val === false) value = "Non inclus";
+        if (key === "matching_speed") value = val === "high" ? "Instantané" : val === "normal" ? "Standard" : String(val);
+        
+        return {
+          label: meta?.label || key,
+          value,
+          icon: meta?.icon || "fa-check"
+        };
       });
     }
-    if (typeof raw === "object") {
-      return Object.entries(raw).map(([k, v]) => ({
-        label: k,
-        value: v === true ? "✓" : v === false ? "✗" : String(v ?? ""),
-      }));
+
+    if (Array.isArray(raw)) {
+      return raw.map((f: any) => {
+        if (typeof f === "string") return { label: "", value: f, icon: "fa-check" };
+        return { 
+          label: f?.label || "", 
+          value: f?.valeur || f?.name || "",
+          icon: f?.icon || "fa-check"
+        };
+      });
     }
     return [];
   }
 
-  function featureIcon(label: string, value: string): string {
-    const txt = (label + " " + value).toLowerCase();
+  function featureIcon(f: { label: string; value: string; icon?: string }): string {
+    if (f.icon) return `fa-solid ${f.icon}`;
+    const txt = (f.label + " " + f.value).toLowerCase();
     if (txt.includes("doc") || txt.includes("declaration")) return "fa-solid fa-file-lines";
     if (txt.includes("appareil") || txt.includes("device")) return "fa-solid fa-mobile-screen";
     if (txt.includes("support") || txt.includes("prioritaire")) return "fa-solid fa-headset";
@@ -164,34 +195,36 @@ export default function Abonnement() {
   return (
     <div className="flex flex-col h-full">
       <style>{`
-        .plan-card { transition: transform .2s, box-shadow .2s; }
-        .plan-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,.1); }
-        .plan-card.featured { box-shadow: 0 8px 32px rgba(245,166,75,.25); }
-        .plan-card.featured:hover { box-shadow: 0 16px 48px rgba(245,166,75,.3); }
-        .tab-btn { transition: all .2s; }
-        .tab-btn.active { background: #1E3A2F; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fade-in { animation: fadeIn 0.3s ease forwards; }
+        .plan-card { transition: all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .plan-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 50px rgba(0,0,0,.15); }
+        .plan-card.featured { box-shadow: 0 10px 40px rgba(245,166,75,.3); }
+        .plan-card.featured:hover { box-shadow: 0 25px 60px rgba(245,166,75,.45); }
+        .tab-btn { transition: all .3s ease; }
+        .tab-btn.active { background: #1E3A2F; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .feature-item { transition: transform 0.2s ease; }
+        .plan-card:hover .feature-item { transform: translateX(4px); }
       `}</style>
 
       <Topbar
-        title="Abonnement"
+        title={t("abonnement_title")}
         breadcrumbs={[
-          { label: "Accueil", href: "/dashboard" },
-          { label: "Abonnement" },
+          { label: t("abonnement_breadcrumb_home"), href: "/dashboard" },
+          { label: t("abonnement_breadcrumb_subscription") },
         ]}
       />
 
-      <div className="custom-scroll p-4 md:p-6 flex flex-col gap-5 pb-24 md:pb-6" style={{ height: "calc(100vh - 64px)", overflowY: "auto" }}>
+      <div className="custom-scroll p-4 md:p-6 flex flex-col gap-5 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
 
         {/* Greeting */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h1 className="font-bricolage text-lg md:text-xl font-extrabold text-textMain tracking-tight leading-tight">
-              Bonjour, <span>{user?.prenom || "Utilisateur"}</span>
+              {t("abonnement_greeting")}, <span>{user?.prenom || t("dashboard_user")}</span>
             </h1>
-            <p className="text-[12.5px] md:text-[13.5px] text-textMuted font-medium mt-0.5 italic">Gérez votre abonnement</p>
+            <p className="text-[12.5px] md:text-[13.5px] text-textMuted font-medium mt-0.5 italic">{t("abonnement_manage")}</p>
           </div>
           <div className="text-[11.5px] text-textMuted font-medium bg-white border border-borderMain px-3 py-1.5 rounded-[9px] flex items-center gap-2 whitespace-nowrap">
             <i className="fa-regular fa-calendar text-primary" />
@@ -208,13 +241,13 @@ export default function Abonnement() {
             <div className="flex-1 w-full">
               <div className="inline-flex items-center gap-2 bg-primary/20 border border-primary/30 rounded-full px-4 py-1.5 mb-5">
                 <i className="fa-solid fa-bolt text-primary text-[10px] animate-pulse" />
-                <span className="text-[11px] font-bold text-primary uppercase tracking-widest">Plan actuel</span>
+                <span className="text-[11px] font-bold text-primary uppercase tracking-widest">{t("abonnement_current_plan")}</span>
               </div>
               <h1 className="font-bricolage text-2xl md:text-4xl font-extrabold text-white leading-tight mb-2">
                 {loadingUsage ? (
                   <span className="inline-block w-40 h-8 bg-white/10 rounded animate-pulse" />
                 ) : (
-                  `Plan ${currentPlan}`
+                    `${t("abonnement_plan")} ${currentPlan}`
                 )}
               </h1>
               <p className="text-white/60 text-[13px] md:text-[14px] mb-5 max-w-lg">
@@ -336,10 +369,10 @@ export default function Abonnement() {
                     <div className="flex flex-col gap-2.5 flex-1 mb-5 relative z-10">
                       {features.map((f, fi) => (
                         <div key={fi} className="flex items-center gap-2.5 text-[13px]">
-                          <i className={`${featureIcon(f.label, f.value)} w-4 flex-shrink-0 text-[11px] ${isFeatured ? "text-primary" : "text-primary"}`} />
+                          <i className={`${featureIcon(f)} w-4 flex-shrink-0 text-[11px] ${isFeatured ? "text-primary" : "text-primary"}`} />
                           <span className={`${isFeatured ? "text-white" : "text-textMain"} font-medium`}>
-                            {f.label ? <><span className="text-textMuted/70">{f.label} : </span></> : null}
-                            {f.value}
+                            {f.label ? <><span className={isFeatured ? "text-white/60" : "text-textMuted/70"}>{f.label} : </span></> : null}
+                            <span className={f.value === "Non inclus" ? "opacity-40" : ""}>{f.value}</span>
                           </span>
                         </div>
                       ))}
@@ -470,32 +503,28 @@ export default function Abonnement() {
               <tbody className="divide-y divide-borderMain">
                 {plans.length > 0 && (() => {
                   const allFeatures = plans.map((p) => normalizeFeatures(p.features));
-                  const maxLen = Math.max(...allFeatures.map((f) => f.length));
-                  const labelMap: Record<string, string[]> = {};
-                  for (let fi = 0; fi < maxLen; fi++) {
-                    for (const feats of allFeatures) {
-                      const f = feats[fi];
-                      if (f && f.label) {
-                        if (!labelMap[f.label]) labelMap[f.label] = [];
-                        labelMap[f.label].push(f.value);
-                      }
-                    }
-                  }
-                  const labels = Object.keys(labelMap).length > 0
-                    ? Object.keys(labelMap)
-                    : allFeatures[0]?.map((_, i) => `Option ${i + 1}`) ?? [];
+                  
+                  // Get unique labels across all plans
+                  const labelSet = new Set<string>();
+                  allFeatures.forEach(feats => feats.forEach(f => { if(f.label) labelSet.add(f.label); }));
+                  const labels = Array.from(labelSet);
+
                   return labels.map((label, fi) => (
                     <tr key={fi} className="hover:bg-surface2 transition-colors">
                       <td className="px-5 py-3 text-[13px] font-medium text-textMain">{label}</td>
                       {plans.map((plan, pi) => {
                         const feats = allFeatures[pi];
-                        const f = feats[fi];
-                        const val = f ? (f.label ? f.value : `${f.label} ${f.value}`.trim()) : "—";
+                        const f = feats.find(feat => feat.label === label);
+                        const val = f ? f.value : "—";
                         const tClass = plan.popular ? "text-primary" : "text-textMuted";
-                        const icon = val === "✓" ? "fa-solid fa-check text-green-500" : val === "✗" ? "fa-solid fa-xmark text-gray-300" : "";
+                        const isSuccess = val === "Inclus" || val === "Instantané" || (typeof val === "string" && !isNaN(Number(val)) && Number(val) > 0);
+                        const isFailure = val === "Non inclus";
+                        
+                        const icon = val === "Inclus" ? "fa-solid fa-check text-green-500" : val === "Non inclus" ? "fa-solid fa-xmark text-gray-300" : "";
+                        
                         return (
                           <td key={pi} className={`px-3 py-3 text-center text-[13px] font-semibold ${tClass} ${plan.popular ? "bg-primary/5" : ""}`}>
-                            {icon ? <i className={icon} /> : val}
+                            {icon ? <i className={icon} /> : <span className={isFailure ? "opacity-30" : ""}>{val}</span>}
                           </td>
                         );
                       })}
@@ -573,7 +602,7 @@ export default function Abonnement() {
       {modalOpen && pollingStatus && (
         <div className="fixed inset-0 z-[10000] flex items-end md:items-center justify-center p-4">
           <div className="absolute inset-0 bg-green-dark/40 backdrop-blur-md" onClick={closeSubscribeModal} />
-          <div className="relative bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] p-0 shadow-2xl overflow-hidden border border-white/20 animate-fade-in">
+          <div className="relative bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] p-0 shadow-2xl overflow-hidden border border-white/20 animate-fade-in pb-[70px] md:pb-0">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div>
                 <h2 className="font-bricolage text-2xl font-black text-slate-900 tracking-tight">Paiement en cours</h2>

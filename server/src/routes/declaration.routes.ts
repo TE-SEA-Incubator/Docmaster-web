@@ -9,7 +9,8 @@ import {
   searchPublicFound,
   getDeclarationById,
   initiateRecovery,
-  generatePdf
+  generatePdf,
+  deleteDeclaration
 } from '../controllers/declaration.controller.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
 import { upload } from '../utils/upload.utils.ts';
@@ -358,5 +359,31 @@ router.post('/recover', authMiddleware, initiateRecovery);
  *         description: Erreur serveur
  */
 router.get('/:id/pdf', authMiddleware, generatePdf);
+
+/**
+ * @swagger
+ * /declarations/{id}:
+ *   delete:
+ *     summary: Supprimer (soft delete) une déclaration
+ *     tags: [Declarations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Déclaration supprimée
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Action non autorisée
+ *       404:
+ *         description: Déclaration introuvable
+ */
+router.delete('/:id', authMiddleware, deleteDeclaration);
 
 export default router;

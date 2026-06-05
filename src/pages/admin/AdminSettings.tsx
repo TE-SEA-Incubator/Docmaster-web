@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "../../context/I18nContext";
 import { adminService } from "../../services/admin";
 
 export default function AdminSettings() {
+  const { t } = useI18n();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -39,8 +41,8 @@ export default function AdminSettings() {
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <h1 className="font-bricolage text-2xl font-black text-gray-900">Paramètres</h1>
-        <p className="text-gray-400 text-[13px] font-medium mt-1">Configuration de la plateforme</p>
+        <h1 className="font-bricolage text-2xl font-black text-gray-900">{t("admin_settings")}</h1>
+        <p className="text-gray-400 text-[13px] font-medium mt-1">{t("admin_settings_subtitle")}</p>
       </div>
 
       {saved && (
@@ -48,7 +50,7 @@ export default function AdminSettings() {
           <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
             <i className="fa-solid fa-check-circle text-emerald-600 text-sm" />
           </div>
-          Paramètre mis à jour
+          {t("admin_setting_updated")}
         </div>
       )}
 
@@ -56,7 +58,7 @@ export default function AdminSettings() {
         {Object.keys(settings).length === 0 ? (
           <div className="text-center py-12 text-gray-300">
             <i className="fa-solid fa-sliders text-3xl mb-3" />
-            <p className="text-[13px] font-medium text-gray-400">Aucun paramètre configuré</p>
+            <p className="text-[13px] font-medium text-gray-400">{t("admin_no_settings")}</p>
           </div>
         ) : (
           <div className="space-y-4">

@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { authService } from "../../services/authService";
+import { useI18n } from "../../context/I18nContext";
 import Topbar from "../../layout/Topbar";
 import DatePicker from "../../components/ui/DatePicker";
 import type { ApiResponse, UserProfile } from "../../types/api";
 
-function validateRequired(v: string) {
-  return v && v.trim().length > 0;
+function validateRequired(v: any) {
+  return v && String(v).trim().length > 0;
 }
 
 export default function InfosProfil() {
+  const { t, lang, setLanguage } = useI18n();
   const { user, updateUser } = useAuth();
   const [tab, setTab] = useState<"personal" | "preferences">("personal");
 
@@ -37,7 +39,9 @@ export default function InfosProfil() {
   useEffect(() => {
     if (user?.photo_url) {
       setPhotoPreview(
-        user.photo_url.startsWith("http") ? user.photo_url : "/" + user.photo_url.replace(/^\//, "")
+        user.photo_url.startsWith("http") || user.photo_url.startsWith("data:")
+          ? user.photo_url
+          : "/" + user.photo_url.replace(/^\//, "")
       );
     }
     if (user?.date_naissance) {
@@ -46,21 +50,23 @@ export default function InfosProfil() {
         if (!isNaN(d.getTime())) {
           setForm((prev) => ({ ...prev, date_naissance: d.toISOString().split("T")[0] }));
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }, [user]);
 
   const fields = ["telephone", "ville", "date_naissance", "lieu_naissance"] as const;
   const isIncomplete = fields.some((f) => {
     const v = f === "telephone" ? form.telephone : f === "ville" ? form.ville : f === "date_naissance" ? form.date_naissance : form.lieu_naissance;
-    return !v || v.trim() === "";
+    return !v || String(v).trim() === "";
   });
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      setFeedback({ ok: false, msg: "L'image ne doit pas dépasser 5 Mo." });
+      setFeedback({ ok: false, msg: t("profil_photo_too_large") });
       return;
     }
     setPhotoFile(file);
@@ -74,7 +80,7 @@ export default function InfosProfil() {
     setFeedback(null);
 
     if (!validateRequired(form.nom) || !validateRequired(form.prenom)) {
-      setFeedback({ ok: false, msg: "Le prénom et le nom sont obligatoires." });
+      setFeedback({ ok: false, msg: t("profil_firstname_required") });
       return;
     }
 
@@ -84,24 +90,24 @@ export default function InfosProfil() {
 
       if (photoFile) {
         const fd = new FormData();
-        fd.append("nom", form.nom.trim());
-        fd.append("prenom", form.prenom.trim());
-        fd.append("ville", form.ville.trim());
-        fd.append("telephone", form.telephone.trim());
+        fd.append("nom", String(form.nom).trim());
+        fd.append("prenom", String(form.prenom).trim());
+        fd.append("ville", String(form.ville).trim());
+        fd.append("telephone", String(form.telephone).trim());
         fd.append("date_naissance", form.date_naissance);
-        fd.append("lieu_naissance", form.lieu_naissance.trim());
+        fd.append("lieu_naissance", String(form.lieu_naissance).trim());
         fd.append("currency", form.currency);
         fd.append("photo_profile", photoFile);
 
         result = await authService.updateProfile(fd as unknown as Partial<UserProfile>);
       } else {
         result = await authService.updateProfile({
-          nom: form.nom.trim(),
-          prenom: form.prenom.trim(),
-          ville: form.ville.trim(),
-          telephone: form.telephone.trim(),
+          nom: String(form.nom).trim(),
+          prenom: String(form.prenom).trim(),
+          ville: String(form.ville).trim(),
+          telephone: String(form.telephone).trim(),
           date_naissance: form.date_naissance,
-          lieu_naissance: form.lieu_naissance.trim(),
+          lieu_naissance: String(form.lieu_naissance).trim(),
           currency: form.currency,
         });
       }
@@ -110,7 +116,7 @@ export default function InfosProfil() {
         const updated = result.data || result.user || result;
         updateUser(updated);
         setPhotoFile(null);
-        setFeedback({ ok: true, msg: "Profil mis à jour avec succès." });
+        setFeedback({ ok: true, msg: t("profil_update_success") });
 
         if (updated.photo_url) {
           setPhotoPreview(
@@ -120,10 +126,10 @@ export default function InfosProfil() {
 
         setTimeout(() => setFeedback(null), 4000);
       } else {
-        setFeedback({ ok: false, msg: result.message || "Une erreur est survenue." });
+        setFeedback({ ok: false, msg: result.message || t("profil_update_error") });
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.response?.data?.message || "Erreur réseau. Veuillez réessayer.";
+      const msg = err?.response?.data?.error || err?.response?.data?.message || t("profil_network_error");
       setFeedback({ ok: false, msg });
     } finally {
       setSaving(false);
@@ -135,11 +141,11 @@ export default function InfosProfil() {
     setFeedback(null);
 
     if (pwForm.new.length < 6) {
-      setFeedback({ ok: false, msg: "Le nouveau mot de passe doit faire au moins 6 caractères." });
+      setFeedback({ ok: false, msg: t("profil_password_length") });
       return;
     }
     if (pwForm.new !== pwForm.confirm) {
-      setFeedback({ ok: false, msg: "Les nouveaux mots de passe ne correspondent pas." });
+      setFeedback({ ok: false, msg: t("profil_password_mismatch") });
       return;
     }
 
@@ -147,10 +153,10 @@ export default function InfosProfil() {
     try {
       await authService.changePassword(pwForm.current, pwForm.new);
       setPwForm({ current: "", new: "", confirm: "" });
-      setFeedback({ ok: true, msg: "Mot de passe mis à jour avec succès." });
+      setFeedback({ ok: true, msg: t("profil_password_success") });
       setTimeout(() => setFeedback(null), 4000);
     } catch (err: any) {
-      const msg = err?.response?.data?.error || "Erreur lors du changement de mot de passe.";
+      const msg = err?.response?.data?.error || t("profil_password_change_error");
       setFeedback({ ok: false, msg });
     } finally {
       setPwSaving(false);
@@ -162,14 +168,14 @@ export default function InfosProfil() {
   return (
     <div className="flex flex-col h-full">
       <Topbar
-        title="Paramètres du profil"
+        title={t("profil_title")}
         breadcrumbs={[
-          { label: "Accueil", href: "/dashboard" },
-          { label: "Mon Profil" },
+          { label: t("profil_breadcrumb_home"), href: "/dashboard" },
+          { label: t("profil_breadcrumb_profile") },
         ]}
       />
 
-      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-6" style={{ height: "calc(100vh - 64px)", overflowY: "auto" }}>
+      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         <div className="max-w-4xl mx-auto w-full flex flex-col gap-5">
 
 
@@ -180,8 +186,8 @@ export default function InfosProfil() {
                 <i className="fa-solid fa-circle-info" />
               </div>
               <div className="flex-1">
-                <p className="text-[13px] font-bold text-blue-900">Complétez votre profil</p>
-                <p className="text-[12px] text-blue-700/80">Certaines informations sont manquantes. Un profil complet renforce la sécurité de vos documents.</p>
+                <p className="text-[13px] font-bold text-blue-900">{t("profil_completion_title")}</p>
+                <p className="text-[12px] text-blue-700/80">{t("profil_completion_desc")}</p>
               </div>
             </div>
           )}
@@ -213,7 +219,7 @@ export default function InfosProfil() {
                 }`}
               >
                 <i className="fa-solid fa-user-gear mr-2" />
-                Personnel
+                {t("profil_tab_personal")}
               </button>
               <button
                 onClick={() => setTab("preferences")}
@@ -224,7 +230,7 @@ export default function InfosProfil() {
                 }`}
               >
                 <i className="fa-solid fa-sliders mr-2" />
-                État Civil &amp; Préf.
+                {t("profil_tab_preferences")}
               </button>
             </div>
 
@@ -237,7 +243,7 @@ export default function InfosProfil() {
                     <div className="relative group">
                       <div className="w-24 h-24 rounded-2xl bg-primary-light flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
                         {photoPreview ? (
-                          <img src={photoPreview} className="w-full h-full object-cover" alt="Photo de profil" />
+                          <img src={photoPreview} className="w-full h-full object-cover" alt={t("profil_photo_alt")} />
                         ) : (
                           <span className="text-2xl font-bold text-primary">{initials}</span>
                         )}
@@ -258,36 +264,36 @@ export default function InfosProfil() {
                       </label>
                     </div>
                     <div className="text-center sm:text-left">
-                      <h3 className="font-bold text-[15px] text-textMain">Photo de profil</h3>
-                      <p className="text-[12px] text-textMuted mt-0.5">PNG, JPG ou GIF. Max 5Mo.</p>
+                      <h3 className="font-bold text-[15px] text-textMain">{t("profil_photo_alt")}</h3>
+                      <p className="text-[12px] text-textMuted mt-0.5">{t("profil_photo_hint")}</p>
                     </div>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Prénom</label>
+                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_label_firstname")}</label>
                       <input
                         type="text"
                         value={form.prenom}
                         onChange={(e) => setForm({ ...form, prenom: e.target.value })}
-                        placeholder="Votre prénom"
+                        placeholder={t("profil_placeholder_firstname")}
                         required
                         className="w-full px-4 py-3 bg-bgMain border border-borda rounded-xl text-textMain text-[14px] outline-none focus:border-primary transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Nom</label>
+                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_label_lastname")}</label>
                       <input
                         type="text"
                         value={form.nom}
                         onChange={(e) => setForm({ ...form, nom: e.target.value })}
-                        placeholder="Votre nom"
+                        placeholder={t("profil_placeholder_lastname")}
                         required
                         className="w-full px-4 py-3 bg-bgMain border border-borda rounded-xl text-textMain text-[14px] outline-none focus:border-primary transition-colors"
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Email (Non modifiable)</label>
+                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_label_email")}</label>
                       <input
                         type="email"
                         value={form.email}
@@ -296,22 +302,22 @@ export default function InfosProfil() {
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Ville actuelle</label>
+                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_label_city")}</label>
                       <input
                         type="text"
                         value={form.ville}
                         onChange={(e) => setForm({ ...form, ville: e.target.value })}
-                        placeholder="Ex: Yaoundé"
+                        placeholder={t("profil_placeholder_city")}
                         className="w-full px-4 py-3 bg-bgMain border border-borda rounded-xl text-textMain text-[14px] outline-none focus:border-primary transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Téléphone</label>
+                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_label_phone")}</label>
                       <input
                         type="tel"
                         value={form.telephone}
                         onChange={(e) => setForm({ ...form, telephone: e.target.value })}
-                        placeholder="Ex: +237 6XX XXX XXX"
+                        placeholder={t("profil_placeholder_phone")}
                         className="w-full px-4 py-3 bg-bgMain border border-borda rounded-xl text-textMain text-[14px] outline-none focus:border-primary transition-colors"
                       />
                     </div>
@@ -322,34 +328,48 @@ export default function InfosProfil() {
                 <div className={tab !== "preferences" ? "hidden" : "space-y-6"}>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Date de naissance</label>
+                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_label_birthdate")}</label>
                       <DatePicker
                         value={form.date_naissance}
                         onChange={(v) => setForm({ ...form, date_naissance: v })}
                         className="w-full px-4 py-3 bg-bgMain border border-borda rounded-xl text-textMain text-[14px] outline-none focus:border-primary transition-colors"
-                        placeholder="jj/mm/aaaa"
+                        placeholder={t("profil_placeholder_date")}
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Lieu de naissance</label>
+                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_label_birthplace")}</label>
                       <input
                         type="text"
                         value={form.lieu_naissance}
                         onChange={(e) => setForm({ ...form, lieu_naissance: e.target.value })}
-                        placeholder="Ex: Douala"
+                        placeholder={t("profil_placeholder_region")}
                         className="w-full px-4 py-3 bg-bgMain border border-borda rounded-xl text-textMain text-[14px] outline-none focus:border-primary transition-colors"
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Devise préférée (Currency)</label>
+                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_label_currency")}</label>
                       <select
                         value={form.currency}
                         onChange={(e) => setForm({ ...form, currency: e.target.value })}
                         className="w-full px-4 py-3 bg-bgMain border border-borda rounded-xl text-textMain text-[14px] outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
                       >
-                        <option value="XAF">Franc CFA (XAF)</option>
-                        <option value="EUR">Euro (EUR)</option>
-                        <option value="USD">US Dollar (USD)</option>
+                        <option value="XAF">{t("profil_currency_xaf")}</option>
+                        <option value="EUR">{t("profil_currency_eur")}</option>
+                        <option value="USD">{t("profil_currency_usd")}</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_label_language")}</label>
+                      <select
+                        value={lang}
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="w-full px-4 py-3 bg-bgMain border border-borda rounded-xl text-textMain text-[14px] outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
+                      >
+                        <option value="fr">Français</option>
+                        <option value="en">English</option>
+                        <option value="ar" disabled className="text-textMuted">
+                          العربية — {t("profil_coming_soon")}
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -364,9 +384,9 @@ export default function InfosProfil() {
                     className="w-full sm:w-auto px-6 py-3 rounded-xl bg-primary text-white text-[14px] font-bold hover:bg-primary-dark transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {saving ? (
-                      <><i className="fa-solid fa-spinner fa-spin" /> Enregistrement...</>
+                      <><i className="fa-solid fa-spinner fa-spin" /> {t("profil_saving")}</>
                     ) : (
-                      <><i className="fa-solid fa-floppy-disk" /> Enregistrer les modifications</>
+                      <><i className="fa-solid fa-floppy-disk" /> {t("profil_save")}</>
                     )}
                   </button>
                 </div>
@@ -378,11 +398,11 @@ export default function InfosProfil() {
           <div className="bg-white border border-borda rounded-[18px] p-5 sm:p-6">
             <h2 className="font-bricolage text-base font-black text-textMain mb-5 flex items-center gap-2">
               <i className="fa-solid fa-lock text-primary" />
-              Changer le mot de passe
+              {t("profil_change_password")}
             </h2>
             <form onSubmit={handleChangePw} className="space-y-4 max-w-md">
               <div>
-                <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Mot de passe actuel</label>
+                <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_current_password")}</label>
                 <input
                   type="password"
                   value={pwForm.current}
@@ -393,7 +413,7 @@ export default function InfosProfil() {
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Nouveau mot de passe</label>
+                <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_new_password")}</label>
                 <input
                   type="password"
                   value={pwForm.new}
@@ -404,7 +424,7 @@ export default function InfosProfil() {
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">Confirmer le mot de passe</label>
+                <label className="text-[11px] font-bold text-textMuted uppercase tracking-wide mb-1.5 block">{t("profil_confirm_password")}</label>
                 <input
                   type="password"
                   value={pwForm.confirm}
@@ -420,9 +440,9 @@ export default function InfosProfil() {
                 className="px-6 py-3 bg-green-dark text-white rounded-xl font-bold text-[13px] hover:bg-green-mid transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {pwSaving ? (
-                  <><i className="fa-solid fa-spinner fa-spin" /> Mise à jour...</>
+                  <><i className="fa-solid fa-spinner fa-spin" /> {t("profil_updating")}</>
                 ) : (
-                  <><i className="fa-solid fa-lock" /> Mettre à jour le mot de passe</>
+                  <><i className="fa-solid fa-lock" /> {t("profil_update_password")}</>
                 )}
               </button>
             </form>

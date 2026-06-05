@@ -11,7 +11,7 @@ GREEN=\033[0;32m
 YELLOW=\033[0;33m
 NC=\033[0m
 
-.PHONY: deploy deploy-full health restart stop start logs help
+.PHONY: deploy deploy-full health restart stop start logs help prod
 .PHONY: deploy-migrate deploy-backup-migrate
 
 help:
@@ -22,6 +22,7 @@ help:
 	@echo "  make deploy-full - Déploiement complet (Envoi + Installation + Compilations + PM2)"
 	@echo "  make deploy-migrate - Déploiement complet et exécution des migrations distantes"
 	@echo "  make deploy-backup-migrate - Backup/extraction + exécution des migrations distantes"
+	@echo "  make prod          - Bascule le frontend Vite (dev) vers server.js (production dist/)"
 	@echo ""
 	@echo "GESTION DES SERVICES V2:"
 	@echo "  make restart     - Redémarre proprement les processus PM2 V2"
@@ -40,6 +41,9 @@ deploy-migrate:
 
 deploy-backup-migrate:
 	@bash deploy.sh backup -m
+
+prod:
+	@bash deploy.sh prod
 
 restart:
 	@echo "$(YELLOW)Redémarrage des services PM2 V2 sur le VPS...$(NC)"

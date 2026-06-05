@@ -1,3 +1,5 @@
+import { useI18n } from "../../context/I18nContext";
+
 interface Step {
   label: string;
   icon?: string;
@@ -14,6 +16,7 @@ export default function Stepper({
   currentStep,
   orientation = "horizontal",
 }: StepperProps) {
+  const { t } = useI18n();
   if (orientation === "vertical") {
     return (
       <div className="space-y-0">
@@ -57,7 +60,7 @@ export default function Stepper({
                     {step.label}
                   </p>
                   <p className="text-xs text-textMuted mt-0.5">
-                    {isActive ? "En cours" : isDone ? "Terminé" : "En attente"}
+                    {isActive ? t("stepper_in_progress") : isDone ? t("stepper_completed") : t("stepper_pending")}
                   </p>
                 </div>
               </div>

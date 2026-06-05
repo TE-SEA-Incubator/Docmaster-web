@@ -6,11 +6,12 @@ import Topbar from "../../layout/Topbar";
 import PaymentModal from "../../components/modals/PaymentModal";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-
-const steps = ["Déclaré", "Trouvé", "Paiement", "Retrait"];
+import { useI18n } from "../../context/I18nContext";
 const POLL_INTERVAL = 5000;
 
 export default function Recuperer() {
+  const { t } = useI18n();
+  const steps = [t("recuperer_step_declared"), t("recuperer_step_found"), t("recuperer_step_payment"), t("recuperer_step_withdrawal")];
   const [searchParams] = useSearchParams();
   const docId = searchParams.get("id");
 
@@ -50,10 +51,13 @@ export default function Recuperer() {
           setStep(d.status === "recovered" ? 4 : d.status === "paid" ? 3 : d.status === "MATCHED" || d.status === "RESOLVED" || d.status === "RETURNED" ? 2 : 1);
           if (d.status === "paid") setPickupCode(d.reference || "");
         } else {
-          setError("Document introuvable");
-        }
+      setError(t("recuperer_not_found"));
+      }
       })
-      .catch(() => setError("Erreur lors du chargement"))
+      .catch((e: any) => {
+        const msg = e.response?.data?.message || e.response?.data?.error || t("recuperer_load_error");
+        setError(msg);
+      })
       .finally(() => setLoading(false));
   }, [docId]);
 
@@ -69,7 +73,9 @@ export default function Recuperer() {
           setShowPaymentModal(false);
           clearInterval(interval);
         }
-      } catch {}
+      } catch (e: any) {
+        console.error("[Recuperer] poll error:", e?.response?.data || e);
+      }
     }, POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [step, docId, pickupCode]);
@@ -104,10 +110,10 @@ export default function Recuperer() {
         setStep(2);
         setShowPaymentModal(false);
       } else {
-        setPayError(res.message || "Erreur de paiement");
+        setPayError(res.message || t("recuperer_pay_error"));
       }
     } catch {
-      setPayError("Erreur réseau");
+      setPayError(t("recuperer_network_error"));
     } finally {
       setPayProcessing(false);
     }
@@ -116,16 +122,16 @@ export default function Recuperer() {
   if (!docId) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar title="Récupération de document" breadcrumbs={[{ label: "Recherche", to: "/rechercher" }, { label: "Récupération" }]} />
+        <Topbar title={t("recuperer_title")} breadcrumbs={[{ label: t("recuperer_breadcrumb_search"), to: "/rechercher" }, { label: t("recuperer_breadcrumb_recovery") }]} />
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] border border-borda p-8 max-w-md w-full text-center shadow-sm">
             <div className="w-16 h-16 bg-bgMain rounded-full flex items-center justify-center mx-auto mb-4">
               <i className="fa-solid fa-file-circle-question text-textMuted text-2xl" />
             </div>
-            <h1 className="font-bricolage text-xl font-black text-textMain mb-2">Document non spécifié</h1>
-            <p className="text-textMuted text-[13px] mb-6">Veuillez rechercher un document pour accéder à cette page.</p>
+            <h1 className="font-bricolage text-xl font-black text-textMain mb-2">{t("recuperer_not_found_title")}</h1>
+            <p className="text-textMuted text-[13px] mb-6">{t("recuperer_not_found")}</p>
             <Link to="/rechercher" className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold text-[13px] hover:bg-primary-dark transition-all">
-              <i className="fa-solid fa-magnifying-glass text-[11px]" /> Rechercher un document
+              <i className="fa-solid fa-magnifying-glass text-[11px]" /> {t("recuperer_breadcrumb_search")}
             </Link>
           </div>
         </div>
@@ -136,11 +142,11 @@ export default function Recuperer() {
   if (loading) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar title="Récupération de document" breadcrumbs={[{ label: "Recherche", to: "/rechercher" }, { label: "Récupération" }]} />
+        <Topbar title={t("recuperer_title")} breadcrumbs={[{ label: t("recuperer_breadcrumb_search"), to: "/rechercher" }, { label: t("recuperer_breadcrumb_recovery") }]} />
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <div className="w-11 h-11 rounded-full border-[3px] border-black/10 border-t-primary animate-spin" />
-            <p className="text-textMuted text-[13px] font-medium">Chargement du document...</p>
+            <p className="text-textMuted text-[13px] font-medium">{t("recuperer_title")}</p>
           </div>
         </div>
       </div>
@@ -150,16 +156,16 @@ export default function Recuperer() {
   if (error || !doc) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar title="Récupération de document" breadcrumbs={[{ label: "Recherche", to: "/rechercher" }, { label: "Récupération" }]} />
+        <Topbar title={t("recuperer_title")} breadcrumbs={[{ label: t("recuperer_breadcrumb_search"), to: "/rechercher" }, { label: t("recuperer_breadcrumb_recovery") }]} />
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] border border-borda p-8 max-w-md w-full text-center shadow-sm">
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <i className="fa-solid fa-circle-exclamation text-red-400 text-2xl" />
             </div>
-            <h1 className="font-bricolage text-xl font-black text-textMain mb-2">Document introuvable</h1>
-            <p className="text-textMuted text-[13px] mb-6">{error || "Ce document n'existe pas ou a été supprimé."}</p>
+            <h1 className="font-bricolage text-xl font-black text-textMain mb-2">{t("recuperer_not_found_title")}</h1>
+            <p className="text-textMuted text-[13px] mb-6">{error || t("recuperer_not_found")}</p>
             <Link to="/rechercher" className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold text-[13px] hover:bg-primary-dark transition-all">
-              <i className="fa-solid fa-arrow-left text-[11px]" /> Retour à la recherche
+              <i className="fa-solid fa-arrow-left text-[11px]" /> {t("recuperer_breadcrumb_search")}
             </Link>
           </div>
         </div>
@@ -242,7 +248,7 @@ export default function Recuperer() {
         ]}
       />
 
-      <div className="custom-scroll flex-1 p-4 sm:p-6 space-y-5 pb-28 lg:pb-6" style={{ height: "calc(100vh - 64px)", overflowY: "auto" }}>
+      <div className="custom-scroll flex-1 p-4 sm:p-6 space-y-5 pb-28 lg:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         <div className="max-w-5xl mx-auto space-y-5">
           {/* Steps tracker */}
           <div className="bg-white border border-borda rounded-[16px] sm:rounded-[20px] px-4 py-3 shadow-sm">
@@ -255,16 +261,16 @@ export default function Recuperer() {
               <div className="w-16 h-16 rounded-full bg-green-light flex items-center justify-center mx-auto mb-4">
                 <i className="fa-solid fa-circle-check text-green-mid text-3xl" />
               </div>
-              <h2 className="font-bricolage text-xl font-extrabold text-textMain mb-1">Paiement confirmé !</h2>
-              <p className="text-[13px] text-textMuted mb-6">Vous pouvez maintenant récupérer votre document.</p>
+              <h2 className="font-bricolage text-xl font-extrabold text-textMain mb-1">{t("recuperer_pay_title")}</h2>
+              <p className="text-[13px] text-textMuted mb-6">{t("recuperer_pay_desc")}</p>
               <div className="max-w-sm mx-auto p-4 bg-bgMain border border-borda rounded-[16px] mb-6">
-                <p className="text-[10px] font-bold text-textMuted uppercase mb-2">Code de retrait</p>
+                <p className="text-[10px] font-bold text-textMuted uppercase mb-2">{t("Code de retrait")}</p>
                 <p className="font-bricolage text-2xl font-extrabold text-primary tracking-[0.2em]">{pickupCode}</p>
                 <button
                   onClick={() => navigator.clipboard.writeText(pickupCode)}
                   className="mt-3 text-[11px] font-bold text-primary hover:text-primary-dark transition-colors"
                 >
-                  <i className="fa-solid fa-copy mr-1" /> Copier le code
+                  <i className="fa-solid fa-copy mr-1" /> {t("Copier le code")}
                 </button>
               </div>
               <div className="p-4 bg-green-light/50 border border-green-mid/20 rounded-[16px] text-left flex gap-3">
@@ -272,9 +278,9 @@ export default function Recuperer() {
                   <i className="fa-solid fa-phone text-white text-sm" />
                 </div>
                 <div>
-                  <p className="text-[12px] font-bold text-textMain">Contactez le trouveur</p>
+                  <p className="text-[12px] font-bold text-textMain">{t("Contactez le trouveur")}</p>
                   <p className="text-[11px] text-textMuted mt-0.5">
-                    Présentez ce code à la personne qui a trouvé votre document pour finaliser la récupération.
+                    {t("Présentez ce code à la personne qui a trouvé votre document pour finaliser la récupération.")}
                   </p>
                 </div>
               </div>
@@ -299,7 +305,7 @@ export default function Recuperer() {
                     <div className="w-full h-56 sm:h-72 bg-gradient-to-br from-green-dark/10 to-green-mid/5 flex items-center justify-center">
                       <div className="text-center">
                         <i className="fa-solid fa-id-card text-5xl text-textMuted/30" />
-                        <p className="text-[11px] text-textMuted mt-2">Aucune photo disponible</p>
+                        <p className="text-[11px] text-textMuted mt-2">{t("Aucune photo disponible")}</p>
                       </div>
                     </div>
                   )}
@@ -308,7 +314,7 @@ export default function Recuperer() {
                       onClick={() => window.open(getImageUrl(doc.photo_verso), "_blank")}
                       className="absolute top-3 right-3 bg-white/90 backdrop-blur rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-textMain hover:bg-white transition-all shadow-sm"
                     >
-                      <i className="fa-solid fa-rotate mr-1" /> Verso
+                      <i className="fa-solid fa-rotate mr-1" /> {t("Verso")}
                     </button>
                   )}
                   <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/40 to-transparent" />
@@ -316,7 +322,7 @@ export default function Recuperer() {
                     <div>
                       <span className={`text-white text-[11px] font-bold px-3 py-1 rounded-full ${doc.type === "found" ? "bg-green-dark/80" : "bg-red-500/80"} inline-block mb-2`}>
                         <i className={`fa-solid ${doc.type === "found" ? "fa-check" : "fa-clock"} mr-1`} />
-                        {doc.type === "found" ? "Document trouvé" : "Document perdu"}
+                        {doc.type === "found" ? t("recuperer_type_found") : t("recuperer_type_lost")}
                       </span>
                       <h1 className="text-white font-bricolage text-xl font-black">
                         {doc.docTypeInfo?.nom || doc.document_type || "Document"}
@@ -328,7 +334,7 @@ export default function Recuperer() {
                         <p className="text-[18px] font-bricolage font-black text-primary">
                           {getCost(doc).toLocaleString("fr-FR")}
                         </p>
-                        <p className="text-[9px] font-bold text-textMuted uppercase tracking-wider">Frais</p>
+                        <p className="text-[9px] font-bold text-textMuted uppercase tracking-wider">{t("recuperer_label_fee")}</p>
                       </div>
                     )}
                   </div>
@@ -338,7 +344,7 @@ export default function Recuperer() {
                 <div className="p-5 sm:p-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <h2 className="font-bricolage text-base font-black text-textMain mb-3">Détails du document</h2>
+                      <h2 className="font-bricolage text-base font-black text-textMain mb-3">{t("Détails du document")}</h2>
                       <div className="space-y-2.5">
                         <Row label="Type" value={doc.docTypeInfo?.nom || doc.document_type || "—"} />
                         <Row label="Numéro" value={doc.numero_document || doc.document_number || "—"} />
@@ -506,7 +512,7 @@ export default function Recuperer() {
 
       {/* Mobile sticky bottom bar */}
       {!collected && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-borda px-4 py-3 lg:hidden z-30">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-borda px-4 py-3 lg:hidden z-[60]">
           <div className="flex items-center gap-3 max-w-lg mx-auto">
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold text-textMuted uppercase">Coût</p>

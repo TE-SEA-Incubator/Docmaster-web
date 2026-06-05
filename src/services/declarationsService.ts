@@ -72,4 +72,9 @@ export const declarationsService = {
     const res = await apiClient.post<ApiResponse>("declarations/deletion-requests", data);
     return res.data;
   },
+
+  async delete(id: string) {
+    const res = await apiClient.delete<ApiResponse>(`declarations/${id}`);
+    return res.data;
+  },
 };

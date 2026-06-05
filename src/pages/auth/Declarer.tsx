@@ -33,7 +33,7 @@ interface DocumentMetadata {
 
 const DOC_META: Record<string, DocumentMetadata> = {
   cni: {
-    label: "Carte nationale d'identité",
+    label: "declarer_doc_type_cni",
     icon: "fa-id-card",
     color: "#F5A64B",
     fields: [
@@ -45,7 +45,7 @@ const DOC_META: Record<string, DocumentMetadata> = {
     ],
   },
   passeport: {
-    label: "Passeport",
+    label: "declarer_doc_type_passeport",
     icon: "fa-passport",
     color: "#2D5A42",
     fields: [
@@ -56,7 +56,7 @@ const DOC_META: Record<string, DocumentMetadata> = {
     ],
   },
   permis: {
-    label: "Permis de conduire",
+    label: "declarer_doc_type_permis",
     icon: "fa-car",
     color: "#3B82F6",
     fields: [
@@ -66,7 +66,7 @@ const DOC_META: Record<string, DocumentMetadata> = {
     ],
   },
   acte: {
-    label: "Acte de naissance",
+    label: "declarer_doc_type_acte",
     icon: "fa-file-invoice",
     color: "#EC4899",
     fields: [
@@ -77,7 +77,7 @@ const DOC_META: Record<string, DocumentMetadata> = {
     ],
   },
   banque: {
-    label: "Carte bancaire",
+    label: "declarer_doc_type_banque",
     icon: "fa-credit-card",
     color: "#EF4444",
     fields: [
@@ -87,7 +87,7 @@ const DOC_META: Record<string, DocumentMetadata> = {
     ],
   },
   titre: {
-    label: "Titre foncier",
+    label: "declarer_doc_type_titre",
     icon: "fa-house",
     color: "#F59E0B",
     fields: [
@@ -97,7 +97,7 @@ const DOC_META: Record<string, DocumentMetadata> = {
     ],
   },
   diplome: {
-    label: "Diplôme",
+    label: "declarer_doc_type_diplome",
     icon: "fa-graduation-cap",
     color: "#8B5CF6",
     fields: [
@@ -108,7 +108,7 @@ const DOC_META: Record<string, DocumentMetadata> = {
     ],
   },
   autre: {
-    label: "Autre document",
+    label: "declarer_doc_type_autre",
     icon: "fa-file",
     color: "#6B7280",
     fields: [
@@ -174,8 +174,9 @@ export default function Declarer() {
         if (res.data) {
           setDocTypes(res.data);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to load document types:", error);
+        alert(error.response?.data?.message || error.response?.data?.error || t("declarer_alert_error"));
       } finally {
         setLoading(false);
       }
@@ -266,7 +267,7 @@ export default function Declarer() {
     for (const docId of selectedDocs) {
       const docNum = getFormValue(docId, "numero");
       if (docNum && !/\d/.test(docNum)) {
-        alert(t("declarer_alert_num_digit_prefix") + getDocMeta(docId).label + t("declarer_alert_num_digit_suffix"));
+        alert(t("declarer_alert_num_digit_prefix") + t(getDocMeta(docId).label) + t("declarer_alert_num_digit_suffix"));
         setSubmitting(false);
         setShowConfirmModal(false);
         return;
@@ -304,18 +305,18 @@ export default function Declarer() {
 
         const formData = new FormData();
         formData.append("doc_type", docId);
-        formData.append("owner_name", ownerName || "Titulaire Inconnu");
+        formData.append("owner_name", ownerName || t("declarer_owner_unknown"));
         if (docNum) formData.append("document_number", docNum);
-        formData.append("ville", ville || "Non spécifiée");
+        formData.append("ville", ville || t("declarer_not_specified"));
         if (quartier) formData.append("quartier", quartier);
-        formData.append("region", "Centre");
-        formData.append("pays", "Cameroun");
+        formData.append("region", t("declarer_region_centre"));
+        formData.append("pays", t("declarer_country_cameroon"));
         if (lossDate) formData.append("date_perte", lossDate);
         if (expiryDate) formData.append("date_expiration", expiryDate);
         if (birthDate) formData.append("date_naissance", birthDate);
         if (circumstances) formData.append("description", circumstances);
         formData.append("etat_physique", "bon");
-        formData.append("urgence_niveau", urgencyLevel === "low" ? "Basse" : urgencyLevel === "high" ? "Urgente" : "Modérée");
+        formData.append("urgence_niveau", urgencyLevel === "low" ? t("declarer_urgency_low_value") : urgencyLevel === "high" ? t("declarer_urgency_high_value") : t("declarer_urgency_medium_value"));
         if (rewardEnabled && rewardAmount) formData.append("recompense_montant", String(parseInt(rewardAmount)));
         formData.append("mode_contact", contactPhone && contactPhone.replace(/\s/g, "").length > 4 ? "PHONE" : "EMAIL");
         if (contactPhone && contactPhone.replace(/\s/g, "").length > 4) formData.append("telephone_contact", contactPhone);
@@ -357,13 +358,14 @@ export default function Declarer() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `declaration_${lastDeclarationRef}.pdf`);
+      link.setAttribute("download", `${t("declarer_pdf_prefix")}_${lastDeclarationRef}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to download PDF:", e);
-      alert(t("declarer_alert_pdf_error"));
+      const msg = e.response?.data?.message || e.response?.data?.error || t("declarer_alert_pdf_error");
+      alert(msg);
     }
   };
 
@@ -379,7 +381,7 @@ export default function Declarer() {
     setQuartier("");
     setLieuPrecis("");
     setCircumstances("");
-    setContactPhone("+237 ");
+    setContactPhone(t("declarer_phone_prefix"));
     setContactEmail("");
     setUrgencyLevel("medium");
     setRewardEnabled(false);
@@ -413,8 +415,7 @@ export default function Declarer() {
 
       <div
         id="pageBody"
-        className="flex-1 min-h-0 overflow-y-auto display:flex flex-col p-4 md:p-6"
-        style={{ height: "calc(100vh - 64px)" }}
+        className="flex-1 min-h-0 overflow-y-auto display:flex flex-col p-4 md:p-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)]"
       >
         {/* alertBanner */}
         <div
@@ -729,8 +730,8 @@ export default function Declarer() {
 
               <div className="field-group mt-4">
                 <label className="field-label">
-                  <i className="fa-solid fa-map-location-dot text-primary"></i> Lieu précis{" "}
-                  <span className="opt-badge">Optionnel</span>
+                  <i className="fa-solid fa-map-location-dot text-primary"></i> {t("declarer_exact_location")}{" "}
+                  <span className="opt-badge">{t("declarer_optional")}</span>
                 </label>
                 <div className="field-wrapper">
                   <i className="fa-solid fa-map-marker-alt field-icon" />
@@ -738,14 +739,14 @@ export default function Declarer() {
                     type="text"
                     value={lieuPrecis}
                     onChange={(e) => setLieuPrecis(e.target.value)}
-                    placeholder="Ex: Marché central, Aéroport de Nsimalen…"
+                    placeholder={t("declarer_placeholder_exact_location")}
                     className="field-input"
                   />
                 </div>
               </div>
 
               <div className="mt-3">
-                <p className="text-[11px] font-bold text-[#9CA3AF] mb-2">Suggestions rapides :</p>
+                <p className="text-[11px] font-bold text-[#9CA3AF] mb-2">{t("declarer_quick_suggestions")}</p>
                 <div className="flex flex-wrap gap-2">
                   {places.map((place) => (
                     <button
@@ -754,7 +755,7 @@ export default function Declarer() {
                       onClick={() => selectPlace(place)}
                       className={`place-tag ${lieuPrecis === place ? "active" : ""}`}
                     >
-                      {place}
+                      {t(place)}
                     </button>
                   ))}
                 </div>
@@ -762,14 +763,14 @@ export default function Declarer() {
 
               <div className="field-group mt-4">
                 <label className="field-label">
-                  <i className="fa-solid fa-comment-dots text-primary"></i> Circonstances{" "}
-                  <span className="opt-badge">Optionnel</span>
+                  <i className="fa-solid fa-comment-dots text-primary"></i> {t("declarer_circumstances")}{" "}
+                  <span className="opt-badge">{t("declarer_optional")}</span>
                 </label>
                 <div className="field-wrapper">
                   <textarea
                     value={circumstances}
                     onChange={(e) => setCircumstances(e.target.value)}
-                    placeholder="Vol, oubli, chute de sac…"
+                    placeholder={t("declarer_placeholder_circumstances")}
                     className="field-input no-icon h-20"
                   />
                 </div>
@@ -780,19 +781,19 @@ export default function Declarer() {
             <div className={`section-card animate-in d4 ${currentStep === 5 ? "" : "hidden"}`}>
               <div className="section-badge">
                 <div className="section-badge-num">5</div>
-                <span className="section-badge-text">Contact &amp; urgence</span>
+                <span className="section-badge-text">{t("declarer_step_5")}</span>
               </div>
               <h2 className="font-bricolage text-[17px] font-extrabold text-textMain mb-1">
-                Comment vous contacter ?
+                {t("declarer_step5_title")}
               </h2>
               <p className="text-[12.5px] text-textMuted mb-4">
-                Permet à un trouveur de vous joindre rapidement.
+                {t("declarer_step5_desc")}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="field-group">
                   <label className="field-label">
-                    <i className="fa-solid fa-phone text-primary"></i> Téléphone
+                    <i className="fa-solid fa-phone text-primary"></i> {t("declarer_phone")}
                   </label>
                   <div className="field-wrapper">
                     <i className="fa-solid fa-phone field-icon" />
@@ -800,7 +801,7 @@ export default function Declarer() {
                       type="tel"
                       value={contactPhone}
                       onChange={(e) => setContactPhone(e.target.value)}
-                      placeholder="+237 6XX XXX XXX"
+                      placeholder={t("declarer_placeholder_phone")}
                       className="field-input"
                     />
                   </div>
@@ -808,8 +809,8 @@ export default function Declarer() {
 
                 <div className="field-group">
                   <label className="field-label">
-                    <i className="fa-solid fa-envelope text-primary"></i> E-mail{" "}
-                    <span className="opt-badge">Optionnel</span>
+                    <i className="fa-solid fa-envelope text-primary"></i> {t("declarer_email")}{" "}
+                    <span className="opt-badge">{t("declarer_optional")}</span>
                   </label>
                   <div className="field-wrapper">
                     <i className="fa-regular fa-envelope field-icon" />
@@ -817,7 +818,7 @@ export default function Declarer() {
                       type="email"
                       value={contactEmail}
                       onChange={(e) => setContactEmail(e.target.value)}
-                      placeholder="jean@exemple.com"
+                      placeholder={t("declarer_placeholder_email")}
                       className="field-input"
                     />
                   </div>
@@ -827,7 +828,7 @@ export default function Declarer() {
               {/* Urgency Level */}
               <div className="mt-4">
                 <label className="field-label mb-2">
-                  <i className="fa-solid fa-gauge text-primary"></i> Niveau d'urgence
+                  <i className="fa-solid fa-gauge text-primary"></i> {t("declarer_urgency_level")}
                 </label>
                 <div className="flex gap-2">
                   <button
@@ -835,21 +836,21 @@ export default function Declarer() {
                     onClick={() => handleUrgencyClick("low")}
                     className={`urgency-btn ${urgencyLevel === "low" ? "sel-low" : ""}`}
                   >
-                    <i className="fa-solid fa-circle text-[7px] text-[#22c55e]"></i> Faible
+                    <i className="fa-solid fa-circle text-[7px] text-[#22c55e]"></i> {t("declarer_urgency_low_btn")}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleUrgencyClick("medium")}
                     className={`urgency-btn ${urgencyLevel === "medium" ? "sel-medium" : ""}`}
                   >
-                    <i className="fa-solid fa-circle text-[7px] text-[#f59e0b]"></i> Modérée
+                    <i className="fa-solid fa-circle text-[7px] text-[#f59e0b]"></i> {t("declarer_urgency_medium_btn")}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleUrgencyClick("high")}
                     className={`urgency-btn ${urgencyLevel === "high" ? "sel-high" : ""}`}
                   >
-                    <i className="fa-solid fa-circle text-[7px] text-[#ef4444]"></i> Urgente
+                    <i className="fa-solid fa-circle text-[7px] text-[#ef4444]"></i> {t("declarer_urgency_high_btn")}
                   </button>
                 </div>
                 <p className="text-[11px] text-textMuted mt-2" id="urgencyDesc">
@@ -863,10 +864,10 @@ export default function Declarer() {
                   <div className="flex items-center gap-2">
                     <i className="fa-solid fa-coins text-primary text-[15px]"></i>
                     <div>
-                      <p className="text-[12.5px] font-bold text-textMain">
-                        Proposer une récompense <span className="opt-badge">Optionnel</span>
-                      </p>
-                      <p className="text-[11px] text-[#9CA3AF]">Augmente les chances de retour</p>
+                    <p className="text-[12.5px] font-bold text-textMain">
+                      {t("declarer_reward_title")} <span className="opt-badge">{t("declarer_optional")}</span>
+                    </p>
+                    <p className="text-[11px] text-[#9CA3AF]">{t("declarer_reward_desc")}</p>
                     </div>
                   </div>
                   <label className="relative inline-block w-[42px] h-[22px] cursor-pointer">
@@ -894,13 +895,13 @@ export default function Declarer() {
                         type="number"
                         value={rewardAmount}
                         onChange={(e) => setRewardAmount(e.target.value)}
-                        placeholder="Montant en FCFA"
+                        placeholder={t("declarer_placeholder_amount")}
                         className="field-input pl-[34px]"
                         min="0"
                         step="500"
                       />
                       <span className="absolute right-4 font-bold text-[11.5px] text-[#9CA3AF]">
-                        FCFA
+                        {t("declarer_fcfa")}
                       </span>
                     </div>
                   </div>
@@ -921,9 +922,9 @@ export default function Declarer() {
                     </div>
                   </div>
                   <p className="text-[12px] text-textMuted leading-relaxed">
-                    Je certifie que les informations fournies sont exactes et j'accepte les{" "}
+                    {t("declarer_certify")}{" "}
                     <a href="/conditions" className="text-primary font-semibold hover:underline">
-                      Conditions d'utilisation
+                      {t("declarer_terms")}
                     </a>
                     .
                   </p>
@@ -934,11 +935,10 @@ export default function Declarer() {
                   disabled={!certified}
                   className="submit-btn disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <i className="fa-solid fa-paper-plane" /> Soumettre ma déclaration
+                  <i className="fa-solid fa-paper-plane" /> {t("declarer_submit")}
                 </button>
                 <p className="text-[11px] text-[#9CA3AF] text-center mt-2.5">
-                  <i className="fa-solid fa-shield-halved text-primary mr-1.5"></i> Vos données sont
-                  protégées.
+                  <i className="fa-solid fa-shield-halved text-primary mr-1.5"></i> {t("declarer_data_protected")}
                 </p>
               </div>
             )}
@@ -951,10 +951,10 @@ export default function Declarer() {
                 disabled={currentStep === 1}
                 className="px-4 py-2 border border-borderMain text-textMain rounded-xl font-semibold hover:bg-bgMain transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                <i className="fa-solid fa-arrow-left text-[11px]" /> Précédent
+                <i className="fa-solid fa-arrow-left text-[11px]" /> {t("declarer_previous")}
               </button>
               <p className="text-[12px] font-bold text-textMuted">
-                Étape {currentStep} / 5
+                {t("declarer_step")} {currentStep} / 5
               </p>
               {currentStep < 5 ? (
                 <button
@@ -962,7 +962,7 @@ export default function Declarer() {
                   onClick={goToNextStep}
                   className="px-4 py-2 bg-[#1E3A2F] text-white rounded-xl font-bold hover:bg-[#2D5A42] transition-all flex items-center gap-2"
                 >
-                  Suivant <i className="fa-solid fa-arrow-right text-[11px]" />
+                  {t("declarer_next")} <i className="fa-solid fa-arrow-right text-[11px]" />
                 </button>
               ) : (
                 <div className="w-[84px]"></div>
@@ -975,7 +975,7 @@ export default function Declarer() {
             {/* Progression Box */}
             <div className="bg-white rounded-2xl p-5 border border-borderMain flex-shrink-0">
               <h3 className="font-bricolage text-[13.5px] font-extrabold text-textMain mb-3">
-                Progression
+                {t("declarer_progression")}
               </h3>
               <div className="bg-[#F2EBD9] rounded-full h-[5px] mb-3.5 overflow-hidden">
                 <div
@@ -1025,7 +1025,7 @@ export default function Declarer() {
                             {step.label}
                           </p>
                           <p className="text-[10.5px] text-[#9CA3AF] leading-none mt-0.5">
-                            {isDone ? "Complété" : isCurrent ? "En cours" : "En attente"}
+                            {isDone ? t("declarer_completed") : isCurrent ? t("declarer_in_progress") : t("declarer_pending")}
                           </p>
                         </div>
                       </div>
@@ -1037,11 +1037,11 @@ export default function Declarer() {
 
             {/* Recap Documents */}
             <div className="bg-gradient-to-br from-[#1E3A2F] to-[#2D5A42] rounded-2xl p-5 text-white flex-shrink-0">
-              <h3 className="font-bricolage text-[13.5px] font-extrabold mb-1">Récapitulatif</h3>
-              <p className="text-[11px] text-white/50 mb-3">Documents déclarés</p>
+              <h3 className="font-bricolage text-[13.5px] font-extrabold mb-1">{t("declarer_summary")}</h3>
+              <p className="text-[11px] text-white/50 mb-3">{t("declarer_documents_declared")}</p>
               <div className="flex flex-col gap-2">
                 {selectedDocs.length === 0 ? (
-                  <span className="text-[11px] text-white/40 italic">Aucun sélectionné</span>
+                  <span className="text-[11px] text-white/40 italic">{t("declarer_none_selected")}</span>
                 ) : (
                   selectedDocs.map((docId) => {
                     const doc = docTypes.find((d) => d.id === docId);
@@ -1059,14 +1059,14 @@ export default function Declarer() {
             {/* Useful Tips */}
             <div className="bg-white rounded-2xl p-5 border border-borderMain flex-shrink-0">
               <h3 className="font-bricolage text-[13.5px] font-extrabold text-textMain mb-3 flex items-center gap-2">
-                <i className="fa-solid fa-circle-info text-primary"></i> Conseils utiles
+                <i className="fa-solid fa-circle-info text-primary"></i> {t("declarer_useful_tips")}
               </h3>
               <div className="flex flex-col gap-3">
                 {[
-                  "Déclarez la perte auprès de la police.",
-                  "Contactez l'autorité émettrice pour bloquer le document.",
-                  "Gardez une copie numérique de vos documents.",
-                  "Vérifiez les objets trouvés en mairie.",
+                  t("declarer_tip_1"),
+                  t("declarer_tip_2"),
+                  t("declarer_tip_3"),
+                  t("declarer_tip_4"),
                 ].map((tip, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <i className="fa-solid fa-check text-green-mid text-xs mt-0.5 flex-shrink-0" />
@@ -1087,20 +1087,17 @@ export default function Declarer() {
               <i className="fa-solid fa-triangle-exclamation"></i>
             </div>
             <h2 className="font-bricolage text-xl font-extrabold text-textMain mb-2">
-              Confirmer la déclaration ?
+              {t("declarer_confirm_title")}
             </h2>
             <p className="text-[13px] text-textMuted leading-relaxed mb-4">
-              Êtes-vous sûr des informations fournies ? Pour valider, veuillez saisir votre mot de
-              passe.
+              {t("declarer_confirm_desc")}
             </p>
 
             {/* COST WARNING */}
             <div className="bg-[#FFF7ED] border border-[#FFEDD5] rounded-xl p-3.5 text-left mb-5">
               <p className="text-[11.5px] text-[#9A3412] leading-relaxed font-semibold">
                 <i className="fa-solid fa-circle-info mr-1.5"></i>
-                Si votre document est retrouvé, des frais de <strong>5 000 FCFA</strong> seront
-                appliqués pour finaliser le processus de récupération et le paiement devra être
-                effectué avant la remise.
+                {t("declarer_cost_warning")}
               </p>
             </div>
 
@@ -1111,13 +1108,13 @@ export default function Declarer() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Votre mot de passe"
+                  placeholder={t("declarer_placeholder_password")}
                   className="field-input"
                 />
               </div>
               {passwordError && (
                 <p className="text-xs text-red-500 font-bold mt-1.5 leading-none">
-                  Mot de passe incorrect
+                  {t("declarer_wrong_password")}
                 </p>
               )}
             </div>
@@ -1131,7 +1128,7 @@ export default function Declarer() {
                 }}
                 className="flex-1 py-3 border border-borderMain rounded-xl font-bold text-sm text-[#374151] hover:bg-bgMain transition-all"
               >
-                Annuler
+                {t("declarer_cancel")}
               </button>
               <button
                 onClick={validateAndSubmit}
@@ -1142,7 +1139,7 @@ export default function Declarer() {
                   <i className="fa-solid fa-spinner fa-spin" />
                 ) : (
                   <>
-                    <i className="fa-solid fa-circle-check" /> Confirmer
+                    <i className="fa-solid fa-circle-check" /> {t("declarer_confirm")}
                   </>
                 )}
               </button>
@@ -1159,24 +1156,24 @@ export default function Declarer() {
               <i className="fa-solid fa-check" />
             </div>
             <h2 className="font-bricolage text-2xl font-black text-textMain mb-2">
-              Déclaration enregistrée !
+              {t("declarer_success_title")}
             </h2>
             <p className="text-sm text-textMuted leading-relaxed mb-4">
-              Votre déclaration a été publiée. Vous serez notifié dès qu'un match est trouvé.
+              {t("declarer_success_desc")}
             </p>
 
             <div className="inline-block py-2 px-5 bg-[#F2EBD9] border border-borderMain rounded-lg text-green-dark font-bricolage text-lg font-extrabold tracking-widest mb-4">
               {lastDeclarationRef}
             </div>
             <p className="text-[11px] text-[#9CA3AF] mb-5 leading-none">
-              Conservez ce numéro de référence.
+              {t("declarer_keep_reference")}
             </p>
 
             <button
               onClick={handleDownloadPdf}
               className="w-full mb-3.5 py-3 bg-[#F5A64B] hover:bg-[#D98A30] text-white font-bricolage text-[14px] font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
             >
-              <i className="fa-solid fa-file-arrow-down"></i> Télécharger la déclaration PDF
+              <i className="fa-solid fa-file-arrow-down"></i> {t("declarer_download_pdf")}
             </button>
 
             <div className="flex gap-3">
@@ -1184,13 +1181,13 @@ export default function Declarer() {
                 onClick={resetForm}
                 className="flex-1 py-3 border border-borderMain rounded-xl font-bold text-sm text-[#374151] hover:bg-[#F9F6F1] transition-all"
               >
-                Nouvelle déclaration
+                {t("declarer_new_declaration")}
               </button>
               <button
                 onClick={() => navigate("/mes-declarations")}
                 className="flex-1 py-3 bg-[#1E3A2F] text-white rounded-xl font-bold text-sm hover:bg-[#2D5A42] transition-all"
               >
-                Mes déclarations
+                {t("declarer_my_declarations")}
               </button>
             </div>
           </div>

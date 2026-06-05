@@ -13,10 +13,19 @@ interface Plan {
   id: string;
   name: string;
   price: number;
-  currency: string;
-  features: string[];
+  currency?: string;
+  features?: Record<string, any>;
+  duration_months?: number;
+  is_featured?: boolean;
   is_active?: boolean;
   [key: string]: unknown;
+}
+
+interface FeatureDefinition {
+  code: string;
+  label: string;
+  type: "boolean" | "number" | "string";
+  description?: string;
 }
 
 interface DocumentType {
@@ -109,6 +118,16 @@ export const adminService = {
   async createPlan(data: Partial<Plan>): Promise<unknown> {
     const res = await apiClient.post("plans", data);
     return res.data.data;
+  },
+
+  async getFeatureDefinitions(): Promise<FeatureDefinition[]> {
+    return [
+      { code: "max_documents", label: "Documents", type: "number", description: "Max documents" },
+      { code: "max_devices", label: "Appareils", type: "number", description: "Max appareils" },
+      { code: "has_analytics", label: "Analytiques", type: "boolean", description: "Accès aux statistiques" },
+      { code: "has_priority_support", label: "Support prioritaire", type: "boolean", description: "Assistance prioritaire" },
+      { code: "has_api_access", label: "API Access", type: "boolean", description: "Accès API" },
+    ];
   },
 
   async getDocumentTypes(): Promise<DocumentType[]> {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "../../context/I18nContext";
 import { adminService } from "../../services/admin";
 
 interface Referral {
@@ -11,6 +12,7 @@ interface Referral {
 }
 
 export default function AdminReferrals() {
+  const { t } = useI18n();
   const [refs, setRefs] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,8 +42,8 @@ export default function AdminReferrals() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-bricolage text-2xl font-black text-gray-900">Parrainages</h1>
-        <p className="text-gray-400 text-[13px] font-medium mt-1">Suivi du programme de parrainage</p>
+        <h1 className="font-bricolage text-2xl font-black text-gray-900">{t("admin_referrals")}</h1>
+        <p className="text-gray-400 text-[13px] font-medium mt-1">{t("admin_referrals_subtitle")}</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200/60 overflow-hidden shadow-sm">
@@ -49,12 +51,12 @@ export default function AdminReferrals() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/80">
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Parrain</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Filleul</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Statut</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Récompense</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Date</th>
-                <th className="text-right px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_sponsor")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_godchild")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_status")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_reward")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_date")}</th>
+                <th className="text-right px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -62,7 +64,7 @@ export default function AdminReferrals() {
                 <tr>
                   <td colSpan={6} className="text-center py-16 text-gray-300">
                     <i className="fa-solid fa-gift text-3xl mb-3" />
-                    <p className="text-[13px] font-medium text-gray-400">Aucun parrainage</p>
+                    <p className="text-[13px] font-medium text-gray-400">{t("admin_no_referrals")}</p>
                   </td>
                 </tr>
               ) : (
@@ -82,7 +84,7 @@ export default function AdminReferrals() {
                           r.status === "rewarded" ? "bg-emerald-500" :
                           r.status === "pending" ? "bg-amber-500" : "bg-gray-400"
                         }`} />
-                        {r.status === "rewarded" ? "Récompensé" : r.status === "pending" ? "En attente" : r.status || "En attente"}
+                        {r.status === "rewarded" ? t("admin_rewarded") : r.status === "pending" ? t("admin_pending") : r.status || t("admin_pending")}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 font-semibold text-gray-700">
@@ -98,7 +100,7 @@ export default function AdminReferrals() {
                           className="text-[11px] px-4 py-1.5 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-white hover:shadow-lg hover:shadow-primary/20 font-bold transition-all"
                         >
                           <i className="fa-solid fa-gift mr-1.5 text-[10px]" />
-                          Récompenser
+                          {t("admin_reward_btn")}
                         </button>
                       )}
                     </td>

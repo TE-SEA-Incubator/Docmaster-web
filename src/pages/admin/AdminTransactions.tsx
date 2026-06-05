@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "../../context/I18nContext";
 import { adminService } from "../../services/admin";
 
 interface Transaction {
@@ -25,6 +26,7 @@ const methodIcons: Record<string, string> = {
 };
 
 export default function AdminTransactions() {
+  const { t } = useI18n();
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,8 +49,8 @@ export default function AdminTransactions() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-bricolage text-2xl font-black text-gray-900">Transactions</h1>
-        <p className="text-gray-400 text-[13px] font-medium mt-1">Historique des paiements</p>
+        <h1 className="font-bricolage text-2xl font-black text-gray-900">{t("admin_transactions")}</h1>
+        <p className="text-gray-400 text-[13px] font-medium mt-1">{t("admin_payment_history")}</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200/60 overflow-hidden shadow-sm">
@@ -56,11 +58,11 @@ export default function AdminTransactions() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/80">
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Utilisateur</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Montant</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Méthode</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Statut</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Date</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_user")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_amount")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_method")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_status")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_date")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -68,7 +70,7 @@ export default function AdminTransactions() {
                 <tr>
                   <td colSpan={5} className="text-center py-16 text-gray-300">
                     <i className="fa-solid fa-credit-card text-3xl mb-3" />
-                    <p className="text-[13px] font-medium text-gray-400">Aucune transaction</p>
+                    <p className="text-[13px] font-medium text-gray-400">{t("admin_no_transactions")}</p>
                   </td>
                 </tr>
               ) : (
@@ -93,9 +95,9 @@ export default function AdminTransactions() {
                           t.status === "pending" ? "bg-amber-500" :
                           t.status === "failed" ? "bg-red-500" : "bg-gray-400"
                         }`} />
-                        {t.status === "completed" || t.status === "success" ? "Complété" :
-                         t.status === "pending" ? "En attente" :
-                         t.status === "failed" ? "Échoué" : t.status || "—"}
+                        {t.status === "completed" || t.status === "success" ? t("admin_completed") :
+                         t.status === "pending" ? t("admin_pending") :
+                         t.status === "failed" ? t("admin_failed") : t.status || "—"}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-gray-400 text-[12px]">

@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && mkdir -p dist/src && cp -r src/assets dist/src/",
     "preview": "vite preview",
     "test:e2e": "npx playwright test",
     "db:clean": "npm run --prefix server db:clean",
@@ -10,15 +10,19 @@
   "dependencies": {
     "@tailwindcss/cli": "^4.1.18",
     "axios": "^1.15.2",
+    "chart.js": "^4.5.1",
     "concurrently": "^9.2.1",
     "daisyui": "^5.5.1-beta.2",
     "firebase": "^12.12.1",
     "flatpickr": "^4.6.13",
     "http-server": "^14.1.1",
+    "i18next": "^26.3.0",
     "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "react": "^19.2.6",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.6",
+    "react-i18next": "^17.0.8",
     "react-router-dom": "^7.15.1",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",

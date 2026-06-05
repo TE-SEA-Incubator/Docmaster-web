@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useI18n } from "../../context/I18nContext";
 import { paymentsService } from "../../services/paymentsService";
 import { settingsService } from "../../services/settingsService";
 import { authService } from "../../services/authService";
@@ -22,6 +23,7 @@ function fmtDate(v?: string | null) {
 }
 
 export default function MesGains() {
+  const { t } = useI18n();
   const { user, updateUser } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [txLoading, setTxLoading] = useState(true);
@@ -84,27 +86,27 @@ export default function MesGains() {
 
   const nextLevelPoints = 500;
   const pointsToNext = Math.max(nextLevelPoints - totalPoints, 0);
-  const levelLabel = totalPoints >= 500 ? "Niveau Or" : "Niveau Argent";
+  const levelLabel = totalPoints >= 500 ? t("mesgains_level_gold") : t("mesgains_level_silver");
 
   const handleWithdraw = () => {
     if (balance < minWithdrawal) {
-      alert(`Solde insuffisant — minimum ${minWithdrawal} XAF requis.\nSolde actuel : ${balance} XAF`);
+      alert(`${t("mesgains_insufficient_balance")} ${minWithdrawal} XAF.\n${t("mesgains_current_balance")} ${balance} XAF`);
     } else {
-      alert("Fonctionnalité de retrait bientôt disponible !");
+      alert(t("mesgains_withdraw_coming_soon"));
     }
   };
 
   return (
     <div className="flex flex-col h-full">
       <Topbar
-        title="Mes Gains"
+        title={t("mesgains_title")}
         breadcrumbs={[
-          { label: "Accueil", href: "/dashboard" },
-          { label: "Mes Gains" },
+          { label: t("mesgains_breadcrumb_home"), href: "/dashboard" },
+          { label: t("mesgains_breadcrumb_earnings") },
         ]}
       />
 
-      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-8" style={{ height: "calc(100vh - 64px)", overflowY: "auto" }}>
+      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-8 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         <div className="max-w-7xl mx-auto w-full flex flex-col gap-5">
 
           {/* ── Wallet Card ── */}
@@ -120,7 +122,7 @@ export default function MesGains() {
             <div className="flex items-start justify-between mb-5 relative z-10">
               <div>
                 <p className="text-white/60 text-[12px] font-medium uppercase tracking-widest mb-1">
-                  Solde disponible
+                  {t("mesgains_balance")}
                 </p>
                 <p className="font-bricolage text-4xl font-extrabold tracking-tight">
                   {fmtAmount(balance)}{" "}
@@ -135,7 +137,7 @@ export default function MesGains() {
             <div className="relative z-10 mb-5">
               <div className="flex justify-between text-[11.5px] mb-1.5">
                 <span className="text-white/60 font-medium">
-                  Progrès vers le prochain retrait
+                  {t("mesgains_progress")}
                 </span>
                 <span className="text-white font-bold">
                   {fmtAmount(balance)} / {fmtAmount(minWithdrawal)} XAF
@@ -151,7 +153,7 @@ export default function MesGains() {
                 />
               </div>
               <p className="text-[11px] text-white/40 mt-1.5">
-                Minimum de retrait : {fmtAmount(minWithdrawal)} XAF
+                {t("mesgains_min_withdrawal")} {fmtAmount(minWithdrawal)} XAF
               </p>
             </div>
 
@@ -160,10 +162,10 @@ export default function MesGains() {
                 onClick={handleWithdraw}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary hover:bg-primary-dark text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98]"
               >
-                <i className="fa-solid fa-credit-card text-xs" /> Retirer mes gains
+                <i className="fa-solid fa-credit-card text-xs" /> {t("mesgains_withdraw")}
               </button>
               <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/15 border border-white/15 text-white font-semibold text-[13px] rounded-[12px] transition-all">
-                <i className="fa-solid fa-clock-rotate-left text-xs" /> Historique
+                <i className="fa-solid fa-clock-rotate-left text-xs" /> {t("mesgains_history")}
               </button>
             </div>
           </div>
@@ -175,28 +177,28 @@ export default function MesGains() {
               bg="bg-green-light"
               color="text-green-mid"
               value={String(statsCards.total_found ?? 0)}
-              label="Documents retrouvés"
+              label={t("mesgains_docs_found")}
             />
             <StatCard
               icon="fa-handshake"
               bg="bg-primary/10"
               color="text-primary"
               value={String(statsCards.total_returned ?? 0)}
-              label="Documents remis"
+              label={t("mesgains_docs_returned")}
             />
             <StatCard
               icon="fa-coins"
               bg="bg-amber-50"
               color="text-amber-500"
               value={fmtAmount(totalFinderPayouts)}
-              label="XAF gagnés total"
+              label={t("mesgains_xaf_earned")}
             />
             <StatCard
               icon="fa-arrow-up-right-from-square"
               bg="bg-blue-50"
               color="text-blue-400"
               value={fmtAmount(totalWithdrawn)}
-              label="XAF retirés"
+              label={t("mesgains_xaf_withdrawn")}
             />
           </div>
 
@@ -209,9 +211,9 @@ export default function MesGains() {
                 </div>
                 <div>
                   <h2 className="font-bricolage text-[15px] font-bold text-textMain leading-tight">
-                    Points DocMaster
+                    {t("mesgains_points_title")}
                   </h2>
-                  <p className="text-[11px] text-textMuted">Programme de fidélité</p>
+                  <p className="text-[11px] text-textMuted">{t("mesgains_loyalty_program")}</p>
                 </div>
               </div>
               <span className="font-bricolage text-xl font-extrabold text-primary">
@@ -221,22 +223,22 @@ export default function MesGains() {
 
             <div className="flex flex-col gap-2 mb-4">
               <PointsRow
-                label="Documents déclarés"
-                detail={`(+${pointsBreakdown.declarations.pts_per_unit || 5} pts \u00d7 ${pointsBreakdown.declarations.count})`}
+                label={t("mesgains_declared_docs")}
+                detail={`(+${pointsBreakdown.declarations.pts_per_unit || 5} pts × ${pointsBreakdown.declarations.count})`}
                 pts={pointsBreakdown.declarations.points}
                 color="bg-primary"
                 max={5}
               />
               <PointsRow
-                label="Documents remis"
-                detail={`(${pointsBreakdown.returns.count} documents)`}
+                label={t("mesgains_returned_docs_points")}
+                detail={`(${pointsBreakdown.returns.count} ${t("mesgains_docs")})`}
                 pts={pointsBreakdown.returns.points}
                 color="bg-green-mid"
                 max={5}
               />
               <PointsRow
-                label="Parrainage"
-                detail={`(${pointsBreakdown.referrals.count} personnes)`}
+                label={t("mesgains_referral")}
+                detail={`(${pointsBreakdown.referrals.count} ${t("mesgains_people")})`}
                 pts={pointsBreakdown.referrals.points}
                 color="bg-amber-400"
                 max={5}
@@ -250,13 +252,13 @@ export default function MesGains() {
                   <p className="text-[12.5px] font-bold text-textMain">{levelLabel}</p>
                   <p className="text-[11px] text-textMuted">
                     {pointsToNext > 0
-                      ? `${pointsToNext} pts pour atteindre Or`
-                      : "Félicitations ! Vous êtes au niveau Or"}
+                      ? `${pointsToNext} ${t("mesgains_points_to_gold")}`
+                      : t("mesgains_congrats_gold")}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[11px] text-textMuted">Prochain niveau</p>
+                <p className="text-[11px] text-textMuted">{t("mesgains_next_level")}</p>
                 <p className="text-[13px] font-bold text-primary">{fmtAmount(nextLevelPoints)} pts</p>
               </div>
             </div>
@@ -270,11 +272,11 @@ export default function MesGains() {
                   <i className="fa-solid fa-clock-rotate-left text-green-mid text-sm" />
                 </div>
                 <h2 className="font-bricolage text-[15px] font-bold text-textMain">
-                  Transactions récentes
+                  {t("mesgains_recent_transactions")}
                 </h2>
               </div>
               <button className="text-[12px] font-semibold text-primary hover:text-primary-dark transition-colors">
-                Voir tout
+                {t("mesgains_see_all")}
               </button>
             </div>
 
@@ -285,14 +287,14 @@ export default function MesGains() {
             ) : transactions.length === 0 ? (
               <div className="p-10 text-center text-textMuted">
                 <i className="fa-solid fa-receipt text-3xl opacity-20 mb-3" />
-                <p className="text-sm">Aucune transaction pour le moment.</p>
+                <p className="text-sm">{t("mesgains_no_transactions")}</p>
               </div>
             ) : (
               <div className="divide-y divide-borda">
                 {transactions.map((tx) => {
                   const isPositive = tx.amount > 0 && tx.type !== "recovery_fee";
 
-                  const meta = getTxMeta(tx.type || "");
+                  const meta = getTxMeta(tx.type || "", t);
                   return (
                     <div
                       key={tx.id}
@@ -320,7 +322,7 @@ export default function MesGains() {
                           {isPositive ? "+" : "-"}
                           {fmtAmount(Math.abs(tx.amount))} XAF
                         </span>
-                        <TxStatusBadge status={tx.status} />
+                        <TxStatusBadge status={tx.status} t={t} />
                       </div>
                     </div>
                   );
@@ -336,7 +338,7 @@ export default function MesGains() {
                 <i className="fa-solid fa-mobile-screen-button text-green-mid text-sm" />
               </div>
               <h2 className="font-bricolage text-[15px] font-bold text-textMain">
-                Méthodes de retrait
+                {t("mesgains_withdrawal_methods")}
               </h2>
             </div>
 
@@ -347,23 +349,26 @@ export default function MesGains() {
                 color="text-yellow-500"
                 bg="bg-yellow-50"
                 connected
+                t={t}
               />
               <PaymentMethodCard
                 icon="fa-mobile-screen-button"
                 name="Orange Money"
                 color="text-orange-500"
                 bg="bg-orange-50"
+                t={t}
               />
               <PaymentMethodCard
                 icon="fa-university"
-                name="Virement bancaire"
+                name={t("mesgains_bank_transfer")}
                 color="text-blue-400"
                 bg="bg-blue-50"
+                t={t}
               />
             </div>
 
             <p className="text-[11px] text-textMuted mt-3 text-center">
-              Minimum de retrait : {fmtAmount(minWithdrawal)} XAF · Délai : 24–48h ouvrables
+              {t("mesgains_min_withdrawal_delay").replace("{amount}", fmtAmount(minWithdrawal))}
             </p>
           </div>
         </div>
@@ -429,7 +434,7 @@ function PointsRow({
   );
 }
 
-function TxStatusBadge({ status }: { status: string }) {
+function TxStatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
   const cls =
     status === "SUCCESS"
       ? "bg-green-light text-green-mid"
@@ -437,7 +442,7 @@ function TxStatusBadge({ status }: { status: string }) {
       ? "bg-orange-50 text-orange-500"
       : "bg-gray-100 text-gray-500";
   const label =
-    status === "SUCCESS" ? "Succès" : status === "PENDING" ? "En cours" : status;
+    status === "SUCCESS" ? t("tx_success") : status === "PENDING" ? t("tx_pending") : status;
   return (
     <span
       className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls}`}
@@ -453,12 +458,14 @@ function PaymentMethodCard({
   color,
   bg,
   connected,
+  t,
 }: {
   icon: string;
   name: string;
   color: string;
   bg: string;
   connected?: boolean;
+  t: (key: string) => string;
 }) {
   return (
     <div
@@ -482,7 +489,7 @@ function PaymentMethodCard({
             connected ? "text-green-mid font-semibold" : "text-textMuted"
           }`}
         >
-          {connected ? "\u2713 Connecté" : "Ajouter"}
+          {connected ? `\u2713 ${t("mesgains_connected")}` : t("mesgains_add")}
         </p>
       </div>
       <i
@@ -496,14 +503,14 @@ function PaymentMethodCard({
   );
 }
 
-function getTxMeta(type: string): { icon: string; bg: string; color: string; label: string; sub: string } {
+function getTxMeta(type: string, t: (key: string) => string): { icon: string; bg: string; color: string; label: string; sub: string } {
   if (type === "finder_payout") {
     return {
       icon: "fa-file-circle-check",
       bg: "bg-green-light",
       color: "text-green-mid",
-      label: "Commission document",
-      sub: "Récompense DocMaster",
+      label: t("tx_commission"),
+      sub: t("tx_reward"),
     };
   }
   if (type === "recovery_fee") {
@@ -511,8 +518,8 @@ function getTxMeta(type: string): { icon: string; bg: string; color: string; lab
       icon: "fa-arrow-up",
       bg: "bg-orange-50",
       color: "text-orange-500",
-      label: "Frais de récupération",
-      sub: "Paiement effectué",
+      label: t("tx_recovery_fee"),
+      sub: t("tx_payment_made"),
     };
   }
   if (type === "withdrawal") {
@@ -520,8 +527,8 @@ function getTxMeta(type: string): { icon: string; bg: string; color: string; lab
       icon: "fa-arrow-right-from-bracket",
       bg: "bg-blue-50",
       color: "text-blue-400",
-      label: "Retrait de gains",
-      sub: "Mobile Money",
+      label: t("tx_withdrawal"),
+      sub: t("tx_mobile_money"),
     };
   }
   return {

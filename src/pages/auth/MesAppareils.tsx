@@ -1,17 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useI18n } from "../../context/I18nContext";
 import { devicesService } from "../../services/devicesService";
 import Topbar from "../../layout/Topbar";
 import DatePicker from "../../components/ui/DatePicker";
 import type { Device } from "../../types/api";
 
-const TYPE_META: Record<string, { label: string; icon: string; color: string; bg: string }> = {
-  telephone:  { label: "Téléphone",   icon: "fa-mobile-screen-button", color: "#3B82F6", bg: "#EFF6FF" },
-  ordinateur: { label: "Ordinateur",  icon: "fa-laptop",               color: "#8B5CF6", bg: "#F5F3FF" },
-  tablette:   { label: "Tablette",    icon: "fa-tablet-screen-button", color: "#10B981", bg: "#ECFDF5" },
-  tv:         { label: "TV / Écran",  icon: "fa-tv",                   color: "#F59E0B", bg: "#FFFBEB" },
-  autre:      { label: "Autre",       icon: "fa-box",                  color: "#6B7280", bg: "#F9FAFB" },
-};
+function getTypeMeta(t: (k: string) => string) {
+  return {
+    telephone:  { label: t("mesappareils_type_telephone"),   icon: "fa-mobile-screen-button", color: "#3B82F6", bg: "#EFF6FF" },
+    ordinateur: { label: t("mesappareils_type_ordinateur"),  icon: "fa-laptop",               color: "#8B5CF6", bg: "#F5F3FF" },
+    tablette:   { label: t("mesappareils_type_tablette"),    icon: "fa-tablet-screen-button", color: "#10B981", bg: "#ECFDF5" },
+    tv:         { label: t("mesappareils_type_tv"),          icon: "fa-tv",                   color: "#F59E0B", bg: "#FFFBEB" },
+    autre:      { label: t("mesappareils_type_autre"),       icon: "fa-box",                  color: "#6B7280", bg: "#F9FAFB" },
+  };
+}
 
 function esc(s: string) {
   return String(s || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -40,6 +43,12 @@ function getDeviceType(category: string) {
   return "autre";
 }
 
+function resolvePhotoUrl(p: string) {
+  if (!p) return "";
+  if (p.startsWith("http") || p.startsWith("data:")) return p;
+  return window.location.origin + "/" + p.replace(/^\//, "");
+}
+
 function normalizeDevice(d: Device) {
   const type = getDeviceType(d.category || d.type || "");
   let photos = d.photos;
@@ -50,7 +59,7 @@ function normalizeDevice(d: Device) {
   return {
     ...d,
     type,
-    nom: d.model || d.modele || d.nom || "Sans nom",
+    nom: d.model || d.modele || d.nom || "Appareil",
     marque: d.brand || d.marque || "",
     modele: d.model || d.modele || "",
     serial: d.serial_number_imei || d.serial_number || d.imei || "",
@@ -62,15 +71,17 @@ function normalizeDevice(d: Device) {
     notes: d.notes || "",
     assurance: d.assurance || "",
     status: d.status || "SAFE",
-    photo: photos.length > 0 ? (photos[0].startsWith("http") || photos[0].startsWith("data:") ? photos[0] : "/" + photos[0]) : null,
-    files: photos.map((p: string) => ({ name: p.split("/").pop(), data: p.startsWith("http") || p.startsWith("data:") ? p : "/" + p })),
+    photo: photos.length > 0 ? resolvePhotoUrl(photos[0]) : null,
+    files: photos.map((p: string) => ({ name: p.split("/").pop(), data: resolvePhotoUrl(p) })),
   };
 }
 
 type NormalizedDevice = ReturnType<typeof normalizeDevice>;
 
 export default function MesAppareils() {
+  const { t } = useI18n();
   const { user } = useAuth();
+  const TYPE_META = getTypeMeta(t);
   const [devices, setDevices] = useState<NormalizedDevice[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentFilter, setCurrentFilter] = useState("all");
@@ -540,7 +551,7 @@ export default function MesAppareils() {
       />
 
       {/* Page body */}
-      <div className="custom-scroll p-4 md:p-6 flex flex-col gap-6 pb-24 md:pb-6" style={{ height: "calc(100vh - 64px)", overflowY: "auto" }}>
+      <div className="custom-scroll p-4 md:p-6 flex flex-col gap-6 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
           <div className="bg-white rounded-[16px] p-[18px] border border-[#1A1A1A]/20 flex items-center gap-3.5 shadow-[0_2px_10px_rgba(0,0,0,.04)] hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(0,0,0,.07)] transition-all">
@@ -629,7 +640,7 @@ export default function MesAppareils() {
                 className={`view-btn ${currentView === "grid" ? "active" : ""}`}
                 title="Vue grille"
               >
-                <i className="fa-solid fa-grid-2" />
+                <i className="fa-solid fa-table-cells" />
               </button>
               <button
                 onClick={() => setCurrentView("list")}
@@ -939,7 +950,7 @@ export default function MesAppareils() {
       {/* Add/Edit Modal */}
       {addModalOpen && (
         <div
-          className="fixed inset-0 bg-green-dark/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-green-dark/40 backdrop-blur-sm z-[100] flex items-end md:items-center justify-center p-4 pb-[70px] md:pb-0"
           style={{ animation: "fadeIn 0.25s ease" }}
         >
           <div
@@ -1044,8 +1055,8 @@ export default function MesAppareils() {
                   <DatePicker value={fGarantie} onChange={(v) => setFGarantie(v)} className="field-input" icon="fa-solid fa-calendar-xmark" placeholder="jj/mm/aaaa" />
                 </div>
                 <div className="field-group">
-                  <label className="field-label"><i className="fa-solid fa-franc-sign" style={{ color: "#F5A64B", fontSize: 10 }} /> Prix</label>
-                  <div className="field-wrapper"><i className="fa-solid fa-franc-sign field-icon" style={{ fontSize: 11 }} /><input type="number" className="field-input" value={fPrix} onChange={(e) => setFPrix(e.target.value)} placeholder="FCFA" min={0} step={500} /></div>
+                  <label className="field-label"><i className="fa-solid fa-coins" style={{ color: "#F5A64B", fontSize: 10 }} /> Prix</label>
+                  <div className="field-wrapper"><i className="fa-solid fa-coins field-icon" style={{ fontSize: 11 }} /><input type="number" className="field-input" value={fPrix} onChange={(e) => setFPrix(e.target.value)} placeholder="FCFA" min={0} step={500} /></div>
                 </div>
               </div>
 
@@ -1155,7 +1166,7 @@ export default function MesAppareils() {
           onClick={(e) => { if (e.target === e.currentTarget) closeDetail(); }}
         >
           <div
-            className="bg-white h-full w-full max-w-[420px] overflow-y-auto"
+            className="bg-white h-full w-full max-w-[420px] overflow-y-auto pb-[70px] md:pb-0"
             style={{ animation: "slideFromRight 0.3s ease", boxShadow: "-10px 0 40px rgba(0,0,0,.15)" }}
           >
             <div style={{ padding: "22px 22px 0" }}>
@@ -1220,32 +1231,49 @@ export default function MesAppareils() {
                       </div>
                     </div>
 
+                    {d.photo && (
+                      <div style={{ marginBottom: 20 }}>
+                        <img
+                          src={d.photo}
+                          style={{
+                            width: "100%", borderRadius: 14, display: "block",
+                            maxHeight: 300, objectFit: "contain", background: "#F9F6F1",
+                            border: "1px solid #EDE7DB",
+                          }}
+                          alt=""
+                        />
+                      </div>
+                    )}
+
                     <div style={{ marginBottom: 20 }}>
                       <p style={{ fontSize: 10.5, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8, paddingLeft: 2 }}>Détails</p>
-                      {infoRow("barcode", "Numéro de série", d.serial)}
-                      {infoRow("palette", "Couleur", d.couleur)}
-                      {infoRow("calendar", "Date d'achat", d.dateAchat ? formatDate(d.dateAchat) : "")}
-                      {infoRow("calendar-xmark", "Fin garantie", d.garantie ? formatDate(d.garantie) : "")}
-                      {infoRow("franc-sign", "Prix d'achat", d.prix ? Number(d.prix).toLocaleString("fr") + " FCFA" : "")}
-                      {infoRow("store", "Lieu d'achat", d.lieu)}
-                      {infoRow("comment-dots", "Notes", d.notes)}
+                      {infoRow("fa-barcode", "Numéro de série", d.serial)}
+                      {infoRow("fa-palette", "Couleur", d.couleur)}
+                      {infoRow("fa-calendar", "Date d'achat", d.dateAchat ? formatDate(d.dateAchat) : "")}
+                      {infoRow("fa-calendar-xmark", "Fin garantie", d.garantie ? formatDate(d.garantie) : "")}
+                      {infoRow("fa-coins", "Prix d'achat", d.prix ? Number(d.prix).toLocaleString("fr") + " FCFA" : "")}
+                      {infoRow("fa-store", "Lieu d'achat", d.lieu)}
+                      {infoRow("fa-comment-dots", "Notes", d.notes)}
                     </div>
 
                     {files.length > 0 && (
-                      <div>
-                        <p style={{ fontSize: 10.5, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                      <div style={{ marginBottom: 20 }}>
+                        <p style={{ fontSize: 10.5, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
                           Factures ({files.length})
                         </p>
-                        <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                           {files.map((f: Record<string, unknown>, i: number) => (
-                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", background: "#F9F6F1", borderRadius: 10, border: "1px solid #EDE7DB" }}>
-                              <i className="fa-solid fa-file-image" style={{ color: "#3B82F6", fontSize: 16, flexShrink: 0 }} />
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: 12, fontWeight: 600, color: "#1A1A1A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{esc(f.name)}</p>
-                              </div>
-                              <a href={f.data} target="_blank" rel="noreferrer" style={{ padding: "5px 10px", background: "#1E3A2F", borderRadius: 7, fontSize: 11, fontWeight: 600, color: "white", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, flexShrink: 0, whiteSpace: "nowrap" }}>
-                                <i className="fa-solid fa-eye" style={{ fontSize: 9 }} /> Voir
-                              </a>
+                            <div key={i}>
+                              <img
+                                src={f.data}
+                                style={{
+                                  width: "100%", borderRadius: 12, display: "block",
+                                  maxHeight: 200, objectFit: "contain", background: "#F9F6F1",
+                                  border: "1px solid #EDE7DB", cursor: "pointer",
+                                }}
+                                onClick={() => window.open(f.data, "_blank")}
+                                alt={esc(f.name)}
+                              />
                             </div>
                           ))}
                         </div>
@@ -1262,7 +1290,7 @@ export default function MesAppareils() {
       {/* Confirm Lost Modal */}
       {confirmLostOpen && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[200] flex items-end md:items-center justify-center p-4 pb-[70px] md:pb-0"
           style={{ background: "rgba(30,58,47,.85)", backdropFilter: "blur(8px)" }}
         >
           <div className="modal animate-in" style={{ maxWidth: 400, textAlign: "center", padding: 32 }}>

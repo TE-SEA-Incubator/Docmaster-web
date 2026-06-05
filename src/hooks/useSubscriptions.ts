@@ -58,7 +58,8 @@ export function useSubscriptionUsage() {
     try {
       const res = await subscriptionsService.getUsage(userId);
       setUsage(res.data || null);
-    } catch {
+    } catch (e: any) {
+      console.error("[useSubscriptionUsage] error:", e?.response?.data || e);
       setUsage(null);
     } finally {
       setLoading(false);

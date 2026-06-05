@@ -61,7 +61,7 @@ export default function Navbar() {
               className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold transition-all"
             >
               <i className="fa-solid fa-globe text-sm" />
-              <span>{lang === "fr" ? "Français" : "English"}</span>
+              <span>{lang === "fr" ? "Français" : lang === "ar" ? "العربية" : "English"}</span>
             </button>
             {langOpen && (
               <div
@@ -79,6 +79,12 @@ export default function Navbar() {
                   className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-white/10 transition text-xs font-bold text-white"
                 >
                   <i className="fa-solid fa-globe text-primary text-[11px]" /> English
+                </button>
+                <button
+                  onClick={() => { setLanguage("ar"); setLangOpen(false); }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-white/10 transition text-xs font-bold text-white"
+                >
+                  <i className="fa-solid fa-globe text-primary text-[11px]" /> العربية
                 </button>
               </div>
             )}

@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import { useNavigate } from "react-router-dom";
 import apiClient from "../services/api";
 import { getToken, saveToken, deleteToken } from "../utils/cookie";
+import { auth, googleProvider } from "../services/firebase";
+import { signInWithPopup } from "firebase/auth";
 
 const AuthContext = createContext(null);
 
@@ -102,6 +104,33 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+      
+      const res = await apiClient.post("auth/google-oauth", {
+        token: idToken,
+        email: result.user.email,
+        displayName: result.user.displayName,
+        photoURL: result.user.photoURL
+      });
+
+      if (res.data.token) {
+        saveSession(res.data.user, res.data.token);
+        setUser({ ...res.data.user, initial: getInitials(res.data.user.nom, res.data.user.prenom) });
+        return { success: true };
+      }
+      return { success: false, message: "Erreur lors de la connexion Google" };
+    } catch (err: any) {
+      console.error("Google Login Error:", err);
+      return {
+        success: false,
+        message: err.response?.data?.error || err.message || "Erreur de connexion Google",
+      };
+    }
+  }, []);
+
   const register = useCallback(async (userData) => {
     try {
       const res = await apiClient.post("auth/register", {
@@ -148,7 +177,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

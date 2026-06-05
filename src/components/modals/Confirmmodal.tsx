@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useI18n } from "../../context/I18nContext";
 
 interface ConfirmModalProps {
   onClose: () => void;
@@ -15,6 +16,8 @@ export default function ConfirmModal({
   onPasswordChange,
   passwordError,
 }: ConfirmModalProps) {
+  const { t } = useI18n();
+
   return (
     <>
       {/* Overlay */}
@@ -24,7 +27,7 @@ export default function ConfirmModal({
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 flex items-center justify-center z-[101] p-4">
+      <div className="fixed inset-0 flex items-end md:items-center justify-center z-[101] p-4 pb-[70px] md:pb-0">
         <div className="bg-white rounded-[28px] shadow-2xl max-w-[420px] w-full p-10 text-center animate-in slide-in-from-bottom-6 duration-300">
           {/* Warning Icon */}
           <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6 shadow-inner animate-pulse">
@@ -33,12 +36,12 @@ export default function ConfirmModal({
 
           {/* Title */}
           <h2 className="font-bricolage text-2xl font-black text-textMain mb-2 leading-tight">
-            Confirmer la déclaration ?
+            {t("confirm_declaration_title")}
           </h2>
 
           {/* Description */}
           <p className="text-[13.5px] text-textMuted leading-relaxed mb-6 px-2">
-            Êtes-vous sûr des informations fournies ? Pour valider votre déclaration, veuillez saisir votre mot de passe secret.
+            {t("confirm_declaration_desc")}
           </p>
 
           {/* Cost Warning */}
@@ -46,10 +49,10 @@ export default function ConfirmModal({
             <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-400"></div>
             <p className="text-[11.5px] text-orange-900 leading-relaxed font-bold">
               <i className="fa-solid fa-circle-info text-orange-500 mr-2 text-sm"></i>
-              Note Importante :
+              {t("confirm_important_note")}
             </p>
             <p className="text-[11.5px] text-orange-800/80 leading-relaxed mt-1 font-medium">
-              Si votre document est retrouvé, des frais de <strong className="text-orange-900">5 000 FCFA</strong> seront appliqués pour le processus de récupération.
+              {t("confirm_recovery_fee_desc")}
             </p>
           </div>
 
@@ -61,7 +64,7 @@ export default function ConfirmModal({
                 type="password"
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}
-                placeholder="Votre mot de passe"
+                placeholder={t("confirm_password_placeholder")}
                 className={`w-full pl-12 pr-4 py-4 bg-bgMain border-2 rounded-2xl text-textMain text-sm outline-none transition-all font-bold tracking-widest ${
                   passwordError 
                     ? "border-red-500 bg-red-50" 
@@ -72,7 +75,7 @@ export default function ConfirmModal({
             {passwordError && (
               <p className="text-[11px] text-red-500 mt-2 font-bold animate-bounce">
                 <i className="fa-solid fa-xmark-circle mr-1"></i>
-                Mot de passe incorrect ou trop court
+                {t("confirm_password_error")}
               </p>
             )}
           </div>
@@ -83,13 +86,13 @@ export default function ConfirmModal({
               onClick={onClose}
               className="px-6 py-4 border-2 border-borderMain bg-white text-textMain rounded-2xl text-sm font-bold hover:bg-bgMain transition-all active:scale-95"
             >
-              Annuler
+              {t("confirm_cancel")}
             </button>
             <button
               onClick={onConfirm}
               className="px-6 py-4 bg-red-500 text-white rounded-2xl font-bricolage font-black text-sm hover:bg-red-600 transition-all shadow-xl shadow-red-500/30 active:scale-95"
             >
-              Confirmer
+              {t("confirm_confirm")}
             </button>
           </div>
         </div>

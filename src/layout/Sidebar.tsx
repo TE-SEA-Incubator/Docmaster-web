@@ -1,40 +1,45 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-
-const navItems = [
-  {
-    section: "Principal",
-    items: [
-      { to: "/dashboard", icon: "fa-solid fa-house", label: "Tableau de bord" },
-      { to: "/mes-documents", icon: "fa-solid fa-list-check", label: "Mes sauvegardes" },
-      { to: "/mes-appareils", icon: "fa-solid fa-mobile-screen-button", label: "Mes appareils" },
-    ],
-  },
-  {
-    section: "Compte",
-    items: [
-      { to: "/mes-declarations", icon: "fa-solid fa-clock-rotate-left", label: "Mes déclarations" },
-      { to: "/mes-gains", icon: "fa-solid fa-wallet", label: "Mes Gains" },
-      { to: "/abonnement", icon: "fa-solid fa-crown", label: "Abonnement" },
-      { to: "/infos-profil", icon: "fa-solid fa-user", label: "Mon Profil" },
-    ],
-  },
-];
+import { useI18n } from "../context/I18nContext";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(() => window.innerWidth >= 900);
+  const [userClosed, setUserClosed] = useState(false);
+
+  const isLargeScreen = () => window.innerWidth >= 900;
+
+  const navItems = [
+    {
+      section: t("sidebar_primary"),
+      items: [
+        { to: "/dashboard", icon: "fa-solid fa-house", label: t("sidebar_dashboard") },
+        { to: "/mes-documents", icon: "fa-solid fa-list-check", label: t("sidebar_saved") },
+        { to: "/mes-appareils", icon: "fa-solid fa-mobile-screen-button", label: t("sidebar_devices") },
+      ],
+    },
+    {
+      section: t("sidebar_account"),
+      items: [
+        { to: "/mes-declarations", icon: "fa-solid fa-clock-rotate-left", label: t("sidebar_declarations") },
+        { to: "/mes-gains", icon: "fa-solid fa-wallet", label: t("sidebar_earnings") },
+        { to: "/abonnement", icon: "fa-solid fa-crown", label: t("sidebar_subscription") },
+        { to: "/infos-profil", icon: "fa-solid fa-user", label: t("sidebar_profile") },
+      ],
+    },
+  ];
 
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth >= 900) setOpen(true);
+      if (window.innerWidth >= 900 && !userClosed) setOpen(true);
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [userClosed]);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--sidebar", open ? "260px" : "0px");
@@ -47,8 +52,8 @@ export default function Sidebar() {
     navigate("/");
   };
 
-  const close = () => setOpen(false);
-  const toggle = () => setOpen((p) => !p);
+  const close = () => { setOpen(false); setUserClosed(true); };
+  const toggle = () => { setOpen((p) => !p); setUserClosed(true); };
   (window as any).__sidebarToggle = toggle;
 
   return (
@@ -65,7 +70,7 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="flex items-center px-5 py-4 border-b border-white/10 flex-shrink-0">
           <Link to="/dashboard">
-            <img src="src/assets/images/docmaster.png" alt="DocMaster" className="h-14 w-auto object-contain rounded brightness-0 invert" />
+            <img src="/src/assets/images/docmaster.png" alt="DocMaster" className="h-14 w-auto object-contain rounded brightness-0 invert" />
           </Link>
         </div>
 
@@ -81,7 +86,7 @@ export default function Sidebar() {
                     <Link
                       key={item.to}
                       to={item.to}
-                      onClick={close}
+                      onClick={() => { if (!isLargeScreen()) close(); }}
                       className={`sb-item ${isActive(item.to) ? "active" : ""}`}
                     >
                       <div className="nav-icon">
@@ -105,7 +110,7 @@ export default function Sidebar() {
               <div className="nav-icon">
                 <i className="fa-solid fa-right-from-bracket" />
               </div>
-              Déconnexion
+              {t("sidebar_logout")}
             </a>
           </nav>
         </div>
@@ -121,7 +126,7 @@ export default function Sidebar() {
                 {user?.prenom || ""} {user?.nom || ""}
               </div>
               <div className="text-[10.5px] text-white/40">
-                {user?.subscription?.plan_name ? `Plan ${user.subscription.plan_name}` : "Plan Standard"}
+                {user?.subscription?.plan_name ? `${t("sidebar_plan")} ${user.subscription.plan_name}` : t("sidebar_plan_standard")}
               </div>
             </div>
           </Link>

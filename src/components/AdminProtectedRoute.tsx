@@ -5,7 +5,7 @@ function checkAdminAuth(): boolean {
   if (!admin) return false;
   try {
     const parsed = JSON.parse(admin);
-    return parsed?.role === "admin" && parsed?.token;
+    return parsed?.role?.toUpperCase() === "ADMIN" && parsed?.token;
   } catch {
     return false;
   }

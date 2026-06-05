@@ -28,6 +28,7 @@ show_usage() {
     echo "Modes disponibles:"
     echo "  full     - Déploiement complet (compression, transfert, compilation des 2 blocs)"
     echo "  backup   - Juste la sauvegarde et extraction (sans compilation/build)"
+    echo "  prod     - Bascule le frontend Vite (dev) vers server.js (production avec dist/)"
     echo "  -m|--migrate - Option (exécuter les migrations DB sur le serveur distant)"
     echo "  help     - Afficher cette aide"
     echo ""
@@ -38,7 +39,7 @@ if [ "$DEPLOY_MODE" = "help" ] || [ "$DEPLOY_MODE" = "-h" ] || [ "$DEPLOY_MODE" 
     exit 0
 fi
 
-if [ "$DEPLOY_MODE" != "full" ] && [ "$DEPLOY_MODE" != "backup" ]; then
+if [ "$DEPLOY_MODE" != "full" ] && [ "$DEPLOY_MODE" != "backup" ] && [ "$DEPLOY_MODE" != "prod" ]; then
     echo "❌ Mode invalide: $DEPLOY_MODE"
     show_usage
     exit 1
@@ -58,10 +59,10 @@ check_local_tools() {
 }
 
 compress_assets() {
-    log_info "Compression du Frontend (en excluant le dossier /server)..."
+    log_info "Compression du Frontend React (en excluant le dossier /server et les builds locaux)..."
     cd "$SCRIPT_DIR"
     rm -f "../$ARCHIVE_FRONT"
-    7z a "../$ARCHIVE_FRONT" ./* -xr!'server' -xr!'node_modules' -xr!'.git' -xr!'Docmaster_Backend' -xr!'Docmaster_Backend_V2' -xr!'*.7z' >/dev/null
+    7z a "../$ARCHIVE_FRONT" ./* -xr!'server' -xr!'node_modules' -xr!'.git' -xr!'dist' -xr!'build' -xr!'Docmaster_Backend' -xr!'Docmaster_Backend_V2' -xr!'*.7z' >/dev/null
 
     log_info "Compression du Backend (Dossier /server)..."
     # Copy production env file to server folder before compressing
@@ -79,7 +80,7 @@ compress_assets() {
         exit 1
     fi
 
-    log_success "Frontend et Backend compressés avec succès !"
+    log_success "Frontend (React) et Backend compressés avec succès !"
 }
 
 transfer_assets() {
@@ -124,10 +125,11 @@ execute_remote_deployment() {
     if [ "$DEPLOY_MODE" = "full" ]; then
         echo "Mode complet activé : Installation et Compilation..."
         
-        # Traitement Frontend V2
-        echo "→ Configuration Dépendances Frontend..."
+        # Traitement Frontend V2 (React)
+        echo "→ Configuration Dépendances et Compilation (Build) du Frontend React..."
         cd "$FRONTEND_DIR"
         npm install --quiet
+        npm run build
         
         # Traitement Backend V2
         echo "→ Configuration Dépendances et Build Backend..."
@@ -141,7 +143,7 @@ execute_remote_deployment() {
             npm run migrate || echo "⚠️ Attention : Pas de script de migration trouvé ou échec de l'exécution."
         fi
         
-        echo "✓ Backend configuré avec succès."
+        echo "✓ Frontend et Backend configurés et compilés avec succès."
     fi
 REMOTE_SCRIPT
 }
@@ -189,11 +191,27 @@ REMOTE_SCRIPT
     fi
 }
 
+switch_to_production() {
+    log_info "Bascule du frontend Vite (dev) vers server.js (production avec dist/)..."
+    ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" << 'REMOTE_SCRIPT'
+        cd /var/www/vhosts/docmaster.net/app/Docmaster
+        pm2 restart docmaster-web-v2 --update-env || pm2 start server.js --name "docmaster-web-v2"
+        pm2 save
+        echo "✓ Frontend basculé vers server.js (mode production)"
+        pm2 show docmaster-web-v2
+REMOTE_SCRIPT
+    log_success "Bascule terminée avec succès !"
+}
+
 # --- Cycle principal d'exécution ---
-check_local_tools
-compress_assets
-transfer_assets
-execute_remote_deployment
-post_deployment
+if [ "$DEPLOY_MODE" = "prod" ]; then
+    switch_to_production
+else
+    check_local_tools
+    compress_assets
+    transfer_assets
+    execute_remote_deployment
+    post_deployment
+fi
 
 log_success "DÉPLOIEMENT TERMINÉ AVEC SUCCÈS SUR LA NOUVELLE ARCHITECTURE V2 !"

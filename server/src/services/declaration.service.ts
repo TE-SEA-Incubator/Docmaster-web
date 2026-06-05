@@ -515,6 +515,20 @@ export class DeclarationService {
   }
 
   /**
+   * Delete a declaration (hard delete)
+   */
+  async deleteDeclaration(declarationId: string, userId: string): Promise<{ success: boolean; message: string }> {
+    const declaration = await this.declarationRepository.findById(declarationId);
+    if (!declaration) throw new Error("Déclaration introuvable");
+    if (declaration.reporter_id !== userId) throw new Error("Action non autorisée");
+
+    const deleted = await this.declarationRepository.hardDelete(declarationId, userId);
+    if (!deleted) throw new Error("Déclaration introuvable");
+
+    return { success: true, message: 'Déclaration supprimée définitivement' };
+  }
+
+  /**
    * Check if a string is a valid UUID
    */
   private isUuid(str: string): boolean {

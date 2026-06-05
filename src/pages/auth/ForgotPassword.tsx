@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useI18n } from "../../context/I18nContext";
 import { authService } from "../../services/authService";
 
 export default function ForgotPassword() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -19,10 +21,10 @@ export default function ForgotPassword() {
       if (res.success) {
         setSent(true);
       } else {
-        setError(res.message || "Erreur d'envoi");
+        setError(res.message || t("forgot_send_error"));
       }
     } catch {
-      setError("Erreur lors de l'envoi du lien. Veuillez réessayer.");
+      setError(t("forgot_send_error_network"));
     } finally {
       setLoading(false);
     }
@@ -42,7 +44,7 @@ export default function ForgotPassword() {
           <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
 
           <Link to="/login" className="inline-flex items-center gap-2 text-[12.5px] text-textMuted font-semibold hover:text-primary transition-colors mb-6">
-            <i className="fa-solid fa-arrow-left" /> Retour à la connexion
+            <i className="fa-solid fa-arrow-left" /> {t("forgot_back_to_login")}
           </Link>
 
           <div className="flex flex-col gap-6 relative z-10">
@@ -52,10 +54,10 @@ export default function ForgotPassword() {
 
             <div className="space-y-2">
               <h1 className="font-bricolage text-3xl font-extrabold tracking-tight text-gray-900">
-                Mot de passe oublié ?
+                {t("forgot_title")}
               </h1>
               <p className="text-gray-500 leading-relaxed text-[15px]">
-                Entrez votre adresse email pour recevoir un lien de réinitialisation.
+                {t("forgot_desc")}
               </p>
             </div>
 
@@ -64,16 +66,16 @@ export default function ForgotPassword() {
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-500 text-3xl">
                   <i className="fa-solid fa-envelope-circle-check" />
                 </div>
-                <p className="text-gray-700 font-semibold text-[15px]">Email envoyé !</p>
+                <p className="text-gray-700 font-semibold text-[15px]">{t("forgot_email_sent")}</p>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  Un lien de réinitialisation a été envoyé à <strong className="text-gray-600">{email}</strong>.
-                  <br />Vérifiez votre boîte mail (pensez aux spams).
+                  {t("forgot_check_inbox").replace("{email}", email)}
+                  <br />{t("forgot_check_spam")}
                 </p>
                 <button
                   onClick={() => navigate("/login")}
                   className="px-6 py-3 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-dark transition-all"
                 >
-                  Retour à la connexion
+                  {t("forgot_back_login")}
                 </button>
               </div>
             ) : (
@@ -86,7 +88,7 @@ export default function ForgotPassword() {
 
                 <div className="flex flex-col">
                   <label className="text-[11px] font-bold text-textMuted uppercase tracking-wider ml-1 mb-1.5">
-                    Votre email
+                    {t("forgot_your_email")}
                   </label>
                   <div className="relative flex items-center group">
                     <i className="fa-regular fa-envelope absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary" />
@@ -109,7 +111,7 @@ export default function ForgotPassword() {
                   {loading ? (
                     <i className="fa-solid fa-spinner fa-spin" />
                   ) : (
-                    <><i className="fa-solid fa-paper-plane" /> Envoyer le lien</>
+                    <><i className="fa-solid fa-paper-plane" /> {t("forgot_send_link")}</>
                   )}
                 </button>
               </form>

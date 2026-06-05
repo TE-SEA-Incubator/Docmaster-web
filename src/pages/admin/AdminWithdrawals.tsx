@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "../../context/I18nContext";
 import { adminService } from "../../services/admin";
 
 interface Withdrawal {
@@ -13,6 +14,7 @@ interface Withdrawal {
 }
 
 export default function AdminWithdrawals() {
+  const { t } = useI18n();
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [note, setNote] = useState("");
@@ -52,8 +54,8 @@ export default function AdminWithdrawals() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-bricolage text-2xl font-black text-gray-900">Retraits</h1>
-        <p className="text-gray-400 text-[13px] font-medium mt-1">Gestion des demandes de retrait</p>
+        <h1 className="font-bricolage text-2xl font-black text-gray-900">{t("admin_withdrawals")}</h1>
+        <p className="text-gray-400 text-[13px] font-medium mt-1">{t("admin_withdrawals_subtitle")}</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200/60 overflow-hidden shadow-sm">
@@ -61,12 +63,12 @@ export default function AdminWithdrawals() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/80">
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Utilisateur</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Montant</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Méthode</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Statut</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Date</th>
-                <th className="text-right px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_user")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_amount")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_method")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_status")}</th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_date")}</th>
+                <th className="text-right px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -74,7 +76,7 @@ export default function AdminWithdrawals() {
                 <tr>
                   <td colSpan={6} className="text-center py-16 text-gray-300">
                     <i className="fa-solid fa-money-bill-transfer text-3xl mb-3" />
-                    <p className="text-[13px] font-medium text-gray-400">Aucune demande de retrait</p>
+                    <p className="text-[13px] font-medium text-gray-400">{t("admin_no_withdrawals")}</p>
                   </td>
                 </tr>
               ) : (
@@ -84,7 +86,7 @@ export default function AdminWithdrawals() {
                     <td className="px-4 py-3.5 font-bricolage font-extrabold text-gray-900">
                       {w.amount?.toLocaleString("fr-FR")} <span className="text-[11px] text-gray-400">XAF</span>
                     </td>
-                    <td className="px-4 py-3.5 text-gray-600">{w.method || "Mobile Money"}</td>
+                    <td className="px-4 py-3.5 text-gray-600">{w.method || t("admin_mobile_money")}</td>
                     <td className="px-4 py-3.5">
                       <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border ${
                         w.status === "approved" ? "bg-emerald-50 text-emerald-600 border-emerald-200/50" :
@@ -95,7 +97,7 @@ export default function AdminWithdrawals() {
                           w.status === "approved" ? "bg-emerald-500" :
                           w.status === "rejected" ? "bg-red-500" : "bg-amber-500"
                         }`} />
-                        {w.status === "approved" ? "Approuvé" : w.status === "rejected" ? "Rejeté" : "En attente"}
+                        {w.status === "approved" ? t("admin_approved") : w.status === "rejected" ? t("admin_rejected") : t("admin_pending")}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-gray-400 text-[12px]">
@@ -109,20 +111,20 @@ export default function AdminWithdrawals() {
                             disabled={actionId === w.id}
                             className="text-[11px] px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold transition-all disabled:opacity-50"
                           >
-                            {actionId === w.id ? <i className="fa-solid fa-spinner fa-spin" /> : "Approuver"}
+                            {actionId === w.id ? <i className="fa-solid fa-spinner fa-spin" /> : t("admin_approve")}
                           </button>
                           <button
                             onClick={() => handleAction(w.id, "reject")}
                             disabled={actionId === w.id}
                             className="text-[11px] px-3 py-1.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 font-bold transition-all disabled:opacity-50"
                           >
-                            Rejeter
+                            {t("admin_reject")}
                           </button>
                         </div>
                       )}
                       {(w.status === "approved" || w.status === "rejected") && (
                         <span className="text-[11px] text-gray-400 font-medium">
-                          Traité
+                          {t("admin_processed")}
                         </span>
                       )}
                     </td>

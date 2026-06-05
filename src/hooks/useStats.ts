@@ -8,7 +8,10 @@ export function useGlobalStats() {
   useEffect(() => {
     statsService.getGlobal()
       .then((res) => setStats(res.data || null))
-      .catch(() => setStats(null))
+      .catch((e: any) => {
+        console.error("[useGlobalStats] error:", e?.response?.data || e);
+        setStats(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -24,7 +27,8 @@ export function usePerformanceStats() {
     try {
       const res = await statsService.getPerformance();
       setStats(res.data || null);
-    } catch {
+    } catch (e: any) {
+      console.error("[usePerformanceStats] error:", e?.response?.data || e);
       setStats(null);
     } finally {
       setLoading(false);
@@ -43,7 +47,10 @@ export function useActiveDocumentTypes() {
   useEffect(() => {
     statsService.getActiveDocumentTypes()
       .then((res) => setTypes(res.data || []))
-      .catch(() => setTypes([]))
+      .catch((e: any) => {
+        console.error("[useActiveDocumentTypes] error:", e?.response?.data || e);
+        setTypes([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 

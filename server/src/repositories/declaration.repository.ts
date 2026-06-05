@@ -284,6 +284,18 @@ export class DeclarationRepository {
     return rows[0] || null;
   }
 
+  /**
+   * Hard delete a declaration
+   */
+  async hardDelete(
+    id: string,
+    reporterId: string,
+  ): Promise<boolean> {
+    const query = "DELETE FROM declarations WHERE id = $1 AND reporter_id = $2";
+    const { rowCount } = await pool.query(query, [id, reporterId]);
+    return (rowCount ?? 0) > 0;
+  }
+
   async getGlobalStats() {
     const query = `
       SELECT 

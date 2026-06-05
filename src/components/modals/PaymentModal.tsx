@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useI18n } from "../../context/I18nContext";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -14,33 +15,12 @@ interface PaymentModalProps {
   submitLabel?: string;
 }
 
-const OPERATORS = [
-  {
-    id: "orange" as const,
-    label: "Orange Money",
-    sublabel: "Paiement mobile Orange",
-    bg: "bg-orange-500",
-    border: "border-orange-500",
-    selectedBg: "bg-orange-50",
-    hoverBorder: "hover:border-orange-300",
-  },
-  {
-    id: "mtn" as const,
-    label: "MTN Mobile Money",
-    sublabel: "Paiement mobile MTN",
-    bg: "bg-yellow-500",
-    border: "border-yellow-500",
-    selectedBg: "bg-yellow-50",
-    hoverBorder: "hover:border-yellow-300",
-  },
-];
-
 export default function PaymentModal({
   isOpen,
   onClose,
   onPay,
   amount,
-  title = "Paiement",
+  title,
   description,
   termsText,
   processing,
@@ -48,8 +28,30 @@ export default function PaymentModal({
   children,
   submitLabel,
 }: PaymentModalProps) {
+  const { t } = useI18n();
   const [payMethod, setPayMethod] = useState<"orange" | "mtn" | "">("");
   const [payPhone, setPayPhone] = useState("");
+
+  const OPERATORS = [
+    {
+      id: "orange" as const,
+      label: t("payment_orange_money"),
+      sublabel: t("payment_orange_sublabel"),
+      bg: "bg-orange-500",
+      border: "border-orange-500",
+      selectedBg: "bg-orange-50",
+      hoverBorder: "hover:border-orange-300",
+    },
+    {
+      id: "mtn" as const,
+      label: t("payment_mtn_money"),
+      sublabel: t("payment_mtn_sublabel"),
+      bg: "bg-yellow-500",
+      border: "border-yellow-500",
+      selectedBg: "bg-yellow-50",
+      hoverBorder: "hover:border-yellow-300",
+    },
+  ];
 
   if (!isOpen) return null;
 
@@ -61,11 +63,11 @@ export default function PaymentModal({
   return (
     <>
       <div className="fixed inset-0 bg-green-dark/40 backdrop-blur-sm z-[200]" onClick={() => { if (!processing) onClose(); }} />
-      <div className="fixed inset-0 flex items-center justify-center z-[201] p-4">
+      <div className="fixed inset-0 flex items-end md:items-center justify-center z-[201] p-4 pb-[70px] md:pb-0">
         <div className="bg-white rounded-[24px] shadow-2xl max-w-md w-full p-6 animate-in zoom-in duration-300" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
-            <h2 className="font-bricolage text-lg font-black text-textMain">{title}</h2>
+            <h2 className="font-bricolage text-lg font-black text-textMain">{title || t("payment_title")}</h2>
             <button
               onClick={onClose}
               disabled={processing}
@@ -83,14 +85,14 @@ export default function PaymentModal({
 
           {/* Amount */}
           <div className="p-4 bg-bgMain rounded-[16px] mb-5">
-            <p className="text-[10px] font-bold text-textMuted uppercase mb-1">Montant à payer</p>
+            <p className="text-[10px] font-bold text-textMuted uppercase mb-1">{t("payment_amount")}</p>
             <p className="font-bricolage text-2xl font-black text-primary">
               {amount > 0 ? `${amount.toLocaleString("fr-FR")} FCFA` : "—"}
             </p>
           </div>
 
           {/* Operator selection */}
-          <p className="text-[12px] font-bold text-textMain mb-3">Choisissez votre méthode de paiement</p>
+          <p className="text-[12px] font-bold text-textMain mb-3">{t("payment_choose_method")}</p>
           <div className="space-y-2.5 mb-5">
             {OPERATORS.map((op) => (
               <div
@@ -126,18 +128,18 @@ export default function PaymentModal({
           {payMethod && (
             <div className="mb-5">
               <label className="text-[11px] font-bold text-textMuted uppercase tracking-wider mb-1.5 block">
-                Numéro de téléphone
+                {t("payment_phone_label")}
               </label>
               <input
                 type="tel"
                 value={payPhone}
                 onChange={(e) => setPayPhone(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                placeholder="Ex: 6XXXXXXXX"
+                placeholder={t("payment_phone_placeholder")}
               />
               <p className="text-[11px] text-textMuted mt-1.5">
                 <i className="fa-solid fa-info-circle text-[10px]" />
-                Saisissez le numéro {payMethod === "orange" ? "Orange Money" : "MTN MoMo"} qui recevra la demande de paiement.
+                {" "}{payMethod === "orange" ? t("payment_phone_hint_orange") : t("payment_phone_hint_mtn")}
               </p>
             </div>
           )}
@@ -156,9 +158,9 @@ export default function PaymentModal({
             className="w-full py-3 bg-primary text-white rounded-xl font-bricolage text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-dark transition-all active:scale-[.98]"
           >
             {processing ? (
-              <><i className="fa-solid fa-spinner fa-spin mr-1" /> Paiement en cours...</>
+              <><i className="fa-solid fa-spinner fa-spin mr-1" /> {t("payment_processing")}</>
             ) : (
-              submitLabel || `Payer ${amount > 0 ? amount.toLocaleString("fr-FR") : ""} FCFA`
+              submitLabel || `${t("payment_pay")} ${amount > 0 ? amount.toLocaleString("fr-FR") : ""} FCFA`
             )}
           </button>
 

@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useDocuments } from "../../hooks/useDocuments";
+import { useI18n } from "../../context/I18nContext";
 import Topbar from "../../layout/Topbar";
 import DocumentCard from "../../components/cards/DocumentCard";
 import DocumentDetailModal from "../../components/ui/DocumentDetailModal";
@@ -9,21 +10,16 @@ import DatePicker from "../../components/ui/DatePicker";
 import type { Document } from "../../types/api";
 
 const docTypes = [
-  { id: "cni", icon: "fa-solid fa-id-card", label: "CNI", cat: "identity" },
-  { id: "passport", icon: "fa-solid fa-passport", label: "Passeport", cat: "travel" },
-  { id: "permis", icon: "fa-solid fa-car", label: "Permis", cat: "vehicle" },
-  { id: "diplome", icon: "fa-solid fa-graduation-cap", label: "Diplôme", cat: "study" },
-  { id: "naissance", icon: "fa-solid fa-baby", label: "Acte naissance", cat: "identity" },
-  { id: "autre", icon: "fa-solid fa-file", label: "Autre", cat: "other" },
+  { id: "cni", icon: "fa-solid fa-id-card", labelKey: "mesdocuments_tab_cni", cat: "identity" },
+  { id: "passport", icon: "fa-solid fa-passport", labelKey: "mesdocuments_tab_passeport", cat: "travel" },
+  { id: "permis", icon: "fa-solid fa-car", labelKey: "mesdocuments_tab_permis", cat: "vehicle" },
+  { id: "diplome", icon: "fa-solid fa-graduation-cap", labelKey: "mesdocuments_tab_diplome", cat: "study" },
+  { id: "naissance", icon: "fa-solid fa-baby", labelKey: "mesdocuments_tab_acte", cat: "identity" },
+  { id: "autre", icon: "fa-solid fa-file", labelKey: "mesdocuments_tab_autre", cat: "other" },
 ];
 
-const catLabels: Record<string, string> = {
-  cni: "Carte Nationale d'Identité", passport: "Passeport International",
-  permis: "Permis de Conduire", diplome: "Diplôme Académique",
-  naissance: "Acte de Naissance", autre: "Document Officiel",
-};
-
 export default function MesDocuments() {
+  const { t } = useI18n();
   const { documents: docs, loading, register, remove, reportLost } = useDocuments();
   const [filterCat, setFilterCat] = useState("all");
   const [search, setSearch] = useState("");
@@ -148,16 +144,25 @@ export default function MesDocuments() {
     </button>
   );
 
+  const catLabelsT = {
+    cni: t("mesdocuments_category_cni"),
+    passport: t("mesdocuments_category_passeport"),
+    permis: t("mesdocuments_category_permis"),
+    diplome: t("mesdocuments_category_diplome"),
+    naissance: t("mesdocuments_category_acte"),
+    autre: t("mesdocuments_category_autre"),
+  };
+
   return (
     <div className="flex flex-col h-full">
       <Topbar
-        title="Mes documents"
+        title={t("mesdocuments_title")}
         breadcrumbs={[
-          { label: "Accueil", href: "/dashboard" },
-          { label: "Mes documents" },
+          { label: t("mesdocuments_breadcrumb_home"), href: "/dashboard" },
+          { label: t("mesdocuments_breadcrumb_documents") },
         ]}
       />
-      <div className="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-8" style={{ height: "calc(100vh - 64px)", overflowY: "auto" }}>
+      <div className="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-8 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
 
 
         {/* Info banner */}
@@ -167,11 +172,9 @@ export default function MesDocuments() {
               <i className="fa-solid fa-shield-halved text-primary text-sm" />
             </div>
             <div>
-              <p className="text-[13.5px] font-bold text-textMain mb-0.5">Pourquoi enregistrer mes documents ?</p>
+              <p className="text-[13.5px] font-bold text-textMain mb-0.5">{t("mesdocuments_banner_title")}</p>
               <p className="text-[12.5px] text-textMuted leading-relaxed">
-                En cas de perte, vos documents enregistrés servent de<strong className="text-textMain"> preuve de propriété</strong>.
-                DocMaster peut ainsi vous identifier rapidement et faciliter la récupération.
-                Vos données sont <strong className="text-textMain">chiffrées et sécurisées</strong>.
+                {t("mesdocuments_banner_desc")}
               </p>
             </div>
             <button onClick={() => setShowBanner(false)}
@@ -188,28 +191,28 @@ export default function MesDocuments() {
               <i className="fa-solid fa-folder-open text-primary text-sm" />
             </div>
             <div className="font-bricolage text-2xl font-extrabold text-textMain">{docs.length}</div>
-            <div className="text-[12px] text-textMuted font-medium">Total enregistrés</div>
+            <div className="text-[12px] text-textMuted font-medium">{t("mesdocuments_total_registered")}</div>
           </div>
           <div className="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
             <div className="w-9 h-9 rounded-[10px] bg-green-light flex items-center justify-center">
               <i className="fa-solid fa-shield-check text-green-mid text-sm" />
             </div>
             <div className="font-bricolage text-2xl font-extrabold text-textMain">{verifiedCount}</div>
-            <div className="text-[12px] text-textMuted font-medium">Vérifiés</div>
+            <div className="text-[12px] text-textMuted font-medium">{t("mesdocuments_verified")}</div>
           </div>
           <div className="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
             <div className="w-9 h-9 rounded-[10px] bg-amber-50 flex items-center justify-center">
               <i className="fa-solid fa-clock text-amber-500 text-sm" />
             </div>
             <div className="font-bricolage text-2xl font-extrabold text-textMain">{pendingCount}</div>
-            <div className="text-[12px] text-textMuted font-medium">En attente</div>
+            <div className="text-[12px] text-textMuted font-medium">{t("mesdocuments_pending")}</div>
           </div>
           <div className="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
             <div className="w-9 h-9 rounded-[10px] bg-blue-50 flex items-center justify-center">
               <i className="fa-solid fa-cloud-arrow-up text-blue-500 text-sm" />
             </div>
             <div className="font-bricolage text-2xl font-extrabold text-textMain">94%</div>
-            <div className="text-[12px] text-textMuted font-medium">Profil complété</div>
+            <div className="text-[12px] text-textMuted font-medium">{t("mesdocuments_profile_completed")}</div>
           </div>
         </div>
 
@@ -218,17 +221,17 @@ export default function MesDocuments() {
           <div className="flex items-center bg-white border border-borderMain rounded-[11px] overflow-hidden flex-1 max-w-sm focus-within:border-primary transition-colors">
             <i className="fa-solid fa-search px-3 text-textMuted text-xs flex-shrink-0" />
             <input
-              type="text" placeholder="Rechercher un document…" value={search}
+              type="text" placeholder={t("mesdocuments_search_placeholder")} value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 py-2.5 pr-3 bg-transparent border-none outline-none font-poppins text-[13.5px] text-textMain placeholder:text-textMuted"
             />
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <FilterTab id="all" label="Tous" />
-            <FilterTab id="cni" label="Identité" />
-            <FilterTab id="passport" label="Voyage" />
-            <FilterTab id="diplome" label="Études" />
-            <FilterTab id="permis" label="Véhicule" />
+            <FilterTab id="all" label={t("mesdocuments_filter_all")} />
+            <FilterTab id="cni" label={t("mesdocuments_filter_identity")} />
+            <FilterTab id="passport" label={t("mesdocuments_filter_travel")} />
+            <FilterTab id="diplome" label={t("mesdocuments_filter_study")} />
+            <FilterTab id="permis" label={t("mesdocuments_filter_vehicle")} />
           </div>
         </div>
 
@@ -242,8 +245,8 @@ export default function MesDocuments() {
               <i className="fa-solid fa-plus text-primary text-xl" />
             </div>
             <div className="text-center">
-              <p className="text-[14px] font-bold text-textMain">Ajouter un document</p>
-              <p className="text-[12px] text-textMuted">CNI, Passeport, Diplôme…</p>
+              <p className="text-[14px] font-bold text-textMain">{t("mesdocuments_add_document")}</p>
+              <p className="text-[12px] text-textMuted">{t("mesdocuments_add_hint")}</p>
             </div>
           </button>
 
@@ -251,7 +254,7 @@ export default function MesDocuments() {
             <DocumentCard
               key={doc.id}
               doc={doc}
-              catLabels={catLabels}
+              catLabels={catLabelsT}
               onView={openViewModal}
               onShare={openShareModal}
               onDelete={handleDelete}
@@ -264,8 +267,8 @@ export default function MesDocuments() {
         <div className="flex items-center gap-3 p-4 bg-white border border-borderMain rounded-[14px]">
           <i className="fa-solid fa-lock text-green-mid text-lg flex-shrink-0" />
           <div>
-            <p className="text-[12.5px] font-bold text-textMain">Vos données sont protégées</p>
-            <p className="text-[11.5px] text-textMuted">Chiffrement AES-256 · Accès limité à vous seul · Conforme RGPD · Stockage sécurisé au Cameroun</p>
+            <p className="text-[12.5px] font-bold text-textMain">{t("mesdocuments_security_title")}</p>
+            <p className="text-[11.5px] text-textMuted">{t("mesdocuments_security_desc")}</p>
           </div>
         </div>
       </div>
@@ -276,8 +279,8 @@ export default function MesDocuments() {
           <div className="modal-box">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="font-bricolage text-xl font-extrabold text-textMain">Enregistrer un document</h2>
-                <p className="text-[12.5px] text-textMuted mt-0.5">Étape {step} sur 3</p>
+                <h2 className="font-bricolage text-xl font-extrabold text-textMain">{t("mesdocuments_modal_title")}</h2>
+                <p className="text-[12.5px] text-textMuted mt-0.5">{t("mesdocuments_step")} {step} {t("mesdocuments_of")} 3</p>
               </div>
               <button onClick={closeAddModal}
                 className="w-9 h-9 rounded-full bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted">
@@ -298,7 +301,7 @@ export default function MesDocuments() {
             {/* Step 1: Type */}
             {step === 1 && (
               <div>
-                <p className="text-[13.5px] font-semibold text-textMain mb-4">Quel type de document voulez-vous enregistrer ?</p>
+                <p className="text-[13.5px] font-semibold text-textMain mb-4">{t("mesdocuments_modal_choose_type")}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
                   {docTypes.map((dt) => (
                     <button
@@ -309,13 +312,13 @@ export default function MesDocuments() {
                       <div className="w-10 h-10 rounded-[11px] bg-green-light flex items-center justify-center mx-auto mb-2">
                         <i className={`${dt.icon} text-green-mid text-lg`} />
                       </div>
-                      <div className="text-[12.5px] font-bold text-textMain">{dt.label}</div>
+                      <div className="text-[12.5px] font-bold text-textMain">{t(dt.labelKey)}</div>
                     </button>
                   ))}
                 </div>
                 <button onClick={() => goStep(2)} disabled={!selectedType}
                   className="w-full py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-dark transition-all active:scale-[.98]">
-                  Continuer <i className="fa-solid fa-arrow-right text-[12px] ml-1" />
+                  {t("mesdocuments_continue")} <i className="fa-solid fa-arrow-right text-[12px] ml-1" />
                 </button>
               </div>
             )}
@@ -325,64 +328,64 @@ export default function MesDocuments() {
               <div>
                 <div className="flex flex-col gap-4 mb-6">
                   <div>
-                    <label className="form-label">Nom complet sur le document <R /></label>
-                    <input type="text" className="form-input" placeholder="Ex: Jean Dupont" value={form.name}
+                    <label className="form-label">{t("mesdocuments_full_name")} <R /></label>
+                    <input type="text" className="form-input" placeholder={t("mesdocuments_placeholder_name")} value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })} />
                   </div>
                   <div>
-                    <label className="form-label">Numéro du document <R /></label>
-                    <input type="text" className="form-input" placeholder="Ex: 123456789CM" value={form.number}
+                    <label className="form-label">{t("mesdocuments_doc_number")} <R /></label>
+                    <input type="text" className="form-input" placeholder={t("mesdocuments_placeholder_number")} value={form.number}
                       onChange={(e) => setForm({ ...form, number: e.target.value })} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="form-label">Date de délivrance</label>
-                      <DatePicker value={form.issued} onChange={(v) => setForm({ ...form, issued: v })} className="form-input" placeholder="jj/mm/aaaa" />
+                      <label className="form-label">{t("mesdocuments_issue_date")}</label>
+                      <DatePicker value={form.issued} onChange={(v) => setForm({ ...form, issued: v })} className="form-input" placeholder={t("mesdocuments_placeholder_date")} />
                     </div>
                     <div>
-                      <label className="form-label">Date d'expiration</label>
-                      <DatePicker value={form.expiry} onChange={(v) => setForm({ ...form, expiry: v })} className="form-input" placeholder="jj/mm/aaaa" />
+                      <label className="form-label">{t("mesdocuments_expiry_date")}</label>
+                      <DatePicker value={form.expiry} onChange={(v) => setForm({ ...form, expiry: v })} className="form-input" placeholder={t("mesdocuments_placeholder_date")} />
                     </div>
                   </div>
                   <div>
-                    <label className="form-label">Autorité délivrante</label>
-                    <input type="text" className="form-input" placeholder="Ex: Préfecture du Centre" value={form.authority}
+                    <label className="form-label">{t("mesdocuments_issuing_authority")}</label>
+                    <input type="text" className="form-input" placeholder={t("mesdocuments_placeholder_authority")} value={form.authority}
                       onChange={(e) => setForm({ ...form, authority: e.target.value })} />
                   </div>
                   <div>
-                    <label className="form-label">Photo du document (recto) <R /></label>
+                    <label className="form-label">{t("mesdocuments_photo_recto")} <R /></label>
                     <div className="drop-zone rounded-2xl p-6 text-center cursor-pointer" onClick={() => rectoRef.current?.click()}>
                       <input ref={rectoRef} type="file" hidden accept="image/*" onChange={(e) => setRectoFile(e.target.files?.[0] || null)} />
                       {rectoFile ? (
                         <div className="space-y-2">
                           <i className="fa-solid fa-check-circle text-green-mid text-2xl" />
                           <p className="text-[12px] text-green-600 font-bold">{rectoFile.name}</p>
-                          <button onClick={(e) => { e.stopPropagation(); setRectoFile(null); }} className="text-[11px] text-red-500 underline">Changer</button>
+                          <button onClick={(e) => { e.stopPropagation(); setRectoFile(null); }} className="text-[11px] text-red-500 underline">{t("mesdocuments_change")}</button>
                         </div>
                       ) : (
                         <div className="space-y-2">
                           <i className="fa-solid fa-camera-retro text-2xl text-slate-400" />
-                          <p className="text-[14px] font-bold text-slate-900">Ajouter le recto</p>
-                          <p className="text-[11px] text-slate-500">Cliquez pour importer une photo</p>
+                          <p className="text-[14px] font-bold text-slate-900">{t("mesdocuments_add_recto")}</p>
+                          <p className="text-[11px] text-slate-500">{t("mesdocuments_click_import")}</p>
                         </div>
                       )}
                     </div>
                   </div>
                   <div>
-                    <label className="form-label">Photo du document (verso) <span className="text-slate-400 font-normal lowercase">— Optionnel</span></label>
+                    <label className="form-label">{t("mesdocuments_photo_verso")} <span className="text-slate-400 font-normal lowercase">— {t("mesdocuments_optional")}</span></label>
                     <div className="drop-zone rounded-2xl p-6 text-center cursor-pointer" onClick={() => versoRef.current?.click()}>
                       <input ref={versoRef} type="file" hidden accept="image/*" onChange={(e) => setVersoFile(e.target.files?.[0] || null)} />
                       {versoFile ? (
                         <div className="space-y-2">
                           <i className="fa-solid fa-check-circle text-green-mid text-2xl" />
                           <p className="text-[12px] text-green-600 font-bold">{versoFile.name}</p>
-                          <button onClick={(e) => { e.stopPropagation(); setVersoFile(null); }} className="text-[11px] text-red-500 underline">Changer</button>
+                          <button onClick={(e) => { e.stopPropagation(); setVersoFile(null); }} className="text-[11px] text-red-500 underline">{t("mesdocuments_change")}</button>
                         </div>
                       ) : (
                         <div className="space-y-2">
                           <i className="fa-solid fa-folder-open text-2xl text-slate-400" />
-                          <p className="text-[14px] font-bold text-slate-900">Ajouter le verso</p>
-                          <p className="text-[11px] text-slate-500">Cliquez pour importer une photo</p>
+                          <p className="text-[14px] font-bold text-slate-900">{t("mesdocuments_add_verso")}</p>
+                          <p className="text-[11px] text-slate-500">{t("mesdocuments_click_import")}</p>
                         </div>
                       )}
                     </div>
@@ -391,11 +394,11 @@ export default function MesDocuments() {
                 <div className="flex gap-3">
                   <button onClick={() => goStep(1)}
                     className="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
-                    <i className="fa-solid fa-arrow-left text-[12px]" /> Retour
+                    <i className="fa-solid fa-arrow-left text-[12px]" /> {t("mesdocuments_back")}
                   </button>
                   <button onClick={() => goStep(3)} disabled={!form.name || !form.number || !rectoFile}
                     className="flex-1 py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98] disabled:opacity-40">
-                    Continuer <i className="fa-solid fa-arrow-right text-[12px] ml-1" />
+                    {t("mesdocuments_continue")} <i className="fa-solid fa-arrow-right text-[12px] ml-1" />
                   </button>
                 </div>
               </div>
@@ -405,11 +408,11 @@ export default function MesDocuments() {
             {step === 3 && (
               <div>
                 <div className="p-4 bg-bgMain border border-borderMain rounded-[14px] mb-5">
-                  <p className="text-[12px] font-bold text-textMuted uppercase tracking-wide mb-3">Récapitulatif</p>
+                  <p className="text-[12px] font-bold text-textMuted uppercase tracking-wide mb-3">{t("mesdocuments_summary")}</p>
                   <div className="space-y-2">
-                    {[{ label: "Nom", val: form.name }, { label: "Type", val: selectedType }, { label: "Numéro", val: form.number },
-                      { label: "Délivré le", val: form.issued || "—" }, { label: "Expiration", val: form.expiry || "—" },
-                      { label: "Documents joints", val: `${rectoFile ? 1 : 0} fichier(s)` },
+                    {[{ label: t("mesdocuments_summary_name"), val: form.name }, { label: t("mesdocuments_summary_type"), val: selectedType }, { label: t("mesdocuments_summary_number"), val: form.number },
+                      { label: t("mesdocuments_summary_issued"), val: form.issued || "—" }, { label: t("mesdocuments_summary_expiry"), val: form.expiry || "—" },
+                      { label: t("mesdocuments_summary_documents"), val: `${rectoFile ? 1 : 0} ${t("mesdocuments_summary_files")}` },
                     ].map((i) => (
                       <div key={i.label} className="flex justify-between text-[13.5px]">
                         <span className="text-textMuted font-medium">{i.label}</span>
@@ -423,18 +426,18 @@ export default function MesDocuments() {
                   <input type="checkbox" id="consent" checked={consent} onChange={(e) => setConsent(e.target.checked)}
                     className="mt-0.5 accent-primary flex-shrink-0 w-4 h-4 cursor-pointer" />
                   <label htmlFor="consent" className="text-[12.5px] text-textMain cursor-pointer leading-snug">
-                    J'accepte que DocMaster conserve ces informations de manière <strong>sécurisée et confidentielle</strong> conformément à la politique de confidentialité.
+                    {t("mesdocuments_consent")}
                   </label>
                 </div>
 
                 <div className="flex gap-3">
                   <button onClick={() => goStep(2)}
                     className="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
-                    <i className="fa-solid fa-arrow-left text-[12px]" /> Retour
+                    <i className="fa-solid fa-arrow-left text-[12px]" /> {t("mesdocuments_back")}
                   </button>
                   <button onClick={handleSubmit} disabled={!consent || submitting}
                     className="flex-1 py-3 rounded-[13px] bg-green-dark text-white font-bricolage text-[14px] font-bold hover:bg-green-mid transition-all active:scale-[.98] flex items-center justify-center gap-2 disabled:opacity-40">
-                    {submitting ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-solid fa-shield-halved text-[13px]" /> Enregistrer et sécuriser</>}
+                    {submitting ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-solid fa-shield-halved text-[13px]" /> {t("mesdocuments_save_secure")}</>}
                   </button>
                 </div>
               </div>
@@ -447,7 +450,7 @@ export default function MesDocuments() {
       {showViewModal && selectedDoc && (
         <DocumentDetailModal
           doc={selectedDoc}
-          catLabels={catLabels}
+          catLabels={catLabelsT}
           onClose={() => setShowViewModal(false)}
         />
       )}
@@ -464,15 +467,15 @@ export default function MesDocuments() {
             <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
               <i className="fa-solid fa-trash text-red-500 text-lg" />
             </div>
-            <h3 className="font-bricolage text-lg font-bold text-textMain text-center mb-1">Supprimer ce document ?</h3>
+            <h3 className="font-bricolage text-lg font-bold text-textMain text-center mb-1">{t("mesdocuments_delete_title")}</h3>
             <p className="text-[13px] text-textMuted text-center mb-5 leading-relaxed">
-              Le document <strong className="text-textMain">{selectedDoc.nom_sur_doc || "Document"}</strong> sera définitivement supprimé de vos archives.
+              {t("mesdocuments_delete_desc").replace("{name}", selectedDoc.nom_sur_doc || t("mesdocuments_document"))}
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors">Annuler</button>
+                className="flex-1 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors">{t("mesdocuments_cancel")}</button>
               <button onClick={confirmDelete}
-                className="flex-1 py-2.5 rounded-[12px] bg-red-500 text-white font-bold hover:bg-red-600 transition-colors">Supprimer</button>
+                className="flex-1 py-2.5 rounded-[12px] bg-red-500 text-white font-bold hover:bg-red-600 transition-colors">{t("mesdocuments_delete")}</button>
             </div>
           </div>
         </div>
@@ -482,7 +485,7 @@ export default function MesDocuments() {
       {showLostModal && selectedDoc && (
         <ReportLostModal
           doc={selectedDoc}
-          catLabels={catLabels}
+          catLabels={catLabelsT}
           onClose={handleLostModalClose}
         />
       )}
@@ -492,8 +495,8 @@ export default function MesDocuments() {
         <div className="fixed bottom-6 right-6 z-50 bg-green-dark text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right fade-in duration-300">
           <i className="fa-solid fa-circle-check text-primary text-lg" />
           <div>
-            <p className="font-bold text-sm">Opération réussie !</p>
-            <p className="text-white/70 text-[12px]">Le document a été mis à jour.</p>
+            <p className="font-bold text-sm">{t("mesdocuments_success_title")}</p>
+            <p className="text-white/70 text-[12px]">{t("mesdocuments_success_desc")}</p>
           </div>
           <button onClick={() => setShowSuccess(false)} className="text-white/50 hover:text-white ml-2">
             <i className="fa-solid fa-xmark" />

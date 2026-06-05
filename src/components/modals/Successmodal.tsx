@@ -1,3 +1,5 @@
+import { useI18n } from "../../context/I18nContext";
+
 interface SuccessModalProps {
   refNumber: string;
   onNewDeclaration: () => void;
@@ -9,6 +11,8 @@ export default function SuccessModal({
   onNewDeclaration,
   onMyDeclarations,
 }: SuccessModalProps) {
+  const { t } = useI18n();
+
   const handleDownloadPdf = () => {
     // À implémenter selon votre logique de génération PDF
     console.log("Téléchargement PDF...");
@@ -29,12 +33,12 @@ export default function SuccessModal({
 
           {/* Title */}
           <h2 className="font-bricolage text-2xl font-black text-textMain mb-2 leading-tight">
-            Déclaration enregistrée !
+            {t("success_declaration_title")}
           </h2>
 
           {/* Description */}
           <p className="text-[13px] text-textMuted leading-relaxed mb-6 px-4">
-            Votre déclaration a été publiée. Vous serez notifié dès qu'un match est trouvé par nos algorithmes.
+            {t("success_declaration_desc")}
           </p>
 
           {/* Reference Badge */}
@@ -44,7 +48,7 @@ export default function SuccessModal({
             </p>
           </div>
           <p className="text-[10px] font-bold text-textMuted uppercase tracking-wider mb-8 opacity-70">
-            Conservez précieusement ce numéro de référence.
+            {t("success_keep_reference")}
           </p>
 
           {/* Download PDF Button */}
@@ -53,7 +57,7 @@ export default function SuccessModal({
             className="w-full mb-4 px-6 py-3.5 bg-primary text-white rounded-2xl font-bricolage font-black text-sm hover:bg-primary-dark transition-all shadow-xl shadow-primary/30 flex items-center justify-center gap-3 group"
           >
             <i className="fa-solid fa-file-arrow-down group-hover:translate-y-0.5 transition-transform"></i>
-            Télécharger la déclaration PDF
+            {t("success_download_pdf")}
           </button>
 
           {/* Action Buttons */}
@@ -62,13 +66,13 @@ export default function SuccessModal({
               onClick={onNewDeclaration}
               className="px-4 py-3 bg-white border-2 border-borderMain text-textMain rounded-xl text-xs font-bold hover:bg-bgMain transition-all"
             >
-              Nouvelle déclaration
+              {t("success_new_declaration")}
             </button>
             <button
               onClick={onMyDeclarations}
               className="px-4 py-3 bg-green-dark text-white rounded-xl text-xs font-bold hover:bg-green-mid transition-all shadow-lg shadow-green-dark/10"
             >
-              Mes déclarations
+              {t("success_my_declarations")}
             </button>
           </div>
         </div>

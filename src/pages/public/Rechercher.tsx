@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
+import Footer from "../../layout/Footer";
 
 interface DocResult {
   id: string | number;
@@ -161,16 +162,16 @@ export default function Rechercher() {
   const hasMore = visibleCount < filteredDocs.length;
 
   const getDocType = (doc: DocResult): string =>
-    doc.document_type || doc.type_doc || doc.doc_type || "Document";
+    doc.document_type || doc.type_doc || doc.doc_type || t("rechercher_document");
 
   const getOwnerName = (doc: DocResult): string =>
-    doc.document_owner || doc.owner_name || doc.nom_sur_doc || "Propriétaire inconnu";
+    doc.document_owner || doc.owner_name || doc.nom_sur_doc || t("rechercher_owner_unknown");
 
   const getPhoto = (doc: DocResult): string =>
     doc.photo_recto || doc.photo || doc.image_url || "";
 
   const getLocation = (doc: DocResult): string =>
-    doc.location || doc.ville || doc.city || "Lieu non spécifié";
+    doc.location || doc.ville || doc.city || t("rechercher_location_unknown");
 
   const getCountry = (doc: DocResult): string =>
     doc.country || doc.pays || "Cameroun";
@@ -181,7 +182,7 @@ export default function Rechercher() {
       : new Date().toLocaleDateString("fr-FR");
 
   const getDocNumber = (doc: DocResult): string =>
-    doc.numero_doc || doc.document_number || "N° non disponible";
+    doc.numero_doc || doc.document_number || t("rechercher_number_unavailable");
 
   const hasDeclaration = (doc: DocResult): boolean =>
     Boolean(
@@ -216,19 +217,18 @@ export default function Rechercher() {
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/15 border border-primary/20 rounded-full">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               <span className="text-xs font-black text-primary/90 uppercase tracking-widest">
-                Base de données en temps réel
+                {t("rechercher_realtime_db")}
               </span>
             </div>
           </div>
 
           <h1 className="font-bricolage text-3xl md:text-5xl font-black text-white text-center tracking-tighter mb-3">
-            Recherchez votre document parmi{" "}
+            {t("rechercher_search_title")}{" "}
             <span className="text-primary">{totalCount.toLocaleString("fr-FR")}</span>{" "}
-            déclarations
+            {t("rechercher_declarations")}
           </h1>
           <p className="text-white/50 text-center text-[15px] mb-10">
-            CNI, passeport, diplôme, permis de conduire — cherchez par nom, type, date
-            ou lieu.
+            {t("rechercher_search_subtitle")}
           </p>
 
           <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-[28px] p-5 md:p-7 shadow-2xl">
@@ -242,7 +242,7 @@ export default function Rechercher() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  placeholder="Nom, type de document, lieu, propriétaire..."
+                  placeholder={t("rechercher_search_placeholder")}
                   className="w-full px-4 py-4 bg-transparent outline-none text-[15px] text-gray-800 font-medium placeholder:text-gray-400"
                 />
                 {query && (
@@ -261,7 +261,7 @@ export default function Rechercher() {
                 <input
                   ref={dateInputRef}
                   type="text"
-                  placeholder="Filtrer par date"
+                  placeholder={t("rechercher_filter_date")}
                   className="w-full h-full pl-11 pr-4 py-4 bg-white rounded-2xl border-2 border-transparent hover:border-primary/30 focus:border-primary transition-all outline-none text-[14px] font-medium text-gray-700 placeholder:text-gray-400 cursor-pointer shadow-sm"
                 />
               </div>
@@ -269,7 +269,7 @@ export default function Rechercher() {
 
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-white/50 text-xs font-bold uppercase tracking-widest mr-1 hidden sm:inline">
-                Filtrer :
+                {t("rechercher_filter")} :
               </span>
               <div className="flex flex-wrap items-center gap-3">
                 <button
@@ -280,7 +280,7 @@ export default function Rechercher() {
                       : "border-white/20 text-white/70 hover:border-primary/50"
                   }`}
                 >
-                  Tous{" "}
+                  {t("rechercher_all")}{" "}
                   <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded-full text-[9px]">
                     {allDocs.length}
                   </span>
@@ -310,7 +310,7 @@ export default function Rechercher() {
                     <i className="fa-solid fa-circle-notch fa-spin" />
                   ) : (
                     <>
-                      <i className="fa-solid fa-magnifying-glass" /> Rechercher
+                      <i className="fa-solid fa-magnifying-glass" /> {t("rechercher_search_btn")}
                     </>
                   )}
                 </button>
@@ -326,26 +326,26 @@ export default function Rechercher() {
           <div>
             <h2 className="font-bricolage text-2xl font-black text-textMain tracking-tighter">
               {query
-                ? "Résultats de recherche"
-                : "Documents récemment ajoutés"}
+                ? t("rechercher_results")
+                : t("rechercher_recent")}
             </h2>
             <p className="text-textMuted text-sm mt-0.5">
               {loading
-                ? "Chargement en cours..."
-                : `${filteredDocs.length} résultat${filteredDocs.length > 1 ? "s" : ""} trouvé${filteredDocs.length > 1 ? "s" : ""}`}
+                ? t("rechercher_loading")
+                : `${filteredDocs.length} ${t("rechercher_result")}${filteredDocs.length > 1 ? "s" : ""} ${t("rechercher_found")}`}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-textMuted font-bold uppercase tracking-wider hidden sm:inline">
-              Trier :
+              {t("rechercher_sort")} :
             </span>
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
               className="px-4 py-2.5 bg-white border border-borda rounded-xl text-sm font-bold text-gray-700 outline-none focus:border-primary transition-all cursor-pointer"
             >
-              <option value="recent">Plus récents</option>
-              <option value="alpha">Alphabétique</option>
+              <option value="recent">{t("rechercher_most_recent")}</option>
+              <option value="alpha">{t("rechercher_alphabetic")}</option>
             </select>
           </div>
         </div>
@@ -408,7 +408,7 @@ export default function Rechercher() {
                       <div className="p-5">
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
-                            Document
+                            {t("rechercher_document")}
                           </span>
                           <span className="text-[10px] font-bold text-textMain">
                             {dateText}
@@ -425,7 +425,7 @@ export default function Rechercher() {
                           to={`/recuperer?id=${doc.id}`}
                           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md"
                         >
-                          Voir les détails
+                          {t("rechercher_view_details")}
                         </Link>
                       </div>
                     </div>
@@ -465,7 +465,7 @@ export default function Rechercher() {
                     <div className="p-5">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
-                          Document trouvé
+                          {t("rechercher_found_doc")}
                         </span>
                         <span className="text-[10px] font-bold text-textMain">
                           {dateText}
@@ -495,8 +495,7 @@ export default function Rechercher() {
                         to={`/recuperer?id=${doc.id}`}
                         className="flex items-center justify-center gap-2 w-full py-3 bg-primary text-secondary rounded-[14px] font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md shadow-primary/20 active:scale-95"
                       >
-                        <i className="fa-solid fa-hand-holding-heart text-xs" /> C'est
-                        le mien
+                        <i className="fa-solid fa-hand-holding-heart text-xs" /> {t("rechercher_its_mine")}
                       </Link>
                     </div>
                   </div>
@@ -510,7 +509,7 @@ export default function Rechercher() {
                   onClick={() => setVisibleCount((prev) => prev + 9)}
                   className="inline-flex items-center gap-2.5 px-8 py-4 bg-secondary text-white rounded-[18px] font-bold text-[14px] hover:bg-green-mid transition-all shadow-lg shadow-secondary/20"
                 >
-                  Charger plus de documents{" "}
+                  {t("rechercher_load_more")}{" "}
                   <i className="fa-solid fa-chevron-down text-xs" />
                 </button>
               </div>
@@ -529,13 +528,13 @@ export default function Rechercher() {
             </div>
 
             <h3 className="font-bricolage text-2xl font-black text-textMain mb-3">
-              Aucun document trouvé
+              {t("rechercher_no_results")}
             </h3>
 
             <p className="text-textMuted text-sm mb-8 max-w-md leading-relaxed">
-              Nous n'avons pas trouvé de document correspondant à votre recherche.
+              {t("rechercher_no_results_desc")}
               <span className="block mt-2">
-                Essayez avec d'autres mots-clés ou déclarez votre perte.
+                {t("rechercher_no_results_hint")}
               </span>
             </p>
 
@@ -544,14 +543,13 @@ export default function Rechercher() {
                 to="/declarer"
                 className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary text-secondary rounded-2xl font-bold text-sm shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all active:scale-95"
               >
-                <i className="fa-solid fa-file-circle-plus text-base" /> Déclarer une
-                perte
+                <i className="fa-solid fa-file-circle-plus text-base" /> {t("rechercher_declare_loss")}
               </Link>
               <Link
                 to="/"
                 className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white border-2 border-primary text-primary rounded-2xl font-bold text-sm hover:bg-primary/5 transition-all active:scale-95"
               >
-                <i className="fa-solid fa-arrow-left text-base" /> Retour à l'accueil
+                <i className="fa-solid fa-arrow-left text-base" /> {t("rechercher_back_home")}
               </Link>
             </div>
           </div>
@@ -559,17 +557,18 @@ export default function Rechercher() {
       </main>
 
       {/* Flatpickr styles */}
-      <style>{`
-        .filter-chip { cursor: pointer; transition: all 0.2s ease; }
-        .filter-chip:hover:not(.bg-primary\\/80) { border-color: #F5A64B; color: #F5A64B; }
-        .doc-card { transition: transform 0.25s, box-shadow 0.25s; }
-        .doc-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -12px rgba(30,58,47,0.15); }
-        .skeleton { background: linear-gradient(90deg, #EAE3D8 25%, #F4EFE6 50%, #EAE3D8 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s infinite; }
-        @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.5s ease forwards; }
-        .match-score-badge { box-shadow: 0 4px 10px rgba(245,166,75,0.3); }
-      `}</style>
-    </div>
-  );
+       <style>{`
+         .filter-chip { cursor: pointer; transition: all 0.2s ease; }
+         .filter-chip:hover:not(.bg-primary\\/80) { border-color: #F5A64B; color: #F5A64B; }
+         .doc-card { transition: transform 0.25s, box-shadow 0.25s; }
+         .doc-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -12px rgba(30,58,47,0.15); }
+         .skeleton { background: linear-gradient(90deg, #EAE3D8 25%, #F4EFE6 50%, #EAE3D8 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s infinite; }
+         @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+         .animate-fade-in { animation: fadeIn 0.5s ease forwards; }
+         .match-score-badge { box-shadow: 0 4px 10px rgba(245,166,75,0.3); }
+        `}</style>
+        <Footer></Footer>
+      </div>
+    );
 }

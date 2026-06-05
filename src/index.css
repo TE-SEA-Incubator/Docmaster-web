@@ -254,6 +254,7 @@ h1, h2, h3, h4, .brand {
 @media (max-width: 639px) {
   .modal-overlay {
     align-items: flex-end;
+    padding-bottom: 70px;
   }
 }
 .modal-box {
@@ -564,4 +565,13 @@ h1, h2, h3, h4, .brand {
 .custom-scroll::-webkit-scrollbar-thumb {
   background: #DDD5C8;
   border-radius: 10px;
+}
+
+/* Notification panel slide-in */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

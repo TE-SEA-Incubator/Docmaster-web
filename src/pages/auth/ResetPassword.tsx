@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useI18n } from "../../context/I18nContext";
 import { authService } from "../../services/authService";
 
 export default function ResetPassword() {
+  const { t } = useI18n();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token") || "";
@@ -28,15 +30,15 @@ export default function ResetPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
-      setError("Lien de réinitialisation invalide ou expiré.");
+      setError(t("reset_invalid_error"));
       return;
     }
     if (!password.trim() || pwStrength < 2) {
-      setError("Veuillez choisir un mot de passe plus sécurisé (min. 8 caractères, lettres et chiffres).");
+      setError(t("reset_weak_password"));
       return;
     }
     if (password !== confirm) {
-      setError("Les mots de passe ne correspondent pas.");
+      setError(t("reset_mismatch"));
       return;
     }
     setLoading(true);
@@ -46,10 +48,10 @@ export default function ResetPassword() {
       if (res.success) {
         setSuccess(true);
       } else {
-        setError(res.message || "Échec de la réinitialisation.");
+        setError(res.message || t("reset_failed"));
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.message || "Erreur lors de la réinitialisation.";
+      const msg = err?.response?.data?.error || err?.message || t("reset_network_error");
       setError(msg);
     } finally {
       setLoading(false);
@@ -70,16 +72,16 @@ export default function ResetPassword() {
                 <i className="fa-solid fa-link-slash" />
               </div>
               <h1 className="font-bricolage text-2xl font-extrabold tracking-tight text-gray-900">
-                Lien invalide
+                {t("reset_invalid_link")}
               </h1>
               <p className="text-gray-500 text-[14px] leading-relaxed">
-                Ce lien de réinitialisation est invalide ou a expiré. Veuillez demander un nouveau lien.
+                {t("reset_invalid_desc")}
               </p>
               <Link
                 to="/forgot-password"
                 className="px-6 py-3 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-dark transition-all mt-2"
               >
-                <i className="fa-solid fa-key mr-2" /> Nouvelle demande
+                <i className="fa-solid fa-key mr-2" /> {t("reset_new_request")}
               </Link>
             </div>
           </div>
@@ -103,16 +105,16 @@ export default function ResetPassword() {
                 <i className="fa-solid fa-check-circle" />
               </div>
               <h1 className="font-bricolage text-2xl font-extrabold tracking-tight text-gray-900">
-                Mot de passe réinitialisé !
+                {t("reset_success_title")}
               </h1>
               <p className="text-gray-500 text-[14px] leading-relaxed">
-                Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter.
+                {t("reset_success_desc")}
               </p>
               <Link
                 to="/login"
                 className="px-6 py-3 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-dark transition-all mt-2"
               >
-                <i className="fa-solid fa-right-to-bracket mr-2" /> Se connecter
+                <i className="fa-solid fa-right-to-bracket mr-2" /> {t("reset_login")}
               </Link>
             </div>
           </div>
@@ -139,10 +141,10 @@ export default function ResetPassword() {
 
             <div className="space-y-2">
               <h1 className="font-bricolage text-3xl font-extrabold tracking-tight text-gray-900">
-                Nouveau mot de passe
+                {t("reset_title")}
               </h1>
               <p className="text-gray-500 leading-relaxed text-[15px]">
-                Choisissez un nouveau mot de passe sécurisé pour votre compte.
+                {t("reset_desc")}
               </p>
             </div>
 
@@ -155,7 +157,7 @@ export default function ResetPassword() {
 
               <div>
                 <label className="text-[11px] font-bold text-textMuted uppercase tracking-wider ml-1 mb-1.5 block">
-                  Nouveau mot de passe
+                  {t("reset_new_password")}
                 </label>
                 <div className="relative flex items-center group">
                   <i className="fa-solid fa-lock absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary" />
@@ -163,7 +165,7 @@ export default function ResetPassword() {
                     type={pwVisible ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min. 8 caractères"
+                    placeholder={t("reset_placeholder_password")}
                     className="w-full py-3.5 pl-[42px] pr-[45px] bg-[#faf8f5] border-[1.5px] border-[#E0D5C4] rounded-[14px] font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.15)] focus:bg-white placeholder:text-[#c4bab0]"
                     required
                   />
@@ -193,7 +195,7 @@ export default function ResetPassword() {
 
               <div>
                 <label className="text-[11px] font-bold text-textMuted uppercase tracking-wider ml-1 mb-1.5 block">
-                  Confirmer le mot de passe
+                  {t("reset_confirm_password")}
                 </label>
                 <div className="relative flex items-center group">
                   <i className="fa-solid fa-lock-open absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary" />
@@ -201,7 +203,7 @@ export default function ResetPassword() {
                     type={pwVisible ? "text" : "password"}
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
-                    placeholder="Répétez votre mot de passe"
+                    placeholder={t("reset_placeholder_confirm")}
                     className="w-full py-3.5 pl-[42px] pr-4 bg-[#faf8f5] border-[1.5px] border-[#E0D5C4] rounded-[14px] font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.15)] focus:bg-white placeholder:text-[#c4bab0]"
                     required
                   />
@@ -209,13 +211,13 @@ export default function ResetPassword() {
                 {confirm && pwMatch === false && (
                   <p className="text-[12px] font-medium mt-1.5 text-red-500">
                     <i className="fa-solid fa-circle-xmark mr-1" />
-                    Les mots de passe ne correspondent pas.
+                    {t("reset_mismatch")}
                   </p>
                 )}
                 {pwMatch === true && (
                   <p className="text-[12px] font-medium mt-1.5 text-green-600">
                     <i className="fa-solid fa-circle-check mr-1" />
-                    Les mots de passe correspondent.
+                    {t("reset_match")}
                   </p>
                 )}
               </div>
@@ -228,7 +230,7 @@ export default function ResetPassword() {
                 {loading ? (
                   <i className="fa-solid fa-spinner fa-spin" />
                 ) : (
-                  <><i className="fa-solid fa-check" /> Réinitialiser le mot de passe</>
+                  <><i className="fa-solid fa-check" /> {t("reset_button")}</>
                 )}
               </button>
             </form>
@@ -236,7 +238,7 @@ export default function ResetPassword() {
             <div className="text-center">
               <Link to="/login" className="text-[12.5px] text-primary font-semibold hover:underline">
                 <i className="fa-solid fa-arrow-left mr-1.5" />
-                Retour à la connexion
+                {t("reset_back_to_login")}
               </Link>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../../context/I18nContext";
 import { useAuth } from "../../context/AuthContext";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
 import { API_BASE_URL } from "../../services/api";
@@ -36,6 +37,7 @@ interface ResultDoc {
 }
 
 export default function Rechercher() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -60,7 +62,8 @@ export default function Rechercher() {
         );
         setHasLost(has);
       }
-    } catch {
+    } catch (e: any) {
+      console.error("[Rechercher] checkUserHasLost error:", e?.response?.data || e);
       setHasLost(false);
     }
   }, []);
@@ -69,7 +72,9 @@ export default function Rechercher() {
     checkUserHasLost();
     documentTypesService.getActive().then((res) => {
       if (res.success && res.data) setDocTypes(res.data);
-    }).catch(() => {});
+    }).catch((e: any) => {
+      console.error("[Rechercher] Failed to load doc types:", e);
+    });
   }, [checkUserHasLost]);
 
   // Load potential matches from Dashboard if provided
@@ -97,7 +102,8 @@ export default function Rechercher() {
         ? `?q=${encodeURIComponent(searchQuery)}`
         : window.location.pathname;
       window.history.replaceState({}, "", newUrl);
-    } catch {
+    } catch (e: any) {
+      console.error("[Rechercher] performSearch error:", e?.response?.data || e);
       setResults([]);
     } finally {
       setLoading(false);
@@ -124,13 +130,13 @@ export default function Rechercher() {
   return (
     <div className="flex flex-col h-full">
       <Topbar
-        title={isMatchView ? "Correspondances potentielles" : "Rechercher"}
+        title={isMatchView ? t("rechercher_potential_matches") : t("rechercher_search_page")}
         breadcrumbs={[
-          { label: isMatchView ? "Correspondances" : "Rechercher" },
+          { label: isMatchView ? t("rechercher_matches") : t("rechercher_search_page") },
         ]}
       />
 
-      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-6" style={{ height: "calc(100vh - 64px)", overflowY: "auto" }}>
+      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         <div className="max-w-5xl mx-auto w-full space-y-6">
           {isMatchView ? (
             <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-[16px] p-5 flex items-start gap-3">
@@ -138,10 +144,9 @@ export default function Rechercher() {
                 <i className="fa-solid fa-magnifying-glass-chart text-orange-600 text-lg" />
               </div>
               <div>
-                <p className="text-[13px] font-bold text-orange-900">Correspondances potentielles détectées</p>
+                <p className="text-[13px] font-bold text-orange-900">{t("rechercher_matches_detected")}</p>
                 <p className="text-[12px] text-orange-700/80 mt-0.5">
-                  Ces documents trouvés pourraient correspondre à votre déclaration de perte.
-                  Les informations sont entièrement visibles. Cliquez sur <strong>"C'est le mien"</strong> pour initier la récupération.
+                  {t("rechercher_matches_desc")} <strong>{t("rechercher_its_mine")}</strong> {t("rechercher_matches_desc2")}
                 </p>
               </div>
               <button
@@ -150,7 +155,7 @@ export default function Rechercher() {
                 }}
                 className="ml-auto px-3 py-1.5 bg-white border border-orange-200 rounded-xl text-[11px] font-bold text-orange-700 hover:bg-orange-50 transition-all shrink-0"
               >
-                <i className="fa-solid fa-xmark mr-1" /> Fermer
+                <i className="fa-solid fa-xmark mr-1" /> {t("rechercher_close")}
               </button>
             </div>
           ) : (
@@ -159,10 +164,9 @@ export default function Rechercher() {
                 <i className="fa-solid fa-shield-halved text-primary text-sm" />
               </div>
               <div>
-                <p className="text-[12px] font-bold text-textMain">Protection des données</p>
+                <p className="text-[12px] font-bold text-textMain">{t("rechercher_data_protection")}</p>
                 <p className="text-[11.5px] text-textMuted mt-0.5">
-                  Les photos sont floutées et les informations sensibles masquées pour protéger la vie privée.
-                  Seuls les utilisateurs avec une déclaration de perte active voient les détails complets.
+                  {t("rechercher_data_protection_desc")}
                 </p>
               </div>
             </div>
@@ -178,7 +182,7 @@ export default function Rechercher() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  placeholder="Rechercher par nom, type de document, numéro..."
+                  placeholder={t("rechercher_search_placeholder")}
                   className="flex-1 py-4 px-3 bg-transparent outline-none text-[14px] text-textMain placeholder:text-textMuted"
                 />
                 {query && (
@@ -193,13 +197,13 @@ export default function Rechercher() {
                   onClick={handleSearch}
                   className="bg-primary text-white font-bricolage font-bold px-6 py-2.5 mr-2 rounded-[11px] hover:bg-primary-dark transition-all active:scale-95 shadow-lg shadow-primary/20 text-[13px]"
                 >
-                  Rechercher
+                  {t("rechercher_search_btn")}
                 </button>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 mt-4">
                 <span className="text-[10px] font-bold text-textMuted uppercase tracking-wider mr-1">
-                  Filtres rapides :
+                  {t("rechercher_quick_filters")} :
                 </span>
                 {quickFilters.map((f) => (
                   <button
@@ -235,19 +239,19 @@ export default function Rechercher() {
                 <i className="fa-solid fa-magnifying-glass text-3xl text-textMuted" />
               </div>
               <h3 className="font-bricolage text-xl font-black text-textMain mb-2">
-                {isMatchView ? "Aucune correspondance chargée" : "Aucun résultat trouvé"}
+                {isMatchView ? t("rechercher_no_matches_loaded") : t("rechercher_no_results")}
               </h3>
               <p className="text-textMuted text-[13px] mb-6 max-w-sm">
                 {isMatchView
-                  ? "Les correspondances potentielles n'ont pas pu être chargées."
-                  : "Essayez une autre recherche ou vérifiez l'orthographe. Vous pouvez aussi déclarer votre perte."}
+                  ? t("rechercher_no_matches_desc")
+                  : t("rechercher_no_results_desc_auth")}
               </p>
               {!isMatchView && (
                 <Link
                   to="/declarer"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold text-[13px] hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
                 >
-                  <i className="fa-solid fa-file-circle-plus" /> Déclarer une perte
+                  <i className="fa-solid fa-file-circle-plus" /> {t("rechercher_declare_loss")}
                 </Link>
               )}
             </div>
@@ -255,11 +259,11 @@ export default function Rechercher() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {results.map((doc) => {
                 const photoUrl = getFullImageUrl(doc.photo_recto);
-                const displayName = typeof doc.owner_name === "string" ? doc.owner_name : "Propriétaire";
+                const displayName = typeof doc.owner_name === "string" ? doc.owner_name : t("rechercher_owner");
                 const dateField = typeof doc.date_trouvaille === "string" ? doc.date_trouvaille : typeof doc.date_perte === "string" ? doc.date_perte : typeof doc.created_at === "string" ? doc.created_at : "";
                 const location = typeof doc.ville === "string" ? doc.ville : "";
                 const rawDocType = doc.docTypeInfo;
-                const docType = rawDocType && typeof rawDocType === "object" && "nom" in rawDocType && typeof (rawDocType as Record<string, unknown>).nom === "string" ? (rawDocType as Record<string, unknown>).nom : typeof doc.document_type === "string" ? doc.document_type : "Document";
+                const docType = rawDocType && typeof rawDocType === "object" && "nom" in rawDocType && typeof (rawDocType as Record<string, unknown>).nom === "string" ? (rawDocType as Record<string, unknown>).nom : typeof doc.document_type === "string" ? doc.document_type : t("rechercher_document");
                 const showFull = isMatchView || hasLost;
 
                 return (
@@ -278,10 +282,10 @@ export default function Rechercher() {
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center px-4">
                           <div className="font-bricolage text-[10px] font-extrabold tracking-[0.2em] text-textMuted uppercase mb-1">
-                            Photo protégée
+                            {t("rechercher_photo_protected")}
                           </div>
                           <p className="text-[11px] text-textMuted/60 text-center">
-                            Visible après déclaration de perte
+                            {t("rechercher_visible_after_declaration")}
                           </p>
                         </div>
                       )}
@@ -295,16 +299,16 @@ export default function Rechercher() {
                     {/* Info */}
                     <div className="p-5 flex flex-col gap-3 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-textMuted uppercase">Propriétaire :</span>
+                        <span className="text-[10px] font-bold text-textMuted uppercase">{t("rechercher_owner_label")} :</span>
                         <span className="text-[13px] font-semibold text-textMain">{displayName}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-textMuted uppercase">Date :</span>
+                        <span className="text-[10px] font-bold text-textMuted uppercase">{t("rechercher_date_label")} :</span>
                         <span className="text-[12px] font-mono font-bold text-primary">{formatDate(dateField)}</span>
                       </div>
                       {location && (
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-textMuted uppercase">Lieu :</span>
+                          <span className="text-[10px] font-bold text-textMuted uppercase">{t("rechercher_location_label")} :</span>
                           <span className="text-[12px] font-medium text-textMain">{location}</span>
                         </div>
                       )}
@@ -316,7 +320,7 @@ export default function Rechercher() {
                             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-bold text-[12px] hover:bg-primary-dark transition-all active:scale-[0.99] shadow-md shadow-primary/20"
                           >
                             <i className="fa-solid fa-hand-holding-heart" />
-                            C'est le mien
+                            {t("rechercher_its_mine")}
                           </Link>
                         ) : (
                           <Link
@@ -324,7 +328,7 @@ export default function Rechercher() {
                             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-bgMain border border-borderMain text-textMain rounded-xl font-bold text-[12px] hover:border-primary hover:text-primary transition-all"
                           >
                             <i className="fa-solid fa-file-circle-plus" />
-                            Déclarer une perte pour voir les détails
+                            {t("rechercher_declare_to_see")}
                           </Link>
                         )}
                       </div>

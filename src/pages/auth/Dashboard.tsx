@@ -9,15 +9,16 @@ import { useGlobalStats, usePerformanceStats } from "../../hooks/useStats";
 import { subscriptionsService } from "../../services/subscriptionsService";
 import { socketService } from "../../services/socket";
 import Topbar from "../../layout/Topbar";
+import { useI18n } from "../../context/I18nContext";
 import type { Subscription, Declaration } from "../../types/api";
 
 const today = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
 
-function greeting() {
+function greeting(t: (key: string) => string) {
   const h = new Date().getHours();
-  if (h >= 18) return "Bonsoir";
-  if (h < 5) return "Bonne nuit";
-  return "Bonjour";
+  if (h >= 18) return t("dashboard_greeting_evening");
+  if (h < 5) return t("dashboard_greeting_night");
+  return t("dashboard_greeting_morning");
 }
 
 const typeLabels: Record<string, string> = { cni: "CNI", passport: "Passeport", permis: "Permis", diplome: "Diplôme", naissance: "Acte", autre: "Doc" };
@@ -35,11 +36,11 @@ function getIconForType(type?: string) {
 
 function statusText(status?: string) {
   switch (status) {
-    case "AVAILABLE": return "Publié";
-    case "SEARCHING": return "Recherche active";
-    case "MATCHED": return "Match trouvé !";
-    case "RETURNED": return "Clôturé";
-    default: return status || "En cours";
+    case "AVAILABLE": return "dashboard_status_published";
+    case "SEARCHING": return "dashboard_status_active_search";
+    case "MATCHED": return "dashboard_status_matched";
+    case "RETURNED": return "dashboard_status_returned";
+    default: return status || "dashboard_status_pending";
   }
 }
 
@@ -50,17 +51,18 @@ function statusBadgeCls(status?: string, type?: string) {
   return "bg-blue-100 text-blue-700";
 }
 
-function timeAgo(dateString?: string) {
+function timeAgo(dateString: string | undefined, t: (key: string) => string) {
   if (!dateString) return "—";
   const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-  if (diff < 60) return "À l'instant";
-  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return `Il y a ${Math.floor(diff / 86400)}j`;
-  return new Date(dateString).toLocaleDateString("fr-FR");
+  if (diff < 60) return t("timeago_now");
+  if (diff < 3600) return `${t("timeago_minutes")} ${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${t("timeago_hours")} ${Math.floor(diff / 3600)}h`;
+  if (diff < 604800) return `${t("timeago_days")} ${Math.floor(diff / 86400)}j`;
+  return t("timeago_older");
 }
 
 export default function Dashboard() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { documents: docs, loading: docsLoading } = useDocuments();
@@ -92,7 +94,9 @@ export default function Dashboard() {
   useEffect(() => {
     subscriptionsService.getMySubscription().then((res) => {
       if (res.success && res.data) setSubscription(res.data);
-    }).catch(() => {});
+    }).catch((e: any) => {
+      console.error("[Dashboard] Failed to load subscription:", e?.response?.data || e);
+    });
   }, []);
 
   useEffect(() => {
@@ -125,22 +129,22 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col h-full">
       <Topbar
-        title="Tableau de bord"
+        title={t("sidebar_dashboard")}
         breadcrumbs={[
-          { label: "Tableau de bord" },
+          { label: t("sidebar_dashboard") },
         ]}
       />
 
-      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-4 sm:gap-5 pb-24 md:pb-6" style={{ height: "calc(100vh - 64px)", overflowY: "auto" }}>
+      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-4 sm:gap-5 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
 
         {/* Greeting */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h1 className="font-bricolage text-xl sm:text-2xl font-extrabold text-textMain tracking-tight leading-tight">
-              {greeting()}, <span>{user?.prenom || "Utilisateur"}</span>
+              {greeting(t)}, <span>{user?.prenom || t("dashboard_user")}</span>
             </h1>
             <p className="text-[12.5px] sm:text-[13.5px] text-textMuted/70 font-medium mt-0.5 italic">
-              Aperçu de vos activités sur DocMaster
+              {t("dashboard_activity_overview")}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -154,17 +158,17 @@ export default function Dashboard() {
 
         {/* Stat cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard icon="fa-solid fa-file-circle-xmark" iconBg="bg-amber-50" iconColor="text-amber-500" badge="Mes docs" badgeColor="bg-amber-100 text-amber-700" value={lostCount} label="Documents déclarés"  />
+          <StatCard icon="fa-solid fa-file-circle-xmark" iconBg="bg-amber-50" iconColor="text-amber-500" badge={t("dashboard_badge_my_docs")} badgeColor="bg-amber-100 text-amber-700" value={lostCount} label={t("dashboard_label_declared_docs")}  />
           <div onClick={() => navigate("/mes-appareils")} className="col-span-1 bg-white border border-borda rounded-[16px] sm:rounded-[18px] p-4 flex flex-col gap-2.5 hover:border-primary/50 transition-all cursor-pointer">
             <div className="flex items-center justify-between">
               <div className="w-9 h-9 rounded-[10px] bg-blue-50 flex items-center justify-center text-base"><i className="fa-solid fa-mobile-screen-button text-blue-600" /></div>
-              <span className="text-[10px] font-bold py-0.5 px-2 rounded-[7px] bg-blue-100 text-blue-700">Mes terminaux</span>
+              <span className="text-[10px] font-bold py-0.5 px-2 rounded-[7px] bg-blue-100 text-blue-700">{t("sidebar_devices")}</span>
             </div>
             <div className="font-bricolage text-[24px] sm:text-[28px] font-extrabold text-textMain leading-none">{devices.length}</div>
-            <div className="text-[11px] sm:text-[12.5px] text-textMuted font-medium leading-tight">Appareils enregistrés</div>
+            <div className="text-[11px] sm:text-[12.5px] text-textMuted font-medium leading-tight">{t("dashboard_label_devices")}</div>
           </div>
-          <StatCard icon="fa-solid fa-triangle-exclamation" iconBg="bg-red-50" iconColor="text-red-500" badge="Plateforme" badgeColor="bg-red-100 text-red-700" value={globalStats?.total_lost ?? "—"} label="Documents déclarés retrouver (global)" />
-          <StatCard icon="fa-solid fa-hand-holding-heart" iconBg="bg-purple-50" iconColor="text-purple-600" badge="Plateforme" badgeColor="bg-purple-100 text-purple-700" value={globalStats?.total_recovered ?? "—"} label="Documents retrouvés (global)" />
+          <StatCard icon="fa-solid fa-triangle-exclamation" iconBg="bg-red-50" iconColor="text-red-500" badge={t("dashboard_badge_platform")} badgeColor="bg-red-100 text-red-700" value={globalStats?.total_lost ?? "—"} label={t("dashboard_label_global_lost")} />
+          <StatCard icon="fa-solid fa-hand-holding-heart" iconBg="bg-purple-50" iconColor="text-purple-600" badge={t("dashboard_badge_platform")} badgeColor="bg-purple-100 text-purple-700" value={globalStats?.total_recovered ?? "—"} label={t("dashboard_label_global_recovered")} />
         </div>
 
         {/* Main grid */}
@@ -178,11 +182,11 @@ export default function Dashboard() {
                   <div className="w-16 h-16 bg-surface2 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i className="fa-solid fa-folder-open text-textMuted text-2xl" />
                   </div>
-                  <h3 className="font-bricolage text-lg font-bold text-textMain">Aucune activité en cours</h3>
-                  <p className="text-textMuted text-sm mt-1">Vos déclarations de perte ou de trouvaille s'afficheront ici.</p>
+                  <h3 className="font-bricolage text-lg font-bold text-textMain">{t("dashboard_no_activity")}</h3>
+                  <p className="text-textMuted text-sm mt-1">{t("dashboard_no_activity_desc")}</p>
                   <div className="mt-6 flex justify-center gap-3">
-                    <button onClick={() => navigate("/declarer")} className="px-4 py-2 bg-primary text-white rounded-[10px] text-xs font-bold shadow-lg shadow-primary/20">Déclarer une perte</button>
-                    <button onClick={() => navigate("/trouver")} className="px-4 py-2 border border-borda rounded-[10px] text-xs font-bold text-textMain hover:bg-surface2">Signaler une trouvaille</button>
+                    <button onClick={() => navigate("/declarer")} className="px-4 py-2 bg-primary text-white rounded-[10px] text-xs font-bold shadow-lg shadow-primary/20">{t("dashboard_declare_loss")}</button>
+                    <button onClick={() => navigate("/trouver")} className="px-4 py-2 border border-borda rounded-[10px] text-xs font-bold text-textMain hover:bg-surface2">{t("dashboard_report_found")}</button>
                   </div>
                 </div>
               ) : (
@@ -202,15 +206,15 @@ export default function Dashboard() {
             <div className="bg-white border border-borda rounded-[18px] overflow-hidden">
               <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-borda">
                 <div className="font-bricolage text-[14px] sm:text-[14.5px] font-bold text-textMain flex items-center gap-2">
-                  <i className="fa-solid fa-clock-rotate-left text-primary text-[12px] sm:text-[13px]" /> Activités récentes
+                  <i className="fa-solid fa-clock-rotate-left text-primary text-[12px] sm:text-[13px]" /> {t("dashboard_recent_activities")}
                 </div>
                 <span className="text-[11.5px] sm:text-[12px] font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all cursor-pointer">
-                  Tout voir <i className="fa-solid fa-arrow-right text-[9px]" />
+                  {t("dashboard_see_all")} <i className="fa-solid fa-arrow-right text-[9px]" />
                 </span>
               </div>
               <div className="flex flex-col divide-y divide-borda">
                 {activeDecls.slice(0, 5).map((decl: any) => {
-                  const dateStr = new Date(decl.created_at).toLocaleDateString("fr-FR");
+                  const dateStr = decl.created_at ? new Date(decl.created_at).toLocaleDateString("fr-FR") : "—";
                   const isLost = decl.declaration_type === "LOST";
                   const iconBg = isLost ? "bg-primary-light" : "bg-blue-50";
                   const iconCls = isLost ? "text-primary-dark" : "text-blue-500";
@@ -221,20 +225,20 @@ export default function Dashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[13px] sm:text-[13.5px] font-semibold text-textMain truncate">
-                          {decl.docTypeInfo?.nom || decl.doc_type || "Document"} {isLost ? "perdu" : "trouvé"}
+                          {decl.docTypeInfo?.nom || decl.doc_type || t("dashboard_document")} {isLost ? t("dashboard_lost") : t("dashboard_found")}
                         </div>
                         <div className="text-[10.5px] sm:text-[11.5px] text-textMuted flex items-center gap-1 italic">
-                          <i className="fa-solid fa-location-dot text-[9px]" /> {decl.ville || "Non spécifié"} · <i className="fa-regular fa-clock text-[9px]" /> {dateStr}
+                          <i className="fa-solid fa-location-dot text-[9px]" /> {decl.ville || t("dashboard_not_specified")} · <i className="fa-regular fa-clock text-[9px]" /> {dateStr}
                         </div>
                       </div>
                       <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${statusBadgeCls(decl.status, decl.declaration_type)} whitespace-nowrap`}>
-                        {statusText(decl.status)}
+                        {t(statusText(decl.status))}
                       </span>
                     </div>
                   );
                 })}
                 {activeDecls.length === 0 && (
-                  <div className="p-5 text-center text-textMuted text-xs italic">Aucune activité récente.</div>
+                  <div className="p-5 text-center text-textMuted text-xs italic">{t("dashboard_no_recent_activity")}</div>
                 )}
               </div>
             </div>
@@ -243,11 +247,11 @@ export default function Dashboard() {
             <div className="mt-2">
               <div className="flex items-center justify-between mb-4 px-1">
                 <div>
-                  <h2 className="font-bricolage text-base sm:text-lg font-extrabold text-textMain tracking-tight">Performances DocMaster</h2>
-                  <p className="text-[11px] sm:text-[12px] text-textMuted/70 font-medium italic">Retrouvés par la communauté ce mois-ci</p>
+                  <h2 className="font-bricolage text-base sm:text-lg font-extrabold text-textMain tracking-tight">{t("dashboard_performance_title")}</h2>
+                  <p className="text-[11px] sm:text-[12px] text-textMuted/70 font-medium italic">{t("dashboard_performance_desc")}</p>
                 </div>
                 <span className="text-primary text-[11px] font-bold hover:underline flex items-center gap-1 cursor-pointer">
-                  Catalogue complet <i className="fa-solid fa-chevron-right text-[9px]" />
+                  {t("dashboard_full_catalog")} <i className="fa-solid fa-chevron-right text-[9px]" />
                 </span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -271,7 +275,7 @@ export default function Dashboard() {
             {/* Donut */}
             <div className="bg-white border border-borda rounded-[18px] overflow-hidden">
               <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-borda font-bricolage text-[14px] sm:text-[14.5px] font-bold text-textMain flex items-center gap-2">
-                <i className="fa-solid fa-chart-pie text-primary text-[12px] sm:text-[13px]" /> Statistiques des documents
+                <i className="fa-solid fa-chart-pie text-primary text-[12px] sm:text-[13px]" /> {t("dashboard_doc_stats")}
               </div>
               <div className="p-5 flex flex-col items-center gap-4">
                 <div className="donut-wrap relative w-32 h-32">
@@ -283,13 +287,13 @@ export default function Dashboard() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <div className="font-bricolage text-[26px] font-extrabold text-textMain leading-none">{docCount}</div>
-                    <div className="text-[10.5px] text-textMuted mt-0.5">Total</div>
+                    <div className="text-[10.5px] text-textMuted mt-0.5">{t("dashboard_total")}</div>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 w-full">
-                  <DonutRow color="bg-[#10B981]" label="Retrouvés" value={verifiedCount} />
-                  <DonutRow color="bg-primary" label="En cours" value={lostCount} />
-                  <DonutRow color="bg-[#7C3AED]" label="Nouveaux" value={Math.max(0, docCount - verifiedCount - lostCount)} />
+                  <DonutRow color="bg-[#10B981]" label={t("dashboard_donut_recovered")} value={verifiedCount} />
+                  <DonutRow color="bg-primary" label={t("dashboard_donut_in_progress")} value={lostCount} />
+                  <DonutRow color="bg-[#7C3AED]" label={t("dashboard_donut_new")} value={Math.max(0, docCount - verifiedCount - lostCount)} />
                 </div>
               </div>
             </div>
@@ -298,10 +302,10 @@ export default function Dashboard() {
             <div className="bg-white border border-borda rounded-[18px] overflow-hidden">
               <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-borda">
                 <div className="font-bricolage text-[14px] sm:text-[14.5px] font-bold text-textMain flex items-center gap-2">
-                  <i className="fa-solid fa-bell text-primary text-[12px] sm:text-[13px]" /> Notifications
+                  <i className="fa-solid fa-bell text-primary text-[12px] sm:text-[13px]" /> {t("dashboard_notifications")}
                 </div>
                 <button onClick={() => setNotifModalOpen(true)} className="text-[11.5px] font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all">
-                  Tout voir <i className="fa-solid fa-arrow-right text-[9px]" />
+                  {t("dashboard_see_all")} <i className="fa-solid fa-arrow-right text-[9px]" />
                 </button>
               </div>
               <div className="flex flex-col divide-y divide-borda">
@@ -311,11 +315,11 @@ export default function Dashboard() {
                     <div className="w-9 h-9 rounded-[9px] bg-green-100 flex items-center justify-center text-sm flex-shrink-0"><i className={`fa-solid ${n.icon || "fa-bell"} text-green-700`} /></div>
                     <div>
                       <div className="text-[12px] sm:text-[12.5px] text-textMain leading-snug italic"><strong>{n.titre || ""}</strong> {n.message}</div>
-                      <div className="text-[10px] sm:text-[10.5px] text-textMuted font-medium italic mt-0.5">{timeAgo(n.created_at)}</div>
+                      <div className="text-[10px] sm:text-[10.5px] text-textMuted font-medium italic mt-0.5">{timeAgo(n.created_at, t)}</div>
                     </div>
                   </div>
                 )) : (
-                  <div className="p-5 text-center text-textMuted text-xs italic">Aucune notification.</div>
+                  <div className="p-5 text-center text-textMuted text-xs italic">{t("dashboard_no_notifications")}</div>
                 )}
               </div>
             </div>
@@ -325,13 +329,13 @@ export default function Dashboard() {
               <div className="absolute w-[200px] h-[200px] rounded-full bg-primary/6 -bottom-12 -right-10 pointer-events-none" />
               <div className="inline-flex items-center gap-1.5 bg-primary/15 border border-primary/25 rounded-full px-2.5 py-1 mb-3">
                 <i className="fa-solid fa-star text-primary text-[9px]" />
-                <span className="text-[10.5px] font-bold text-primary uppercase tracking-wide">Plan actuel</span>
+                <span className="text-[10.5px] font-bold text-primary uppercase tracking-wide">{t("dashboard_current_plan")}</span>
               </div>
               <div className="font-bricolage text-[18px] font-extrabold text-white mb-0.5">{planName}</div>
-              <div className="text-[12px] text-white/50 mb-3.5">{docLimit} documents / type · SMS & Email</div>
+              <div className="text-[12px] text-white/50 mb-3.5">{docLimit} {t("dashboard_plan_details")}</div>
               <div className="mb-3.5">
                 <div className="flex justify-between text-[11.5px] mb-1.5">
-                  <span className="text-white/60">Quotas utilisés</span>
+                  <span className="text-white/60">{t("dashboard_quota_used")}</span>
                   <span className="text-primary font-bold">{docCountSub} / {docLimit}</span>
                 </div>
                 <div className="h-[5px] bg-white/10 rounded-full overflow-hidden">
@@ -339,15 +343,15 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex flex-col gap-1.5 mb-4 relative z-10">
-                <FeatureRow icon="fa-solid fa-check" text="Alertes SMS + Email" color="text-primary" />
-                <FeatureRow icon="fa-solid fa-check" text="Suivi en temps réel" color="text-primary" />
-                <FeatureRow icon="fa-solid fa-lock" text="Géolocalisation avancée" color="text-white/30" muted />
+                <FeatureRow icon="fa-solid fa-check" text={t("dashboard_feature_sms")} color="text-primary" />
+                <FeatureRow icon="fa-solid fa-check" text={t("dashboard_feature_tracking")} color="text-primary" />
+                <FeatureRow icon="fa-solid fa-lock" text={t("dashboard_feature_geo")} color="text-white/30" muted />
               </div>
               <button
                 onClick={() => navigate("/abonnement")}
                 className="w-full py-2.5 rounded-[11px] bg-primary text-white font-bricolage text-[13.5px] font-bold flex items-center justify-center gap-2 transition-all hover:bg-primary-dark active:scale-[.98] shadow-lg shadow-primary/20 relative z-10"
               >
-                <i className="fa-solid fa-rocket" /> Passer au plan Pro
+                <i className="fa-solid fa-rocket" /> {t("dashboard_upgrade_plan")}
               </button>
             </div>
           </div>
@@ -429,6 +433,7 @@ const cardPalettes: Record<string, { border: string; headerBg: string; borderB: 
 };
 
 function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; navigate: (path: string) => void; userName?: string }) {
+  const { t } = useI18n();
   const hasMatch = decl.status === "MATCHED" || decl.status === "RETURNED";
   const allMatches = (decl.matches as unknown as Array<{ status: string; found_declaration_id: string }> | undefined) || [];
   const hasPotential = !hasMatch && allMatches.some((m) => m.status === "PENDING");
@@ -450,10 +455,10 @@ function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; nav
       <div className={`px-4 sm:px-5 py-3 border-b ${c.borderB} flex items-center justify-between ${c.headerBg}`}>
         <div className={`font-bricolage text-[13px] font-bold ${c.text} flex items-center gap-2`}>
           <i className={`fa-solid ${hasMatch ? "fa-check-double animate-bounce" : hasPotential ? "fa-magnifying-glass-chart" : "fa-triangle-exclamation animate-pulse"}`} />
-          {hasMatch ? "Document trouvé !" : hasPotential ? "Correspondance possible" : "Ma perte signalée"}
+          {hasMatch ? t("dashboard_card_lost_matched") : hasPotential ? t("dashboard_card_lost_potential") : t("dashboard_card_lost_reported")}
         </div>
         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${c.badge} text-white uppercase tracking-wider`}>
-          {decl.status === "MATCHED" ? "Match trouvé" : decl.status === "RETURNED" ? "Récupéré" : hasPotential ? "Potentiel" : "Perdu"}
+          {decl.status === "MATCHED" ? t("dashboard_badge_matched") : decl.status === "RETURNED" ? t("dashboard_badge_returned") : hasPotential ? t("dashboard_badge_potential") : t("dashboard_badge_lost")}
         </span>
       </div>
       <div className="p-4 sm:p-5">
@@ -462,22 +467,22 @@ function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; nav
             <i className={`fa-solid ${getIconForType(decl.doc_type)} text-lg`} />
           </div>
           <div>
-            <div className="text-[13.5px] font-bold text-textMain">{decl.docTypeInfo?.nom || decl.doc_type || "Document"} — {decl.nom_complet || decl.owner_name || userName || "Utilisateur"}</div>
-            <div className="text-[10px] text-textMuted italic">Réf: {decl.identifiant_doc_dm || decl.reference || "---"} · {statusText(decl.status)}</div>
+            <div className="text-[13.5px] font-bold text-textMain">{decl.docTypeInfo?.nom || decl.doc_type || t("dashboard_document")} — {decl.nom_complet || decl.owner_name || userName || t("dashboard_user")}</div>
+            <div className="text-[10px] text-textMuted italic">{t("dashboard_ref")}: {decl.identifiant_doc_dm || decl.reference || "---"} · {t(statusText(decl.status))}</div>
           </div>
         </div>
-        <StepIndicator steps={["Soumission", "Recherche", "Matching", "Récupéré"]} current={step} color={colorKey} />
+        <StepIndicator steps={[t("dashboard_step_submission"), t("dashboard_step_search"), t("dashboard_step_matching"), t("dashboard_step_recovered")]} current={step} color={colorKey} />
         {hasPotential && (
           <div className="mt-6 flex justify-end">
             <button onClick={viewPotentialMatches} className="px-4 py-2 bg-orange-500 text-white rounded-[10px] text-[11px] font-bold hover:bg-orange-600 transition-all flex items-center gap-2 shadow-lg shadow-orange-500/20">
-              <i className="fa-solid fa-magnifying-glass-chart" /> Voir les correspondances
+              <i className="fa-solid fa-magnifying-glass-chart" /> {t("dashboard_view_matches")}
             </button>
           </div>
         )}
         {decl.status === "MATCHED" && (
           <div className="mt-6 flex justify-end">
             <button onClick={() => navigate(`/recuperer?id=${decl.id}`)} className="px-4 py-2 bg-green-600 text-white rounded-[10px] text-[11px] font-bold hover:bg-green-700 transition-all flex items-center gap-2 shadow-lg shadow-green-500/20">
-              <i className="fa-solid fa-handshake" /> Récupérer votre document
+              <i className="fa-solid fa-handshake" /> {t("dashboard_recover_document")}
             </button>
           </div>
         )}
@@ -487,6 +492,7 @@ function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; nav
 }
 
 function TrackingFoundCard({ decl, navigate }: { decl: Declaration; navigate: (path: string) => void }) {
+  const { t } = useI18n();
   const colorKey = decl.status === "RETURNED" || decl.status === "MATCHED" ? "green" : "blue";
   const c = cardPalettes[colorKey];
 
@@ -495,9 +501,9 @@ function TrackingFoundCard({ decl, navigate }: { decl: Declaration; navigate: (p
   if (decl.status === "MATCHED") step = 3;
   if (decl.status === "RETURNED") step = 4;
 
-  const headerLabel = decl.status === "RETURNED" ? "Document remis ✓" : decl.status === "MATCHED" ? "Propriétaire identifié — À rendre" : "Document que j'ai trouvé";
+  const headerLabel = decl.status === "RETURNED" ? t("dashboard_card_found_returned") : decl.status === "MATCHED" ? t("dashboard_card_found_matched") : t("dashboard_card_found_reported");
   const headerIcon = decl.status === "RETURNED" ? "fa-circle-check" : decl.status === "MATCHED" ? "fa-handshake animate-bounce" : "fa-hand-holding-heart";
-  const badgeLabel = decl.status === "RETURNED" ? "Remis" : decl.status === "MATCHED" ? "À rendre" : "Signalé";
+  const badgeLabel = decl.status === "RETURNED" ? t("dashboard_badge_returned") : decl.status === "MATCHED" ? t("dashboard_badge_to_return") : t("dashboard_badge_reported");
 
   return (
     <div className={`bg-white border-2 ${c.border} rounded-[18px] overflow-hidden shadow-md`}>
@@ -513,22 +519,22 @@ function TrackingFoundCard({ decl, navigate }: { decl: Declaration; navigate: (p
             <i className={`fa-solid ${getIconForType(decl.doc_type)} text-lg`} />
           </div>
           <div>
-            <div className="text-[13.5px] font-bold text-textMain">{decl.docTypeInfo?.nom || decl.doc_type || "Document"} — {decl.owner_name || "Inconnu"}</div>
-            <div className="text-[10px] text-textMuted italic">Réf: {decl.identifiant_doc_dm || decl.reference || "---"} · {statusText(decl.status)}</div>
+            <div className="text-[13.5px] font-bold text-textMain">{decl.docTypeInfo?.nom || decl.doc_type || t("dashboard_document")} — {decl.owner_name || t("dashboard_unknown")}</div>
+            <div className="text-[10px] text-textMuted italic">{t("dashboard_ref")}: {decl.identifiant_doc_dm || decl.reference || "---"} · {t(statusText(decl.status))}</div>
           </div>
         </div>
-        <StepIndicator steps={["Trouvé", "Signalé", "Propriétaire", "Rendu"]} current={step} color={colorKey} />
+        <StepIndicator steps={[t("dashboard_found_step_found"), t("dashboard_found_step_reported"), t("dashboard_found_step_owner"), t("dashboard_found_step_returned")]} current={step} color={colorKey} />
         {decl.status === "MATCHED" && decl.status !== "RETURNED" && (
           <div className="mt-6 flex justify-end">
             <button onClick={() => navigate(`/trouver?id=${decl.id}`)} className="px-4 py-2 bg-green-600 text-white rounded-[10px] text-[11px] font-bold hover:bg-green-700 transition-all flex items-center gap-2 shadow-lg shadow-green-500/20">
-              <i className="fa-solid fa-hand-holding-heart" /> Rendre le document
+              <i className="fa-solid fa-hand-holding-heart" /> {t("dashboard_return_document")}
             </button>
           </div>
         )}
         {decl.status !== "MATCHED" && decl.status !== "RETURNED" && (
           <div className="mt-4 text-[11px] text-textMuted italic text-center bg-blue-50 rounded-xl py-2 px-3">
             <i className="fa-solid fa-clock-rotate-left text-blue-400 mr-1" />
-            En attente qu'un propriétaire confirme ce document
+            {t("dashboard_waiting_confirmation")}
           </div>
         )}
       </div>
@@ -547,24 +553,25 @@ const typeImages: Record<string, string> = {
 };
 
 const typeConfigs: Record<string, { icon: string; color: string; label: string }> = {
-  CNI: { icon: "fa-id-card", color: "bg-orange-50 text-orange-600", label: "CNI / Attestation" },
-  PASSPORT: { icon: "fa-passport", color: "bg-blue-50 text-blue-600", label: "Passeport" },
-  PASSEPORT: { icon: "fa-passport", color: "bg-blue-50 text-blue-600", label: "Passeport" },
-  "PERMIS DE CONDUIRE": { icon: "fa-car", color: "bg-green-50 text-green-600", label: "Permis" },
-  DIPLÔME: { icon: "fa-graduation-cap", color: "bg-purple-50 text-purple-600", label: "Diplômes" },
-  "CARTE BANCAIRE": { icon: "fa-credit-card", color: "bg-indigo-50 text-indigo-600", label: "Cartes Bancaires" },
-  "CARTE GRISE": { icon: "fa-file-invoice", color: "bg-red-50 text-red-600", label: "Cartes Grises" },
-  DEFAULT: { icon: "fa-file-lines", color: "bg-gray-50 text-gray-600", label: "Autres Documents" },
+  CNI: { icon: "fa-id-card", color: "bg-orange-50 text-orange-600", label: "dashboard_label_cni" },
+  PASSPORT: { icon: "fa-passport", color: "bg-blue-50 text-blue-600", label: "dashboard_label_passeport" },
+  PASSEPORT: { icon: "fa-passport", color: "bg-blue-50 text-blue-600", label: "dashboard_label_passeport" },
+  "PERMIS DE CONDUIRE": { icon: "fa-car", color: "bg-green-50 text-green-600", label: "dashboard_label_permis" },
+  DIPLÔME: { icon: "fa-graduation-cap", color: "bg-purple-50 text-purple-600", label: "dashboard_label_diplome" },
+  "CARTE BANCAIRE": { icon: "fa-credit-card", color: "bg-indigo-50 text-indigo-600", label: "dashboard_label_carte_bancaire" },
+  "CARTE GRISE": { icon: "fa-file-invoice", color: "bg-red-50 text-red-600", label: "dashboard_label_carte_grise" },
+  DEFAULT: { icon: "fa-file-lines", color: "bg-gray-50 text-gray-600", label: "dashboard_label_doc" },
 };
 
 function PerfCard({ doc }: { doc: any }) {
+  const { t } = useI18n();
   const name = (doc.name || "").toUpperCase();
   const cfg = typeConfigs[name] || typeConfigs.DEFAULT;
   const trend = parseFloat(doc.trend) || 0;
   const isUp = trend >= 0;
 
   const latest = doc.recent_items?.[0];
-  const activityText = latest ? `${latest.type === "LOST" ? "Perdu" : "Retrouvé"} ${timeAgo(latest.date)}${latest.ville ? ` à ${latest.ville}` : ""}` : "Aucune activité";
+  const activityText = latest ? `${latest.type === "LOST" ? t("dashboard_perf_lost") : t("dashboard_perf_found")} ${timeAgo(latest.date, t)}${latest.ville ? ` ${t("dashboard_perf_in")} ${latest.ville}` : ""}` : t("dashboard_perf_no_activity");
 
   return (
     <div className="bg-white border border-borda rounded-2xl overflow-hidden hover:border-primary/50 transition-all group cursor-pointer shadow-sm">
@@ -580,12 +587,12 @@ function PerfCard({ doc }: { doc: any }) {
           <div className={`w-6 h-6 rounded-md ${cfg.color} flex items-center justify-center text-[10px]`}>
             <i className={`fa-solid ${cfg.icon}`} />
           </div>
-          <span className="text-[11px] font-bold text-textMain truncate">{cfg.label}</span>
+          <span className="text-[11px] font-bold text-textMain truncate">{t(cfg.label)}</span>
         </div>
         <div className="flex flex-col">
           <div className="flex items-baseline gap-1">
             <span className="text-[13px] font-extrabold text-primary">{(parseInt(doc.count) || 0).toLocaleString()}</span>
-            <span className="text-[9px] text-textMuted font-medium italic">retrouvés ce mois</span>
+            <span className="text-[9px] text-textMuted font-medium italic">{t("dashboard_this_month")}</span>
           </div>
           <span className="text-[8px] text-textMuted mt-1 bg-surface2 px-1.5 py-0.5 rounded-md w-fit font-medium">
             <i className="fa-solid fa-clock-rotate-left text-[7px] mr-1" /> {activityText}

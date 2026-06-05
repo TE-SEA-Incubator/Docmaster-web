@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useI18n } from "../../context/I18nContext";
 import type { Document } from "../../types/api";
 import { declarationsService } from "../../services/declarationsService";
 import { documentsService } from "../../services/documentsService";
@@ -6,32 +7,7 @@ import { generateDeclarationPDF } from "../../utils/pdf";
 import DatePicker from "./DatePicker";
 import Stepper from "./Stepper";
 
-const steps = [
-  { label: "Propriété", icon: "fa-user" },
-  { label: "Type de document", icon: "fa-file" },
-  { label: "Informations", icon: "fa-pen" },
-  { label: "Lieu & date", icon: "fa-map-pin" },
-  { label: "Contact", icon: "fa-phone" },
-];
 
-const docTypes = [
-  { id: "cni", icon: "fa-solid fa-id-card", label: "Carte nationale d'identité" },
-  { id: "passport", icon: "fa-solid fa-passport", label: "Passeport" },
-  { id: "permis", icon: "fa-solid fa-car-side", label: "Permis de conduire" },
-  { id: "acte_naissance", icon: "fa-solid fa-file-lines", label: "Acte de naissance" },
-  { id: "diplome", icon: "fa-solid fa-graduation-cap", label: "Diplôme" },
-  { id: "carte_bancaire", icon: "fa-solid fa-credit-card", label: "Carte bancaire" },
-  { id: "attestation", icon: "fa-solid fa-file-circle-check", label: "Attestation" },
-  { id: "autre", icon: "fa-solid fa-folder", label: "Autre" },
-];
-
-const places = ["Domicile", "Transport en commun", "Restaurant/Bar", "Commerce", "Lieu public", "Établissement scolaire", "Lieu de travail", "Autre"];
-
-const urgencyLevels = [
-  { id: 1, label: "Basse", icon: "fa-regular fa-face-smile", color: "text-green-mid bg-green-light border-green-mid/30" },
-  { id: 2, label: "Moyenne", icon: "fa-regular fa-face-meh", color: "text-amber-500 bg-amber-50 border-amber-300" },
-  { id: 3, label: "Haute", icon: "fa-regular fa-face-frown", color: "text-red-500 bg-red-50 border-red-300" },
-];
 
 interface DocFormData {
   nom_complet: string;
@@ -48,6 +24,44 @@ interface ReportLostModalProps {
 }
 
 export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostModalProps) {
+  const { t } = useI18n();
+
+  const steps = [
+    { label: t("reportlost_step_property"), icon: "fa-user" },
+    { label: t("reportlost_step_type"), icon: "fa-file" },
+    { label: t("reportlost_step_info"), icon: "fa-pen" },
+    { label: t("reportlost_step_location"), icon: "fa-map-pin" },
+    { label: t("reportlost_step_contact"), icon: "fa-phone" },
+  ];
+
+  const docTypes = [
+    { id: "cni", icon: "fa-solid fa-id-card", label: t("reportlost_doc_cni") },
+    { id: "passport", icon: "fa-solid fa-passport", label: t("reportlost_doc_passeport") },
+    { id: "permis", icon: "fa-solid fa-car-side", label: t("reportlost_doc_permis") },
+    { id: "acte_naissance", icon: "fa-solid fa-file-lines", label: t("reportlost_doc_acte") },
+    { id: "diplome", icon: "fa-solid fa-graduation-cap", label: t("reportlost_doc_diplome") },
+    { id: "carte_bancaire", icon: "fa-solid fa-credit-card", label: t("reportlost_doc_carte") },
+    { id: "attestation", icon: "fa-solid fa-file-circle-check", label: t("reportlost_doc_attestation") },
+    { id: "autre", icon: "fa-solid fa-folder", label: t("reportlost_doc_autre") },
+  ];
+
+  const places = [
+    t("reportlost_place_home"),
+    t("reportlost_place_transport"),
+    t("reportlost_place_restaurant"),
+    t("reportlost_place_commerce"),
+    t("reportlost_place_public"),
+    t("reportlost_place_school"),
+    t("reportlost_place_work"),
+    t("reportlost_place_autre"),
+  ];
+
+  const urgencyLevels = [
+    { id: 1, label: t("reportlost_urgency_low"), icon: "fa-regular fa-face-smile", color: "text-green-mid bg-green-light border-green-mid/30" },
+    { id: 2, label: t("reportlost_urgency_medium"), icon: "fa-regular fa-face-meh", color: "text-amber-500 bg-amber-50 border-amber-300" },
+    { id: 3, label: t("reportlost_urgency_high"), icon: "fa-regular fa-face-frown", color: "text-red-500 bg-red-50 border-red-300" },
+  ];
+
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -123,7 +137,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
         };
       });
 
-      const description = `[Urgence: ${urgencyLevels.find((u) => u.id === urgence)?.label}] Lieu: ${lieu}. ${circonstances}${rewardEnabled && reward ? ` | Récompense: ${reward} FCFA` : ""}`;
+      const description = `[${t("reportlost_desc_urgence")}: ${urgencyLevels.find((u) => u.id === urgence)?.label}] ${t("reportlost_desc_lieu")}: ${lieu}. ${circonstances}${rewardEnabled && reward ? ` | ${t("reportlost_desc_recompense")}: ${reward} FCFA` : ""}`;
 
       for (const d of docsData) {
         await declarationsService.createLost({
@@ -157,14 +171,14 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
         lieu_perte: lieu,
         date_perte: new Date(datePerte).toLocaleDateString("fr-FR"),
         circonstances,
-        urgence: urgencyLevels.find((u) => u.id === urgence)?.label || "Moyenne",
+        urgence: urgencyLevels.find((u) => u.id === urgence)?.label || t("reportlost_urgency_medium"),
         telephone,
         email,
         recompense: rewardEnabled ? reward : "",
       });
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: string } }; message?: string };
-      setError(err?.response?.data?.error || err?.message || "Erreur lors de la soumission");
+      setError(err?.response?.data?.error || err?.message || t("reportlost_submit_error"));
     } finally {
       setSubmitting(false);
     }
@@ -178,12 +192,12 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
           <div className="w-20 h-20 rounded-full bg-green-light flex items-center justify-center mx-auto mb-4">
             <i className="fa-solid fa-check text-green-dark text-3xl" />
           </div>
-          <h2 className="font-bricolage text-xl font-extrabold text-textMain mb-2">Déclaration enregistrée !</h2>
-          <p className="text-[13px] text-textMuted mb-4">Un PDF de votre déclaration a été téléchargé.</p>
+          <h2 className="font-bricolage text-xl font-extrabold text-textMain mb-2">{t("reportlost_success_title")}</h2>
+          <p className="text-[13px] text-textMuted mb-4">{t("reportlost_success_desc")}</p>
           <div className="inline-block px-5 py-2 bg-bgMain rounded-xl font-bricolage font-extrabold text-lg text-green-dark tracking-wider mb-4">
             {successData.ref}
           </div>
-          <p className="text-[11px] text-textMuted mb-5">Conservez ce numéro de référence.</p>
+          <p className="text-[11px] text-textMuted mb-5">{t("reportlost_success_ref_desc")}</p>
           <div className="flex gap-3">
             <button onClick={() => {
               const docData = selectedTypes.map((id) => {
@@ -200,18 +214,18 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
                 lieu_perte: lieu,
                 date_perte: new Date(datePerte).toLocaleDateString("fr-FR"),
                 circonstances,
-                urgence: urgencyLevels.find((u) => u.id === urgence)?.label || "Moyenne",
+                urgence: urgencyLevels.find((u) => u.id === urgence)?.label || t("reportlost_urgency_medium"),
                 telephone,
                 email,
                 recompense: rewardEnabled ? reward : "",
               });
             }}
               className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-[13px] hover:bg-primary-dark transition-all flex items-center justify-center gap-2">
-              <i className="fa-solid fa-file-pdf" /> Télécharger le PDF
+              <i className="fa-solid fa-file-pdf" /> {t("reportlost_download_pdf")}
             </button>
             <button onClick={onClose}
               className="flex-1 py-3 rounded-xl bg-green-dark text-white font-bold text-[13px] hover:bg-green-mid transition-all">
-              Mes documents
+              {t("reportlost_my_documents")}
             </button>
           </div>
         </div>
@@ -225,7 +239,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
       <div className="modal-box animate-in" style={{ maxWidth: "640px", padding: 0, overflow: "hidden" }}>
         <div className="p-6 pb-0">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bricolage text-lg font-extrabold text-textMain">Déclarer une perte</h2>
+            <h2 className="font-bricolage text-lg font-extrabold text-textMain">{t("reportlost_title")}</h2>
             <button onClick={onClose} disabled={submitting}
               className="w-8 h-8 rounded-lg border border-borda text-textMuted hover:text-textMain hover:border-textMain flex items-center justify-center transition-all text-sm">
               <i className="fa-solid fa-xmark" />
@@ -237,12 +251,12 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
         <div className="px-6 pb-4 max-h-[55vh] overflow-y-auto">
           {step === 1 && (
             <div className="animate-in">
-              <h3 className="font-bricolage text-base font-bold text-textMain mb-1">Pour qui déclarez-vous la perte ?</h3>
-              <p className="text-[12px] text-textMuted mb-4">Cela nous aide à mieux qualifier votre demande.</p>
+              <h3 className="font-bricolage text-base font-bold text-textMain mb-1">{t("reportlost_step1_question")}</h3>
+              <p className="text-[12px] text-textMuted mb-4">{t("reportlost_step1_desc")}</p>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { id: true, icon: "fa-user-check", label: "Pour moi-même" },
-                  { id: false, icon: "fa-users", label: "Pour une autre personne" },
+                  { id: true, icon: "fa-user-check", label: t("reportlost_self") },
+                  { id: false, icon: "fa-users", label: t("reportlost_other") },
                 ].map((opt) => (
                   <button key={String(opt.id)} onClick={() => setPourSoi(opt.id)}
                     className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
@@ -257,7 +271,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
               </div>
               {!pourSoi && (
                 <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3 mt-4">
-                  <i className="fa-solid fa-info-circle mr-1" /> Vous pourrez préciser le lien avec le propriétaire à l'étape suivante.
+                  <i className="fa-solid fa-info-circle mr-1" /> {t("reportlost_other_hint")}
                 </p>
               )}
             </div>
@@ -265,8 +279,8 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
 
           {step === 2 && (
             <div className="animate-in">
-              <h3 className="font-bricolage text-base font-bold text-textMain mb-1">Quel(s) document(s) avez-vous perdu(s) ?</h3>
-              <p className="text-[12px] text-textMuted mb-4">Sélectionnez un ou plusieurs types.</p>
+              <h3 className="font-bricolage text-base font-bold text-textMain mb-1">{t("reportlost_step2_question")}</h3>
+              <p className="text-[12px] text-textMuted mb-4">{t("reportlost_step2_desc")}</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {docTypes.map((dt) => {
                   const sel = selectedTypes.includes(dt.id);
@@ -301,8 +315,8 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
 
           {step === 3 && (
             <div className="animate-in space-y-5">
-              <h3 className="font-bricolage text-base font-bold text-textMain mb-1">Informations des documents</h3>
-              <p className="text-[12px] text-textMuted mb-2">Renseignez les détails pour chaque document.</p>
+              <h3 className="font-bricolage text-base font-bold text-textMain mb-1">{t("reportlost_step3_title")}</h3>
+              <p className="text-[12px] text-textMuted mb-2">{t("reportlost_step3_desc")}</p>
               {selectedTypes.map((id) => {
                 const dt = docTypes.find((d) => d.id === id);
                 const f = docForms[id] || {};
@@ -317,32 +331,32 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Nom complet</label>
+                          <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_nom_complet")}</label>
                           <input type="text" value={f.nom_complet} onChange={(e) => updateDocForm(id, "nom_complet", e.target.value)}
-                            className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder="Jean Dupont" />
+                            className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_nom_complet_placeholder")} />
                         </div>
                         <div>
-                          <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Numéro du document</label>
+                          <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_numero_doc")}</label>
                           <input type="text" value={f.numero_doc} onChange={(e) => updateDocForm(id, "numero_doc", e.target.value)}
-                            className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder="Ex: 1234567890" />
+                            className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_numero_doc_placeholder")} />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Date de délivrance</label>
+                          <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_delivrance")}</label>
                           <DatePicker value={f.date_delivrance} onChange={(v) => updateDocForm(id, "date_delivrance", v)}
-                            className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder="jj/mm/aaaa" />
+                            className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_date_placeholder")} />
                         </div>
                         <div>
-                          <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Date d'expiration</label>
+                          <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_expiration")}</label>
                           <DatePicker value={f.date_expiration} onChange={(v) => updateDocForm(id, "date_expiration", v)}
-                            className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder="jj/mm/aaaa" />
+                            className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_date_placeholder")} />
                         </div>
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Description (optionnel)</label>
+                        <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_description")}</label>
                         <textarea value={f.description} onChange={(e) => updateDocForm(id, "description", e.target.value)} rows={2}
-                          className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors resize-none" placeholder="Décrivez le document..." />
+                          className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors resize-none" placeholder={t("reportlost_description_placeholder")} />
                       </div>
                     </div>
                   </div>
@@ -353,21 +367,21 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
 
           {step === 4 && (
             <div className="animate-in space-y-4">
-              <h3 className="font-bricolage text-base font-bold text-textMain mb-1">Où et quand ?</h3>
-              <p className="text-[12px] text-textMuted mb-2">Ces informations s'appliquent à tous les documents sélectionnés.</p>
+              <h3 className="font-bricolage text-base font-bold text-textMain mb-1">{t("reportlost_step4_title")}</h3>
+              <p className="text-[12px] text-textMuted mb-2">{t("reportlost_step4_desc")}</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Date de perte</label>
+                  <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_perte")}</label>
                   <DatePicker value={datePerte} onChange={(v) => setDatePerte(v)}
                     className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder="jj/mm/aaaa" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Heure (optionnel)</label>
+                  <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_heure")}</label>
                   <input type="time" className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Lieu de perte</label>
+                <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_lieu")}</label>
                 <div className="flex flex-wrap gap-1.5">
                   {places.map((p) => (
                     <button key={p} onClick={() => setLieu(p)}
@@ -376,37 +390,37 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
                       }`}>{p}</button>
                   ))}
                 </div>
-                {lieu === "Autre" && (
+                {lieu === t("reportlost_place_autre") && (
                   <input type="text" value={lieu} onChange={(e) => setLieu(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors mt-2" placeholder="Précisez le lieu" />
+                    className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors mt-2" placeholder={t("reportlost_lieu_placeholder")} />
                 )}
               </div>
               <div>
-                <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Circonstances (optionnel)</label>
+                <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_circonstances")}</label>
                 <textarea value={circonstances} onChange={(e) => setCirconstances(e.target.value)} rows={2}
-                  className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors resize-none" placeholder="Vol, oubli, chute de sac…" />
+                  className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors resize-none" placeholder={t("reportlost_circonstances_placeholder")} />
               </div>
             </div>
           )}
 
           {step === 5 && (
             <div className="animate-in space-y-4">
-              <h3 className="font-bricolage text-base font-bold text-textMain mb-1">Contact & validation</h3>
-              <p className="text-[12px] text-textMuted mb-2">Comment les personnes qui trouveront vos documents peuvent-elles vous contacter ?</p>
+              <h3 className="font-bricolage text-base font-bold text-textMain mb-1">{t("reportlost_step5_title")}</h3>
+              <p className="text-[12px] text-textMuted mb-2">{t("reportlost_step5_desc")}</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Téléphone</label>
+                  <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_telephone")}</label>
                   <input type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder="+237 6XX XXX XXX" />
+                    className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_telephone_placeholder")} />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Email (optionnel)</label>
+                  <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_email_label")}</label>
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder="exemple@email.com" />
+                    className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_email_placeholder")} />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Niveau d'urgence</label>
+                <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_urgency_label")}</label>
                 <div className="flex gap-2">
                   {urgencyLevels.map((u) => (
                     <button key={u.id} onClick={() => setUrgence(u.id)}
@@ -423,8 +437,8 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
                   <div className="flex items-center gap-2">
                     <i className="fa-solid fa-coins text-primary text-sm" />
                     <div>
-                      <p className="text-[12px] font-bold text-textMain">Proposer une récompense</p>
-                      <p className="text-[10px] text-textMuted">Augmente les chances de retour</p>
+                      <p className="text-[12px] font-bold text-textMain">{t("reportlost_reward_title")}</p>
+                      <p className="text-[10px] text-textMuted">{t("reportlost_reward_desc")}</p>
                     </div>
                   </div>
                   <button onClick={() => setRewardEnabled(!rewardEnabled)}
@@ -435,7 +449,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
                 {rewardEnabled && (
                   <div className="mt-2 flex items-center gap-2">
                     <input type="number" value={reward} onChange={(e) => setReward(e.target.value)}
-                      className="flex-1 px-3 py-2 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder="Montant" min="0" step="500" />
+                      className="flex-1 px-3 py-2 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_reward_amount")} min="0" step="500" />
                     <span className="text-[11px] font-bold text-textMuted">FCFA</span>
                   </div>
                 )}
@@ -443,13 +457,13 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
                 <p className="text-[11px] text-amber-800 font-medium">
                   <i className="fa-solid fa-circle-info mr-1" />
-                  Des frais de <strong>5 000 FCFA</strong> s'appliquent si un document est retrouvé.
+                  {t("reportlost_fee_notice")}
                 </p>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">Mot de passe</label>
+                <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_password")}</label>
                 <input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                  className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder="Votre mot de passe pour confirmer" />
+                  className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_password_placeholder")} />
                 {error && <p className="text-[11px] text-red-500 font-semibold mt-1">{error}</p>}
               </div>
             </div>
@@ -459,19 +473,19 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
         <div className="p-4 bg-bgMain border-t border-borda flex items-center justify-between gap-3">
           <button onClick={step === 1 ? onClose : prevStep} disabled={submitting}
             className="px-4 py-2.5 rounded-xl border border-borda bg-white text-textMain text-[12px] font-semibold hover:bg-surface2 transition-all disabled:opacity-40 flex items-center gap-1.5">
-            <i className="fa-solid fa-arrow-left text-[10px]" /> {step === 1 ? "Annuler" : "Précédent"}
+            <i className="fa-solid fa-arrow-left text-[10px]" /> {step === 1 ? t("reportlost_cancel") : t("reportlost_previous")}
           </button>
           <p className="text-[11px] font-bold text-textMuted">{step} / 5</p>
           {step < 5 ? (
             <button onClick={nextStep} disabled={!isValid()}
               className="px-4 py-2.5 rounded-xl bg-green-dark text-white text-[12px] font-bold hover:bg-green-mid transition-all disabled:opacity-40 flex items-center gap-1.5">
-              Suivant <i className="fa-solid fa-arrow-right text-[10px]" />
+              {t("reportlost_next")} <i className="fa-solid fa-arrow-right text-[10px]" />
             </button>
           ) : (
             <button onClick={handleSubmit} disabled={!isValid() || submitting || password.length < 4}
               className="px-4 py-2.5 rounded-xl bg-red-500 text-white text-[12px] font-bold hover:bg-red-600 transition-all disabled:opacity-40 flex items-center gap-1.5 shadow-lg shadow-red-500/25">
               {submitting ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-paper-plane text-[10px]" />}
-              {submitting ? "Envoi..." : "Soumettre"}
+              {submitting ? t("reportlost_sending") : t("reportlost_submit")}
             </button>
           )}
         </div>

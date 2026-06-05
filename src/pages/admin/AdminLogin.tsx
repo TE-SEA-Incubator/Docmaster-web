@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../services/api";
 import { saveToken } from "../../utils/cookie";
+import { useI18n } from "../../context/I18nContext";
 
 export default function AdminLogin() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", mot_de_passe: "" });
   const [error, setError] = useState("");
@@ -22,18 +24,20 @@ export default function AdminLogin() {
 
     try {
       const res = await apiClient.post("auth/login", form);
-      if (res.data.user?.role === "admin") {
+      const userRole = res.data.user?.role?.toUpperCase();
+      
+      if (userRole === "ADMIN") {
         saveToken(res.data.token);
         localStorage.setItem(
           "docmaster_admin_login",
-          JSON.stringify({ role: "admin", token: res.data.token, user: res.data.user })
+          JSON.stringify({ role: "ADMIN", token: res.data.token, user: res.data.user })
         );
         navigate("/admin");
       } else {
-        setError("Accès non autorisé");
+        setError(t("admin_unauthorized"));
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || "Erreur de connexion");
+      setError(err.response?.data?.error || t("admin_login_error"));
     } finally {
       setLoading(false);
     }
@@ -78,7 +82,7 @@ export default function AdminLogin() {
               Admin DocMaster
             </h1>
             <p className="text-[14px] text-[#6B7280] font-medium">
-              Connexion Administrateur Sécurisée
+              {t("admin_administration")}
             </p>
           </div>
 
@@ -93,7 +97,7 @@ export default function AdminLogin() {
             <div className="flex flex-col gap-2">
               <label className="text-[12.5px] font-bold text-[#6B7280] uppercase tracking-wider flex items-center gap-1.5">
                 <i className="fa-solid fa-envelope text-[#F5A64B] text-xs" />
-                Adresse Email
+                {t("admin_email")}
               </label>
               <div className="relative">
                 <input
@@ -112,7 +116,7 @@ export default function AdminLogin() {
             <div className="flex flex-col gap-2">
               <label className="text-[12.5px] font-bold text-[#6B7280] uppercase tracking-wider flex items-center gap-1.5">
                 <i className="fa-solid fa-lock text-[#F5A64B] text-xs" />
-                Mot de Passe
+                {t("admin_password")}
               </label>
               <div className="relative">
                 <input
@@ -130,10 +134,10 @@ export default function AdminLogin() {
             <div className="flex items-center justify-between text-[13px] mt-1">
               <label className="flex items-center gap-1.5 cursor-pointer text-[#6B7280] font-medium">
                 <input type="checkbox" className="w-4 h-4 cursor-pointer accent-[#F5A64B]" />
-                Se souvenir de moi
+                {t("admin_remember")}
               </label>
               <a href="/forgot-password" className="text-[#F5A64B] font-semibold hover:text-[#D98A30] transition-colors no-underline">
-                Mot de passe oublié ?
+                {t("admin_forgot_password")}
               </a>
             </div>
 
@@ -148,14 +152,14 @@ export default function AdminLogin() {
               ) : (
                 <i className="fa-solid fa-arrow-right-to-bracket" />
               )}
-              {loading ? "Connexion..." : "Se Connecter"}
+              {loading ? t("admin_connecting") : t("admin_login")}
             </button>
           </form>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-[#EAE3D8]" />
-            <span className="text-[12px] text-[#9CA3AF] font-medium">Besoin d'aide ?</span>
+            <span className="text-[12px] text-[#9CA3AF] font-medium">{t("admin_need_help")}</span>
             <div className="flex-1 h-px bg-[#EAE3D8]" />
           </div>
 
@@ -163,10 +167,10 @@ export default function AdminLogin() {
           <div className="pt-5 border-t border-[#EAE3D8] text-center flex flex-col gap-3">
             <a href="/login" className="text-[#F5A64B] no-underline text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 hover:gap-3 transition-all">
               <i className="fa-solid fa-arrow-left text-xs" />
-              Retour au login utilisateur
+              {t("admin_back_user_login")}
             </a>
             <a href="https://docmaster.com/contact" target="_blank" rel="noopener noreferrer" className="text-[#F5A64B] no-underline text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 hover:gap-3 transition-all">
-              Contacter le support
+              {t("admin_contact_support")}
               <i className="fa-solid fa-arrow-up-right-from-square text-xs" />
             </a>
           </div>

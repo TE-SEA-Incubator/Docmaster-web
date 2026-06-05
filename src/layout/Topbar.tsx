@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useI18n } from "../context/I18nContext";
 import { useNotifications } from "../hooks/useNotifications";
 
 interface Breadcrumb {
@@ -16,9 +17,11 @@ interface TopbarProps {
 
 export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: TopbarProps) {
   const { user } = useAuth();
+  const { t, lang, setLanguage } = useI18n();
   const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [searchQ, setSearchQ] = useState("");
+  const [langOpen, setLangOpen] = useState(false);
 
   const handleToggle = () => {
     if (onToggleSidebar) {
@@ -60,9 +63,6 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
               </span>
             ))}
           </nav>
-          {/* <h1 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 18, fontWeight: 800, color: "#1A1A1A", marginTop: 1 }}>
-            {title}
-          </h1> */}
         </div>
 
         {/* Desktop search bar */}
@@ -74,7 +74,7 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
               value={searchQ}
               onChange={(e) => setSearchQ(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && doSearch()}
-              placeholder="Rechercher un document..."
+              placeholder={t("topbar_search")}
               className="flex-1 py-2 px-2 bg-transparent outline-none text-[12.5px] text-textMain placeholder:text-textMuted"
             />
             <button onClick={doSearch} className="pr-2.5 text-primary hover:text-primary-dark transition-colors text-[13px]">
@@ -88,14 +88,50 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
           to="/declarer"
           className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-[11px] font-bold hover:bg-blue-600 transition-all"
         >
-          <i className="fa-solid fa-triangle-exclamation text-[10px]" /> Déclarer une perte
+          <i className="fa-solid fa-triangle-exclamation text-[10px]" /> {t("topbar_declare_lost")}
         </Link>
         <Link
           to="/trouver"
           className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 text-white text-[11px] font-bold hover:bg-red-600 transition-all"
         >
-          <i className="fa-solid fa-hand-holding-hand text-[10px]" /> Doc retrouvé
+          <i className="fa-solid fa-hand-holding-hand text-[10px]" /> {t("topbar_found_doc")}
         </Link>
+        <div className="relative">
+          <button
+            onClick={() => setLangOpen(!langOpen)}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white border border-[#E0D5C4] text-[#374151] text-[11px] font-bold hover:border-primary transition-all"
+          >
+            <i className="fa-solid fa-globe text-primary" />
+            <span className="hidden sm:inline">
+              {lang === "fr" ? "Français" : lang === "ar" ? "العربية" : "English"}
+            </span>
+          </button>
+          {langOpen && (
+            <div
+              className="absolute right-0 mt-2 w-32 bg-white border border-[#E0D5C4] rounded-xl shadow-lg overflow-hidden z-50"
+              onMouseLeave={() => setLangOpen(false)}
+            >
+              <button
+                onClick={() => { setLanguage("fr"); setLangOpen(false); }}
+                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50 transition text-[11px] font-bold text-gray-700"
+              >
+                <i className="fa-solid fa-globe text-primary" /> Français
+              </button>
+              <button
+                onClick={() => { setLanguage("en"); setLangOpen(false); }}
+                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50 transition text-[11px] font-bold text-gray-700"
+              >
+                <i className="fa-solid fa-globe text-primary" /> English
+              </button>
+              <button
+                onClick={() => { setLanguage("ar"); setLangOpen(false); }}
+                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50 transition text-[11px] font-bold text-gray-700"
+              >
+                <i className="fa-solid fa-globe text-primary" /> العربية
+              </button>
+            </div>
+          )}
+        </div>
         <button
           onClick={() => (window as any).__openNotifModal?.()}
           className="relative w-9 h-9 rounded-[10px] border border-[#E0D5C4] bg-white text-[#6B7280] flex items-center justify-center hover:border-primary hover:text-primary transition-all"

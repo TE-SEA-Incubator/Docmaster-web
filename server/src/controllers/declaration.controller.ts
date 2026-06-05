@@ -343,3 +343,29 @@ export const generatePdf = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Erreur lors de la génération du PDF' });
   }
 };
+
+export const deleteDeclaration = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Non authentifié' });
+    }
+
+    const result = await declarationService.deleteDeclaration(id as string, userId);
+    res.json(result);
+  } catch (error: any) {
+    console.error('❌ Erreur suppression déclaration:', error);
+    if (error.message === 'Déclaration introuvable') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
+    if (error.message === 'Action non autorisée') {
+      return res.status(403).json({ success: false, message: error.message });
+    }
+    if (error.message === 'Déclaration déjà supprimée') {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

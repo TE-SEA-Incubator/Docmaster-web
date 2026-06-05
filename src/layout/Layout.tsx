@@ -57,7 +57,7 @@ export default function Layout() {
         <Navbar />
       ) : null}
 
-      <main className={isAuthPage && user ? "ml-[var(--sidebar)] max-md:ml-0 md:pb-0 transition-all duration-300" : ""}>
+      <main className={isAuthPage && user ? "ml-[var(--sidebar)] max-md:ml-0 pb-[70px] md:pb-0 transition-all duration-300" : ""}>
         <div className="page-fade-in">
           <Outlet />
         </div>

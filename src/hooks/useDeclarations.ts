@@ -94,7 +94,10 @@ export function useDeclarationStats() {
     setLoading(true);
     declarationsService.getStats()
       .then((res) => setStats(res.data || null))
-      .catch(() => setStats(null))
+      .catch((e: any) => {
+        console.error("[useDeclarationStats] error:", e?.response?.data || e);
+        setStats(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 

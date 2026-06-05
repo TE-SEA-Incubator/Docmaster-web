@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useI18n } from "../../context/I18nContext";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api/";
 
@@ -51,7 +52,8 @@ function FieldInput({
 }
 
 export default function Login() {
-  const { login, register, user } = useAuth();
+  const { t } = useI18n();
+  const { login, loginWithGoogle, register, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -140,6 +142,22 @@ export default function Login() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setLoginError("");
+    setRegError("");
+    setLoginLoading(true);
+    setRegLoading(true);
+    const result = await loginWithGoogle();
+    setLoginLoading(false);
+    setRegLoading(false);
+    if (result.success) {
+      navigate("/dashboard");
+    } else {
+      setLoginError(result.message);
+      setRegError(result.message);
+    }
+  };
+
   const handleRegister = async () => {
     setRegError("");
     setRegLoading(true);
@@ -179,10 +197,10 @@ export default function Login() {
   const renderPwBars = (pw: string) => {
     const strength = calcPwStrength(pw);
     const levels = [
-      { label: "Faible", color: "bg-red-500", active: strength >= 1 },
-      { label: "Moyen", color: "bg-yellow-500", active: strength >= 2 },
-      { label: "Fort", color: "bg-green-500", active: strength >= 3 },
-      { label: "Très fort", color: "bg-green-600", active: strength >= 4 },
+      { label: t("login_pw_weak"), color: "bg-red-500", active: strength >= 1 },
+      { label: t("login_pw_medium"), color: "bg-yellow-500", active: strength >= 2 },
+      { label: t("login_pw_strong"), color: "bg-green-500", active: strength >= 3 },
+      { label: t("login_pw_very_strong"), color: "bg-green-600", active: strength >= 4 },
     ];
     return (
       <div className="flex gap-1 mt-1.5">
@@ -248,10 +266,10 @@ export default function Login() {
             </Link>
           </div>
           <h2 className="font-bricolage text-[28px] font-extrabold text-textMain leading-[1.2] tracking-tight mb-1.5">
-            Retrouvez vos documents perdus
+            {t("login_hero_title")}
           </h2>
           <p className="text-[13.5px] text-textMuted leading-[1.55] font-medium">
-            La plateforme qui connecte ceux qui perdent avec ceux qui trouvent.
+            {t("login_hero_subtitle")}
           </p>
         </div>
 
@@ -270,7 +288,7 @@ export default function Login() {
                 tab === "login" ? "text-white" : "text-textMuted"
               }`}
             >
-              <i className="fa-solid fa-right-to-bracket text-[13px]" /> Connexion
+              <i className="fa-solid fa-right-to-bracket text-[13px]" /> {t("login_tab_login")}
             </button>
             <button
               onClick={() => setTab("register")}
@@ -278,7 +296,7 @@ export default function Login() {
                 tab === "register" ? "text-white" : "text-textMuted"
               }`}
             >
-              <i className="fa-solid fa-user-plus text-[13px]" /> Inscription
+              <i className="fa-solid fa-user-plus text-[13px]" /> {t("login_tab_register")}
             </button>
           </div>
 
@@ -287,10 +305,10 @@ export default function Login() {
             <form onSubmit={handleLogin} className="flex flex-col gap-3.5">
               <div className="mb-1">
                 <h1 className="font-bricolage text-[23px] font-extrabold text-textMain tracking-tight mb-[3px]">
-                  Bon retour ! 👋
+                  {t("login_welcome_back")}
                 </h1>
                 <p className="text-[13px] text-textMuted font-medium italic">
-                  Connectez-vous à votre espace
+                  {t("login_subtitle")}
                 </p>
               </div>
 
@@ -305,14 +323,14 @@ export default function Login() {
                 type="email"
                 value={loginForm.email}
                 onChange={(v) => setLoginForm((f) => ({ ...f, email: v }))}
-                placeholder="vous@exemple.com"
+                placeholder={t("login_email_placeholder")}
               />
               <FieldInput
                 icon="fa-solid fa-lock"
                 type={pwVisible ? "text" : "password"}
                 value={loginForm.password}
                 onChange={(v) => setLoginForm((f) => ({ ...f, password: v }))}
-                placeholder="••••••••"
+                placeholder={t("login_password_placeholder")}
                 id="login-pw"
                 rightButton={
                   <button
@@ -332,7 +350,7 @@ export default function Login() {
                   className="text-[12.5px] text-primary font-semibold hover:underline"
                 >
                   <i className="fa-solid fa-key mr-1.5" />
-                  Mot de passe oublié ?
+                  {t("login_forgot_password")}
                 </button>
               </div>
 
@@ -345,20 +363,22 @@ export default function Login() {
                   <i className="fa-solid fa-spinner fa-spin" />
                 ) : (
                   <>
-                    <i className="fa-solid fa-right-to-bracket" /> Se connecter
+                    <i className="fa-solid fa-right-to-bracket" /> {t("login_btn_login")}
                   </>
                 )}
               </button>
 
               <div className="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-black/10 after:content-[''] after:flex-1 after:h-[1px] after:bg-black/10">
-                ou continuer avec
+                {t("login_or_continue")}
               </div>
               <div className="flex gap-2.5">
                 <button
                   type="button"
-                  className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all"
+                  onClick={handleGoogleLogin}
+                  disabled={loginLoading}
+                  className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all disabled:opacity-50"
                 >
-                  <i className="fa-brands fa-google text-[#db4437]" /> Google
+                  {loginLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
                 </button>
                 <button
                   type="button"
@@ -375,10 +395,10 @@ export default function Login() {
             <div className="flex flex-col gap-4">
               <div className="mb-1">
                 <h1 className="font-bricolage text-[23px] font-extrabold text-textMain tracking-tight mb-[3px]">
-                  Créer un compte
+                  {t("login_create_account")}
                 </h1>
                 <p className="text-[13px] text-textMuted font-medium italic">
-                  Rejoignez la communauté DocMaster
+                  {t("login_register_subtitle")}
                 </p>
               </div>
 
@@ -396,9 +416,11 @@ export default function Login() {
                   <div className="flex gap-2.5">
                     <button
                       type="button"
-                      className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all"
+                      onClick={handleGoogleLogin}
+                      disabled={regLoading}
+                      className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all disabled:opacity-50"
                     >
-                      <i className="fa-brands fa-google text-[#db4437]" /> Google
+                      {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
                     </button>
                     <button
                       type="button"
@@ -414,7 +436,7 @@ export default function Login() {
                     </button>
                   </div>
                   <div className="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-black/10 after:content-[''] after:flex-1 after:h-[1px] after:bg-black/10">
-                    ou s'inscrire avec
+                      {t("login_or_register_with")}
                   </div>
                   <div className="flex gap-2.5">
                     <div className="flex-1">
@@ -423,7 +445,7 @@ export default function Login() {
                         type="text"
                         value={regForm.nom}
                         onChange={(v) => setRegForm((f) => ({ ...f, nom: v }))}
-                        placeholder="Dupont"
+                        placeholder={t("profil_placeholder_lastname")}
                       />
                     </div>
                     <div className="flex-1">
@@ -432,7 +454,7 @@ export default function Login() {
                         type="text"
                         value={regForm.prenom}
                         onChange={(v) => setRegForm((f) => ({ ...f, prenom: v }))}
-                        placeholder="Jean"
+                        placeholder={t("profil_placeholder_firstname")}
                       />
                     </div>
                   </div>
@@ -441,14 +463,14 @@ export default function Login() {
                     type="tel"
                     value={regForm.telephone}
                     onChange={(v) => setRegForm((f) => ({ ...f, telephone: v }))}
-                    placeholder="+237 6XX XXX XXX"
+                    placeholder={t("profil_placeholder_phone")}
                   />
                   <FieldInput
                     icon="fa-regular fa-envelope"
                     type="email"
                     value={regForm.email}
                     onChange={(v) => setRegForm((f) => ({ ...f, email: v }))}
-                    placeholder="vous@exemple.com"
+                    placeholder={t("login_email_placeholder")}
                   />
                   <div>
                     <FieldInput
@@ -459,7 +481,7 @@ export default function Login() {
                         setRegForm((f) => ({ ...f, password: v }));
                         setPwStrength(calcPwStrength(v));
                       }}
-                      placeholder="Min. 8 caractères"
+                      placeholder={t("reset_placeholder_password")}
                       id="m-pw1"
                     />
                     {regForm.password && (
@@ -485,7 +507,7 @@ export default function Login() {
                     disabled={!canGoNext(1)}
                     className="w-full py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60 mt-1"
                   >
-                    Continuer <i className="fa-solid fa-arrow-right" />
+                    {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
                   </button>
                 </>
               )}
@@ -498,9 +520,9 @@ export default function Login() {
                       <i className="fa-solid fa-shield-halved text-white text-[16px]" />
                     </div>
                     <div>
-                      <p className="font-semibold text-textMain text-[14px] mb-0.5">Sécurisation du compte</p>
+                      <p className="font-semibold text-textMain text-[14px] mb-0.5">{t("login_security_title")}</p>
                       <p className="text-[12.5px] text-textMuted leading-[1.6]">
-                        Confirmez votre mot de passe pour valider la sécurité de votre compte DocMaster.
+                        {t("login_security_desc")}
                       </p>
                     </div>
                   </div>
@@ -508,7 +530,7 @@ export default function Login() {
                     icon="fa-solid fa-lock"
                     type="text"
                     value={regForm.password}
-                    placeholder="••••••••"
+                    placeholder={t("login_password_placeholder")}
                     id="m-pw1-show"
                   />
                   <div>
@@ -520,19 +542,19 @@ export default function Login() {
                         setRegForm((f) => ({ ...f, passwordConfirm: v }));
                         setPwMatch(v === regForm.password && v.length > 0);
                       }}
-                      placeholder="Répétez votre mot de passe"
+                      placeholder={t("reset_placeholder_confirm")}
                       id="m-pw2"
                     />
                     {regForm.passwordConfirm && pwMatch === false && (
                       <p className="text-[12px] font-medium mt-1.5 text-red-500">
                         <i className="fa-solid fa-circle-xmark mr-1" />
-                        Les mots de passe ne correspondent pas.
+                        {t("login_error_pw_mismatch")}
                       </p>
                     )}
                     {pwMatch === true && (
                       <p className="text-[12px] font-medium mt-1.5 text-green-600">
                         <i className="fa-solid fa-circle-check mr-1" />
-                        Parfait, les mots de passe correspondent !
+                        {t("login_success_pw_match")}
                       </p>
                     )}
                   </div>
@@ -550,7 +572,7 @@ export default function Login() {
                       disabled={!canGoNext(2)}
                       className="flex-1 py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60"
                     >
-                      Valider <i className="fa-solid fa-arrow-right" />
+                      {t("login_btn_validate")} <i className="fa-solid fa-arrow-right" />
                     </button>
                   </div>
                 </>
@@ -564,7 +586,7 @@ export default function Login() {
                       <i className="fa-solid fa-mobile-screen-button text-primary text-[22px]" />
                     </div>
                     <p className="text-[13px] text-textMuted leading-[1.6]">
-                      Un code PIN à 6 chiffres a été envoyé par SMS au{" "}
+                      {t("login_pin_sms_sent")}{" "}
                       <span className="font-semibold text-textMain">{regForm.telephone}</span>
                     </p>
                   </div>
@@ -603,9 +625,9 @@ export default function Login() {
                     ))}
                   </div>
                   <p className="text-[12px] text-textMuted text-center">
-                    Vous n'avez pas reçu le code ?{" "}
+                    {t("login_pin_not_received")}{" "}
                     <button className="text-primary font-semibold hover:underline">
-                      Renvoyer
+                      {t("login_pin_resend")}
                     </button>
                   </p>
                   <div className="flex gap-2.5 mt-1">
@@ -622,7 +644,7 @@ export default function Login() {
                       disabled={!canGoNext(3)}
                       className="flex-1 py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60"
                     >
-                      Vérifier <i className="fa-solid fa-arrow-right" />
+                      {t("login_btn_verify")} <i className="fa-solid fa-arrow-right" />
                     </button>
                   </div>
                 </>
@@ -637,16 +659,16 @@ export default function Login() {
                     </div>
                     <div>
                       <p className="font-semibold text-textMain text-[14px] mb-0.5">
-                        Votre identité sur DocMaster
+                        {t("login_identity_title")}
                       </p>
                       <p className="text-[12.5px] text-textMuted leading-[1.6]">
-                        Choisissez un pseudonyme unique. C'est ainsi que la communauté vous connaîtra.
+                        {t("login_identity_desc")}
                       </p>
                     </div>
                   </div>
                   <div className="flex flex-col">
                     <label className="text-[12px] font-bold text-textMuted uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                      <i className="fa-solid fa-at text-primary text-[11px]" /> Votre pseudo
+                      <i className="fa-solid fa-at text-primary text-[11px]" /> {t("login_pseudo_label")}
                     </label>
                     <div className="relative flex items-center group">
                       <span className="absolute left-3.5 text-[#c4bab0] text-[14px] font-bold">
@@ -675,13 +697,13 @@ export default function Login() {
                       )}
                     </div>
                     <p className="text-[11.5px] text-textMuted mt-1.5">
-                      Entre 3 et 20 caractères, lettres, chiffres et _
+{t("login_pseudo_hint")}
                     </p>
                   </div>
                   {pseudoSuggestions.length > 0 && (
                     <div>
                       <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-2">
-                        Suggestions
+                        {t("login_suggestions")}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {pseudoSuggestions.map((s) => (
@@ -704,7 +726,7 @@ export default function Login() {
                       className="flex items-center gap-2 text-[12.5px] font-semibold text-textMuted hover:text-primary transition-colors w-fit"
                     >
                       <i className="fa-solid fa-users text-primary text-[11px]" />
-                      Vous avez un code de parrainage ?
+                      {t("login_referral_question")}
                       <i
                         className={`fa-solid fa-chevron-down text-[10px] transition-transform ${
                           showReferral ? "rotate-180" : ""
@@ -718,12 +740,12 @@ export default function Login() {
                           type="text"
                           value={regForm.referral}
                           onChange={(v) => setRegForm((f) => ({ ...f, referral: v }))}
-                          placeholder="Code ou lien de parrainage"
+                          placeholder={t("login_referral_placeholder")}
                         />
                         <p className="text-[11.5px] text-textMuted">
-                          Votre parrain recevra une récompense et vous bénéficierez de{" "}
+                          {t("login_referral_desc_1")}{" "}
                           <span className="font-semibold text-primary">
-                            3 déclarations gratuites
+{t("login_referral_desc_2")}
                           </span>
                           .
                         </p>
@@ -748,7 +770,7 @@ export default function Login() {
                         <i className="fa-solid fa-spinner fa-spin" />
                       ) : (
                         <>
-                          <i className="fa-solid fa-rocket" /> Créer mon compte
+<i className="fa-solid fa-rocket" /> {t("login_btn_create")}
                         </>
                       )}
                     </button>
@@ -761,9 +783,9 @@ export default function Login() {
           {/* Social proof */}
           <div className="flex flex-col gap-2 mt-2">
             {[
-              { icon: "fa-solid fa-circle-check", text: "+150 documents retrouvés" },
-              { icon: "fa-solid fa-users", text: "+2 400 membres actifs" },
-              { icon: "fa-solid fa-shield-halved", text: "Données sécurisées & privées" },
+              { icon: "fa-solid fa-circle-check", text: t("login_proof_docs") },
+              { icon: "fa-solid fa-users", text: t("login_proof_members") },
+              { icon: "fa-solid fa-shield-halved", text: t("login_proof_security") },
             ].map((item) => (
               <div
                 key={item.text}
@@ -795,17 +817,17 @@ export default function Login() {
             </div>
             <div className="relative z-10">
               <h2 className="font-bricolage text-[26px] font-extrabold text-white leading-[1.25] mb-3 tracking-tight">
-                Retrouvez vos documents perdus
+                {t("login_hero_title")}
               </h2>
               <p className="text-[13.5px] text-white/60 leading-[1.6]">
-                La plateforme communautaire qui connecte ceux qui perdent avec ceux qui trouvent.
+                {t("login_desktop_hero_desc")}
               </p>
             </div>
             <div className="flex flex-col gap-2.5 relative z-10">
               {[
-                { icon: "fa-solid fa-circle-check", text: "+150 documents retrouvés" },
-                { icon: "fa-solid fa-users", text: "+2 400 membres actifs" },
-                { icon: "fa-solid fa-shield-halved", text: "Données sécurisées" },
+                { icon: "fa-solid fa-circle-check", text: t("login_proof_docs") },
+                { icon: "fa-solid fa-users", text: t("login_proof_members") },
+                { icon: "fa-solid fa-shield-halved", text: t("login_proof_security") },
               ].map((item) => (
                 <div
                   key={item.text}
@@ -833,7 +855,7 @@ export default function Login() {
                   tab === "login" ? "text-white" : "text-textMuted"
                 }`}
               >
-                <i className="fa-solid fa-right-to-bracket" /> Connexion
+                <i className="fa-solid fa-right-to-bracket" /> {t("login_tab_login")}
               </button>
               <button
                 onClick={() => setTab("register")}
@@ -841,7 +863,7 @@ export default function Login() {
                   tab === "register" ? "text-white" : "text-textMuted"
                 }`}
               >
-                <i className="fa-solid fa-user-plus" /> Inscription
+                <i className="fa-solid fa-user-plus" /> {t("login_tab_register")}
               </button>
             </div>
 
@@ -850,10 +872,10 @@ export default function Login() {
               <form onSubmit={handleLogin} className="flex flex-col gap-3.5">
                 <div className="mb-1">
                   <h1 className="font-bricolage text-[26px] font-extrabold text-textMain tracking-tight mb-[3px]">
-                    Bon retour !
+                    {t("login_welcome_back")}
                   </h1>
                   <p className="text-[13px] text-textMuted font-medium italic">
-                    Connectez-vous à votre espace DocMaster
+                    {t("login_subtitle")}
                   </p>
                 </div>
 
@@ -868,7 +890,7 @@ export default function Login() {
                   type="email"
                   value={loginForm.email}
                   onChange={(v) => setLoginForm((f) => ({ ...f, email: v }))}
-                  placeholder="vous@exemple.com"
+                  placeholder={t("login_email_placeholder")}
                 />
 
                 <FieldInput
@@ -876,7 +898,7 @@ export default function Login() {
                   type={pwVisible ? "text" : "password"}
                   value={loginForm.password}
                   onChange={(v) => setLoginForm((f) => ({ ...f, password: v }))}
-                  placeholder="••••••••"
+                  placeholder={t("login_password_placeholder")}
                   id="dlogin-pw"
                   rightButton={
                     <button
@@ -896,7 +918,7 @@ export default function Login() {
                     className="text-[12.5px] text-primary font-semibold hover:underline"
                   >
                     <i className="fa-solid fa-key mr-1.5" />
-                    Mot de passe oublié ?
+                    {t("login_forgot_password")}
                   </button>
                 </div>
 
@@ -909,13 +931,13 @@ export default function Login() {
                     <i className="fa-solid fa-spinner fa-spin" />
                   ) : (
                     <>
-                      <i className="fa-solid fa-right-to-bracket" /> Se connecter
+                      <i className="fa-solid fa-right-to-bracket" /> {t("login_btn_login")}
                     </>
                   )}
                 </button>
 
                 <div className="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-borda after:content-[''] after:flex-1 after:h-[1px] after:bg-borda">
-                  ou continuer avec
+                  {t("login_or_continue")}
                 </div>
                 <div className="flex gap-2.5">
                   <button
@@ -924,11 +946,13 @@ export default function Login() {
                   >
                     <i className="fa-brands fa-facebook text-blue-500" /> Facebook
                   </button>
-                  <button
-                    type="button"
-                    className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]"
+                  <button 
+                    type="button" 
+                    onClick={handleGoogleLogin}
+                    disabled={loginLoading || regLoading}
+                    className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] disabled:opacity-50"
                   >
-                    <i className="fa-brands fa-google text-[#db4437]" /> Google
+                    {loginLoading || regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
                   </button>
                   <button
                     type="button"
@@ -945,10 +969,10 @@ export default function Login() {
               <div className="flex flex-col gap-4">
                 <div>
                   <h1 className="font-bricolage text-[26px] font-extrabold text-textMain tracking-tight mb-[3px]">
-                    Créer un compte
+                    {t("login_create_account")}
                   </h1>
                   <p className="text-[13px] text-textMuted font-medium italic">
-                    Rejoignez la communauté DocMaster
+                    {t("login_register_subtitle")}
                   </p>
                 </div>
 
@@ -967,30 +991,35 @@ export default function Login() {
                       <button type="button" className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
                         <i className="fa-brands fa-facebook text-blue-500" /> Facebook
                       </button>
-                      <button type="button" className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
-                        <i className="fa-brands fa-google text-[#db4437]" /> Google
+                      <button 
+                        type="button" 
+                        onClick={handleGoogleLogin}
+                        disabled={regLoading}
+                        className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] disabled:opacity-50"
+                      >
+                        {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
                       </button>
                       <button type="button" className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
                         <i className="fa-brands fa-apple text-[#1a1a1a]" /> Apple
                       </button>
                     </div>
                     <div className="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-borda after:content-[''] after:flex-1 after:h-[1px] after:bg-borda">
-                      ou s'inscrire avec
+                    {t("login_or_register_with")}
                     </div>
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <FieldInput icon="fa-regular fa-user" type="text" value={regForm.nom} onChange={(v) => setRegForm((f) => ({ ...f, nom: v }))} placeholder="Dupont" />
+                        <FieldInput icon="fa-regular fa-user" type="text" value={regForm.nom} onChange={(v) => setRegForm((f) => ({ ...f, nom: v }))} placeholder={t("profil_placeholder_lastname")} />
                       </div>
                       <div className="flex-1">
-                        <FieldInput icon="fa-regular fa-user" type="text" value={regForm.prenom} onChange={(v) => setRegForm((f) => ({ ...f, prenom: v }))} placeholder="Jean" />
+                        <FieldInput icon="fa-regular fa-user" type="text" value={regForm.prenom} onChange={(v) => setRegForm((f) => ({ ...f, prenom: v }))} placeholder={t("profil_placeholder_firstname")} />
                       </div>
                     </div>
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <FieldInput icon="fa-solid fa-phone" type="tel" value={regForm.telephone} onChange={(v) => setRegForm((f) => ({ ...f, telephone: v }))} placeholder="+237 6XX XXX XXX" />
+                        <FieldInput icon="fa-solid fa-phone" type="tel" value={regForm.telephone} onChange={(v) => setRegForm((f) => ({ ...f, telephone: v }))} placeholder={t("profil_placeholder_phone")} />
                       </div>
                       <div className="flex-1">
-                        <FieldInput icon="fa-regular fa-envelope" type="email" value={regForm.email} onChange={(v) => setRegForm((f) => ({ ...f, email: v }))} placeholder="vous@exemple.com" />
+                        <FieldInput icon="fa-regular fa-envelope" type="email" value={regForm.email} onChange={(v) => setRegForm((f) => ({ ...f, email: v }))} placeholder={t("login_email_placeholder")} />
                       </div>
                     </div>
                     <div>
@@ -1002,7 +1031,7 @@ export default function Login() {
                           setRegForm((f) => ({ ...f, password: v }));
                           setPwStrength(calcPwStrength(v));
                         }}
-                        placeholder="Min. 8 caractères"
+                        placeholder={t("reset_placeholder_password")}
                         id="d-pw1"
                       />
                       {regForm.password && renderPwBars(regForm.password)}
@@ -1013,7 +1042,7 @@ export default function Login() {
                       disabled={!canGoNext(1)}
                       className="w-full py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60 mt-1"
                     >
-                      Continuer <i className="fa-solid fa-arrow-right" />
+                    {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
                     </button>
                   </>
                 )}
@@ -1026,11 +1055,11 @@ export default function Login() {
                         <i className="fa-solid fa-shield-halved text-white text-[16px]" />
                       </div>
                       <div>
-                        <p className="font-semibold text-textMain text-[14px] mb-0.5">Sécurisation du compte</p>
-                        <p className="text-[12.5px] text-textMuted leading-[1.6]">Confirmez votre mot de passe pour valider la sécurité de votre compte DocMaster.</p>
+                        <p className="font-semibold text-textMain text-[14px] mb-0.5">{t("login_security_title")}</p>
+                        <p className="text-[12.5px] text-textMuted leading-[1.6]">{t("login_security_desc")}</p>
                       </div>
                     </div>
-                    <FieldInput icon="fa-solid fa-lock" type="text" value={regForm.password} placeholder="••••••••" id="d-pw1-show" />
+                    <FieldInput icon="fa-solid fa-lock" type="text" value={regForm.password} placeholder={t("login_password_placeholder")} id="d-pw1-show" />
                     <div>
                       <FieldInput
                         icon="fa-solid fa-lock-open"
@@ -1040,7 +1069,7 @@ export default function Login() {
                           setRegForm((f) => ({ ...f, passwordConfirm: v }));
                           setPwMatch(v === regForm.password && v.length > 0);
                         }}
-                        placeholder="Répétez votre mot de passe"
+                        placeholder={t("reset_placeholder_confirm")}
                         id="d-pw2"
                       />
                       {regForm.passwordConfirm && pwMatch === false && (
@@ -1052,10 +1081,10 @@ export default function Login() {
                     </div>
                     <div className="flex gap-3 mt-1">
                       <button type="button" onClick={() => setRegStep(1)} className="px-5 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[14px] font-semibold text-textMain flex items-center justify-center gap-2 transition-all hover:bg-white active:scale-[0.97]">
-                        <i className="fa-solid fa-arrow-left" /> Retour
+                        <i className="fa-solid fa-arrow-left" /> {t("login_back")}
                       </button>
                       <button type="button" onClick={() => setRegStep(3)} disabled={!canGoNext(2)} className="flex-1 py-3 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60">
-                        Valider <i className="fa-solid fa-arrow-right" />
+                        {t("login_btn_validate")} <i className="fa-solid fa-arrow-right" />
                       </button>
                     </div>
                   </>
@@ -1102,14 +1131,14 @@ export default function Login() {
                       ))}
                     </div>
                     <p className="text-[12px] text-textMuted text-center">
-                      Vous n'avez pas reçu le code ? <button className="text-primary font-semibold hover:underline">Renvoyer</button>
+                      {t("login_pin_not_received")} <button className="text-primary font-semibold hover:underline">{t("login_pin_resend")}</button>
                     </p>
                     <div className="flex gap-3 mt-1">
                       <button type="button" onClick={() => setRegStep(2)} className="px-5 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[14px] font-semibold text-textMain flex items-center justify-center gap-2 transition-all hover:bg-white active:scale-[0.97]">
-                        <i className="fa-solid fa-arrow-left" /> Retour
+                        <i className="fa-solid fa-arrow-left" /> {t("login_back")}
                       </button>
                       <button type="button" onClick={() => setRegStep(4)} disabled={!canGoNext(3)} className="flex-1 py-3 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60">
-                        Vérifier <i className="fa-solid fa-arrow-right" />
+                        {t("login_btn_verify")} <i className="fa-solid fa-arrow-right" />
                       </button>
                     </div>
                   </>
@@ -1123,13 +1152,13 @@ export default function Login() {
                         <i className="fa-solid fa-id-badge text-white text-[16px]" />
                       </div>
                       <div>
-                        <p className="font-semibold text-textMain text-[14px] mb-0.5">Votre identité sur DocMaster</p>
-                        <p className="text-[12.5px] text-textMuted leading-[1.6]">Choisissez un pseudonyme unique. C'est ainsi que la communauté vous reconnaîtra.</p>
+                        <p className="font-semibold text-textMain text-[14px] mb-0.5">{t("login_identity_title")}</p>
+                        <p className="text-[12.5px] text-textMuted leading-[1.6]">{t("login_identity_desc")}</p>
                       </div>
                     </div>
                     <div className="flex flex-col">
                       <label className="text-[12px] font-bold text-textMuted uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                        <i className="fa-solid fa-at text-primary text-[11px]" /> Votre pseudo
+                      <i className="fa-solid fa-at text-primary text-[11px]" /> {t("login_pseudo_label")}
                       </label>
                       <div className="relative flex items-center group">
                         <span className="absolute left-3.5 text-[#c4bab0] text-[14px] font-bold">@</span>
@@ -1138,11 +1167,11 @@ export default function Login() {
                           className="w-full py-3.5 pl-7 pr-[42px] bg-[#faf8f5] border-[1.5px] border-[#E0D5C4] rounded-[14px] font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.15)] focus:bg-white placeholder:text-[#c4bab0]"
                         />
                       </div>
-                      <p className="text-[11.5px] text-textMuted mt-1.5">Entre 3 et 20 caractères, lettres, chiffres et _</p>
+                      <p className="text-[11.5px] text-textMuted mt-1.5">{t("login_pseudo_hint")}</p>
                     </div>
                     {pseudoSuggestions.length > 0 && (
                       <div>
-                        <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-2">Suggestions basées sur votre nom</p>
+                        <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-2">{t("login_suggestions_name")}</p>
                         <div className="flex flex-wrap gap-2">
                           {pseudoSuggestions.map((s) => (
                             <button key={s} type="button" onClick={() => setRegForm((f) => ({ ...f, pseudo: s }))}
@@ -1156,24 +1185,24 @@ export default function Login() {
                     <div className="flex flex-col gap-2">
                       <button type="button" onClick={() => setShowReferral(!showReferral)}
                         className="flex items-center gap-2 text-[12.5px] font-semibold text-textMuted hover:text-primary transition-colors w-fit">
-                        <i className="fa-solid fa-users text-primary text-[11px]" /> Vous avez un code de parrainage ?
+                        <i className="fa-solid fa-users text-primary text-[11px]" /> {t("login_referral_question")}
                         <i className={`fa-solid fa-chevron-down text-[10px] transition-transform ${showReferral ? "rotate-180" : ""}`} />
                       </button>
                       {showReferral && (
                         <div className="flex flex-col gap-1.5">
-                          <FieldInput icon="fa-solid fa-link" type="text" value={regForm.referral} onChange={(v) => setRegForm((f) => ({ ...f, referral: v }))} placeholder="Code ou lien de parrainage" />
-                          <p className="text-[11.5px] text-textMuted">Votre parrain recevra une récompense et vous bénéficierez de <span className="font-semibold text-primary">3 déclarations gratuites</span>.</p>
+                          <FieldInput icon="fa-solid fa-link" type="text" value={regForm.referral} onChange={(v) => setRegForm((f) => ({ ...f, referral: v }))} placeholder={t("login_referral_placeholder")} />
+                          <p className="text-[11.5px] text-textMuted">{t("login_referral_desc_1")} <span className="font-semibold text-primary">{t("login_referral_desc_2")}</span>.</p>
                         </div>
                       )}
                     </div>
                     <div className="flex gap-3 mt-1">
                       <button type="button" onClick={() => setRegStep(3)}
                         className="px-5 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[14px] font-semibold text-textMain flex items-center justify-center gap-2 transition-all hover:bg-white active:scale-[0.97]">
-                        <i className="fa-solid fa-arrow-left" /> Retour
+                        <i className="fa-solid fa-arrow-left" /> {t("login_back")}
                       </button>
                       <button type="button" onClick={handleRegister} disabled={!regForm.pseudo || regLoading}
                         className="flex-1 py-3.5 bg-green-dark text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/20 active:scale-[0.98] disabled:opacity-60">
-                        {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-solid fa-rocket" /> Créer mon compte</>}
+                        {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-solid fa-rocket" /> {t("login_btn_create")}</>}
                       </button>
                     </div>
                   </>
@@ -1201,8 +1230,8 @@ export default function Login() {
             </div>
 
             <div className="space-y-2">
-              <h3 className="font-bricolage text-3xl font-extrabold tracking-tight text-gray-900">Mot de passe oublié ?</h3>
-              <p className="text-gray-500 leading-relaxed text-[15px]">Entrez votre adresse email pour recevoir un lien de réinitialisation.</p>
+              <h3 className="font-bricolage text-3xl font-extrabold tracking-tight text-gray-900">{t("forgot_title")}</h3>
+              <p className="text-gray-500 leading-relaxed text-[15px]">{t("forgot_desc")}</p>
             </div>
 
             {forgotSent ? (
@@ -1210,11 +1239,11 @@ export default function Login() {
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-500 text-3xl">
                   <i className="fa-solid fa-envelope-circle-check" />
                 </div>
-                <p className="text-gray-700 font-semibold">Email envoyé ! Vérifiez votre boîte mail.</p>
-                <p className="text-gray-400 text-sm">Le lien expire dans 24h. Vérifiez vos spams si vous ne le trouvez pas.</p>
+                <p className="text-gray-700 font-semibold">{t("forgot_sent_title")}</p>
+                <p className="text-gray-400 text-sm">{t("forgot_sent_desc")}</p>
                 <button onClick={() => { setShowForgot(false); forgotRef.current?.close(); setForgotSent(false); }}
                   className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-dark transition-all">
-                  Fermer
+                  {t("forgot_close")}
                 </button>
               </div>
             ) : (
@@ -1236,12 +1265,12 @@ export default function Login() {
                 }
               }} className="flex flex-col gap-4">
                 <div className="flex flex-col">
-                  <label className="text-[11px] font-bold text-textMuted uppercase tracking-wider ml-1 mb-1.5">Votre email</label>
-                  <FieldInput icon="fa-regular fa-envelope" type="email" value={forgotEmail} onChange={setForgotEmail} placeholder="exemple@mail.com" />
+                  <label className="text-[11px] font-bold text-textMuted uppercase tracking-wider ml-1 mb-1.5">{t("forgot_email_label")}</label>
+                  <FieldInput icon="fa-regular fa-envelope" type="email" value={forgotEmail} onChange={setForgotEmail} placeholder={t("login_email_placeholder")} />
                 </div>
                 <button type="submit" disabled={forgotLoading || !forgotEmail}
                   className="w-full py-3.5 bg-primary text-white rounded-2xl font-bold text-base shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all disabled:opacity-60 flex items-center justify-center gap-2">
-                  {forgotLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-solid fa-paper-plane" /> Envoyer le lien</>}
+                  {forgotLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-solid fa-paper-plane" /> {t("forgot_btn")}</>}
                 </button>
               </form>
             )}

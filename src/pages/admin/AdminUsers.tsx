@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "../../context/I18nContext";
 import { adminService } from "../../services/admin";
 
 interface User {
@@ -7,6 +8,12 @@ interface User {
   prenom?: string;
   email?: string;
   telephone?: string;
+  subscription_status?: string;
+  active_plan?: string;
+  wallet_balance?: number;
+  points?: number;
+  code_invitation?: string;
+  referral_count?: number;
   is_active?: boolean;
   is_verified?: boolean;
   created_at?: string;
@@ -14,6 +21,7 @@ interface User {
 }
 
 export default function AdminUsers() {
+  const { t } = useI18n();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -33,6 +41,15 @@ export default function AdminUsers() {
       u.email?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleDelete = async (id: string, name: string) => {
+    if (window.confirm(`${t("admin_user_delete_confirm")} "${name}" ?\n${t("admin_user_delete_irreversible")}`)) {
+      try {
+        await adminService.deleteUser(id);
+        setUsers((prev) => prev.filter((u) => u.id !== id));
+      } catch {}
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -43,18 +60,22 @@ export default function AdminUsers() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-bricolage text-2xl font-black text-gray-900">Utilisateurs</h1>
-          <p className="text-gray-400 text-[13px] font-medium mt-1">{users.length} inscrit{users.length !== 1 ? "s" : ""}</p>
+          <h1 className="font-bricolage text-2xl font-black text-gray-900">
+            {t("admin_users")}
+          </h1>
+          <p className="text-gray-400 text-[13px] font-medium mt-1">
+            {t("admin_users_subtitle")}
+          </p>
         </div>
-        <div className="relative w-full sm:w-72">
+        <div className="relative w-72">
           <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 text-sm" />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un utilisateur..."
+            placeholder={t("admin_search_user")}
             className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-primary transition-colors placeholder:text-gray-300"
           />
         </div>
@@ -64,60 +85,110 @@ export default function AdminUsers() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/80">
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Nom</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Email</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Téléphone</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Statut</th>
-                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Inscrit le</th>
-                <th className="text-right px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+              <tr className="border-b border-gray-100">
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  {t("admin_user")}
+                </th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  {t("admin_user_subscription")}
+                </th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  {t("admin_user_wallet")}
+                </th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  {t("admin_user_points")}
+                </th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  {t("admin_user_referral_code")}
+                </th>
+                <th className="text-center px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  {t("admin_user_referrals_count")}
+                </th>
+                <th className="text-left px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  {t("admin_registered_on")}
+                </th>
+                <th className="text-right px-4 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  {t("admin_actions")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-16 text-gray-300">
+                  <td colSpan={8} className="text-center py-16 text-gray-300">
                     <i className="fa-solid fa-users text-3xl mb-3" />
-                    <p className="text-[13px] font-medium text-gray-400">Aucun utilisateur trouvé</p>
+                    <p className="text-[13px] font-medium text-gray-400">
+                      {t("admin_no_users_found")}
+                    </p>
                   </td>
                 </tr>
               ) : (
-                filtered.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary text-[13px] font-bold">
-                          {(u.prenom?.[0] || u.nom?.[0] || "?").toUpperCase()}
+                filtered.map((u) => {
+                  const initial = (
+                    (u.prenom?.[0] || "") + (u.nom?.[0] || "")
+                  ).toUpperCase() || "?";
+                  const fullName = [u.prenom, u.nom].filter(Boolean).join(" ");
+                  return (
+                    <tr key={u.id} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-[34px] h-[34px] rounded-xl bg-green-50 flex items-center justify-center text-[12px] font-bold text-green-700">
+                            {initial}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-gray-900">
+                              {fullName}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {u.email}
+                            </span>
+                          </div>
                         </div>
-                        <span className="font-semibold text-gray-900">{u.prenom || ""} {u.nom || ""}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-gray-500">{u.email || "—"}</td>
-                    <td className="px-4 py-3.5 text-gray-500">{u.telephone || "—"}</td>
-                    <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                        u.is_active
-                          ? "bg-emerald-50 text-emerald-600"
-                          : u.is_verified
-                          ? "bg-blue-50 text-blue-600"
-                          : "bg-gray-100 text-gray-400"
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          u.is_active ? "bg-emerald-500" : u.is_verified ? "bg-blue-500" : "bg-gray-400"
-                        }`} />
-                        {u.is_active ? "Actif" : u.is_verified ? "Vérifié" : "Inactif"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-gray-400 text-[12px]">
-                      {u.created_at ? new Date(u.created_at).toLocaleDateString("fr-FR") : "—"}
-                    </td>
-                    <td className="px-4 py-3.5 text-right">
-                      <button className="text-gray-300 hover:text-primary p-2 rounded-xl hover:bg-primary/5 transition-all">
-                        <i className="fa-solid fa-ellipsis-vertical text-sm" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-4 py-3">
+                        {u.subscription_status === "ACTIVE" ? (
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-700 uppercase tracking-wider">
+                            {u.active_plan || t("admin_active")}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 uppercase tracking-wider">
+                            {t("admin_user_free")}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-medium">
+                        {u.wallet_balance ?? 0} XAF
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-orange-500 font-bold">
+                          {u.points ?? 0}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                          {u.code_invitation || "---"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {u.referral_count ?? 0}
+                      </td>
+                      <td className="px-4 py-3 text-[11px] text-gray-400">
+                        {u.created_at
+                          ? new Date(u.created_at).toLocaleDateString()
+                          : "---"}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => handleDelete(u.id, fullName)}
+                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          title={t("admin_user_delete_title")}
+                        >
+                          <i className="fa-solid fa-trash-can" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

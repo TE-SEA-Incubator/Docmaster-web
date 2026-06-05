@@ -78,6 +78,8 @@ export interface DocumentDeclaration {
     telephone_contact?: string;
     email_contact?: string;
     created_at: Date;
+    deleted_at?: Date | null;
+    deleted_reason?: string | null;
 }
 
 export interface UserDocument {

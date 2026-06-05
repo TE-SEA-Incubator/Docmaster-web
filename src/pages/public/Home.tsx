@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import { subscriptionsService } from "../../services/subscriptionsService";
+
 import type { Plan } from "../../types/api";
 
 const testimonials = [
@@ -49,23 +50,23 @@ function useCounter(ref, target, suffix = "") {
 }
 
 const steps = [
-  { num: 1, title: "Déclarez", desc: "Remplissez une fiche de déclaration de perte avec les détails de votre document." },
-  { num: 2, title: "Recherchez", desc: "Notre système compare votre déclaration avec les documents trouvés par la communauté." },
-  { num: 3, title: "Confirmez", desc: "Validez la correspondance et effectuez le paiement sécurisé des frais de service." },
-  { num: 4, title: "Récupérez", desc: "Récupérez votre document auprès du point de retrait grâce au code de retrait unique." },
+  { num: 1, titleKey: "home_how_step1_title", descKey: "home_how_step1_desc" },
+  { num: 2, titleKey: "home_how_step2_title", descKey: "home_how_step2_desc" },
+  { num: 3, titleKey: "home_how_step3_title", descKey: "home_how_step3_desc" },
+  { num: 4, titleKey: "home_how_step4_title", descKey: "home_how_step4_desc" },
 ];
 
 const features = [
-  { icon: "fa-solid fa-shield-halved", bg: "bg-green-light", color: "text-green-mid", title: "Sécurisé & Fiable", desc: "Vos données sont chiffrées. Le paiement n'est libéré qu'après confirmation de la remise physique du document." },
-  { icon: "fa-solid fa-bolt", bg: "bg-primary/10", color: "text-primary", title: "Rapide & Efficace", desc: "Un matching intelligent compare les déclarations en temps réel. En moyenne, un document est retrouvé en 48h." },
-  { icon: "fa-solid fa-users", bg: "bg-blue-50", color: "text-blue-500", title: "Communauté Solidaire", desc: "Plus de 1500 membres actifs prêts à vous aider. Plus vous contribuez, plus vous gagnez en récompenses." },
+  { icon: "fa-solid fa-shield-halved", bg: "bg-green-light", color: "text-green-mid", titleKey: "home_feature_secure", descKey: "home_feature_secure_desc" },
+  { icon: "fa-solid fa-bolt", bg: "bg-primary/10", color: "text-primary", titleKey: "home_feature_fast", descKey: "home_feature_fast_desc" },
+  { icon: "fa-solid fa-users", bg: "bg-blue-50", color: "text-blue-500", titleKey: "home_feature_community", descKey: "home_feature_community_desc" },
 ];
 
 const tips = [
-  { icon: "fa-solid fa-shield-alt", title: "Vigilance dans les lieux bondés", desc: "Gardez vos documents dans des poches intérieures dans les marchés et transports." },
-  { icon: "fa-solid fa-copy", title: "Numérisez vos documents", desc: "Conservez des copies numérisées sécurisées de vos documents dans le cloud." },
-  { icon: "fa-solid fa-bell", title: "Déclarez immédiatement", desc: "Plus vous déclarez tôt, plus vous avez de chances de récupérer votre document." },
-  { icon: "fa-solid fa-phone-alt", title: "Contacts d'urgence", desc: "Mémorisez les numéros d'urgence locaux et gardez une liste de contacts accessible." },
+  { icon: "fa-solid fa-shield-alt", titleKey: "home_tip_vigilance", descKey: "home_tip_vigilance_desc" },
+  { icon: "fa-solid fa-copy", titleKey: "home_tip_scan", descKey: "home_tip_scan_desc" },
+  { icon: "fa-solid fa-bell", titleKey: "home_tip_declare", descKey: "home_tip_declare_desc" },
+  { icon: "fa-solid fa-phone-alt", titleKey: "home_tip_contacts", descKey: "home_tip_contacts_desc" },
 ];
 
 export default function Home() {
@@ -88,7 +89,7 @@ export default function Home() {
   return (
     <>
       <HeroSection t={t} />
-      <RecentDocsSection />
+      <RecentDocsSection t={t} />
       <HowItWorksSection t={t} />
       <WhyDocmasterSection t={t} />
       <DigitalVaultSection t={t} />
@@ -108,11 +109,26 @@ function HeroSection({ t }) {
   return (
     <section className="bg-bgMain noise relative overflow-hidden min-h-screen flex items-center pt-[68px]">
       <style>{`
-        .tower-col { perspective: 800px; }
-        .tower-col-inner { transform-style: preserve-3d; }
-        .tower-col-inner img { transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-        .tower-col-inner img:hover { transform: scale(1.03); box-shadow: 0 12px 40px rgba(0,0,0,.15); }
+        .tower-col { perspective: 1200px; }
+        .tower-col-inner { 
+          transform-style: preserve-3d; 
+          animation: tower-rotate 60s linear infinite;
+        }
+        @keyframes tower-rotate {
+          0% { transform: rotateY(0deg); }
+          50% { transform: rotateY(15deg) rotateX(5deg); }
+          100% { transform: rotateY(0deg); }
+        }
+        .tower-col-inner img { 
+          transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          backface-visibility: hidden;
+        }
+        .tower-col-inner img:hover { transform: scale(1.05) translateZ(30px); box-shadow: 0 20px 60px rgba(0,0,0,.2); z-index: 50; }
         .tower-stack { display: flex; flex-direction: column; }
+        @keyframes float {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(2deg); }
+        }
       `}</style>
 
       <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
@@ -156,11 +172,11 @@ function HeroSection({ t }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-6">
-              <MiniStat icon="fa-solid fa-file-lines" value="2 847" label="Déclarés" />
+              <MiniStat icon="fa-solid fa-file-lines" value="2 847" label={t("home_mini_declared")} />
               <div className="w-px h-8 bg-borda" />
-              <MiniStat icon="fa-solid fa-search" value="2 156" label="Retrouvés" />
+              <MiniStat icon="fa-solid fa-search" value="2 156" label={t("home_mini_found")} />
               <div className="w-px h-8 bg-borda" />
-              <MiniStat icon="fa-solid fa-users" value="1 523" label="Membres" />
+              <MiniStat icon="fa-solid fa-users" value="1 523" label={t("home_mini_members")} />
             </div>
           </div>
 
@@ -168,20 +184,20 @@ function HeroSection({ t }) {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-80 h-80 rounded-full bg-primary/10 blur-3xl" />
             </div>
-            <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden" style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)" }}>
-              <div className="grid grid-cols-2 gap-5 auto-rows-max" style={{ perspective: "1000px" }}>
-                <div className="flex flex-col gap-5 tower-col">
+            <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden" >
+              <div className="grid grid-cols-2 gap-8 auto-rows-max" style={{ perspective: "1500px" }}>
+                <div className="flex flex-col gap-6 tower-col">
                   <div className="tower-col-inner tower-stack">
-                    <img src="/src/assets/images/images.jpg" className="w-full h-auto max-w-[260px] object-cover rounded-[16px] shadow-lg" alt="Document CNI" />
-                    <img src="/src/assets/images/1.png" className="w-full h-auto max-w-[260px] object-cover rounded-[16px] shadow-lg" alt="Document" />
-                    <img src="/src/assets/images/permis.jpg" className="w-full h-auto max-w-[260px] object-contain rounded-[16px] shadow-lg" alt="Document Passeport" />
+                    <img src="/src/assets/images/images.jpg" className="w-full h-auto max-w-[240px] object-cover rounded-[24px] shadow-xl border-4 border-white/10" alt="Document CNI" />
+                    <img src="/src/assets/images/1.png" className="w-full h-auto max-w-[240px] object-cover rounded-[24px] shadow-xl border-4 border-white/10" alt="Document" />
+                    <img src="/src/assets/images/permis.jpg" className="w-full h-auto max-w-[240px] object-contain rounded-[24px] shadow-xl border-4 border-white/10" alt="Document Passeport"/>
                   </div>
                 </div>
-                <div className="flex flex-col gap-5 mt-12 tower-col">
-                  <div className="tower-col-inner tower-stack">
-                    <img src="/src/assets/images/passport.png" className="w-full h-auto max-w-[260px] object-cover rounded-[16px] shadow-lg" alt="Document Passeport" />
-                    <img src="/src/assets/images/cni-poubelle.jpeg" className="w-full h-auto max-w-[260px] object-cover rounded-[16px] shadow-lg" alt="Document" />
-                    <img src="/src/assets/images/bacc.png" className="w-full h-auto max-w-[260px] object-contain rounded-[16px] shadow-lg" alt="Document" />
+                <div className="flex flex-col gap-6 mt-20 tower-col">
+                  <div className="tower-col-inner tower-stack" >
+                    <img src="/src/assets/images/passport.png" className="w-full h-auto max-w-[240px] object-cover rounded-[24px] shadow-xl border-4 border-white/10" alt="Document Passeport"/>
+                    <img src="/src/assets/images/cni-poubelle.jpeg" className="w-full h-auto max-w-[240px] object-cover rounded-[24px] shadow-xl border-4 border-white/10" alt="Document" />
+                    <img src="/src/assets/images/bacc.png" className="w-full h-auto max-w-[240px] object-contain rounded-[24px] shadow-xl border-4 border-white/10" alt="Document" />
                   </div>
                 </div>
               </div>
@@ -191,7 +207,7 @@ function HeroSection({ t }) {
       </div>
 
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 animate-bounce">
-        <span className="text-[10px] font-bold uppercase tracking-widest">Découvrir</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest">{t("home_how_title")}</span>
         <i className="fa-solid fa-chevron-down text-xs" />
       </div>
     </section>
@@ -248,7 +264,7 @@ const recentDocuments = [
   },
 ];
 
-function RecentDocsSection() {
+function RecentDocsSection({ t }) {
   const [docs] = useState(recentDocuments);
 
   return (
@@ -256,10 +272,10 @@ function RecentDocsSection() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
-            <i className="fa-solid fa-clock-rotate-left text-[10px]" /> En temps réel
+            <i className="fa-solid fa-clock-rotate-left text-[10px]" /> {t("home_recent_badge")}
           </span>
-          <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">Documents récemment ajoutés</h2>
-          <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">Des documents sont signalés chaque jour. Le vôtre est peut-être déjà ici.</p>
+          <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">{t("home_recent_title")}</h2>
+          <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">{t("home_recent_desc")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -292,7 +308,7 @@ function RecentDocsSection() {
                   </div>
                   <span className="text-[11px] font-black text-primary whitespace-nowrap">{doc.pourcentage_restitution}%</span>
                 </div>
-                <p className="text-[10px] text-textMuted mt-1 font-medium">Taux de restitution</p>
+                <p className="text-[10px] text-textMuted mt-1 font-medium">{t("home_recent_desc")}</p>
               </div>
             </div>
           ))}
@@ -302,7 +318,7 @@ function RecentDocsSection() {
           <Link to="/rechercher"
             className="inline-flex items-center gap-2.5 px-8 py-4 bg-green-dark text-white rounded-[18px] font-bold text-[14px] hover:bg-green-mid transition-all hover:-translate-y-1 shadow-lg shadow-green-dark/20"
           >
-            Voir tous les documents <i className="fa-solid fa-arrow-right text-[11px]" />
+            {t("home_recent_view_all")} <i className="fa-solid fa-arrow-right text-[11px]" />
           </Link>
         </div>
       </div>
@@ -319,10 +335,10 @@ function HowItWorksSection({ t }) {
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-bold uppercase tracking-widest mb-5 border border-primary/20">
-            <i className="fa-solid fa-route text-[10px]" /> Le processus
+            <i className="fa-solid fa-route text-[10px]" /> {t("home_how_badge")}
           </span>
-          <h2 className="font-bricolage text-2xl md:text-3xl font-extrabold text-textMain tracking-normal mb-4">Comment ça marche ?</h2>
-          <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">Un processus simple et sécurisé en 4 étapes.</p>
+          <h2 className="font-bricolage text-2xl md:text-3xl font-extrabold text-textMain tracking-normal mb-4">{t("home_how_title")}</h2>
+          <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">{t("home_how_desc")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -332,8 +348,8 @@ function HowItWorksSection({ t }) {
                 <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center font-bricolage text-2xl font-black mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-primary/20">
                   {step.num}
                 </div>
-                <h3 className="font-bricolage text-lg font-bold text-textMain mb-3">{step.title}</h3>
-                <p className="text-textMuted text-[13px] leading-relaxed">{step.desc}</p>
+                <h3 className="font-bricolage text-lg font-bold text-textMain mb-3">{t(step.titleKey)}</h3>
+                <p className="text-textMuted text-[13px] leading-relaxed">{t(step.descKey)}</p>
               </div>
               {i < steps.length - 1 && (
                 <div className="hidden lg:block absolute top-[60px] -right-3 w-9 h-9 bg-primary rounded-full flex items-center justify-center z-10 shadow-lg shadow-primary/30 border-2 border-white">
@@ -348,12 +364,12 @@ function HowItWorksSection({ t }) {
           <Link to="/login"
             className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary text-white rounded-[18px] font-black text-[15px] shadow-xl shadow-primary/30 hover:bg-primary-dark transition-all hover:-translate-y-1"
           >
-            <i className="fa-solid fa-file-circle-plus" /> J'ai perdu un document
+            <i className="fa-solid fa-file-circle-plus" /> {t("home_how_btn_loss")}
           </Link>
           <Link to="/trouver"
             className="inline-flex items-center gap-2.5 px-8 py-4 bg-white border border-borda text-textMain rounded-[18px] font-bold text-[15px] hover:bg-primary/5 transition-all hover:-translate-y-1 shadow-sm"
           >
-            <i className="fa-solid fa-hand-holding-heart" /> J'ai trouvé un document
+            <i className="fa-solid fa-hand-holding-heart" /> {t("home_how_btn_found")}
           </Link>
         </div>
       </div>
@@ -367,10 +383,10 @@ function WhyDocmasterSection({ t }) {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
-            <i className="fa-solid fa-star text-[10px]" /> Nos avantages
+            <i className="fa-solid fa-star text-[10px]" /> {t("home_why_badge")}
           </span>
-          <h2 className="font-bricolage text-2xl md:text-3xl font-extrabold text-textMain tracking-normal mb-4">Pourquoi utiliser DocMaster ?</h2>
-          <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">Une plateforme conçue pour la communauté camerounaise, avec des fonctionnalités adaptées à vos besoins.</p>
+          <h2 className="font-bricolage text-2xl md:text-3xl font-extrabold text-textMain tracking-normal mb-4">{t("home_why_title")}</h2>
+          <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">{t("home_why_desc")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -379,17 +395,17 @@ function WhyDocmasterSection({ t }) {
               <div className={`w-14 h-14 rounded-2xl ${f.bg} flex items-center justify-center ${f.color} text-2xl mb-6 shadow-sm`}>
                 <i className={f.icon} />
               </div>
-              <h3 className="font-bricolage text-[18px] font-bold text-textMain mb-3">{f.title}</h3>
-              <p className="text-textMuted text-[13px] leading-relaxed">{f.desc}</p>
+              <h3 className="font-bricolage text-[18px] font-bold text-textMain mb-3">{t(f.titleKey)}</h3>
+              <p className="text-textMuted text-[13px] leading-relaxed">{t(f.descKey)}</p>
             </div>
           ))}
 
           <div className="feature-card bg-green-dark rounded-[24px] p-8 shadow-xl md:col-span-2 relative overflow-hidden" style={{ transition: "transform 0.3s, box-shadow 0.3s" }}>
             <div className="absolute -right-8 -bottom-8 w-48 h-48 bg-primary/10 rounded-full blur-2xl" />
             <div className="relative z-10">
-              <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-white/10">Principal</span>
-              <h3 className="font-bricolage text-2xl md:text-3xl font-extrabold text-white mb-4 tracking-tighter">Récupération assistée 24h/7j</h3>
-              <p className="text-white/60 text-[14px] leading-relaxed mb-8 max-w-md">Notre équipe et notre réseau d'agences partenaires vous accompagnent à chaque étape. Nous prenons en charge la logistique de la remise du document.</p>
+              <span className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-white/10">{t("sidebar_primary")}</span>
+              <h3 className="font-bricolage text-2xl md:text-3xl font-extrabold text-white mb-4 tracking-tighter">{t("home_feature_recovery")}</h3>
+              <p className="text-white/60 text-[14px] leading-relaxed mb-8 max-w-md">{t("home_feature_recovery_desc")}</p>
               <div className="flex flex-wrap gap-3">
                 {["Paiement sécurisé", "Code de retrait unique", "Agences partenaires"].map((label, j) => (
                   <div key={j} className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10">
@@ -407,8 +423,8 @@ function WhyDocmasterSection({ t }) {
               <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-green-dark text-2xl mb-6">
                 <i className="fa-solid fa-coins" />
               </div>
-              <h3 className="font-bricolage text-[18px] font-bold text-green-dark mb-3">Gagnez des Récompenses</h3>
-              <p className="text-green-dark/70 text-[13px] leading-relaxed">Signalez un document trouvé et percevez 50% des frais de service de la procédure.</p>
+              <h3 className="font-bricolage text-[18px] font-bold text-green-dark mb-3">{t("home_feature_rewards")}</h3>
+              <p className="text-green-dark/70 text-[13px] leading-relaxed">{t("home_feature_rewards_desc")}</p>
             </div>
           </div>
         </div>
@@ -429,16 +445,14 @@ function DigitalVaultSection({ t }) {
                   <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" style={{ animation: "ping 1s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
                 </span>
-                <span className="text-xs font-black text-secondary uppercase tracking-widest">Nouveau : Coffre-fort numérique</span>
+                <span className="text-xs font-black text-secondary uppercase tracking-widest">{t("home_vault_badge")}</span>
               </div>
 
               <h2 className="font-bricolage text-2xl md:text-4xl font-black text-[#1A1A1A] leading-tight mb-8 tracking-normal">
-                Mieux vaut prévenir que <span className="text-primary">guérir.</span>
+                {t("home_vault_title")}
               </h2>
 
-              <p className="text-gray-600 text-[15px] leading-loose tracking-wide mb-8">
-                N'attendez pas de perdre vos biens. <strong>Enregistrez vos documents vitaux</strong> (CNI, Passeports, Permis) et vos <strong>appareils électroniques</strong> (Téléphones, Ordinateurs portables) avec leurs numéros de série (IMEI, SN).
-              </p>
+              <p className="text-gray-600 text-[15px] leading-loose tracking-wide mb-8">{t("home_vault_desc")}</p>
 
               <ul className="space-y-4 mb-10">
                 <li className="flex items-start gap-4">
@@ -446,8 +460,8 @@ function DigitalVaultSection({ t }) {
                     <i className="fa-solid fa-laptop-mobile" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-[#1A1A1A]">Appareils sécurisés</h4>
-                    <p className="text-sm text-gray-500 mt-1">Enregistrez l'IMEI de votre téléphone ou le SN de votre PC. En cas de vol, la communauté sera alertée.</p>
+                    <h4 className="font-bold text-[#1A1A1A]">{t("home_vault_feature1_title")}</h4>
+                    <p className="text-sm text-gray-500 mt-1">{t("home_vault_feature1_desc")}</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
@@ -455,8 +469,8 @@ function DigitalVaultSection({ t }) {
                     <i className="fa-solid fa-file-shield" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-[#1A1A1A]">Vos documents numérisés</h4>
-                    <p className="text-sm text-gray-500 mt-1">Stockez une copie sécurisée de vos pièces pour faciliter leur déclaration et récupération future.</p>
+                    <h4 className="font-bold text-[#1A1A1A]">{t("home_vault_feature2_title")}</h4>
+                    <p className="text-sm text-gray-500 mt-1">{t("home_vault_feature2_desc")}</p>
                   </div>
                 </li>
               </ul>
@@ -464,7 +478,7 @@ function DigitalVaultSection({ t }) {
               <Link to="/login"
                 className="inline-flex items-center gap-3 px-8 py-4 bg-green-dark text-white rounded-2xl font-bold hover:bg-green-mid transition-all shadow-lg hover:-translate-y-1"
               >
-                <i className="fa-solid fa-vault" /> Accéder à mon coffre-fort
+                <i className="fa-solid fa-vault" /> {t("home_vault_btn")}
               </Link>
             </div>
 
@@ -476,11 +490,11 @@ function DigitalVaultSection({ t }) {
                 <img src="/src/assets/images/devices_docs.png" alt="Appareils" className="w-full h-auto object-contain rounded-2xl" style={{ animation: "float 6s ease-in-out infinite" }} />
                 <div className="absolute top-4 -left-4 md:-left-8 bg-white border border-gray-100 rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3 z-20" style={{ animation: "float 5s ease-in-out infinite 1s" }}>
                   <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center"><i className="fa-solid fa-check text-green-600 text-[10px]" /></div>
-                  <div><p className="text-[10px] font-black text-gray-800">IMEI vérifié</p><p className="text-[9px] text-gray-400">Sécurisé</p></div>
+                  <div><p className="text-[10px] font-black text-gray-800">{t("home_vault_imei_verified")}</p><p className="text-[9px] text-gray-400">{t("home_vault_secure")}</p></div>
                 </div>
                 <div className="absolute bottom-10 -right-4 md:-right-8 bg-white border border-gray-100 rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3 z-20" style={{ animation: "float 4s ease-in-out infinite 0.5s" }}>
                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center"><i className="fa-solid fa-lock text-blue-600 text-[10px]" /></div>
-                  <div><p className="text-[10px] font-black text-gray-800">Coffre chiffré</p><p className="text-[9px] text-gray-400">Privé</p></div>
+                  <div><p className="text-[10px] font-black text-gray-800">{t("home_vault_encrypted")}</p><p className="text-[9px] text-gray-400">{t("home_vault_private")}</p></div>
                 </div>
               </div>
             </div>
@@ -631,10 +645,10 @@ function StatsSection({ t, statCounters }) {
             </div>
 
             {[
-              { icon: "fa-solid fa-file-lines", target: 2847, label: "Docs<br/>Déclarés", pos: "top-[-8px] left-1/2 -translate-x-1/2", id: "stat-0" },
-              { icon: "fa-solid fa-search", target: 2156, label: "Docs<br/>Retrouvés", pos: "right-[-8px] top-1/2 -translate-y-1/2", id: "stat-1" },
-              { icon: "fa-solid fa-users", target: 1523, label: "Utilisateurs<br/>Actifs", pos: "bottom-[-8px] left-1/2 -translate-x-1/2", id: "stat-2" },
-              { icon: "fa-solid fa-star", target: "4.8★", label: "Note<br/>Moyenne", pos: "left-[-8px] top-1/2 -translate-y-1/2", id: "stat-3" },
+              { icon: "fa-solid fa-file-lines", target: 2847, labelKey: "home_mini_declared", pos: "top-[-8px] left-1/2 -translate-x-1/2", id: "stat-0" },
+              { icon: "fa-solid fa-search", target: 2156, labelKey: "home_mini_found", pos: "right-[-8px] top-1/2 -translate-y-1/2", id: "stat-1" },
+              { icon: "fa-solid fa-users", target: 1523, labelKey: "home_mini_members", pos: "bottom-[-8px] left-1/2 -translate-x-1/2", id: "stat-2" },
+              { icon: "fa-solid fa-star", target: "4.8★", labelKey: "stat_average_rating", pos: "left-[-8px] top-1/2 -translate-y-1/2", id: "stat-3" },
             ].map((s, i) => (
               <div key={i} id={s.id} className={`stat-node absolute ${s.pos} flex flex-col items-center gap-1 opacity-30`}>
                 <div className="stat-icon-box w-14 h-14 rounded-full bg-white border-2 border-primary/20 flex flex-col items-center justify-center shadow-md">
@@ -646,7 +660,7 @@ function StatsSection({ t, statCounters }) {
                   >
                     {s.target}
                   </div>
-                  <p className="text-[9px] text-gray-400 uppercase font-bold leading-tight" dangerouslySetInnerHTML={{ __html: s.label }} />
+                  <p className="text-[9px] text-gray-400 uppercase font-bold leading-tight">{t(s.labelKey)}</p>
                 </div>
               </div>
             ))}
@@ -687,15 +701,15 @@ function ReferralSection({ t }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
             <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-6 border border-primary/20">
-              <i className="fa-solid fa-gift text-[10px]" /> Programme de parrainage
+              <i className="fa-solid fa-gift text-[10px]" /> {t("home_referral_badge")}
             </span>
-            <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-6">Invitez vos amis,<br /><span className="text-primary">gagnez ensemble.</span></h2>
-            <p className="text-textMuted text-[14px] mb-8 leading-loose tracking-wide">Chaque ami inscrit avec votre code vous rapporte des récompenses. Plus vous parrainez, plus vous gagnez.</p>
+            <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-6" dangerouslySetInnerHTML={{ __html: t("home_referral_title") }} />
+            <p className="text-textMuted text-[14px] mb-8 leading-loose tracking-wide">{t("home_referral_desc")}</p>
             <ul className="space-y-4 mb-10">
               {[
-                { icon: "fa-solid fa-gift", text: "500 FCFA par ami parrainé" },
-                { icon: "fa-solid fa-coins", text: "Bonus de 10% sur leurs gains" },
-                { icon: "fa-solid fa-crown", text: "Statut VIP à partir de 10 parrainages" },
+                { icon: "fa-solid fa-gift", text: t("home_referral_feature1") },
+                { icon: "fa-solid fa-coins", text: t("home_referral_feature2") },
+                { icon: "fa-solid fa-crown", text: t("home_referral_feature3") },
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-4">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -708,21 +722,21 @@ function ReferralSection({ t }) {
             <Link to="/login"
               className="inline-flex items-center gap-2.5 px-8 py-4 bg-green-dark text-white rounded-[18px] font-black text-[15px] hover:bg-green-mid transition-all shadow-lg shadow-green-dark/20"
             >
-              Commencer à parrainer <i className="fa-solid fa-arrow-right text-[11px]" />
+              {t("home_referral_btn")} <i className="fa-solid fa-arrow-right text-[11px]" />
             </Link>
           </div>
 
           <div className="space-y-4">
             {[
-              { num: 1, title: "Partagez votre code", desc: "Envoyez votre code unique à vos amis via WhatsApp, SMS, etc." },
-              { num: 2, title: "Ils s'inscrivent", desc: "Vos amis créent leur compte DocMaster avec votre code de parrainage." },
-              { num: 3, title: "Vous gagnez automatiquement", desc: "Vos récompenses sont créditées automatiquement sur votre compte DocMaster." },
+              { num: 1, titleKey: "home_referral_step1_title", descKey: "home_referral_step1_desc" },
+              { num: 2, titleKey: "home_referral_step2_title", descKey: "home_referral_step2_desc" },
+              { num: 3, titleKey: "home_referral_step3_title", descKey: "home_referral_step3_desc" },
             ].map((s, i) => (
               <div key={i} className="bg-white border border-borda rounded-[24px] p-6 flex items-center gap-5 hover:border-primary transition-all shadow-sm">
                 <div className="w-12 h-12 rounded-full bg-green-light border-2 border-green-mid/20 text-green-mid flex items-center justify-center font-bricolage font-black text-lg flex-shrink-0">{s.num}</div>
                 <div>
-                  <h4 className="font-bold text-textMain mb-1">{s.title}</h4>
-                  <p className="text-textMuted text-[13px]">{s.desc}</p>
+                  <h4 className="font-bold text-textMain mb-1">{t(s.titleKey)}</h4>
+                  <p className="text-textMuted text-[13px]">{t(s.descKey)}</p>
                 </div>
               </div>
             ))}
@@ -735,67 +749,75 @@ function ReferralSection({ t }) {
 
 function SubscriptionsTeaser({ t, plans }: { t: any; plans: Plan[] }) {
   return (
-    <section className="py-20 px-5 bg-green-dark relative overflow-hidden">
+    <section className="py-24 px-5 bg-green-dark relative overflow-hidden">
       <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(#F5A64B 1px, transparent 1px), linear-gradient(90deg, #F5A64B 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
-      <div className="absolute top-0 left-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px]" />
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
+      <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-white/5 rounded-full blur-[80px]" />
 
       <div className="relative z-10 max-w-7xl mx-auto">
-        <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-white/10">
-            <i className="fa-solid fa-crown text-[10px]" /> Offres &amp; Plans
+        <div className="text-center mb-16">
+          <span className="inline-flex items-center gap-2 px-5 py-2 bg-white/10 text-primary rounded-full text-[12px] font-black uppercase tracking-widest mb-6 border border-white/10 backdrop-blur-sm">
+            <i className="fa-solid fa-crown text-[10px]" /> {t("home_subscriptions_badge")}
           </span>
-          <h2 className="font-bricolage text-2xl md:text-3xl font-black text-white tracking-normal mb-4">Nos abonnements</h2>
-          <p className="text-white/50 text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">Accédez à des fonctionnalités premium et augmentez vos chances de retrouver vos documents.</p>
+          <h2 className="font-bricolage text-3xl md:text-5xl font-black text-white tracking-tight mb-6">{t("home_subscriptions_title")}</h2>
+          <p className="text-white/50 text-[15px] md:text-[17px] leading-relaxed max-w-2xl mx-auto tracking-wide">{t("home_subscriptions_desc")}</p>
         </div>
 
-        <div id="pricing-container" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+        <div id="pricing-container" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
           {plans.length === 0 && (
-            <div className="col-span-full text-center text-white/40 text-[13px] py-10">Chargement des plans...</div>
+            <div className="col-span-full text-center text-white/40 text-[13px] py-10">
+              <i className="fa-solid fa-circle-notch fa-spin mr-2" /> {t("home_subscriptions_loading")}
+            </div>
           )}
           {plans.slice(0, 4).map((plan, idx) => {
             const isFeatured = plan.popular || idx === 1;
             const price = plan.price || 0;
+            const features = Array.isArray(plan.features) ? plan.features : 
+                             typeof plan.features === 'object' ? Object.entries(plan.features).map(([k, v]) => v === true ? k : `${v} ${k}`) : [];
+
             return (
-              <div key={plan.id} className={`rounded-[20px] p-5 flex flex-col ${isFeatured ? "bg-white/10 border border-white/20" : "bg-white/5 border border-white/10"}`}>
-                <div className="w-10 h-10 rounded-[12px] bg-primary/20 flex items-center justify-center mb-3">
-                  <i className="fa-solid fa-crown text-primary text-base" />
+              <div key={plan.id} className={`group rounded-[32px] p-8 flex flex-col transition-all duration-500 hover:-translate-y-3 ${isFeatured ? "bg-white/10 border-2 border-primary/30 shadow-2xl shadow-primary/10 scale-105 z-10" : "bg-white/5 border border-white/10 hover:bg-white/10"}`}>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:rotate-12 ${isFeatured ? "bg-primary text-green-dark shadow-lg shadow-primary/20" : "bg-white/10 text-primary"}`}>
+                  <i className={`fa-solid ${isFeatured ? 'fa-rocket' : 'fa-crown'} text-xl`} />
                 </div>
-                <div className={`font-bricolage text-lg font-bold ${isFeatured ? "text-white" : "text-white/80"}`}>{plan.name}</div>
-                <div className="font-bricolage text-2xl font-extrabold text-white mt-2 mb-4">
-                  {price.toLocaleString("fr-FR")} <span className="text-sm font-bold text-white/50">XAF</span>
+                <div className={`font-bricolage text-xl font-black ${isFeatured ? "text-white" : "text-white/90"}`}>{plan.name}</div>
+                <div className="font-bricolage text-3xl md:text-4xl font-black text-white mt-4 mb-6 tracking-tight">
+                  {price.toLocaleString("fr-FR")} <span className="text-sm font-bold text-white/40 uppercase">XAF</span>
                 </div>
-                <div className="flex flex-col gap-2 flex-1 mb-4">
-                  {(Array.isArray(plan.features) ? plan.features : []).slice(0, 4).map((f: any, fi: number) => {
-                    const val = typeof f === "string" ? f : f?.valeur || f?.name || "";
-                    const label = typeof f === "string" ? "" : f?.label || "";
-                    return (
-                      <div key={fi} className="flex items-center gap-2 text-[12px]">
-                        <i className="fa-solid fa-check text-primary text-[10px] w-3 flex-shrink-0" />
-                        <span className="text-white/70">{label ? `${label} : ` : ""}{val}</span>
+                
+                <div className="w-full h-px bg-white/10 mb-6" />
+
+                <div className="flex flex-col gap-4 flex-1 mb-8">
+                  {features.slice(0, 5).map((f: any, fi: number) => (
+                    <div key={fi} className="flex items-center gap-3 text-[13px]">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${isFeatured ? "bg-primary text-green-dark" : "bg-white/10 text-primary"}`}>
+                        <i className="fa-solid fa-check text-[10px]" />
                       </div>
-                    );
-                  })}
+                      <span className="text-white/70 font-medium capitalize">{String(f).replace(/_/g, ' ')}</span>
+                    </div>
+                  ))}
                 </div>
+                
                 <Link
                   to="/abonnement"
-                  className={`text-center w-full py-2 rounded-[12px] text-[13px] font-bold transition-all ${
+                  className={`text-center w-full py-4 rounded-2xl text-[14px] font-black transition-all shadow-xl ${
                     isFeatured
-                      ? "bg-primary text-white hover:bg-primary-dark"
+                      ? "bg-primary text-green-dark hover:bg-primary-dark shadow-primary/20"
                       : "bg-white/10 text-white hover:bg-white/20"
                   }`}
                 >
-                  Choisir ce plan
+                  {isFeatured ? "COMMENCER MAINTENANT" : t("home_subscriptions_choose")}
                 </Link>
               </div>
             );
           })}
         </div>
 
-        <div className="text-center mt-10">
+        <div className="text-center mt-16">
           <Link to="/abonnement"
-            className="inline-flex items-center gap-2.5 px-8 py-4 bg-white/10 border border-white/20 text-white rounded-[18px] font-bold text-[14px] hover:bg-white/15 transition-all"
+            className="inline-flex items-center gap-3 px-10 py-5 bg-white/5 border border-white/10 text-white rounded-3xl font-black text-[15px] hover:bg-white/10 transition-all hover:scale-105"
           >
-            Voir tous les plans <i className="fa-solid fa-arrow-right text-[11px]" />
+            DÉCOUVRIR TOUS LES PLANS <i className="fa-solid fa-arrow-right text-[11px]" />
           </Link>
         </div>
       </div>
@@ -916,10 +938,10 @@ function TipsSection({ t }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
           <div className="lg:col-span-1">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 text-green-dark rounded-full text-[11px] font-black uppercase tracking-widest mb-6 border border-white/20">
-              <i className="fa-solid fa-lightbulb text-[10px]" /> Conseils pratiques
+              <i className="fa-solid fa-lightbulb text-[10px]" /> {t("home_tips_badge")}
             </span>
-            <h2 className="font-bricolage text-2xl md:text-3xl font-black text-green-dark tracking-normal mb-6">Protégez<br />vos documents</h2>
-            <p className="text-green-dark/70 text-[14px] leading-loose tracking-wide">Quelques bonnes pratiques pour éviter la perte de vos documents importants.</p>
+            <h2 className="font-bricolage text-2xl md:text-3xl font-black text-green-dark tracking-normal mb-6" dangerouslySetInnerHTML={{ __html: t("home_tips_title") }} />
+            <p className="text-green-dark/70 text-[14px] leading-loose tracking-wide">{t("home_tips_desc")}</p>
           </div>
           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5">
             {tips.map((tip, i) => (
@@ -927,8 +949,8 @@ function TipsSection({ t }) {
                 <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
                   <i className={`${tip.icon} text-lg`} />
                 </div>
-                <h3 className="font-bricolage text-[17px] font-bold text-textMain mb-2">{tip.title}</h3>
-                <p className="text-textMuted text-[13px]">{tip.desc}</p>
+                <h3 className="font-bricolage text-[17px] font-bold text-textMain mb-2">{t(tip.titleKey)}</h3>
+                <p className="text-textMuted text-[13px]">{t(tip.descKey)}</p>
               </div>
             ))}
           </div>
@@ -942,8 +964,8 @@ function PartnersSection({ t }) {
   return (
     <section className="py-20 px-5 bg-surface2">
       <div className="max-w-7xl mx-auto text-center">
-        <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">Nos Partenaires Institutionnels</h2>
-        <p className="text-textMuted mb-12 tracking-wide text-[14px]">Des institutions qui nous font confiance pour la récupération de vos documents.</p>
+        <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">{t("home_partners_title")}</h2>
+        <p className="text-textMuted mb-12 tracking-wide text-[14px]">{t("home_partners_desc")}</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 justify-items-center">
           {partners.map((p, i) => (
             <div key={i} className="bg-white border border-borda rounded-[20px] p-6 w-full text-center hover:border-primary transition-all shadow-sm">
@@ -970,28 +992,16 @@ function AppDownloadSection({ t }) {
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/15 border border-primary/20 rounded-full mb-8">
               <i className="fa-solid fa-mobile-screen text-primary text-xs" />
-              <span className="text-xs font-black text-primary/90 uppercase tracking-widest">Application Mobile</span>
+              <span className="text-xs font-black text-primary/90 uppercase tracking-widest">{t("home_app_badge")}</span>
             </div>
 
-            <h2 className="font-bricolage text-3xl md:text-4xl lg:text-[2.8rem] font-black text-[#1A1A1A] leading-tight tracking-normal mb-8">
-              DocMaster,<br />
-              <span style={{
-                background: "linear-gradient(90deg,#F5A64B,#D98A30,#F5A64B)",
-                backgroundSize: "200% auto",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                animation: "shimmer 3s linear infinite",
-              }}>dans votre poche.</span>
-            </h2>
+            <h2 className="font-bricolage text-3xl md:text-4xl lg:text-[2.8rem] font-black text-[#1A1A1A] leading-tight tracking-normal mb-8" dangerouslySetInnerHTML={{ __html: t("home_app_title") }} />
 
-            <p className="text-[#1A1A1A]/60 text-[15px] leading-loose tracking-wide mb-10 max-w-md">
-              Déclarez une perte, cherchez un document retrouvé, <strong>sauvegardez vos appareils (téléphones, ordinateurs)</strong> et récupérez vos biens — directement depuis votre smartphone, où que vous soyez au Cameroun.
-            </p>
+            <p className="text-[#1A1A1A]/60 text-[15px] leading-loose tracking-wide mb-10 max-w-md">{t("home_app_desc")}</p>
 
             <div className="flex flex-col sm:flex-row gap-3 mb-10">
-              <StoreBadge img="/src/assets/images/Playstore.png" label="Disponible sur" name="Google Play" />
-              <AppStoreBadge />
+              <StoreBadge t={t} img="/src/assets/images/Playstore.png" label={t("home_app_available")} name={t("home_app_playstore")} />
+              <AppStoreBadge t={t} />
             </div>
 
             <div className="flex items-center gap-5">
@@ -999,8 +1009,8 @@ function AppDownloadSection({ t }) {
                 <img src="/src/assets/images/qr_code.png" alt="QR Code" className="w-full h-full object-contain" />
               </div>
               <div>
-                <p className="text-[#1A1A1A] font-bold text-[14px] mb-1">Scannez pour télécharger</p>
-                <p className="text-[#1A1A1A]/50 text-[12px] leading-relaxed">Pointez votre caméra vers le QR code<br />pour accéder à l'application.</p>
+                <p className="text-[#1A1A1A] font-bold text-[14px] mb-1">{t("home_app_qr")}</p>
+                <p className="text-[#1A1A1A]/50 text-[12px] leading-relaxed">{t("home_app_qr_desc")}</p>
               </div>
             </div>
           </div>
@@ -1014,7 +1024,7 @@ function AppDownloadSection({ t }) {
   );
 }
 
-function StoreBadge({ img, label, name }) {
+function StoreBadge({ t, img, label, name }) {
   return (
     <a href="https://play.google.com/store/apps/details?id=com.tesea.docmaster" target="_blank"
       className="flex items-center gap-3.5 bg-[#111111] hover:bg-[#222] px-5 py-3.5 rounded-2xl transition-colors w-fit"
@@ -1028,21 +1038,21 @@ function StoreBadge({ img, label, name }) {
   );
 }
 
-function AppStoreBadge() {
+function AppStoreBadge({ t }) {
   return (
     <span className="flex items-center gap-3.5 bg-[#111111] hover:bg-[#222] px-5 py-3.5 rounded-2xl transition-colors w-fit cursor-pointer">
       <svg className="w-8 h-8 flex-shrink-0" viewBox="0 0 814 1000" xmlns="http://www.w3.org/2000/svg">
         <path fill="white" d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-43.4-148.4-107.7C27.3 740.9 0 647.3 0 559.4c0-235.7 154.1-360.4 305.8-360.4 78.8 0 144.5 51.9 194.4 51.9 47.7 0 121.9-55 212.9-55 34.2 0 101.7 4.1 163.8 63.3zm-226.1-199.8c32.4-38.5 55.6-91.9 55.6-145.3 0-7.6-.6-15.3-1.9-22.5-48 1.9-104.6 29.5-139.2 72.4-30.5 36.6-58.8 90-58.8 144.4 0 8.3 1.3 16.6 1.9 19.2 3.2.6 8.3 1.3 13.3 1.3 43.2 0 95.2-25.7 129.1-69.5z" />
       </svg>
       <div>
-        <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest leading-none mb-0.5">Télécharger dans</p>
-        <p className="text-white font-black text-[17px] leading-tight">App Store</p>
+        <p className="text-white/60 text-[9px] font-bold uppercase tracking-widest leading-none mb-0.5">{t("home_app_download")}</p>
+        <p className="text-white font-black text-[17px] leading-tight">{t("home_app_appstore")}</p>
       </div>
     </span>
   );
 }
 
-function StickyAppBar() {
+function StickyAppBar({ t }) {
   return (
     <div id="sticky-app-bar"
       className="w-full bg-[#111111] text-white px-5 py-4 md:py-5"
@@ -1053,19 +1063,19 @@ function StickyAppBar() {
             <i className="fa-solid fa-mobile-screen text-[#1E3A2F] text-lg" />
           </div>
           <p className="text-[13px] md:text-[15px] font-semibold text-white/90">
-            Téléchargez l'application DocMaster gratuitement
+            {t("home_sticky_download")}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <a href="https://play.google.com/store/apps/details?id=com.tesea.docmaster" target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-2 bg-primary text-[#1E3A2F] px-5 py-2.5 rounded-[14px] font-black text-[12px] md:text-[13px] hover:bg-primary-dark transition-all whitespace-nowrap active:scale-95"
           >
-            <img src="/src/assets/images/Playstore.png" className="w-4 h-4 object-contain" alt="" /> Google Play
+            <img src="/src/assets/images/Playstore.png" className="w-4 h-4 object-contain" alt="" /> {t("home_app_playstore")}
           </a>
           <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-2 bg-white/10 text-white px-5 py-2.5 rounded-[14px] font-black text-[12px] md:text-[13px] hover:bg-white/20 transition-all whitespace-nowrap active:scale-95"
           >
-            <i className="fa-brands fa-apple text-base" /> App Store
+            <i className="fa-brands fa-apple text-base" /> {t("home_app_appstore")}
           </a>
         </div>
       </div>
