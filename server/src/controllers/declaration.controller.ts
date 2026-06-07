@@ -224,9 +224,13 @@ export const getMyDeclarations = async (req: Request, res: Response) => {
 
 export const searchDeclarations = async (req: Request, res: Response) => {
   try {
-    const filters = req.query;
+    const filters: any = { ...req.query };
+    const user = (req as any).user;
+    if (user?.role === 'ADMIN') {
+      filters.include_all = true;
+    }
     const result = await declarationService.searchDeclarations(filters);
-    res.json({ success: true, count: result.length, data: result });
+    res.json({ success: true, count: result.data.length, total: result.total, data: result.data });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -271,9 +275,12 @@ export const getDeclarationById = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Déclaration introuvable' });
     }
 
-    // By default, do not return full details. Only return full details
-    // when the authenticated user actually has an active LOST declaration.
-    const userId = (req as any).user?.id;
+    // Admins see full details; otherwise, require an active LOST declaration
+    const user = (req as any).user;
+    const userId = user?.id;
+    if (user?.role === 'ADMIN') {
+      return res.json({ success: true, data: result });
+    }
     if (userId) {
       // Fetch user's declarations and check for an active LOST
       const myDecls = await declarationService.getUserDeclarations(userId);

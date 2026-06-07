@@ -88,13 +88,15 @@ export default function InfosProfil() {
     try {
       let result: ApiResponse<UserProfile>;
 
+      const validDate = form.date_naissance && !isNaN(new Date(form.date_naissance).getTime()) ? form.date_naissance : "";
+
       if (photoFile) {
         const fd = new FormData();
         fd.append("nom", String(form.nom).trim());
         fd.append("prenom", String(form.prenom).trim());
         fd.append("ville", String(form.ville).trim());
         fd.append("telephone", String(form.telephone).trim());
-        fd.append("date_naissance", form.date_naissance);
+        if (validDate) fd.append("date_naissance", validDate);
         fd.append("lieu_naissance", String(form.lieu_naissance).trim());
         fd.append("currency", form.currency);
         fd.append("photo_profile", photoFile);
@@ -106,7 +108,7 @@ export default function InfosProfil() {
           prenom: String(form.prenom).trim(),
           ville: String(form.ville).trim(),
           telephone: String(form.telephone).trim(),
-          date_naissance: form.date_naissance,
+          ...(validDate ? { date_naissance: validDate } : {}),
           lieu_naissance: String(form.lieu_naissance).trim(),
           currency: form.currency,
         });

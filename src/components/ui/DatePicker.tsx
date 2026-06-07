@@ -12,16 +12,21 @@ interface DatePickerProps {
   icon?: string;
 }
 
+function isValidDateString(v: unknown): v is string {
+  return typeof v === "string" && v.trim().length > 0 && !isNaN(new Date(v).getTime());
+}
+
 export default function DatePicker({ value, onChange, className, placeholder, icon }: DatePickerProps) {
   const ref = useRef<HTMLInputElement>(null);
   const fpRef = useRef<flatpickr.Instance | null>(null);
+  const safeValue = isValidDateString(value) ? value : "";
 
   useEffect(() => {
     fpRef.current = flatpickr(ref.current!, {
       locale: French,
       dateFormat: "Y-m-d",
       disableMobile: true,
-      defaultDate: value || undefined,
+      defaultDate: safeValue || undefined,
       onChange: (dates) => {
         if (dates[0]) {
           const y = dates[0].getFullYear();
@@ -40,12 +45,12 @@ export default function DatePicker({ value, onChange, className, placeholder, ic
   useEffect(() => {
     const fp = fpRef.current;
     if (!fp) return;
-    if (value && fp.selectedDates[0]?.toISOString().split("T")[0] !== value) {
-      fp.setDate(value, false);
-    } else if (!value && fp.selectedDates.length > 0) {
+    if (!safeValue) {
       fp.clear(false);
+    } else if (fp.selectedDates[0]?.toISOString().split("T")[0] !== safeValue) {
+      fp.setDate(safeValue, false);
     }
-  }, [value]);
+  }, [safeValue]);
 
   return (
     <div className="relative">

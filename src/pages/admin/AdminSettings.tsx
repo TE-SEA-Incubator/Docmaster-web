@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "../../context/I18nContext";
 import { adminService } from "../../services/admin";
+import InfoTooltip from "../../components/ui/InfoTooltip";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import EmptyState from "../../components/ui/EmptyState";
 
 export default function AdminSettings() {
   const { t } = useI18n();
@@ -31,17 +34,16 @@ export default function AdminSettings() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-11 h-11 rounded-full border-[3px] border-gray-200 border-t-primary animate-spin" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <h1 className="font-bricolage text-2xl font-black text-gray-900">{t("admin_settings")}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-bricolage text-2xl font-black text-gray-900">{t("admin_settings")}</h1>
+          <InfoTooltip text="Paramètres généraux de l'application. Modifiez les valeurs directement et cliquez ailleurs pour sauvegarder." />
+        </div>
         <p className="text-gray-400 text-[13px] font-medium mt-1">{t("admin_settings_subtitle")}</p>
       </div>
 
@@ -56,10 +58,7 @@ export default function AdminSettings() {
 
       <div className="bg-white rounded-2xl border border-gray-200/60 p-6 shadow-sm">
         {Object.keys(settings).length === 0 ? (
-          <div className="text-center py-12 text-gray-300">
-            <i className="fa-solid fa-sliders text-3xl mb-3" />
-            <p className="text-[13px] font-medium text-gray-400">{t("admin_no_settings")}</p>
-          </div>
+          <EmptyState icon="fa-solid fa-sliders" message={t("admin_no_settings")} />
         ) : (
           <div className="space-y-4">
             {Object.entries(settings).map(([key, value]) => (

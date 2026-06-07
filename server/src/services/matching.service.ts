@@ -172,7 +172,7 @@ export class MatchingService {
       // So we might want to add a method to DeclarationRepository
       
       // Get all active lost declarations
-      const activeLost = await this.declarationRepository.search({ 
+      const { rows: activeLost } = await this.declarationRepository.search({ 
         declaration_type: 'LOST', 
         status: 'SEARCHING' 
       });

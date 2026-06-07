@@ -36,6 +36,7 @@ const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminDeclarations = lazy(() => import("./pages/admin/AdminDeclarations"));
 const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 const AdminDocumentTypes = lazy(() => import("./pages/admin/AdminDocumentTypes"));
+const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
 
 export default function App() {
   return (
@@ -86,6 +87,7 @@ export default function App() {
           <Route path="/admin/declarations" element={<AdminDeclarations />} />
           <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
           <Route path="/admin/document-types" element={<AdminDocumentTypes />} />
+          <Route path="/admin/activity-log" element={<AdminActivityLog />} />
         </Route>
       </Routes>
     </Suspense>

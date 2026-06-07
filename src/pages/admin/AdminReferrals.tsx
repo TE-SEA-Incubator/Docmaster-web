@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "../../context/I18nContext";
 import { adminService } from "../../services/admin";
+import InfoTooltip from "../../components/ui/InfoTooltip";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import EmptyState from "../../components/ui/EmptyState";
 
 interface Referral {
   id: string;
@@ -32,17 +35,16 @@ export default function AdminReferrals() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-11 h-11 rounded-full border-[3px] border-gray-200 border-t-primary animate-spin" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="font-bricolage text-2xl font-black text-gray-900">{t("admin_referrals")}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-bricolage text-2xl font-black text-gray-900">{t("admin_referrals")}</h1>
+          <InfoTooltip text="Liste des parrainages : utilisateurs qui ont invité d'autres personnes à rejoindre la plateforme." />
+        </div>
         <p className="text-gray-400 text-[13px] font-medium mt-1">{t("admin_referrals_subtitle")}</p>
       </div>
 
@@ -61,12 +63,7 @@ export default function AdminReferrals() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {refs.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-16 text-gray-300">
-                    <i className="fa-solid fa-gift text-3xl mb-3" />
-                    <p className="text-[13px] font-medium text-gray-400">{t("admin_no_referrals")}</p>
-                  </td>
-                </tr>
+                <EmptyState icon="fa-solid fa-gift" message={t("admin_no_referrals")} colSpan={6} />
               ) : (
                 refs.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50/60 transition-colors">

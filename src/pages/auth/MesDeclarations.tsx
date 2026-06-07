@@ -159,7 +159,7 @@ export default function MesDeclarations() {
       />
 
 {/* REMPLACE la div enveloppante juste après le premier <Topbar /> */}
-<div className="custom-scroll p-4 sm:p-6 flex flex-col gap-4 pb-28 md:pb-8 w-full overflow-y-visible">
+<div className="custom-scroll p-4 sm:p-6 flex flex-col gap-4 pb-28 md:pb-8 w-full max-w-7xl mx-auto max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         {/* Header card */}
         <section className="bg-white border border-borda rounded-[16px] sm:rounded-[18px] p-3 sm:p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -192,7 +192,7 @@ export default function MesDeclarations() {
         </section>
 
         {/* Grid */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((item) => {
             const isPerdu = (item.declaration_type || item.type || "").toUpperCase() === "LOST";
             const typeBadge = isPerdu

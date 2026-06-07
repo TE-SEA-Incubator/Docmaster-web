@@ -245,23 +245,65 @@ export class UserRepository {
   }
 
   /**
-   * Get all users with subscription and referral info (Admin)
+   * Get all users with subscription and referral info (Admin) — paginated
    */
-  async getAllUsersForAdmin(): Promise<any[]> {
-    const query = `
+  async getAllUsersForAdmin(options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    is_verified?: boolean;
+  } = {}): Promise<{ users: any[]; total: number }> {
+    const { page = 1, limit = 20, search = "", status, is_verified } = options;
+    const offset = (page - 1) * limit;
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let idx = 1;
+
+    if (search) {
+      conditions.push(`(u.nom ILIKE $${idx} OR u.prenom ILIKE $${idx} OR u.email ILIKE $${idx} OR u.telephone ILIKE $${idx})`);
+      params.push(`%${search}%`);
+      idx++;
+    }
+    if (status) {
+      conditions.push(`s.status = $${idx}`);
+      params.push(status);
+      idx++;
+    }
+    if (is_verified !== undefined) {
+      conditions.push(`u.is_verified = $${idx}`);
+      params.push(is_verified);
+      idx++;
+    }
+
+    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const countQuery = `
+      SELECT COUNT(*) FROM users u
+      LEFT JOIN user_subscriptions s ON s.user_id = u.id AND s.status = 'ACTIVE'
+      ${where}
+    `;
+    const { rows: countRows } = await pool.query(countQuery, params);
+    const total = parseInt(countRows[0].count);
+
+    const dataQuery = `
       SELECT 
           u.id, u.nom, u.prenom, u.email, u.telephone, u.pays, u.ville, 
           u.role, u.wallet_balance, u.points, u.code_invitation, u.created_at,
+          u.is_verified,
           s.plan_id as active_plan, 
           s.status as subscription_status,
           s.date_fin as subscription_end,
           (SELECT COUNT(*) FROM users WHERE parrain_id = u.id) as referral_count
       FROM users u
       LEFT JOIN user_subscriptions s ON s.user_id = u.id AND s.status = 'ACTIVE'
+      ${where}
       ORDER BY u.created_at DESC
+      LIMIT $${idx} OFFSET $${idx + 1}
     `;
-    const { rows } = await pool.query(query);
-    return rows;
+    params.push(limit, offset);
+    const { rows } = await pool.query(dataQuery, params);
+    return { users: rows, total };
   }
 
   /**

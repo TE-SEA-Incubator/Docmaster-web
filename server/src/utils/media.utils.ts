@@ -131,7 +131,7 @@ export async function encodeMediaFields(data: any): Promise<any> {
     return Promise.all(data.map(item => encodeMediaFields(item)));
   }
 
-  if (typeof data !== 'object' || isBufferLike(data)) return data;
+  if (typeof data !== 'object' || isBufferLike(data) || data instanceof Date) return data;
 
   const result = { ...data };
   const imageFields = [

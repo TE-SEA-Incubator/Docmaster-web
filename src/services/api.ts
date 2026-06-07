@@ -18,7 +18,7 @@ const API_BASE_URL = resolveBaseUrl();
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
-  headers: { "Content-Type": "application/json" },
+  headers: {},
 });
 
 apiClient.interceptors.request.use((config) => {

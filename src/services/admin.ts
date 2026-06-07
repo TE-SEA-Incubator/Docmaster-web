@@ -175,8 +175,8 @@ export const adminService = {
     return res.data;
   },
 
-  async getAdminUsers(): Promise<{ users: AdminUser[] }> {
-    const res = await apiClient.get("auth/admin/users");
+  async getAdminUsers(params?: { page?: number; limit?: number; search?: string; status?: string }): Promise<{ users: AdminUser[]; total: number }> {
+    const res = await apiClient.get("auth/admin/users", { params });
     return res.data;
   },
 

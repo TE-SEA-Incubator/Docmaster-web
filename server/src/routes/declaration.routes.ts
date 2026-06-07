@@ -242,7 +242,7 @@ router.get('/me', authMiddleware, getMyDeclarations);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/', searchDeclarations);
+router.get('/', authMiddleware, searchDeclarations);
 
 /**
  * @swagger

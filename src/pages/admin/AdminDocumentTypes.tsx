@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "../../context/I18nContext";
 import { adminService } from "../../services/admin";
+import InfoTooltip from "../../components/ui/InfoTooltip";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import EmptyState from "../../components/ui/EmptyState";
 
 interface DocumentType {
   id: string;
@@ -96,11 +99,7 @@ export default function AdminDocumentTypes() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-11 h-11 rounded-full border-[3px] border-gray-200 border-t-primary animate-spin" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
@@ -109,6 +108,7 @@ export default function AdminDocumentTypes() {
         <div>
           <h1 className="font-bricolage text-2xl font-black text-gray-900">
             {t("admin_document_types")}
+            <InfoTooltip text="Types de documents que les utilisateurs peuvent déclarer (perte ou trouvaille)." />
           </h1>
           <p className="text-gray-400 text-[13px] font-medium mt-1">
             {t("admin_document_types_subtitle")}
@@ -124,10 +124,7 @@ export default function AdminDocumentTypes() {
       </div>
 
       {types.length === 0 ? (
-        <div className="text-center py-20 text-gray-300">
-          <i className="fa-solid fa-tags text-4xl mb-4" />
-          <p className="text-sm font-medium text-gray-400">{t("admin_no_document_types")}</p>
-        </div>
+        <EmptyState icon="fa-solid fa-tags" message={t("admin_no_document_types")} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {types.map((doc) => (
@@ -302,12 +299,27 @@ export default function AdminDocumentTypes() {
                   <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">
                     {t("admin_icon")}
                   </label>
-                  <input
+                  <select
                     value={form.icone}
                     onChange={(e) => setForm({ ...form, icone: e.target.value })}
-                    placeholder="ex: passport"
                     className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                  />
+                  >
+                    <option value="file">📄 Document</option>
+                    <option value="passport">🛂 Passeport</option>
+                    <option value="id-card">🆔 Carte identité</option>
+                    <option value="car">🚗 Permis/Véhicule</option>
+                    <option value="graduation-cap">🎓 Diplôme</option>
+                    <option value="wallet">👛 Portefeuille</option>
+                    <option value="phone">📱 Téléphone</option>
+                    <option value="laptop">💻 Ordinateur</option>
+                    <option value="key">🔑 Clés</option>
+                    <option value="bag-shopping">🛍️ Sac</option>
+                    <option value="book">📖 Livre</option>
+                    <option value="credit-card">💳 Carte bancaire</option>
+                    <option value="certificate">📜 Certificat</option>
+                    <option value="image">🖼️ Photo</option>
+                    <option value="heart">❤️ Bijou</option>
+                  </select>
                 </div>
               </div>
 

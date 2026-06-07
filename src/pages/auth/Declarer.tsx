@@ -101,7 +101,7 @@ const DOC_META: Record<string, DocumentMetadata> = {
     icon: "fa-graduation-cap",
     color: "#8B5CF6",
     fields: [
-      { id: "titulaire", label: "declarer_field_l aureat", type: "text", icon: "fa-user", placeholder: "declarer_placeholder_nom" },
+      { id: "titulaire", label: "declarer_field_laureat", type: "text", icon: "fa-user", placeholder: "declarer_placeholder_nom" },
       { id: "intitule", label: "declarer_field_intitule", type: "text", icon: "fa-graduation-cap", placeholder: "declarer_placeholder_intitule" },
       { id: "specialite", label: "declarer_field_specialite", type: "text", icon: "fa-book", placeholder: "declarer_placeholder_specialite" },
       { id: "annee", label: "declarer_field_annee", type: "text", icon: "fa-calendar-days", placeholder: "declarer_placeholder_annee" },
@@ -143,7 +143,6 @@ export default function Declarer() {
   // Form states
   const [ownerType, setOwnerType] = useState<"me" | "other" | null>(null);
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
-  const [activeDocIdx, setActiveDocIdx] = useState(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
   
   // Custom states matching the HTML inputs
@@ -161,6 +160,8 @@ export default function Declarer() {
   const [certified, setCertified] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [stepErrors, setStepErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const formLeftRef = useRef<HTMLDivElement>(null);
@@ -183,6 +184,11 @@ export default function Declarer() {
     };
     loadDocTypes();
   }, []);
+
+  // Clear field errors when step changes
+  useEffect(() => {
+    setFieldErrors({});
+  }, [currentStep]);
 
   const getDocMeta = (docId: string): DocumentMetadata => {
     const doc = docTypes.find((d) => d.id === docId);
@@ -216,10 +222,45 @@ export default function Declarer() {
       alert(t("declarer_alert_select_document"));
       return;
     }
-    if (currentStep === 3 && activeDocIdx < selectedDocs.length - 1) {
-      setActiveDocIdx((prev) => prev + 1);
+    if (currentStep === 3) {
+      const errors: Record<string, string> = {};
+      for (const docId of selectedDocs) {
+        const meta = getDocMeta(docId);
+        for (const field of meta.fields) {
+          if (field.optional) continue;
+          const val = getFormValue(docId, field.id);
+          if (!val || !val.trim()) {
+            errors[field.id + "_" + docId] = t("declarer_field_required");
+          }
+        }
+      }
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+      setFieldErrors({});
+      setCurrentStep((prev) => prev + 1);
       if (formLeftRef.current) formLeftRef.current.scrollTop = 0;
       return;
+    }
+    if (currentStep === 4) {
+      const errors: Record<string, string> = {};
+      if (!lossDate || !lossDate.trim()) errors.lossDate = t("declarer_field_required");
+      if (!ville || !ville.trim()) errors.ville = t("declarer_field_required");
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+      setFieldErrors({});
+    }
+    if (currentStep === 5) {
+      const errors: Record<string, string> = {};
+      if (!contactPhone || !contactPhone.trim()) errors.contactPhone = t("declarer_field_required");
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        return;
+      }
+      setFieldErrors({});
     }
     if (currentStep < 5) {
       setCurrentStep((prev) => prev + 1);
@@ -228,11 +269,6 @@ export default function Declarer() {
   };
 
   const goToPrevStep = () => {
-    if (currentStep === 3 && activeDocIdx > 0) {
-      setActiveDocIdx((prev) => prev - 1);
-      if (formLeftRef.current) formLeftRef.current.scrollTop = 0;
-      return;
-    }
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
       if (formLeftRef.current) formLeftRef.current.scrollTop = 0;
@@ -316,7 +352,8 @@ export default function Declarer() {
         if (birthDate) formData.append("date_naissance", birthDate);
         if (circumstances) formData.append("description", circumstances);
         formData.append("etat_physique", "bon");
-        formData.append("urgence_niveau", urgencyLevel === "low" ? t("declarer_urgency_low_value") : urgencyLevel === "high" ? t("declarer_urgency_high_value") : t("declarer_urgency_medium_value"));
+        const urgencyMap: Record<string, string> = { low: "Basse", medium: "Modérée", high: "Haute" };
+        formData.append("urgence_niveau", urgencyMap[urgencyLevel] || "Modérée");
         if (rewardEnabled && rewardAmount) formData.append("recompense_montant", String(parseInt(rewardAmount)));
         formData.append("mode_contact", contactPhone && contactPhone.replace(/\s/g, "").length > 4 ? "PHONE" : "EMAIL");
         if (contactPhone && contactPhone.replace(/\s/g, "").length > 4) formData.append("telephone_contact", contactPhone);
@@ -374,7 +411,6 @@ export default function Declarer() {
     setSelectedDocs([]);
     setFormData({});
     setOwnerType(null);
-    setActiveDocIdx(0);
     setLossDate("");
     setLossTime("");
     setVille("");
@@ -398,10 +434,6 @@ export default function Declarer() {
       </div>
     );
   }
-
-  const currentDocId = selectedDocs[activeDocIdx];
-  const currentMeta = currentDocId ? getDocMeta(currentDocId) : null;
-  const currentDocType = docTypes.find((d) => d.id === currentDocId);
 
   return (
     <div className="flex flex-col h-full bg-[#F2EBD9]">
@@ -549,104 +581,96 @@ export default function Declarer() {
               )}
             </div>
 
-            {/* ── STEP 3: Document Details ── */}
+            {/* ── STEP 3: Document Details (all docs visible) ── */}
             <div className={`section-card animate-in d2 ${currentStep === 3 ? "" : "hidden"}`}>
               <div className="section-badge">
                 <div className="section-badge-num">3</div>
                 <span className="section-badge-text">{t("declarer_step_3")}</span>
               </div>
+              <h2 className="font-bricolage text-[17px] font-extrabold text-textMain mb-1">
+                {t("declarer_step3_title")}
+              </h2>
+              <p className="text-[12.5px] text-textMuted mb-2">
+                {t("declarer_step3_desc")}
+              </p>
 
-              {/* Dynamic Header */}
-              {currentMeta && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h2 className="font-bricolage text-[17px] font-extrabold text-textMain">
-                      {t("declarer_step3_title")}
-                    </h2>
-                    <p className="text-[12.5px] text-textMuted mt-1">
-                      {t("declarer_step3_desc")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2.5 px-3 py-1.5 bg-primary-light border border-primary/20 rounded-xl">
-                    <span className="text-primary text-base">
-                      <i className={`fa-solid ${currentMeta.icon}`}></i>
-                    </span>
-                    <div>
-                      <p className="text-[12px] font-black text-primary leading-tight">
-                        {currentDocType?.nom}
-                      </p>
-                      <p className="text-[10px] font-medium text-textMuted">
-                        {t("declarer_document")} {activeDocIdx + 1} {t("declarer_of")} {selectedDocs.length}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Sub-navigation tabs (if multiple selected) */}
               {selectedDocs.length > 1 && (
-                <div className="overflow-x-auto pb-2 mb-4 border-b border-borderMain/60">
-                  <div className="flex gap-2">
-                    {selectedDocs.map((docId, index) => {
-                      const doc = docTypes.find((d) => d.id === docId);
-                      const isCompleted = getFormValue(docId, "titulaire") && getFormValue(docId, "numero");
-                      return (
-                        <div
-                          key={docId}
-                          onClick={() => setActiveDocIdx(index)}
-                          className={`doc-nav-tab ${activeDocIdx === index ? "active" : ""} ${isCompleted ? "done" : ""}`}
-                        >
-                          <div className="tab-num">
-                            {isCompleted ? <i className="fa-solid fa-check" /> : index + 1}
-                          </div>
-                          <span>{doc?.nom}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-[#F2EBD9] rounded-xl">
+                  <i className="fa-solid fa-layer-group text-primary text-xs" />
+                  <span className="text-[11.5px] font-semibold text-textMuted">
+                    {selectedDocs.length} {t("declarer_documents_selected")}
+                  </span>
                 </div>
               )}
 
-              {/* Fields generation */}
-              {currentMeta && currentDocId && (
-                <div className="space-y-4">
-                  {currentMeta.fields.map((field) => (
-                    <div key={field.id} className="field-group">
-                      <label className="field-label">
-                        {field.icon && <i className={`fa-solid ${field.icon} text-primary`} />}
-                        {t(field.label)}
-                        {field.optional && <span className="opt-badge">{t("declarer_optional")}</span>}
-                      </label>
-                      <div className="field-wrapper">
-                        {field.icon && <i className={`fa-solid ${field.icon} field-icon`} />}
-                        {field.type === "textarea" ? (
-                          <textarea
-                            value={getFormValue(currentDocId, field.id)}
-                            onChange={(e) => updateFormField(currentDocId, field.id, e.target.value)}
-                            placeholder={field.placeholder ? t(field.placeholder) : ""}
-                            className="field-input no-icon"
-                          />
-                        ) : field.type === "date" ? (
-                          <DatePicker
-                            value={getFormValue(currentDocId, field.id)}
-                            onChange={(v) => updateFormField(currentDocId, field.id, v)}
-                            className="field-input"
-                            placeholder={t("declarer_date_format")}
-                          />
-                        ) : (
-                          <input
-                            type={field.type}
-                            value={getFormValue(currentDocId, field.id)}
-                            onChange={(e) => updateFormField(currentDocId, field.id, e.target.value)}
-                            placeholder={field.placeholder ? t(field.placeholder) : ""}
-                            className="field-input"
-                          />
-                        )}
+              {selectedDocs.map((docId, idx) => {
+                const meta = getDocMeta(docId);
+                const doc = docTypes.find((d) => d.id === docId);
+                const hexColor = meta.color || "#6B7280";
+                return (
+                  <div key={docId} className={`${idx > 0 ? "mt-6" : ""} bg-white rounded-2xl border`} style={{ borderColor: hexColor + "30" }}>
+                    <div className="flex items-center gap-3 px-5 py-3.5 rounded-t-2xl" style={{ background: hexColor + "0D", borderBottom: `1px solid ${hexColor}20` }}>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base" style={{ background: hexColor }}>
+                        <i className={`fa-solid ${meta.icon}`} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold" style={{ color: hexColor }}>{doc?.nom || t("declarer_document")}</p>
+                        <p className="text-[10px] font-medium text-gray-400">
+                          {t("declarer_document")} {idx + 1} {t("declarer_of")} {selectedDocs.length}
+                        </p>
+                      </div>
+                      <div className="ml-auto flex items-center gap-1.5 text-[10px] font-semibold"
+                        style={{ color: getFormValue(docId, "titulaire") && getFormValue(docId, "numero") ? "#22c55e" : "#9CA3AF" }}>
+                        <i className={`fa-solid ${getFormValue(docId, "titulaire") && getFormValue(docId, "numero") ? "fa-circle-check" : "fa-circle"}`} />
+                        {getFormValue(docId, "titulaire") && getFormValue(docId, "numero") ? t("declarer_completed") : t("declarer_pending")}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="p-5 space-y-4">
+                      {meta.fields.map((field) => (
+                        <div key={field.id} className="field-group">
+                          <label className="field-label">
+                            {field.icon && <i className={`fa-solid ${field.icon} text-primary`} />}
+                            {t(field.label)}
+                            {!field.optional && <span className="required-star">*</span>}
+                            {field.optional && <span className="opt-badge">{t("declarer_optional")}</span>}
+                          </label>
+                          <div className="field-wrapper">
+                            {field.icon && <i className={`fa-solid ${field.icon} field-icon`} />}
+                            {field.type === "textarea" ? (
+                              <textarea
+                                value={getFormValue(docId, field.id)}
+                                onChange={(e) => { updateFormField(docId, field.id, e.target.value); setFieldErrors((prev) => ({ ...prev, [field.id + "_" + docId]: "" })); }}
+                                placeholder={field.placeholder ? t(field.placeholder) : ""}
+                                className={`field-input no-icon ${fieldErrors[field.id + "_" + docId] ? "field-error" : ""}`}
+                                required={!field.optional}
+                              />
+                            ) : field.type === "date" ? (
+                              <DatePicker
+                                value={getFormValue(docId, field.id)}
+                                onChange={(v) => { updateFormField(docId, field.id, v); setFieldErrors((prev) => ({ ...prev, [field.id + "_" + docId]: "" })); }}
+                                className={`field-input ${fieldErrors[field.id + "_" + docId] ? "field-error" : ""}`}
+                                placeholder={t("declarer_date_format")}
+                              />
+                            ) : (
+                              <input
+                                type={field.type}
+                                value={getFormValue(docId, field.id)}
+                                onChange={(e) => { updateFormField(docId, field.id, e.target.value); setFieldErrors((prev) => ({ ...prev, [field.id + "_" + docId]: "" })); }}
+                                placeholder={field.placeholder ? t(field.placeholder) : ""}
+                                className={`field-input ${fieldErrors[field.id + "_" + docId] ? "field-error" : ""}`}
+                                required={!field.optional}
+                              />
+                            )}
+                            {fieldErrors[field.id + "_" + docId] && (
+                              <p className="field-error-msg">{fieldErrors[field.id + "_" + docId]}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* ── STEP 4: Location & Date ── */}
@@ -666,15 +690,17 @@ export default function Declarer() {
                 <div className="field-group">
                   <label className="field-label">
                     <i className="fa-solid fa-calendar-days text-primary"></i> {t("declarer_loss_date")}
+                    <span className="required-star">*</span>
                   </label>
                   <div className="field-wrapper">
                     <i className="fa-regular fa-calendar-minus field-icon" />
                     <DatePicker
                       value={lossDate}
-                      onChange={setLossDate}
-                      className="field-input"
+                      onChange={(v) => { setLossDate(v); setFieldErrors((prev) => ({ ...prev, lossDate: "" })); }}
+                      className={`field-input ${fieldErrors.lossDate ? "field-error" : ""}`}
                       placeholder={t("declarer_date_format")}
                     />
+                    {fieldErrors.lossDate && <p className="field-error-msg">{fieldErrors.lossDate}</p>}
                   </div>
                 </div>
 
@@ -697,16 +723,19 @@ export default function Declarer() {
                 <div className="field-group">
                   <label className="field-label">
                     <i className="fa-solid fa-city text-primary"></i> {t("declarer_city")}
+                    <span className="required-star">*</span>
                   </label>
                   <div className="field-wrapper">
                     <i className="fa-solid fa-city field-icon" />
                     <input
                       type="text"
                       value={ville}
-                      onChange={(e) => setVille(e.target.value)}
+                      onChange={(e) => { setVille(e.target.value); setFieldErrors((prev) => ({ ...prev, ville: "" })); }}
                       placeholder={t("declarer_placeholder_city")}
-                      className="field-input"
+                      className={`field-input ${fieldErrors.ville ? "field-error" : ""}`}
+                      required
                     />
+                    {fieldErrors.ville && <p className="field-error-msg">{fieldErrors.ville}</p>}
                   </div>
                 </div>
 
@@ -794,16 +823,19 @@ export default function Declarer() {
                 <div className="field-group">
                   <label className="field-label">
                     <i className="fa-solid fa-phone text-primary"></i> {t("declarer_phone")}
+                    <span className="required-star">*</span>
                   </label>
                   <div className="field-wrapper">
                     <i className="fa-solid fa-phone field-icon" />
                     <input
                       type="tel"
                       value={contactPhone}
-                      onChange={(e) => setContactPhone(e.target.value)}
+                      onChange={(e) => { setContactPhone(e.target.value); setFieldErrors((prev) => ({ ...prev, contactPhone: "" })); }}
                       placeholder={t("declarer_placeholder_phone")}
-                      className="field-input"
+                      className={`field-input ${fieldErrors.contactPhone ? "field-error" : ""}`}
+                      required
                     />
+                    {fieldErrors.contactPhone && <p className="field-error-msg">{fieldErrors.contactPhone}</p>}
                   </div>
                 </div>
 
@@ -1022,7 +1054,7 @@ export default function Declarer() {
                               isCurrent ? "text-textMain font-black" : "text-[#6B7280]"
                             }`}
                           >
-                            {step.label}
+                            {t(step.label)}
                           </p>
                           <p className="text-[10.5px] text-[#9CA3AF] leading-none mt-0.5">
                             {isDone ? t("declarer_completed") : isCurrent ? t("declarer_in_progress") : t("declarer_pending")}
@@ -1457,6 +1489,27 @@ export default function Declarer() {
         resize: vertical;
         min-height: 80px;
         line-height: 1.6;
+      }
+      .required-star {
+        color: #ef4444;
+        font-size: 14px;
+        margin-left: 2px;
+      }
+      .field-error {
+        border-color: #ef4444 !important;
+        background: #fef2f2 !important;
+      }
+      .field-error:focus {
+        box-shadow: 0 0 0 4px rgba(239,68,68,.12) !important;
+      }
+      .field-error-msg {
+        color: #ef4444;
+        font-size: 11px;
+        font-weight: 600;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
       .opt-badge {
         display: inline-flex;

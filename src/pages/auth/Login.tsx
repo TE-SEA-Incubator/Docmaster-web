@@ -241,7 +241,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2EBD9] overflow-x-hidden relative font-poppins">
+    <div className="min-h-full bg-[#F2EBD9] overflow-x-hidden relative font-poppins">
       {/* Loader */}
       <div
         id="page-loader"
@@ -371,22 +371,22 @@ export default function Login() {
               <div className="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-black/10 after:content-[''] after:flex-1 after:h-[1px] after:bg-black/10">
                 {t("login_or_continue")}
               </div>
-              <div className="flex gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  disabled={loginLoading}
-                  className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all disabled:opacity-50"
-                >
-                  {loginLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
-                </button>
-                <button
-                  type="button"
-                  className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all"
-                >
-                  <i className="fa-brands fa-apple text-[#1a1a1a]" /> Apple
-                </button>
-              </div>
+                <div className="flex flex-wrap gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    disabled={loginLoading}
+                    className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {loginLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all whitespace-nowrap"
+                  >
+                    <i className="fa-brands fa-apple text-[#1a1a1a]" /> Apple
+                  </button>
+                </div>
             </form>
           )}
 
@@ -413,24 +413,24 @@ export default function Login() {
               {/* Step 1: Identity */}
               {regStep === 1 && (
                 <>
-                  <div className="flex gap-2.5">
+                  <div className="flex flex-wrap gap-2.5">
                     <button
                       type="button"
                       onClick={handleGoogleLogin}
                       disabled={regLoading}
-                      className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all disabled:opacity-50"
+                      className="flex-1 min-w-[100px] py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[11px] xl:text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all disabled:opacity-50 whitespace-nowrap"
                     >
                       {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
                     </button>
                     <button
                       type="button"
-                      className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all"
+                      className="flex-1 min-w-[100px] py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[11px] xl:text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all whitespace-nowrap"
                     >
                       <i className="fa-brands fa-facebook text-blue-500" /> Facebook
                     </button>
                     <button
                       type="button"
-                      className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all"
+                      className="flex-1 min-w-[100px] py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[11px] xl:text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all whitespace-nowrap"
                     >
                       <i className="fa-brands fa-apple text-[#1a1a1a]" /> Apple
                     </button>
@@ -799,7 +799,7 @@ export default function Login() {
         </div>
 
         {/* ═══ DESKTOP CARD ═══ */}
-        <div className="hidden md:flex w-full max-w-[980px] min-h-[580px] bg-white rounded-[24px] shadow-2xl shadow-black/10 overflow-hidden relative z-20">
+        <div className="hidden md:flex w-full max-w-[980px] min-h-[500px] xl:min-h-[580px] max-h-[calc(100vh-5rem)] bg-white rounded-[24px] shadow-2xl shadow-black/10 overflow-hidden relative z-20">
           {/* LEFT PANEL */}
           <aside className="w-[300px] shrink-0 bg-green-dark p-[44px_36px] flex flex-col justify-between relative overflow-hidden">
             <div className="absolute inset-0 pointer-events-none">
@@ -841,7 +841,7 @@ export default function Login() {
           </aside>
 
           {/* RIGHT FORM PANEL */}
-          <main className="flex-1 p-[44px_48px] bg-white flex flex-col gap-[22px] justify-center overflow-y-auto">
+          <main className="flex-1 p-[36px_24px] xl:p-[44px_48px] bg-white flex flex-col gap-[22px] justify-center overflow-y-auto">
             {/* Pill Toggle */}
             <div className="relative flex bg-[#faf8f5] border-[1.5px] border-borda rounded-[16px] p-1.5 shadow-sm overflow-hidden">
               <div
@@ -939,10 +939,10 @@ export default function Login() {
                 <div className="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-borda after:content-[''] after:flex-1 after:h-[1px] after:bg-borda">
                   {t("login_or_continue")}
                 </div>
-                <div className="flex gap-2.5">
+                <div className="flex flex-wrap gap-2.5">
                   <button
                     type="button"
-                    className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]"
+                    className="flex-1 min-w-[100px] py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[11px] xl:text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] whitespace-nowrap"
                   >
                     <i className="fa-brands fa-facebook text-blue-500" /> Facebook
                   </button>
@@ -950,13 +950,13 @@ export default function Login() {
                     type="button" 
                     onClick={handleGoogleLogin}
                     disabled={loginLoading || regLoading}
-                    className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] disabled:opacity-50"
+                    className="flex-1 min-w-[100px] py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[11px] xl:text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] disabled:opacity-50 whitespace-nowrap"
                   >
                     {loginLoading || regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
                   </button>
                   <button
                     type="button"
-                    className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]"
+                    className="flex-1 min-w-[100px] py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[11px] xl:text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] whitespace-nowrap"
                   >
                     <i className="fa-brands fa-apple text-[#1a1a1a]" /> Apple
                   </button>
@@ -987,19 +987,19 @@ export default function Login() {
                 {/* Step 1 Desktop */}
                 {regStep === 1 && (
                   <>
-                    <div className="flex gap-2.5">
-                      <button type="button" className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
+                    <div className="flex flex-wrap gap-2.5">
+                      <button type="button" className="flex-1 min-w-[100px] py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[11px] xl:text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] whitespace-nowrap">
                         <i className="fa-brands fa-facebook text-blue-500" /> Facebook
                       </button>
                       <button 
                         type="button" 
                         onClick={handleGoogleLogin}
                         disabled={regLoading}
-                        className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] disabled:opacity-50"
+                        className="flex-1 min-w-[100px] py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[11px] xl:text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] disabled:opacity-50 whitespace-nowrap"
                       >
                         {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
                       </button>
-                      <button type="button" className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
+                      <button type="button" className="flex-1 min-w-[100px] py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[11px] xl:text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] whitespace-nowrap">
                         <i className="fa-brands fa-apple text-[#1a1a1a]" /> Apple
                       </button>
                     </div>

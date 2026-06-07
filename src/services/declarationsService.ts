@@ -26,8 +26,8 @@ export const declarationsService = {
     return res.data;
   },
 
-  async getAll() {
-    const res = await apiClient.get<ApiResponse<Declaration[]>>("declarations");
+  async getAll(params?: { page?: number; limit?: number; search?: string; declaration_type?: string; status?: string }) {
+    const res = await apiClient.get<ApiResponse<Declaration[]>>("declarations", { params });
     return res.data;
   },
 
@@ -37,7 +37,7 @@ export const declarationsService = {
   },
 
   async searchPublic(query: string) {
-    const res = await apiClient.get<ApiResponse<Declaration[]>>("declarations/search", {
+    const res = await apiClient.get<ApiResponse<Declaration[]>>("declarations/search-public", {
       params: { q: query },
     });
     return res.data;

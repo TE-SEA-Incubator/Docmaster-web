@@ -131,7 +131,7 @@ export class DeclarationRepository {
   /**
    * Search declarations with filters
    */
-  async search(filters: any): Promise<DocumentDeclaration[]> {
+  async search(filters: any): Promise<{ rows: DocumentDeclaration[]; total: number }> {
     let query = "SELECT * FROM declarations WHERE 1=1";
     const values: any[] = [];
     let paramIndex = 1;
@@ -158,9 +158,26 @@ export class DeclarationRepository {
       values.push(filters.declaration_type);
     }
 
+    if (filters.search) {
+      query += ` AND (owner_name ILIKE $${paramIndex} OR document_number ILIKE $${paramIndex} OR identifiant_doc_dm ILIKE $${paramIndex})`;
+      values.push(`%${filters.search}%`);
+      paramIndex++;
+    }
+
+    const countQuery = query.replace('SELECT *', 'SELECT COUNT(*)');
+    const { rows: countRows } = await pool.query(countQuery, values);
+    const total = parseInt(countRows[0].count);
+
+    const page = filters.page ? parseInt(filters.page) : 1;
+    const limit = filters.limit ? parseInt(filters.limit) : 20;
+    const offset = (page - 1) * limit;
+
     query += " ORDER BY created_at DESC";
+    query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+    values.push(limit, offset);
+
     const { rows } = await pool.query(query, values);
-    return rows;
+    return { rows, total };
   }
 
   /**

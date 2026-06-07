@@ -13,7 +13,7 @@ export const smsService = {
   },
 
   async getPurchaseHistory() {
-    const res = await apiClient.get<ApiResponse>("sms/history");
+    const res = await apiClient.get<ApiResponse>("sms/purchase-history");
     return res.data;
   },
 };

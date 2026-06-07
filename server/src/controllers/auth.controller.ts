@@ -258,8 +258,15 @@ export class AuthController {
    */
   async getAdminUsers(req: Request, res: Response): Promise<void> {
     try {
-      const users = await this.userService.getAllUsersForAdmin();
-      res.status(200).json(users);
+      const { page, limit, search, status, is_verified } = req.query;
+      const result = await this.userService.getAllUsersForAdmin({
+        page: page ? parseInt(page as string) : 1,
+        limit: limit ? parseInt(limit as string) : 20,
+        search: search as string || '',
+        status: status as string || '',
+        is_verified: is_verified !== undefined ? is_verified === 'true' : undefined,
+      });
+      res.status(200).json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message || 'Failed to fetch users' });
     }

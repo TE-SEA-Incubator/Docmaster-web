@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller.ts';
-import { authMiddleware } from '../middleware/auth.middleware.ts';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.middleware.ts';
 import { upload } from '../utils/upload.utils.ts';
 
 const router = Router();
@@ -335,7 +335,7 @@ router.post('/reset-password', (req, res) => authController.resetPassword(req, r
  *       500:
  *         description: Erreur serveur
  */
-router.get('/admin/users', authMiddleware, (req, res) => authController.getAdminUsers(req, res));
+router.get('/admin/users', authMiddleware, adminMiddleware, (req, res) => authController.getAdminUsers(req, res));
 
 /**
  * @swagger
@@ -359,7 +359,7 @@ router.get('/admin/users', authMiddleware, (req, res) => authController.getAdmin
  *       404:
  *         description: Utilisateur introuvable
  */
-router.delete('/admin/users/:id', authMiddleware, (req, res) => authController.deleteAdminUser(req, res));
+router.delete('/admin/users/:id', authMiddleware, adminMiddleware, (req, res) => authController.deleteAdminUser(req, res));
 
 /**
  * @swagger

@@ -220,11 +220,12 @@ export class UserService {
   }
 
   /**
-   * Get all users for admin
+   * Get all users for admin (paginated)
    */
-  async getAllUsersForAdmin(): Promise<any[]> {
-    const users = await this.userRepository.getAllUsersForAdmin();
-    return await encodeMediaFields(users);
+  async getAllUsersForAdmin(options?: any): Promise<any> {
+    const result = await this.userRepository.getAllUsersForAdmin(options || {});
+    const users = await encodeMediaFields(result.users);
+    return { users, total: result.total };
   }
 
   /**

@@ -232,12 +232,12 @@ export class DeclarationService {
   /**
    * Search declarations
    */
-  async searchDeclarations(filters: any): Promise<any[]> {
-    const declarations = await this.declarationRepository.search(filters);
+  async searchDeclarations(filters: any): Promise<{ data: any[]; total: number }> {
+    const { rows, total } = await this.declarationRepository.search(filters);
     
     // Attach doc type info to each result
     const results = await Promise.all(
-      declarations.map(async (decl) => {
+      rows.map(async (decl) => {
         // Try finding doc type by ID then by code
         let docType = null;
         if (decl.doc_type && this.isUuid(decl.doc_type)) {
@@ -254,7 +254,7 @@ export class DeclarationService {
       })
     );
     
-    return await encodeMediaFields(results);
+    return { data: await encodeMediaFields(results), total };
   }
 
   /**
