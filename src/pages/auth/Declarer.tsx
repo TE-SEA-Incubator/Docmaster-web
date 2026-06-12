@@ -1,10 +1,21 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
 import DatePicker from "../../components/ui/DatePicker";
 import Topbar from "../../layout/Topbar";
 import apiClient from "../../services/api";
 import { useI18n } from "../../context/I18nContext";
+import { useAuth } from "../../context/AuthContext";
+
+function addMonths(dateStr: string, months: number): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + months);
+  if (d.getDate() !== day) d.setDate(0);
+  return d.toISOString().split("T")[0];
+}
 
 interface DocTypeCatalog {
   id: string;
@@ -12,6 +23,7 @@ interface DocTypeCatalog {
   nom: string;
   icone: string;
   is_active: boolean;
+  delai_expiration_mois: number;
 }
 
 interface FormField {
@@ -131,6 +143,7 @@ const steps = [
 
 export default function Declarer() {
   const { t } = useI18n();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [docTypes, setDocTypes] = useState<DocTypeCatalog[]>([]);
@@ -198,14 +211,31 @@ export default function Declarer() {
   };
 
   const toggleDocType = (docId: string) => {
-    setSelectedDocs((prev) =>
-      prev.includes(docId) ? prev.filter((d) => d !== docId) : [...prev, docId]
-    );
+    setSelectedDocs((prev) => {
+      if (prev.includes(docId)) return prev.filter((d) => d !== docId);
+      const fullName = ownerType === "me" ? [user?.prenom, user?.nom].filter(Boolean).join(" ").trim() : "";
+      if (fullName) {
+        const key = `titulaire_${docId}`;
+        setFormData((prevData) => ({ ...prevData, [key]: fullName }));
+      }
+      return [...prev, docId];
+    });
   };
 
   const updateFormField = (docId: string, fieldId: string, value: string) => {
     const key = `${fieldId}_${docId}`;
-    setFormData((prev) => ({ ...prev, [key]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [key]: value };
+      if (fieldId === "date_delivrance" && value) {
+        const doc = docTypes.find((d) => d.id === docId);
+        const expMoins = doc?.delai_expiration_mois ?? 0;
+        if (expMoins > 0) {
+          const expKey = `date_expiration_${docId}`;
+          next[expKey] = addMonths(value, expMoins);
+        }
+      }
+      return next;
+    });
   };
 
   const getFormValue = (docId: string, fieldId: string, defaultValue = ""): string => {
@@ -226,11 +256,21 @@ export default function Declarer() {
       const errors: Record<string, string> = {};
       for (const docId of selectedDocs) {
         const meta = getDocMeta(docId);
+        const docType = docTypes.find((d) => d.id === docId);
+        const expMoins = docType?.delai_expiration_mois ?? 0;
+        const hasExp = expMoins > 0;
         for (const field of meta.fields) {
           if (field.optional) continue;
+          if (hasExp && field.id === "date_expiration") continue;
           const val = getFormValue(docId, field.id);
           if (!val || !val.trim()) {
             errors[field.id + "_" + docId] = t("declarer_field_required");
+          }
+        }
+        if (hasExp && !meta.fields.some((f) => f.id === "date_delivrance")) {
+          const val = getFormValue(docId, "date_delivrance");
+          if (!val || !val.trim()) {
+            errors["date_delivrance_" + docId] = t("declarer_field_required");
           }
         }
       }
@@ -337,6 +377,7 @@ export default function Declarer() {
         const ownerName = getFormValue(docId, "titulaire");
         const docNum = getFormValue(docId, "numero");
         const birthDate = getFormValue(docId, "date_naissance") || undefined;
+        const delivranceDate = getFormValue(docId, "date_delivrance") || undefined;
         const expiryDate = getFormValue(docId, "date_expiration") || undefined;
 
         const formData = new FormData();
@@ -348,6 +389,7 @@ export default function Declarer() {
         formData.append("region", t("declarer_region_centre"));
         formData.append("pays", t("declarer_country_cameroon"));
         if (lossDate) formData.append("date_perte", lossDate);
+        if (delivranceDate) formData.append("date_delivrance", delivranceDate);
         if (expiryDate) formData.append("date_expiration", expiryDate);
         if (birthDate) formData.append("date_naissance", birthDate);
         if (circumstances) formData.append("description", circumstances);
@@ -496,7 +538,16 @@ export default function Declarer() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div
-                  onClick={() => setOwnerType("me")}
+                  onClick={() => {
+                    setOwnerType("me");
+                    const fullName = [user?.prenom, user?.nom].filter(Boolean).join(" ").trim();
+                    if (fullName) {
+                      selectedDocs.forEach((docId) => {
+                        const key = `titulaire_${docId}`;
+                        setFormData((prev) => ({ ...prev, [key]: fullName }));
+                      });
+                    }
+                  }}
                   className={`doc-type-card ${ownerType === "me" ? "selected" : ""}`}
                 >
                   <div className="doc-check">
@@ -546,7 +597,7 @@ export default function Declarer() {
                       <i className="fa-solid fa-check"></i>
                     </div>
                     <div className="card-icon">
-                      <i className={`fa-solid ${doc.icone || "fa-file"}`}></i>
+                      <i className={`fa-solid fa-${doc.icone || "file"}`}></i>
                     </div>
                     <span className="card-label">{doc.nom}</span>
                   </div>
@@ -607,6 +658,10 @@ export default function Declarer() {
                 const meta = getDocMeta(docId);
                 const doc = docTypes.find((d) => d.id === docId);
                 const hexColor = meta.color || "#6B7280";
+                const expMoins = doc?.delai_expiration_mois ?? 0;
+                const hasExp = expMoins > 0;
+                const hasDateDelivranceField = meta.fields.some((f) => f.id === "date_delivrance");
+                const hasDateExpirationField = meta.fields.some((f) => f.id === "date_expiration");
                 return (
                   <div key={docId} className={`${idx > 0 ? "mt-6" : ""} bg-white rounded-2xl border`} style={{ borderColor: hexColor + "30" }}>
                     <div className="flex items-center gap-3 px-5 py-3.5 rounded-t-2xl" style={{ background: hexColor + "0D", borderBottom: `1px solid ${hexColor}20` }}>
@@ -626,7 +681,7 @@ export default function Declarer() {
                       </div>
                     </div>
                     <div className="p-5 space-y-4">
-                      {meta.fields.map((field) => (
+                      {meta.fields.filter((f) => !(hasExp && f.id === "date_expiration")).map((field) => (
                         <div key={field.id} className="field-group">
                           <label className="field-label">
                             {field.icon && <i className={`fa-solid ${field.icon} text-primary`} />}
@@ -667,6 +722,45 @@ export default function Declarer() {
                           </div>
                         </div>
                       ))}
+                      {hasExp && !hasDateDelivranceField && (
+                        <div className="field-group">
+                          <label className="field-label">
+                            <i className="fa-solid fa-calendar text-primary" />
+                            {t("declarer_field_date_delivrance")}
+                            <span className="required-star">*</span>
+                          </label>
+                          <div className="field-wrapper">
+                            <i className="fa-regular fa-calendar field-icon" />
+                            <DatePicker
+                              value={getFormValue(docId, "date_delivrance")}
+                              onChange={(v) => { updateFormField(docId, "date_delivrance", v); setFieldErrors((prev) => ({ ...prev, ["date_delivrance_" + docId]: "" })); }}
+                              className={`field-input ${fieldErrors["date_delivrance_" + docId] ? "field-error" : ""}`}
+                              placeholder={t("declarer_date_format")}
+                            />
+                            {fieldErrors["date_delivrance_" + docId] && (
+                              <p className="field-error-msg">{fieldErrors["date_delivrance_" + docId]}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {hasExp && (
+                        <div className="field-group">
+                          <label className="field-label">
+                            <i className="fa-solid fa-calendar-check text-primary" />
+                            {t("declarer_field_date_expiration")}
+                          </label>
+                          <div className="field-wrapper">
+                            <i className="fa-regular fa-calendar-check field-icon" />
+                            <DatePicker
+                              value={getFormValue(docId, "date_expiration")}
+                              onChange={() => {}}
+                              className="field-input opacity-60"
+                              placeholder={t("declarer_date_format")}
+                              disabled
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -1079,7 +1173,7 @@ export default function Declarer() {
                     const doc = docTypes.find((d) => d.id === docId);
                     return (
                       <div key={docId} className="flex items-center gap-2 text-xs font-semibold">
-                        <i className={`fa-solid ${doc?.icone || "fa-file"} text-primary`} />
+                        <i className={`fa-solid fa-${doc?.icone || "file"} text-primary`} />
                         <span>{doc?.nom}</span>
                       </div>
                     );
@@ -1112,9 +1206,11 @@ export default function Declarer() {
       </div>
 
       {/* CONFIRMATION MODAL */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1E3A2F]/85 backdrop-blur-sm animate-in">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+      {showConfirmModal && createPortal(
+        <div className="fixed inset-0 z-[210] flex items-end md:items-center justify-center md:p-4 bg-[#1E3A2F]/85 backdrop-blur-sm animate-in">
+          <div className="bg-white rounded-t-3xl md:rounded-3xl p-8 max-w-md w-full text-center shadow-[0_-10px_40px_rgba(0,0,0,0.2)] animate-in slide-in-from-bottom-6 duration-300">
+            {/* Grab handle for mobile */}
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden" />
             <div className="w-15 h-15 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 text-red-500 text-2xl">
               <i className="fa-solid fa-triangle-exclamation"></i>
             </div>
@@ -1177,13 +1273,16 @@ export default function Declarer() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* SUCCESS OVERLAY */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm animate-in">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+      {showSuccessModal && createPortal(
+        <div className="fixed inset-0 z-[210] flex items-end md:items-center justify-center md:p-4 bg-black/55 backdrop-blur-sm animate-in">
+          <div className="bg-white rounded-t-3xl md:rounded-3xl p-8 max-w-md w-full text-center shadow-[0_-10px_40px_rgba(0,0,0,0.2)] animate-in slide-in-from-bottom-6 duration-300">
+            {/* Grab handle for mobile */}
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden" />
             <div className="w-16 h-16 rounded-full bg-green-light flex items-center justify-center mx-auto mb-4 text-green-mid text-3xl">
               <i className="fa-solid fa-check" />
             </div>
@@ -1223,7 +1322,8 @@ export default function Declarer() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Dynamic styles matching the HTML mockup */}

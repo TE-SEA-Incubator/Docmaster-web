@@ -15,6 +15,7 @@ interface DocumentType {
   finder_percent?: number;
   app_percent?: number;
   points_recompense?: number;
+  delai_expiration_mois?: number;
   is_active?: boolean;
 }
 
@@ -27,6 +28,8 @@ const defaultForm = {
   finder_percent: 80,
   app_percent: 20,
   points_recompense: 50,
+  hasExpiration: true,
+  delai_expiration_mois: 12,
 };
 
 export default function AdminDocumentTypes() {
@@ -52,12 +55,13 @@ export default function AdminDocumentTypes() {
 
   const openNew = () => {
     setEditingId(null);
-    setForm(defaultForm);
+    setForm({ ...defaultForm });
     setModalOpen(true);
   };
 
   const openEdit = (doc: DocumentType) => {
     setEditingId(doc.id);
+    const dm = doc.delai_expiration_mois ?? 0;
     setForm({
       nom: doc.nom,
       code: doc.code || "",
@@ -67,6 +71,8 @@ export default function AdminDocumentTypes() {
       finder_percent: doc.finder_percent ?? 80,
       app_percent: doc.app_percent ?? 20,
       points_recompense: doc.points_recompense ?? 50,
+      hasExpiration: dm > 0,
+      delai_expiration_mois: dm > 0 ? dm : 12,
     });
     setModalOpen(true);
   };
@@ -76,10 +82,14 @@ export default function AdminDocumentTypes() {
     if (!form.nom.trim()) return;
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        delai_expiration_mois: form.hasExpiration ? form.delai_expiration_mois : 0,
+      };
       if (editingId) {
-        await adminService.updateDocumentType(editingId, form);
+        await adminService.updateDocumentType(editingId, payload);
       } else {
-        await adminService.createDocumentType(form);
+        await adminService.createDocumentType(payload);
       }
       setModalOpen(false);
       fetchTypes();
@@ -176,6 +186,15 @@ export default function AdminDocumentTypes() {
                 {doc.finder_percent != null && (
                   <span className="text-[10px] font-bold bg-green-50 px-2 py-1 rounded text-green-700">
                     {t("admin_reward")} {doc.finder_percent}%
+                  </span>
+                )}
+                {(doc.delai_expiration_mois ?? 0) > 0 ? (
+                  <span className="text-[10px] font-bold bg-blue-50 px-2 py-1 rounded text-blue-700">
+                    {doc.delai_expiration_mois} mois
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold bg-gray-100 px-2 py-1 rounded text-gray-500">
+                    Sans expiration
                   </span>
                 )}
               </div>
@@ -283,45 +302,74 @@ export default function AdminDocumentTypes() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="field">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">
-                    {t("admin_certificate")} (+)
-                  </label>
-                  <input
-                    type="number"
-                    value={form.points_recompense}
-                    onChange={(e) => setForm({ ...form, points_recompense: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="field">
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">
+                      {t("admin_certificate")} (+)
+                    </label>
+                    <input
+                      type="number"
+                      value={form.points_recompense}
+                      onChange={(e) => setForm({ ...form, points_recompense: Number(e.target.value) })}
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                    />
+                  </div>
+                  <div className="field">
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">
+                      {t("admin_icon")}
+                    </label>
+                    <select
+                      value={form.icone}
+                      onChange={(e) => setForm({ ...form, icone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                    >
+                      <option value="file">📄 Document</option>
+                      <option value="passport">🛂 Passeport</option>
+                      <option value="id-card">🆔 Carte identité</option>
+                      <option value="car">🚗 Permis/Véhicule</option>
+                      <option value="graduation-cap">🎓 Diplôme</option>
+                      <option value="wallet">👛 Portefeuille</option>
+                      <option value="phone">📱 Téléphone</option>
+                      <option value="laptop">💻 Ordinateur</option>
+                      <option value="key">🔑 Clés</option>
+                      <option value="bag-shopping">🛍️ Sac</option>
+                      <option value="book">📖 Livre</option>
+                      <option value="credit-card">💳 Carte bancaire</option>
+                      <option value="certificate">📜 Certificat</option>
+                      <option value="image">🖼️ Photo</option>
+                      <option value="heart">❤️ Bijou</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="field">
-                  <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">
-                    {t("admin_icon")}
-                  </label>
-                  <select
-                    value={form.icone}
-                    onChange={(e) => setForm({ ...form, icone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                  >
-                    <option value="file">📄 Document</option>
-                    <option value="passport">🛂 Passeport</option>
-                    <option value="id-card">🆔 Carte identité</option>
-                    <option value="car">🚗 Permis/Véhicule</option>
-                    <option value="graduation-cap">🎓 Diplôme</option>
-                    <option value="wallet">👛 Portefeuille</option>
-                    <option value="phone">📱 Téléphone</option>
-                    <option value="laptop">💻 Ordinateur</option>
-                    <option value="key">🔑 Clés</option>
-                    <option value="bag-shopping">🛍️ Sac</option>
-                    <option value="book">📖 Livre</option>
-                    <option value="credit-card">💳 Carte bancaire</option>
-                    <option value="certificate">📜 Certificat</option>
-                    <option value="image">🖼️ Photo</option>
-                    <option value="heart">❤️ Bijou</option>
-                  </select>
+
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                      A une date d'expiration ?
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, hasExpiration: !form.hasExpiration })}
+                      className={`w-11 h-6 rounded-full transition-colors ${form.hasExpiration ? "bg-primary" : "bg-gray-300"}`}
+                    >
+                      <div className={`w-4.5 h-4.5 rounded-full bg-white shadow transition-transform ${form.hasExpiration ? "translate-x-[22px]" : "translate-x-[4px]"}`} />
+                    </button>
+                  </div>
+                  {form.hasExpiration && (
+                    <div className="field">
+                      <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">
+                        Durée de validité (mois)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={form.delai_expiration_mois}
+                        onChange={(e) => setForm({ ...form, delai_expiration_mois: Math.max(1, Number(e.target.value)) })}
+                        className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                      />
+                    </div>
+                  )}
                 </div>
-              </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                 <button

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useI18n } from "../../context/I18nContext";
 import type { Document } from "../../types/api";
 import { declarationsService } from "../../services/declarationsService";
@@ -23,6 +24,15 @@ interface ReportLostModalProps {
   onClose: () => void;
 }
 
+function addMonths(dateStr: string, months: number): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + months);
+  if (d.getDate() !== day) d.setDate(0);
+  return d.toISOString().split("T")[0];
+}
+
 export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostModalProps) {
   const { t } = useI18n();
 
@@ -35,14 +45,14 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
   ];
 
   const docTypes = [
-    { id: "cni", icon: "fa-solid fa-id-card", label: t("reportlost_doc_cni") },
-    { id: "passport", icon: "fa-solid fa-passport", label: t("reportlost_doc_passeport") },
-    { id: "permis", icon: "fa-solid fa-car-side", label: t("reportlost_doc_permis") },
-    { id: "acte_naissance", icon: "fa-solid fa-file-lines", label: t("reportlost_doc_acte") },
-    { id: "diplome", icon: "fa-solid fa-graduation-cap", label: t("reportlost_doc_diplome") },
-    { id: "carte_bancaire", icon: "fa-solid fa-credit-card", label: t("reportlost_doc_carte") },
-    { id: "attestation", icon: "fa-solid fa-file-circle-check", label: t("reportlost_doc_attestation") },
-    { id: "autre", icon: "fa-solid fa-folder", label: t("reportlost_doc_autre") },
+    { id: "cni", icon: "fa-solid fa-id-card", label: t("reportlost_doc_cni"), delai_expiration_mois: 120 },
+    { id: "passport", icon: "fa-solid fa-passport", label: t("reportlost_doc_passeport"), delai_expiration_mois: 60 },
+    { id: "permis", icon: "fa-solid fa-car-side", label: t("reportlost_doc_permis"), delai_expiration_mois: 60 },
+    { id: "acte_naissance", icon: "fa-solid fa-file-lines", label: t("reportlost_doc_acte"), delai_expiration_mois: 0 },
+    { id: "diplome", icon: "fa-solid fa-graduation-cap", label: t("reportlost_doc_diplome"), delai_expiration_mois: 0 },
+    { id: "carte_bancaire", icon: "fa-solid fa-credit-card", label: t("reportlost_doc_carte"), delai_expiration_mois: 48 },
+    { id: "attestation", icon: "fa-solid fa-file-circle-check", label: t("reportlost_doc_attestation"), delai_expiration_mois: 0 },
+    { id: "autre", icon: "fa-solid fa-folder", label: t("reportlost_doc_autre"), delai_expiration_mois: 0 },
   ];
 
   const places = [
@@ -104,7 +114,17 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
   };
 
   const updateDocForm = (type: string, field: keyof DocFormData, value: string) => {
-    setDocForms((f) => ({ ...f, [type]: { ...(f[type] || {}), [field]: value } }));
+    setDocForms((f) => {
+      const updated = { ...(f[type] || {}), [field]: value };
+      if (field === "date_delivrance" && value) {
+        const dt = docTypes.find((d) => d.id === type);
+        const expMoins = dt?.delai_expiration_mois ?? 0;
+        if (expMoins > 0) {
+          updated.date_expiration = addMonths(value, expMoins);
+        }
+      }
+      return { ...f, [type]: updated };
+    });
   };
 
   const nextStep = () => step < 5 && setStep((s) => s + 1);
@@ -148,6 +168,8 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
           date_perte: datePerte,
           lieu_perte: lieu,
           description,
+          date_delivrance: d.date_delivrance || undefined,
+          date_expiration: d.date_expiration || undefined,
         });
       }
 
@@ -185,10 +207,12 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
   };
 
   if (successData) {
-    return (
+    return createPortal(
       <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}
-        style={{ background: "rgba(30,58,47,.85)", backdropFilter: "blur(8px)", zIndex: 200 }}>
+        style={{ background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(12px)", zIndex: 210 }}>
         <div className="modal-box animate-in text-center" style={{ maxWidth: "420px" }}>
+          {/* Grab handle for mobile */}
+          <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden" />
           <div className="w-20 h-20 rounded-full bg-green-light flex items-center justify-center mx-auto mb-4">
             <i className="fa-solid fa-check text-green-dark text-3xl" />
           </div>
@@ -229,15 +253,18 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
             </button>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && !submitting && onClose()}
-      style={{ background: "rgba(30,58,47,.85)", backdropFilter: "blur(8px)", zIndex: 200 }}>
-      <div className="modal-box animate-in" style={{ maxWidth: "640px", padding: 0, overflow: "hidden" }}>
-        <div className="p-6 pb-0">
+      style={{ background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(12px)", zIndex: 210 }}>
+      <div className="modal-box animate-in" style={{ maxWidth: "640px", padding: 0, display: "flex", flexDirection: "column", maxHeight: "90vh", overflow: "hidden" }}>
+        {/* Grab handle for mobile */}
+        <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mt-3 mb-1 md:hidden flex-shrink-0" />
+        <div className="px-6 py-4 pb-0 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bricolage text-lg font-extrabold text-textMain">{t("reportlost_title")}</h2>
             <button onClick={onClose} disabled={submitting}
@@ -245,10 +272,10 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
               <i className="fa-solid fa-xmark" />
             </button>
           </div>
-          <Stepper steps={steps} currentStep={step} orientation="vertical" />
         </div>
 
-        <div className="px-6 pb-4 max-h-[55vh] overflow-y-auto">
+        <div className="flex gap-4 px-6 overflow-hidden flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto pb-4">
           {step === 1 && (
             <div className="animate-in">
               <h3 className="font-bricolage text-base font-bold text-textMain mb-1">{t("reportlost_step1_question")}</h3>
@@ -341,18 +368,33 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
                             className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_numero_doc_placeholder")} />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_delivrance")}</label>
-                          <DatePicker value={f.date_delivrance} onChange={(v) => updateDocForm(id, "date_delivrance", v)}
-                            className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_date_placeholder")} />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_expiration")}</label>
-                          <DatePicker value={f.date_expiration} onChange={(v) => updateDocForm(id, "date_expiration", v)}
-                            className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_date_placeholder")} />
-                        </div>
-                      </div>
+                      {(() => {
+                        const dtInfo = docTypes.find((d) => d.id === id);
+                        const hasExpRow = (dtInfo?.delai_expiration_mois ?? 0) > 0;
+                        if (hasExpRow) {
+                          return (
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_delivrance")}</label>
+                                <DatePicker value={f.date_delivrance} onChange={(v) => updateDocForm(id, "date_delivrance", v)}
+                                  className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_date_placeholder")} />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_expiration")}</label>
+                                <DatePicker value={f.date_expiration} onChange={() => {}} disabled
+                                  className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors opacity-60" placeholder={t("reportlost_date_placeholder")} />
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div>
+                            <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_delivrance")}</label>
+                            <DatePicker value={f.date_delivrance} onChange={(v) => updateDocForm(id, "date_delivrance", v)}
+                              className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_date_placeholder")} />
+                          </div>
+                        );
+                      })()}
                       <div>
                         <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_description")}</label>
                         <textarea value={f.description} onChange={(e) => updateDocForm(id, "description", e.target.value)} rows={2}
@@ -469,8 +511,12 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
             </div>
           )}
         </div>
+          <div className="w-36 flex-shrink-0 pt-1">
+            <Stepper steps={steps} currentStep={step} orientation="vertical" />
+          </div>
+        </div>
 
-        <div className="p-4 bg-bgMain border-t border-borda flex items-center justify-between gap-3">
+        <div className="p-4 bg-bgMain border-t border-borda flex items-center justify-between gap-3 flex-shrink-0">
           <button onClick={step === 1 ? onClose : prevStep} disabled={submitting}
             className="px-4 py-2.5 rounded-xl border border-borda bg-white text-textMain text-[12px] font-semibold hover:bg-surface2 transition-all disabled:opacity-40 flex items-center gap-1.5">
             <i className="fa-solid fa-arrow-left text-[10px]" /> {step === 1 ? t("reportlost_cancel") : t("reportlost_previous")}
@@ -490,6 +536,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

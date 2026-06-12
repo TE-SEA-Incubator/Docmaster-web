@@ -171,6 +171,9 @@ export function AuthProvider({ children }) {
   const updateUser = useCallback((updatedFields) => {
     setUser((prev) => {
       const next = { ...prev, ...updatedFields };
+      // Recalculer les initiales au cas où le nom change
+      next.initial = getInitials(next.nom, next.prenom);
+      
       localStorage.setItem(AUTH_KEY, JSON.stringify(next));
       return next;
     });

@@ -101,9 +101,9 @@ export default function Recuperer() {
     setPayError("");
     try {
       const res = await declarationsService.payRecoveryFee({
-        declaration_id: docId,
-        method: method === "orange" ? "ORANGE_MONEY" : "MTN_MOMO",
-        telephone: phone,
+        docId: docId,
+        paymentMethod: method === "orange" ? "ORANGE_MONEY" : "MTN_MOMO",
+        phone,
       });
       console.log("[Recuperer] payRecoveryFee response:", res);
       if (res.success) {

@@ -86,13 +86,13 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
         <Link
           to="/declarer"
-          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-[11px] font-bold hover:bg-blue-600 transition-all"
+          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 text-white text-[11px] font-bold hover:bg-blue-600 transition-all"
         >
           <i className="fa-solid fa-triangle-exclamation text-[10px]" /> {t("topbar_declare_lost")}
         </Link>
         <Link
           to="/trouver"
-          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 text-white text-[11px] font-bold hover:bg-red-600 transition-all"
+          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-[11px] font-bold hover:bg-red-600 transition-all"
         >
           <i className="fa-solid fa-hand-holding-hand text-[10px]" /> {t("topbar_found_doc")}
         </Link>

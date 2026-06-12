@@ -27,6 +27,7 @@ export default function Sidebar() {
       items: [
         { to: "/mes-declarations", icon: "fa-solid fa-clock-rotate-left", label: t("sidebar_declarations") },
         { to: "/mes-gains", icon: "fa-solid fa-wallet", label: t("sidebar_earnings") },
+        { to: "/parrainage", icon: "fa-solid fa-gift", label: t("sidebar_referral") },
         { to: "/abonnement", icon: "fa-solid fa-crown", label: t("sidebar_subscription") },
         { to: "/infos-profil", icon: "fa-solid fa-user", label: t("sidebar_profile") },
       ],

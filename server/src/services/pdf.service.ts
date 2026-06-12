@@ -128,53 +128,53 @@ export class PdfService {
         let y = flagH + 10;
 
         // ── Bloc français (gauche) ──
-        doc.font('Helvetica-Bold').fontSize(7.5).fillColor(C.green)
+        doc.font('Helvetica-Bold').fontSize(7).fillColor(C.green)
           .text('REPUBLIQUE DU CAMEROUN', ML, y, { width: 200, align: 'center' });
-        doc.font('Helvetica').fontSize(6.5).fillColor(C.darkGray)
-          .text('Paix – Travail – Patrie', ML, y + 10, { width: 200, align: 'center' });
         doc.font('Helvetica').fontSize(6).fillColor(C.darkGray)
-          .text('————————————', ML, y + 19, { width: 200, align: 'center' });
-        doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.darkGray)
-          .text('PRESIDENCE DE LA REPUBLIQUE', ML, y + 28, { width: 200, align: 'center' });
-        doc.font('Helvetica').fontSize(6).fillColor(C.darkGray)
-          .text('————————————', ML, y + 37, { width: 200, align: 'center' });
-        doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.darkGray)
-          .text('DELEGATION GENERALE A LA SURETE NATIONALE', ML, y + 46, { width: 200, align: 'center' });
-        doc.font('Helvetica').fontSize(6).fillColor(C.darkGray)
-          .text('————————————', ML, y + 55, { width: 200, align: 'center' });
+          .text('Paix – Travail – Patrie', ML, y + 8, { width: 200, align: 'center' });
+        doc.font('Helvetica').fontSize(5.5).fillColor(C.darkGray)
+          .text('————————————', ML, y + 15, { width: 200, align: 'center' });
+        doc.font('Helvetica-Bold').fontSize(6).fillColor(C.darkGray)
+          .text('PRESIDENCE DE LA REPUBLIQUE', ML, y + 22, { width: 200, align: 'center' });
+        doc.font('Helvetica').fontSize(5.5).fillColor(C.darkGray)
+          .text('————————————', ML, y + 29, { width: 200, align: 'center' });
+        doc.font('Helvetica-Bold').fontSize(6).fillColor(C.darkGray)
+          .text('DELEGATION GENERALE A LA SURETE NATIONALE', ML, y + 36, { width: 200, align: 'center' });
+        doc.font('Helvetica').fontSize(5.5).fillColor(C.darkGray)
+          .text('————————————', ML, y + 43, { width: 200, align: 'center' });
 
         // ── Étoile centrale stylisée ──
         const cx = PW / 2;
-        const cy = y + 32;
+        const cy = y + 26;
         doc.save();
-        doc.circle(cx, cy, 22).fill(C.greenLight).stroke();
-        doc.circle(cx, cy, 22).lineWidth(1.5).strokeColor(C.green).stroke();
-        doc.font('Helvetica-Bold').fontSize(18).fillColor(C.green)
-          .text('★', cx - 9, cy - 10);
+        doc.circle(cx, cy, 18).fill(C.greenLight).stroke();
+        doc.circle(cx, cy, 18).lineWidth(1.5).strokeColor(C.green).stroke();
+        doc.font('Helvetica-Bold').fontSize(14).fillColor(C.green)
+          .text('★', cx - 7, cy - 8);
         doc.restore();
 
         // Logo / nom plateforme sous l'étoile
-        doc.font('Helvetica-Bold').fontSize(9).fillColor(C.green)
-          .text('DocMaster', cx - 30, cy + 15, { width: 60, align: 'center' });
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(C.green)
+          .text('DocMaster', cx - 25, cy + 12, { width: 50, align: 'center' });
 
         // ── Bloc anglais (droite) ──
         const rx = PW - ML - 200;
-        doc.font('Helvetica-Bold').fontSize(7.5).fillColor(C.green)
+        doc.font('Helvetica-Bold').fontSize(7).fillColor(C.green)
           .text('REPUBLIC OF CAMEROON', rx, y, { width: 200, align: 'center' });
-        doc.font('Helvetica').fontSize(6.5).fillColor(C.darkGray)
-          .text('Peace – Work – Fatherland', rx, y + 10, { width: 200, align: 'center' });
         doc.font('Helvetica').fontSize(6).fillColor(C.darkGray)
-          .text('————————————', rx, y + 19, { width: 200, align: 'center' });
-        doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.darkGray)
-          .text('PRESIDENCY OF THE REPUBLIC', rx, y + 28, { width: 200, align: 'center' });
-        doc.font('Helvetica').fontSize(6).fillColor(C.darkGray)
-          .text('————————————', rx, y + 37, { width: 200, align: 'center' });
-        doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.darkGray)
-          .text('GENERAL DELEGATION FOR NATIONAL SECURITY', rx, y + 46, { width: 200, align: 'center' });
-        doc.font('Helvetica').fontSize(6).fillColor(C.darkGray)
-          .text('————————————', rx, y + 55, { width: 200, align: 'center' });
+          .text('Peace – Work – Fatherland', rx, y + 8, { width: 200, align: 'center' });
+        doc.font('Helvetica').fontSize(5.5).fillColor(C.darkGray)
+          .text('————————————', rx, y + 15, { width: 200, align: 'center' });
+        doc.font('Helvetica-Bold').fontSize(6).fillColor(C.darkGray)
+          .text('PRESIDENCY OF THE REPUBLIC', rx, y + 22, { width: 200, align: 'center' });
+        doc.font('Helvetica').fontSize(5.5).fillColor(C.darkGray)
+          .text('————————————', rx, y + 29, { width: 200, align: 'center' });
+        doc.font('Helvetica-Bold').fontSize(6).fillColor(C.darkGray)
+          .text('GENERAL DELEGATION FOR NATIONAL SECURITY', rx, y + 36, { width: 200, align: 'center' });
+        doc.font('Helvetica').fontSize(5.5).fillColor(C.darkGray)
+          .text('————————————', rx, y + 43, { width: 200, align: 'center' });
 
-        y += 72;
+        y += 58;
 
         // ── Ligne de séparation dorée ──
         doc.moveTo(ML, y).lineTo(PW - MR, y).lineWidth(1).strokeColor(C.gold).stroke();
@@ -183,47 +183,47 @@ export class PdfService {
         y += 5;
 
         // ── Numéro de référence et unité (bloc de droite, style officiel) ──
-        doc.roundedRect(ML, y, CW, 26, 3)
+        doc.roundedRect(ML, y, CW, 22, 3)
           .fill(C.greenLight).strokeColor(C.green).lineWidth(0.5).stroke();
 
-        doc.font('Helvetica').fontSize(7).fillColor(C.gray)
-          .text('N° Réf :', ML + 8, y + 5);
-        doc.font('Helvetica-Bold').fontSize(8.5).fillColor(C.green)
-          .text(ref, ML + 8, y + 14);
+        doc.font('Helvetica').fontSize(6).fillColor(C.gray)
+          .text('N° Réf :', ML + 8, y + 3);
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(C.green)
+          .text(ref, ML + 8, y + 11);
 
-        doc.font('Helvetica').fontSize(7).fillColor(C.gray)
-          .text('Unité / Service :', ML + 180, y + 5);
-        doc.font('Helvetica-Bold').fontSize(7.5).fillColor(C.darkGray)
-          .text('DocMaster — Plateforme Numérique de Gestion Documentaire', ML + 180, y + 14, { width: 200 });
+        doc.font('Helvetica').fontSize(6).fillColor(C.gray)
+          .text('Unité / Service :', ML + 180, y + 3);
+        doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.darkGray)
+          .text('DocMaster — Plateforme Numérique de Gestion Documentaire', ML + 180, y + 11, { width: 200 });
 
-        doc.font('Helvetica').fontSize(7).fillColor(C.gray)
-          .text('Fait à :', PW - MR - 140, y + 5);
-        doc.font('Helvetica-Bold').fontSize(7.5).fillColor(C.darkGray)
-          .text(`Yaoundé, le ${todayLong}`, PW - MR - 140, y + 14, { width: 135, align: 'right' });
+        doc.font('Helvetica').fontSize(6).fillColor(C.gray)
+          .text('Fait à :', PW - MR - 140, y + 3);
+        doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.darkGray)
+          .text(`Yaoundé, le ${todayLong}`, PW - MR - 140, y + 11, { width: 135, align: 'right' });
 
-        y += 34;
+        y += 28;
 
         // ─────────────────────────────────────────────────────────────────────
         // TITRE PRINCIPAL — BILINGUE
         // ─────────────────────────────────────────────────────────────────────
-        doc.roundedRect(ML, y, CW, 36, 4).fill(C.green);
-        doc.font('Helvetica-Bold').fontSize(11).fillColor(C.white)
-          .text(`ATTESTATION DE DÉCLARATION DE ${declTypeLabel}`, ML, y + 5, { width: CW, align: 'center' });
-        doc.font('Helvetica').fontSize(7.5).fillColor('#A7C4B0')
-          .text(`DECLARATION OF ${isLost ? 'LOSS' : 'FOUND ITEM'}`, ML, y + 20, { width: CW, align: 'center' });
-        y += 44;
+        doc.roundedRect(ML, y, CW, 30, 4).fill(C.green);
+        doc.font('Helvetica-Bold').fontSize(10).fillColor(C.white)
+          .text(`ATTESTATION DE DÉCLARATION DE ${declTypeLabel}`, ML, y + 3, { width: CW, align: 'center' });
+        doc.font('Helvetica').fontSize(7).fillColor('#A7C4B0')
+          .text(`DECLARATION OF ${isLost ? 'LOSS' : 'FOUND ITEM'}`, ML, y + 16, { width: CW, align: 'center' });
+        y += 36;
 
         // ── Sous-titre légal ──
-        doc.font('Helvetica-Oblique').fontSize(7).fillColor(C.lightGray)
+        doc.font('Helvetica-Oblique').fontSize(6.5).fillColor(C.lightGray)
           .text(
             'Conformément à la Loi N° 2010/012 du 21 décembre 2010 relative à la sécurité intérieure — Art. 162 du Code Pénal Camerounais',
             ML, y, { width: CW, align: 'center' }
           );
-        y += 14;
+        y += 11;
 
         // ── Filet mince ──
         doc.moveTo(ML, y).lineTo(PW - MR, y).lineWidth(0.4).strokeColor(C.border).stroke();
-        y += 10;
+        y += 6;
 
         // ─────────────────────────────────────────────────────────────────────
         // PRÉAMBULE OFFICIEL
@@ -234,20 +234,20 @@ export class PdfService {
           ? `Nous, soussignés, DocMaster, Plateforme Numérique agréée de gestion et de recherche de documents perdus, auxiliaire des services de la Sûreté Nationale, attestons que s'est présenté(e) devant notre système, ce jour :\n\n${ownerName.toUpperCase()}\n\nQui nous déclare avoir égaré ou perdu ${article}${declaration.document_number ? `, portant le numéro ${declaration.document_number},` : ''} dans les circonstances décrites ci-après.`
           : `Nous, soussignés, DocMaster, Plateforme Numérique agréée de gestion et de recherche de documents perdus, attestons que s'est présenté(e) devant notre système, ce jour :\n\n${ownerName.toUpperCase()}\n\nQui nous déclare avoir trouvé ${article}${declaration.document_number ? `, portant le numéro ${declaration.document_number},` : ''} et en sollicite la restitution au propriétaire légitime.`;
 
-        doc.roundedRect(ML, y, CW, 78, 4)
+        doc.roundedRect(ML, y, CW, 70, 4)
           .fill(C.cream).strokeColor(C.border).lineWidth(0.5).stroke();
 
         // Filet vert à gauche (style "citation officielle")
-        doc.rect(ML, y, 4, 78).fill(C.green);
+        doc.rect(ML, y, 4, 70).fill(C.green);
 
-        doc.font('Helvetica').fontSize(8.5).fillColor(C.darkGray)
-          .text(preambleText, ML + 12, y + 8, {
+        doc.font('Helvetica').fontSize(8).fillColor(C.darkGray)
+          .text(preambleText, ML + 12, y + 6, {
             width: CW - 20,
             align: 'justify',
-            lineGap: 3,
+            lineGap: 2,
           });
 
-        y += 86;
+        y += 76;
 
         // ─────────────────────────────────────────────────────────────────────
         // SECTION I — IDENTITÉ DU DÉCLARANT
@@ -289,7 +289,7 @@ export class PdfService {
           { label: 'Quartier / Quarter', value: val(declaration.quartier) },
         ]);
 
-        y += 6;
+        y += 4;
 
         // ─────────────────────────────────────────────────────────────────────
         // SECTION II — DESCRIPTION DU DOCUMENT
@@ -314,7 +314,7 @@ export class PdfService {
           ]);
         }
 
-        y += 6;
+        y += 4;
 
         // ─────────────────────────────────────────────────────────────────────
         // SECTION III — CIRCONSTANCES DE LA PERTE / DÉCOUVERTE
@@ -338,118 +338,117 @@ export class PdfService {
 
         // Description / circonstances
         if (declaration.description) {
-          const descH = 36;
+          const descH = 30;
           doc.roundedRect(ML, y, CW, descH, 3)
             .fill(C.white).strokeColor(C.border).lineWidth(0.5).stroke();
-          doc.font('Helvetica-Bold').fontSize(7).fillColor(C.lightGray)
-            .text('Circonstances / Circumstances', ML + 8, y + 5);
-          doc.font('Helvetica-Oblique').fontSize(8).fillColor(C.darkGray)
-            .text(`« ${declaration.description} »`, ML + 8, y + 16, {
-              width: CW - 16, height: 18, ellipsis: true,
+          doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.lightGray)
+            .text('Circonstances / Circumstances', ML + 8, y + 3);
+          doc.font('Helvetica-Oblique').fontSize(7.5).fillColor(C.darkGray)
+            .text(`« ${declaration.description} »`, ML + 8, y + 13, {
+              width: CW - 16, height: 15, ellipsis: true,
             });
           y += descH + 2;
         }
 
-        y += 4;
+        y += 2;
 
         // ─────────────────────────────────────────────────────────────────────
         // RÉCOMPENSE (si applicable)
         // ─────────────────────────────────────────────────────────────────────
         if (declaration.recompense_montant && parseFloat(declaration.recompense_montant) > 0) {
-          doc.roundedRect(ML, y, CW, 22, 4)
+          doc.roundedRect(ML, y, CW, 18, 4)
             .fill(C.goldLight).strokeColor(C.gold).lineWidth(1).stroke();
-          doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#92400E')
+          doc.font('Helvetica-Bold').fontSize(8).fillColor('#92400E')
             .text(
               `🏅  RÉCOMPENSE OFFERTE : ${Number(declaration.recompense_montant).toLocaleString('fr-FR')} FCFA`,
-              ML + 10, y + 6,
+              ML + 10, y + 4,
               { width: CW - 20, align: 'center' }
             );
-          y += 28;
+          y += 22;
         }
 
         // ─────────────────────────────────────────────────────────────────────
         // STATUT DE LA DÉCLARATION
         // ─────────────────────────────────────────────────────────────────────
-        y += 4;
-        doc.roundedRect(ML, y, CW, 20, 4).fill('#F9FAFB').strokeColor(C.border).lineWidth(0.5).stroke();
-        doc.font('Helvetica-Bold').fontSize(7).fillColor(C.lightGray)
-          .text('STATUT DE LA DÉCLARATION / DECLARATION STATUS', ML + 10, y + 4);
-        doc.roundedRect(ML + 10, y + 12, 140, 6, 2).fill(statusColor);
-        doc.font('Helvetica-Bold').fontSize(6).fillColor(C.white)
-          .text(statusLabel.toUpperCase(), ML + 10, y + 14, { width: 140, align: 'center' });
-        y += 26;
+        y += 2;
+        doc.roundedRect(ML, y, CW, 18, 4).fill('#F9FAFB').strokeColor(C.border).lineWidth(0.5).stroke();
+        doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.lightGray)
+          .text('STATUT DE LA DÉCLARATION / DECLARATION STATUS', ML + 10, y + 3);
+        doc.roundedRect(ML + 10, y + 10, 140, 5, 2).fill(statusColor);
+        doc.font('Helvetica-Bold').fontSize(5.5).fillColor(C.white)
+          .text(statusLabel.toUpperCase(), ML + 10, y + 12, { width: 140, align: 'center' });
+        y += 22;
 
         // ─────────────────────────────────────────────────────────────────────
         // ATTESTATION LÉGALE FINALE
         // (Reprise exacte du formulaire DGSN officiel)
         // ─────────────────────────────────────────────────────────────────────
-        y += 4;
         doc.moveTo(ML, y).lineTo(PW - MR, y).lineWidth(0.4).strokeColor(C.border).stroke();
-        y += 8;
+        y += 6;
 
         const legalText =
           `Le (la) déclarant(e) a été informé(e) des dispositions de l'article 162 du Code Pénal Camerounais punissant quiconque aura sciemment fait usage d'un certificat ou d'une attestation concernant des faits matériels inexacts. L'intéressé(e) est informé(e) des peines encourues en cas de fausses déclarations (Art. 167 C.P. Camerounais).\n\nEn foi de quoi, le présent certificat lui est délivré pour servir et valoir ce que de droit.`;
 
-        doc.roundedRect(ML, y, CW, 52, 4)
+        doc.roundedRect(ML, y, CW, 44, 4)
           .fill('#F0FDF4').strokeColor(C.green).lineWidth(0.5).stroke();
-        doc.rect(ML, y, 4, 52).fill(C.green);
-        doc.font('Helvetica').fontSize(7.5).fillColor(C.darkGray)
-          .text(legalText, ML + 12, y + 6, { width: CW - 20, align: 'justify', lineGap: 2 });
+        doc.rect(ML, y, 4, 44).fill(C.green);
+        doc.font('Helvetica').fontSize(7).fillColor(C.darkGray)
+          .text(legalText, ML + 12, y + 5, { width: CW - 20, align: 'justify', lineGap: 1 });
 
-        y += 58;
+        y += 50;
 
         // ─────────────────────────────────────────────────────────────────────
         // ZONE DE SIGNATURES
         // ─────────────────────────────────────────────────────────────────────
-        const sigBoxH = 68;
+        const sigBoxH = 52;
         doc.roundedRect(ML, y, CW, sigBoxH, 4)
           .fill(C.cream).strokeColor(C.border).lineWidth(0.5).stroke();
 
         // Signature gauche — Le Déclarant
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(C.darkGray)
-          .text('LE (LA) DÉCLARANT(E)', ML + 20, y + 8, { width: 160, align: 'center' });
-        doc.font('Helvetica').fontSize(6.5).fillColor(C.lightGray)
-          .text('(Signature précédée de la mention\n"Lu et approuvé")', ML + 20, y + 20, { width: 160, align: 'center', lineGap: 1 });
-        doc.moveTo(ML + 20, y + sigBoxH - 14).lineTo(ML + 180, y + sigBoxH - 14)
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor(C.darkGray)
+          .text('LE (LA) DÉCLARANT(E)', ML + 20, y + 6, { width: 160, align: 'center' });
+        doc.font('Helvetica').fontSize(6).fillColor(C.lightGray)
+          .text('(Signature précédée de la mention\n"Lu et approuvé")', ML + 20, y + 16, { width: 160, align: 'center', lineGap: 1 });
+        doc.moveTo(ML + 20, y + sigBoxH - 12).lineTo(ML + 180, y + sigBoxH - 12)
           .lineWidth(0.6).strokeColor(C.gold).stroke();
-        doc.font('Helvetica').fontSize(6.5).fillColor(C.lightGray)
-          .text(ownerName, ML + 20, y + sigBoxH - 10, { width: 160, align: 'center' });
+        doc.font('Helvetica').fontSize(6).fillColor(C.lightGray)
+          .text(ownerName, ML + 20, y + sigBoxH - 9, { width: 160, align: 'center' });
 
         // Séparateur vertical
-        doc.moveTo(PW / 2, y + 12).lineTo(PW / 2, y + sigBoxH - 8)
+        doc.moveTo(PW / 2, y + 8).lineTo(PW / 2, y + sigBoxH - 8)
           .lineWidth(0.5).strokeColor(C.border).stroke();
 
         // Signature droite — DocMaster / Commissaire
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(C.darkGray)
-          .text('LE RESPONSABLE ADMINISTRATIF', PW / 2 + 10, y + 8, { width: 220, align: 'center' });
-        doc.font('Helvetica').fontSize(6.5).fillColor(C.lightGray)
-          .text('DOCMASTER\nPlateforme agréée de gestion documentaire', PW / 2 + 10, y + 20, { width: 220, align: 'center', lineGap: 1 });
+        doc.font('Helvetica-Bold').fontSize(7.5).fillColor(C.darkGray)
+          .text('LE RESPONSABLE ADMINISTRATIF', PW / 2 + 10, y + 6, { width: 220, align: 'center' });
+        doc.font('Helvetica').fontSize(6).fillColor(C.lightGray)
+          .text('DOCMASTER\nPlateforme agréée de gestion documentaire', PW / 2 + 10, y + 16, { width: 220, align: 'center', lineGap: 1 });
 
         // Tampon circulaire DocMaster
         const stampCX = PW / 2 + 120;
-        const stampCY = y + 42;
-        doc.circle(stampCX, stampCY, 18)
+        const stampCY = y + 30;
+        doc.circle(stampCX, stampCY, 13)
           .lineWidth(1.5).strokeColor(C.green).stroke();
-        doc.circle(stampCX, stampCY, 14)
+        doc.circle(stampCX, stampCY, 10)
           .lineWidth(0.5).strokeColor(C.green).stroke();
-        doc.font('Helvetica-Bold').fontSize(5.5).fillColor(C.green)
-          .text('DOCMASTER', stampCX - 16, stampCY - 7, { width: 32, align: 'center' });
-        doc.font('Helvetica').fontSize(5).fillColor(C.green)
-          .text('OFFICIEL', stampCX - 16, stampCY + 1, { width: 32, align: 'center' });
-        doc.font('Helvetica').fontSize(4.5).fillColor(C.green)
-          .text(todayLong.split(' ').slice(-1)[0], stampCX - 16, stampCY + 8, { width: 32, align: 'center' });
+        doc.font('Helvetica-Bold').fontSize(4.5).fillColor(C.green)
+          .text('DOCMASTER', stampCX - 12, stampCY - 5, { width: 24, align: 'center' });
+        doc.font('Helvetica').fontSize(4).fillColor(C.green)
+          .text('OFFICIEL', stampCX - 12, stampCY + 1, { width: 24, align: 'center' });
+        doc.font('Helvetica').fontSize(3.5).fillColor(C.green)
+          .text(todayLong.split(' ').slice(-1)[0], stampCX - 12, stampCY + 6, { width: 24, align: 'center' });
 
-        doc.moveTo(PW / 2 + 10, y + sigBoxH - 14).lineTo(PW - MR - 20, y + sigBoxH - 14)
+        doc.moveTo(PW / 2 + 10, y + sigBoxH - 12).lineTo(PW - MR - 20, y + sigBoxH - 12)
           .lineWidth(0.6).strokeColor(C.gold).stroke();
 
-        y += sigBoxH + 8;
+        y += sigBoxH + 4;
 
         // ── Validité (comme le formulaire DGSN) ──
-        doc.roundedRect(ML, y, CW, 14, 3).fill(C.greenLight).strokeColor(C.green).lineWidth(0.4).stroke();
-        doc.font('Helvetica-Bold').fontSize(7).fillColor(C.green)
+        doc.roundedRect(ML, y, CW, 12, 3).fill(C.greenLight).strokeColor(C.green).lineWidth(0.4).stroke();
+        doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.green)
           .text(`Validité : 3 (trois) mois à compter de la date de délivrance  —  Valide jusqu'au : ${new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}`,
-            ML + 8, y + 3, { width: CW - 16, align: 'center' });
-        y += 20;
+            ML + 8, y + 2, { width: CW - 16, align: 'center' });
+        y += 14;
 
         // ─────────────────────────────────────────────────────────────────────
         // PIED DE PAGE
@@ -457,22 +456,22 @@ export class PdfService {
         // Filets dorés
         doc.moveTo(ML, y).lineTo(PW - MR, y).lineWidth(0.3).strokeColor(C.gold).stroke();
         doc.moveTo(ML, y + 2).lineTo(PW - MR, y + 2).lineWidth(1).strokeColor(C.green).stroke();
-        y += 8;
+        y += 4;
 
-        doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.green)
+        doc.font('Helvetica-Bold').fontSize(6).fillColor(C.green)
           .text('DocMaster', ML, y, { continued: true })
           .font('Helvetica').fillColor(C.gray)
           .text('  –  Plateforme Numérique Officielle de Recherche et Gestion de Documents Perdus', { continued: false });
 
-        doc.font('Helvetica').fontSize(6).fillColor(C.lightGray)
-          .text('www.docmaster.cm  |  contact@docmaster.cm  |  +237 000 000 000', ML, y + 10, {
+        doc.font('Helvetica').fontSize(5.5).fillColor(C.lightGray)
+          .text('www.docmaster.cm  |  contact@docmaster.cm  |  +237 000 000 000', ML, y + 8, {
             width: CW, align: 'center',
           });
 
-        doc.font('Helvetica').fontSize(5.5).fillColor('#D1D5DB')
+        doc.font('Helvetica').fontSize(5).fillColor('#D1D5DB')
           .text(
             `Document généré électroniquement — Référence : ${ref} — ${todayLong} — Toute falsification est passible de poursuites judiciaires conformément à l'article 167 du Code Pénal Camerounais.`,
-            ML, y + 20, { width: CW, align: 'center', lineGap: 1 }
+            ML, y + 15, { width: CW, align: 'center', lineGap: 1 }
           );
 
         // ── Bande inférieure drapeau ──
@@ -508,12 +507,12 @@ function drawSectionTitle(
   x: number, y: number, w: number,
   C: Record<string, string>
 ): number {
-  doc.roundedRect(x, y, w, 18, 3).fill(C.green);
-  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(C.white)
-    .text(`SECTION ${num} —  ${titleFR}`, x + 8, y + 5, { continued: true })
-    .font('Helvetica').fontSize(7).fillColor('#A7C4B0')
+  doc.roundedRect(x, y, w, 16, 3).fill(C.green);
+  doc.font('Helvetica-Bold').fontSize(8).fillColor(C.white)
+    .text(`SECTION ${num} —  ${titleFR}`, x + 8, y + 4, { continued: true })
+    .font('Helvetica').fontSize(6.5).fillColor('#A7C4B0')
     .text(`   /   ${titleEN}`);
-  return y + 22;
+  return y + 18;
 }
 
 /**
@@ -527,7 +526,7 @@ function drawFieldRow(
   fields: [FieldDef, FieldDef],
   rowIndex = 0
 ): number {
-  const rowH = 22;
+  const rowH = 20;
   const halfW = (w - 4) / 2;
 
   // Fond alternant
@@ -538,16 +537,16 @@ function drawFieldRow(
     .fill(bg).strokeColor(C.border).lineWidth(0.4).stroke();
 
   // Contenu champ gauche
-  doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.lightGray)
-    .text(fields[0].label, x + 6, y + 4, { width: halfW - 12 });
-  doc.font('Helvetica').fontSize(8.5).fillColor(C.darkGray)
-    .text(fields[0].value, x + 6, y + 13, { width: halfW - 12, ellipsis: true, lineBreak: false });
+  doc.font('Helvetica-Bold').fontSize(6).fillColor(C.lightGray)
+    .text(fields[0].label, x + 6, y + 3, { width: halfW - 12 });
+  doc.font('Helvetica').fontSize(8).fillColor(C.darkGray)
+    .text(fields[0].value, x + 6, y + 11, { width: halfW - 12, ellipsis: true, lineBreak: false });
 
   // Contenu champ droit
-  doc.font('Helvetica-Bold').fontSize(6.5).fillColor(C.lightGray)
-    .text(fields[1].label, x + halfW + 10, y + 4, { width: halfW - 12 });
-  doc.font('Helvetica').fontSize(8.5).fillColor(C.darkGray)
-    .text(fields[1].value, x + halfW + 10, y + 13, { width: halfW - 12, ellipsis: true, lineBreak: false });
+  doc.font('Helvetica-Bold').fontSize(6).fillColor(C.lightGray)
+    .text(fields[1].label, x + halfW + 10, y + 3, { width: halfW - 12 });
+  doc.font('Helvetica').fontSize(8).fillColor(C.darkGray)
+    .text(fields[1].value, x + halfW + 10, y + 11, { width: halfW - 12, ellipsis: true, lineBreak: false });
 
   return y + rowH + 2;
 }

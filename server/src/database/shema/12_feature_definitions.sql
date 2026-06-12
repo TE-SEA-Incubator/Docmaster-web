@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS feature_definitions (
 
 -- Seed des 10 fonctionnalités prédéfinies
 INSERT INTO feature_definitions (code, label, type, description) VALUES
-('docs_per_type', 'Documents autorisés par type', 'number', 'Limite de documents pour chaque catégorie'),
-('objects_limit', 'Nombre d''objets (appareils)', 'number', 'Nombre maximal d''objets suivis'),
+('docs_per_type', 'Déclarations actives par type', 'number', 'Nombre max de déclarations de perte actives par catégorie (ex: 1 déclaration CNI)'),
+('objects_limit', 'Objets personnels (documents + appareils)', 'number', 'Nombre maximal d''objets dans le coffre-fort (documents personnels + appareils enregistrés)'),
 ('sms_alerts', 'Alertes par SMS', 'boolean', 'Envoi de notifications SMS en cas de perte'),
 ('email_alerts', 'Alertes par Email', 'boolean', 'Envoi de notifications par email'),
 ('geo_tracking', 'Géolocalisation avancée', 'boolean', 'Accès à la carte de suivi précise'),

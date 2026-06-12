@@ -6,6 +6,7 @@ import Sidebar from "./Sidebar";
 import MobileNav from "./MobileNav";
 import Footer from "./Footer";
 import NotificationModal from "../components/ui/NotificationModal";
+import PlayStoreBanner from "../components/ui/PlayStoreBanner";
 
 const authPages = ["/dashboard", "/mes-documents", "/mes-appareils", "/mes-declarations", "/abonnement", "/parrainage", "/mes-gains", "/infos-profil", "/declarer", "/trouver", "/rechercher", "/recuperer"];
 const publicPages = ["/", "/login", "/forgot-password", "/reset-password", "/recherche-publique", "/conditions", "/confidentialite", "/partage", "/partage.html"];
@@ -68,6 +69,7 @@ export default function Layout() {
       {showFooter && !isAuthPage && <Footer />}
 
       {notifModalOpen && <NotificationModal onClose={() => setNotifModalOpen(false)} />}
+      <PlayStoreBanner />
     </div>
   );
 }

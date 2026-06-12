@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 
 const BehavioralModals: React.FC = () => {
@@ -70,14 +71,16 @@ const BehavioralModals: React.FC = () => {
 
   if (!activeModal) return null;
 
-  return (
-    <div className="fixed inset-0 z-[10000] flex items-end md:items-center justify-center p-4 md:p-6 pb-[70px] md:pb-0">
-      <div 
-        className="absolute inset-0 bg-green-dark/80 backdrop-blur-md animate-fade-in" 
-      />
-      
+  return createPortal(
+    <div className="modal-overlay" style={{ zIndex: 210 }}>
       {activeModal === 'statistique' && (
-        <div className="relative bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl animate-slide-up flex flex-col md:flex-row min-h-[400px]">
+        <div 
+          className="relative bg-white w-full max-w-2xl rounded-t-[28px] md:rounded-[32px] overflow-hidden shadow-2xl animate-slide-up flex flex-col md:flex-row min-h-[400px] modal-box"
+          style={{ padding: 0 }}
+        >
+          {/* Grab handle for mobile */}
+          <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-3 md:hidden flex-shrink-0" />
+          
           {/* Image Side */}
           <div className="w-full md:w-1/2 bg-green-dark p-8 flex flex-col justify-center relative overflow-hidden">
              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl" />
@@ -94,7 +97,7 @@ const BehavioralModals: React.FC = () => {
           </div>
 
           {/* Content Side */}
-          <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center">
+          <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center relative">
             <button onClick={closeModal} className="absolute top-6 right-6 text-textMuted hover:text-textMain transition-colors">
               <i className="fa-solid fa-xmark text-xl" />
             </button>
@@ -135,7 +138,10 @@ const BehavioralModals: React.FC = () => {
       )}
 
       {activeModal === 'action' && (
-        <div className="relative bg-white w-full max-w-3xl rounded-[40px] overflow-hidden shadow-2xl animate-scale-up p-8 md:p-12">
+        <div className="relative bg-white w-full max-w-3xl rounded-t-[28px] md:rounded-[40px] overflow-hidden shadow-2xl animate-scale-up p-8 md:p-12 modal-box">
+          {/* Grab handle for mobile */}
+          <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-4 md:hidden" />
+
           <button onClick={closeModal} className="absolute top-8 right-8 text-textMuted hover:text-textMain transition-colors">
             <i className="fa-solid fa-xmark text-2xl" />
           </button>
@@ -191,7 +197,8 @@ const BehavioralModals: React.FC = () => {
         .animate-slide-up { animation: slide-up 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
         .animate-scale-up { animation: scale-up 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 };
 

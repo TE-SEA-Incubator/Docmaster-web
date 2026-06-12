@@ -29,108 +29,89 @@ interface DocumentPDFData {
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "Anonymous";
+    if (!url.startsWith("data:")) {
+      img.crossOrigin = "Anonymous";
+    }
     img.onload = () => resolve(img);
     img.onerror = reject;
-    img.src = url.startsWith("http")
-      ? url
-      : window.location.origin + "/" + url.replace(/^\//, "");
+    if (url.startsWith("data:") || url.startsWith("http")) {
+      img.src = url;
+    } else {
+      img.src = window.location.origin + "/" + url.replace(/^\//, "");
+    }
   });
 }
 
 export async function generateDocumentPDF(
-  doc: DocumentPDFData
+  doc: DocumentPDFData,
+  isFreePlan = true
 ): Promise<boolean> {
   if (!doc) return false;
 
   try {
     const docPdf = new jsPDF();
 
-    docPdf.setFillColor(245, 166, 75);
-    docPdf.rect(0, 0, 210, 40, "F");
+    const pageW = 210;
+    const pageH = 297;
+    const margin = 10;
+    const imgW = pageW - margin * 2;
+    const imgH = 90;
+    const centerX = margin;
 
-    docPdf.setTextColor(255, 255, 255);
-    docPdf.setFont("helvetica", "bold");
-    docPdf.setFontSize(24);
-    docPdf.text("DOCMASTER", 105, 20, { align: "center" });
-    docPdf.setFont("helvetica", "normal");
-    docPdf.setFontSize(10);
-    docPdf.text("VOTRE PORTEFEUILLE DE DOCUMENTS NUMÉRIQUES", 105, 30, {
-      align: "center",
-    });
-
-    docPdf.setTextColor(26, 26, 26);
-    docPdf.setFontSize(18);
-    docPdf.setFont("helvetica", "bold");
-    docPdf.text(doc.type_doc.toUpperCase(), 20, 55);
-
-    const fields: [string, string | undefined, number][] = [
-      ["NUMÉRO:", doc.numero_doc, 50],
-      ["TITULAIRE:", doc.nom_sur_doc, 60],
-      ["DÉLIVRÉ LE:", doc.date_delivrance, 60],
-      ["EXPIRATION:", doc.date_expiration, 60],
-      ["AUTORITÉ:", doc.nom_autorite, 60],
-    ];
-
-    let yRow = 65;
-    docPdf.setFontSize(10);
-    for (const [label, value, xVal] of fields) {
-      docPdf.setFont("helvetica", "normal");
-      docPdf.setTextColor(107, 114, 128);
-      docPdf.text(label, 20, yRow);
-      docPdf.setTextColor(26, 26, 26);
-      docPdf.setFont("helvetica", "bold");
-      const display =
-        value && value !== "NON SPÉCIFIÉ"
-          ? label.startsWith("DÉLIVRÉ") || label.startsWith("EXPIRATION")
-            ? new Date(value).toLocaleDateString("fr-FR")
-            : value
-          : "NON SPÉCIFIÉ";
-      docPdf.text(display, xVal, yRow);
-      yRow += 7;
-    }
-
-    let yOffset = 110;
-    const imgWidth = 170;
-    const imgHeight = 85;
-    const centerX = (210 - imgWidth) / 2;
+    let yOffset = 75;
 
     if (doc.photo_recto) {
       try {
         const imgRecto = await loadImage(doc.photo_recto);
-        docPdf.setFontSize(9);
-        docPdf.setTextColor(150, 150, 150);
-        docPdf.setFont("helvetica", "italic");
-        docPdf.text("FACE AVANT (RECTO)", 20, yOffset - 5);
-        docPdf.addImage(imgRecto, "JPEG", centerX, yOffset, imgWidth, imgHeight);
-        yOffset += imgHeight + 15;
+        docPdf.addImage(imgRecto, "JPEG", centerX, yOffset, imgW, imgH);
       } catch {
         console.error("Error loading recto image");
       }
     }
 
     if (doc.photo_verso) {
+      yOffset += imgH + 8;
+      if (yOffset + imgH > pageH - margin) {
+        docPdf.addPage();
+        yOffset = margin;
+      }
       try {
         const imgVerso = await loadImage(doc.photo_verso);
-        docPdf.setFontSize(9);
-        docPdf.setTextColor(150, 150, 150);
-        docPdf.setFont("helvetica", "italic");
-        docPdf.text("FACE ARRIÈRE (VERSO)", 20, yOffset - 5);
-        docPdf.addImage(imgVerso, "JPEG", centerX, yOffset, imgWidth, imgHeight);
+        docPdf.addImage(imgVerso, "JPEG", centerX, yOffset, imgW, imgH);
       } catch {
         console.error("Error loading verso image");
+      }
+    }
+
+    if (isFreePlan) {
+      const totalPages = docPdf.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        docPdf.setPage(i);
+        docPdf.setFillColor(30, 58, 47);
+        docPdf.rect(0, 0, pageW, 55, "F");
+        docPdf.setTextColor(255, 255, 255);
+        docPdf.setFont("helvetica", "bold");
+        docPdf.setFontSize(22);
+        docPdf.text("DOCMASTER", pageW / 2, 25, { align: "center" });
+        docPdf.setFont("helvetica", "normal");
+        docPdf.setFontSize(9);
+        docPdf.text("VOTRE PORTEFEUILLE DE DOCUMENTS NUMÉRIQUES", pageW / 2, 38, {
+          align: "center",
+        });
+        docPdf.setFontSize(7);
+        docPdf.text("Version gratuite", pageW / 2, 48, { align: "center" });
       }
     }
 
     const totalPages = docPdf.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       docPdf.setPage(i);
-      docPdf.setFontSize(8);
+      docPdf.setFontSize(7);
       docPdf.setTextColor(180, 180, 180);
       docPdf.text(
-        `Ce document est une copie numérique sécurisée générée par DocMaster le ${new Date().toLocaleDateString("fr-FR")}`,
-        105,
-        285,
+        `Généré par DocMaster le ${new Date().toLocaleDateString("fr-FR")}`,
+        pageW / 2,
+        pageH - 5,
         { align: "center" }
       );
     }

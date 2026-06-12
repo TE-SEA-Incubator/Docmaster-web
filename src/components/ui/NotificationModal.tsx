@@ -73,12 +73,12 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
 
       <div
         ref={panelRef}
-        className="fixed z-[110] bg-white shadow-2xl overflow-hidden border border-borda
-          md:right-0 md:top-0 md:h-full md:w-[420px] md:rounded-none md:animate-none md:translate-x-0
-          inset-0 rounded-none flex flex-col
-          animate-in slide-in-from-right"
+        className="notif-panel fixed z-[110] bg-white shadow-2xl overflow-hidden border border-borda
+          top-0 bottom-0 w-full md:w-[420px] md:rounded-none
+          rounded-none flex flex-col"
         style={{
-          animation: "notifSlideIn 0.3s ease-out",
+          right: 0,
+          left: "auto",
         }}
       >
         {/* Header */}
@@ -168,9 +168,12 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
       </div>
 
       <style>{`
+        .notif-panel {
+          animation: notifSlideIn 0.3s ease-out;
+        }
         @keyframes notifSlideIn {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
         }
       `}</style>
     </>

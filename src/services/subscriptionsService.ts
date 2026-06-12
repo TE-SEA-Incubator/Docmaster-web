@@ -22,7 +22,7 @@ export const subscriptionsService = {
     return res.data;
   },
 
-  async subscribe(data: { planId: string; months?: number; paymentMethod?: string }) {
+  async subscribe(data: { planId: string; months?: number; paymentMethod?: string; phone?: string }) {
     const res = await apiClient.post<ApiResponse<Subscription>>("subscriptions/subscribe", data);
     return res.data;
   },

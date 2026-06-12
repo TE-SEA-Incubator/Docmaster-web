@@ -40,6 +40,15 @@ export class ReferralRepository {
       const avantages = JSON.stringify({ declarations: 3 });
       await client.query(insertSubQuery, [filleulId, planId, startDate, endDate, avantages]);
 
+      // 4. Record earnings history + send notifications
+      const { EarningsService } = await import('../services/earnings.service.ts');
+      await new EarningsService().recordReferralPoints(
+        parrainId,
+        10,
+        pointsGagnes,
+        { referralId: refRows[0].id, filleulId }
+      );
+
       await client.query('COMMIT');
       return refRows[0];
     } catch (error) {

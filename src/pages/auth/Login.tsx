@@ -17,6 +17,7 @@ function FieldInput({
   placeholder,
   rightButton,
   id,
+  disabled,
 }: {
   icon?: string;
   type: string;
@@ -25,6 +26,7 @@ function FieldInput({
   placeholder: string;
   rightButton?: React.ReactNode;
   id?: string;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex flex-col">
@@ -40,7 +42,8 @@ function FieldInput({
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
-          className="w-full py-3.5 pl-[42px] pr-[45px] bg-[#faf8f5] border-[1.5px] border-[#E0D5C4] rounded-[14px] font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.15)] focus:bg-white placeholder:text-[#c4bab0]"
+          disabled={disabled}
+          className={`w-full py-3.5 pl-[42px] pr-[45px] bg-[#faf8f5] border-[1.5px] border-[#E0D5C4] rounded-[14px] font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.15)] focus:bg-white placeholder:text-[#c4bab0] ${disabled ? "opacity-60 cursor-not-allowed bg-gray-100" : ""}`}
           required
         />
         {rightButton && (
@@ -81,7 +84,8 @@ export default function Login() {
   const [pwMatch, setPwMatch] = useState<boolean | null>(null);
   const [pseudoAvailable, setPseudoAvailable] = useState<boolean | null>(null);
   const [pinValues, setPinValues] = useState(["", "", "", "", "", ""]);
-  const [showReferral, setShowReferral] = useState(false);
+  const [showReferral, setShowReferral] = useState(() => !!localStorage.getItem("dm_referral_code"));
+  const [referralLocked, setReferralLocked] = useState(() => !!localStorage.getItem("dm_referral_locked"));
   const [regError, setRegError] = useState("");
   const [regLoading, setRegLoading] = useState(false);
   const [pwVisible, setPwVisible] = useState(false);
@@ -109,10 +113,20 @@ export default function Login() {
   }, [user, navigate]);
 
   useEffect(() => {
+    const stored = localStorage.getItem("dm_referral_code");
+    if (stored && !searchParams.get("ref") && !searchParams.get("code") && !regForm.referral) {
+      setRegForm((f) => ({ ...f, referral: stored }));
+    }
+  }, []);
+
+  useEffect(() => {
     const ref = searchParams.get("ref") || searchParams.get("code");
     if (ref) {
       setRegForm((f) => ({ ...f, referral: ref }));
       setShowReferral(true);
+      setReferralLocked(true);
+      localStorage.setItem("dm_referral_code", ref);
+      localStorage.setItem("dm_referral_locked", "true");
     }
   }, [searchParams]);
 
@@ -171,6 +185,8 @@ export default function Login() {
     });
     setRegLoading(false);
     if (result.success) {
+      localStorage.removeItem("dm_referral_code");
+      localStorage.removeItem("dm_referral_locked");
       navigate("/dashboard");
     } else {
       setRegError(result.message);
@@ -739,7 +755,13 @@ export default function Login() {
                           icon="fa-solid fa-link"
                           type="text"
                           value={regForm.referral}
-                          onChange={(v) => setRegForm((f) => ({ ...f, referral: v }))}
+                          onChange={(v) => {
+                            setRegForm((f) => ({ ...f, referral: v }));
+                            if (!referralLocked) {
+                              localStorage.setItem("dm_referral_code", v);
+                            }
+                          }}
+                          disabled={referralLocked}
                           placeholder={t("login_referral_placeholder")}
                         />
                         <p className="text-[11.5px] text-textMuted">
@@ -1190,7 +1212,12 @@ export default function Login() {
                       </button>
                       {showReferral && (
                         <div className="flex flex-col gap-1.5">
-                          <FieldInput icon="fa-solid fa-link" type="text" value={regForm.referral} onChange={(v) => setRegForm((f) => ({ ...f, referral: v }))} placeholder={t("login_referral_placeholder")} />
+                          <FieldInput icon="fa-solid fa-link" type="text" value={regForm.referral} onChange={(v) => {
+                            setRegForm((f) => ({ ...f, referral: v }));
+                            if (!referralLocked) {
+                              localStorage.setItem("dm_referral_code", v);
+                            }
+                          }} disabled={referralLocked} placeholder={t("login_referral_placeholder")} />
                           <p className="text-[11.5px] text-textMuted">{t("login_referral_desc_1")} <span className="font-semibold text-primary">{t("login_referral_desc_2")}</span>.</p>
                         </div>
                       )}

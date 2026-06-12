@@ -223,12 +223,18 @@ export class AuthController {
         currency
       });
 
+      if (!updatedUser) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+      }
+
       const { mot_de_passe: _, ...userWithoutPassword } = updatedUser;
       res.status(200).json({
         message: 'Profile updated successfully',
         user: userWithoutPassword
       });
     } catch (error: any) {
+      console.error('[updateProfile]', error);
       res.status(500).json({ error: error.message || 'Update failed' });
     }
   }
@@ -325,6 +331,7 @@ export class AuthController {
       const stats = await this.userService.getEarningsStats(userId);
       res.status(200).json({ success: true, data: stats });
     } catch (error: any) {
+      console.error('[getEarningsStats]', error);
       res.status(500).json({ success: false, message: error.message || 'Failed to fetch earnings stats' });
     }
   }

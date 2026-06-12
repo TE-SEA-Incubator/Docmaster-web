@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
 import { useAuth } from "../../context/AuthContext";
@@ -294,18 +295,17 @@ export default function MesDeclarations() {
       </div>
 
       {/* ────── Detail slide-in panel ────── */}
-      <div
-        className={`fixed inset-0 bg-green-dark/40 backdrop-blur-sm z-[60] transition-opacity duration-300 ${
-          detailId ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-        onClick={closeDetail}
-      >
+      {detailId && createPortal(
         <div
-          className={`absolute right-0 top-0 bottom-0 w-full max-w-[480px] bg-white shadow-2xl transition-transform duration-300 overflow-y-auto custom-scroll pb-24 md:pb-0 ${
-            detailId ? "translate-x-0" : "translate-x-full"
-          }`}
-          onClick={(e) => e.stopPropagation()}
+          className={`fixed inset-0 bg-green-dark/40 backdrop-blur-sm z-[210] transition-opacity duration-300 opacity-100`}
+          onClick={closeDetail}
         >
+          <div
+            className={`absolute right-0 top-0 bottom-0 w-full max-w-[480px] bg-white shadow-2xl transition-transform duration-300 overflow-y-auto custom-scroll pb-0 ${
+              detailId ? "translate-x-0" : "translate-x-full"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
           {detailItem && (
             <>
               {/* Panel Header */}
@@ -449,12 +449,14 @@ export default function MesDeclarations() {
             </>
           )}
         </div>
-      </div>
+      </div>,
+      document.body
+      )}
 
       {/* ────── Delete confirmation modal ────── */}
-      {confirmDeleteId && (
+      {confirmDeleteId && createPortal(
         <div
-          className="fixed inset-0 bg-green-dark/60 backdrop-blur-md z-[70] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-green-dark/60 backdrop-blur-md z-[210] flex items-center justify-center p-4"
           onClick={() => !deleting && setConfirmDeleteId(null)}
         >
           <div
@@ -494,7 +496,8 @@ export default function MesDeclarations() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

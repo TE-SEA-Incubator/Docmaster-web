@@ -179,7 +179,8 @@ post_deployment() {
         
         # 3. Relancement du Backend API V2
         echo "Relancement du Backend API (DOCMASTER-API_V2)..."
-        cd /var/www/vhosts/docmaster.net/app/Docmaster_Backend_V2
+        
+        
         
         # Lancement propre de l'index compilé (on redémarre s'il existe, sinon on le crée)
         pm2 restart DOCMASTER-API_V2 --update-env || pm2 start dist/index.js --name "DOCMASTER-API_V2" --update-env

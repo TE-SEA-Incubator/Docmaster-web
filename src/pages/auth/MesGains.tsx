@@ -4,8 +4,9 @@ import { useI18n } from "../../context/I18nContext";
 import { paymentsService } from "../../services/paymentsService";
 import { settingsService } from "../../services/settingsService";
 import { authService } from "../../services/authService";
+import { earningsService } from "../../services/earningsService";
 import Topbar from "../../layout/Topbar";
-import type { Transaction } from "../../types/api";
+import type { Transaction, EarningsRecord } from "../../types/api";
 
 function fmtAmount(n: number) {
   return n.toLocaleString("fr-FR");
@@ -29,14 +30,18 @@ export default function MesGains() {
   const [txLoading, setTxLoading] = useState(true);
   const [statsData, setStatsData] = useState<Record<string, unknown> | null>(null);
   const [minWithdrawal, setMinWithdrawal] = useState(500);
+  const [earningsHistory, setEarningsHistory] = useState<EarningsRecord[]>([]);
+  const [earningsLoading, setEarningsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     setTxLoading(true);
+    setEarningsLoading(true);
     try {
-      const [txRes, settingsRes, statsRes] = await Promise.all([
+      const [txRes, settingsRes, statsRes, earningsRes] = await Promise.all([
         paymentsService.getMyTransactions(),
         settingsService.getAll(),
         authService.getEarningsStats(),
+        earningsService.getMyEarnings(),
       ]);
 
       if (txRes.success && txRes.data) {
@@ -51,10 +56,15 @@ export default function MesGains() {
       if (statsRes.success && statsRes.data) {
         setStatsData(statsRes.data as Record<string, unknown>);
       }
+
+      if (earningsRes.success && earningsRes.data) {
+        setEarningsHistory(earningsRes.data.data || []);
+      }
     } catch {
       // silent
     } finally {
       setTxLoading(false);
+      setEarningsLoading(false);
     }
   }, []);
 
@@ -331,6 +341,70 @@ export default function MesGains() {
             )}
           </div>
 
+          {/* ── Historique des gains ── */}
+          <div className="bg-white border border-borda rounded-[18px] overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-borda">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-[9px] bg-primary/10 flex items-center justify-center">
+                  <i className="fa-solid fa-clock-rotate-left text-primary text-sm" />
+                </div>
+                <h2 className="font-bricolage text-[15px] font-bold text-textMain">
+                  {t("mesgains_earnings_history") || "Historique des gains"}
+                </h2>
+              </div>
+              <span className="text-[11px] text-textMuted font-medium">
+                {earningsHistory.length} {t("mesgains_entries") || "entrées"}
+              </span>
+            </div>
+
+            {earningsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 rounded-full border-4 border-borda border-t-primary animate-spin" />
+              </div>
+            ) : earningsHistory.length === 0 ? (
+              <div className="p-10 text-center text-textMuted">
+                <i className="fa-solid fa-coins text-3xl opacity-20 mb-3" />
+                <p className="text-sm">{t("mesgains_no_earnings") || "Aucun gain pour le moment"}</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-borda">
+                {earningsHistory.map((entry) => {
+                  const isPoints = entry.currency === "POINTS";
+                  const meta = getEarningMeta(entry.type, t);
+                  return (
+                    <div
+                      key={entry.id}
+                      className="flex items-center gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors"
+                    >
+                      <div
+                        className={`w-9 h-9 rounded-[10px] ${meta.bg} flex items-center justify-center flex-shrink-0`}
+                      >
+                        <i className={`fa-solid ${meta.icon} ${meta.color} text-sm`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-textMain truncate leading-tight">
+                          {entry.description || meta.label}
+                        </p>
+                        <p className="text-[11px] text-textMuted mt-0.5">
+                          {fmtDate(entry.created_at)}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        <span
+                          className={`font-bricolage text-[14px] font-extrabold ${
+                            isPoints ? "text-primary" : "text-green-mid"
+                          }`}
+                        >
+                          +{fmtAmount(entry.amount)} {isPoints ? "pts" : "XAF"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* ── Méthodes de retrait ── */}
           <div className="bg-white border border-borda rounded-[18px] p-5">
             <div className="flex items-center gap-2.5 mb-4">
@@ -501,6 +575,55 @@ function PaymentMethodCard({
       />
     </div>
   );
+}
+
+function getEarningMeta(type: string, t: (key: string) => string): { icon: string; bg: string; color: string; label: string } {
+  if (type === "declaration_points") {
+    return {
+      icon: "fa-file-circle-check",
+      bg: "bg-primary/10",
+      color: "text-primary",
+      label: t("mesgains_declaration_points") || "Points déclaration",
+    };
+  }
+  if (type === "return_points") {
+    return {
+      icon: "fa-handshake",
+      bg: "bg-green-light",
+      color: "text-green-mid",
+      label: t("mesgains_return_points") || "Points remise document",
+    };
+  }
+  if (type === "referral_points") {
+    return {
+      icon: "fa-user-plus",
+      bg: "bg-amber-50",
+      color: "text-amber-500",
+      label: t("mesgains_referral_points") || "Points parrainage",
+    };
+  }
+  if (type === "referral_bonus") {
+    return {
+      icon: "fa-gift",
+      bg: "bg-purple-50",
+      color: "text-purple-400",
+      label: t("mesgains_referral_bonus") || "Bonus parrainage",
+    };
+  }
+  if (type === "finder_payout") {
+    return {
+      icon: "fa-sack-dollar",
+      bg: "bg-green-light",
+      color: "text-green-mid",
+      label: t("mesgains_finder_payout") || "Récompense remise",
+    };
+  }
+  return {
+    icon: "fa-coins",
+    bg: "bg-gray-100",
+    color: "text-gray-500",
+    label: type,
+  };
 }
 
 function getTxMeta(type: string, t: (key: string) => string): { icon: string; bg: string; color: string; label: string; sub: string } {

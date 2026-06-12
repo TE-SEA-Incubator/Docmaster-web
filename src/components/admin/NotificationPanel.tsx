@@ -19,7 +19,7 @@ export default function NotificationPanel({ open, onClose, notifications, loadin
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed top-0 right-0 z-50 h-full w-full max-w-sm bg-white border-l border-[#EAE3D8] shadow-2xl flex flex-col animate-slide-in-right">
+      <div className="fixed top-0 bottom-0 z-50 w-full max-w-sm bg-white border-l border-[#EAE3D8] shadow-2xl flex flex-col" style={{ right: 0, left: "auto" }}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#EAE3D8]">
           <h3 className="font-bricolage font-bold text-gray-900">{t("notification_title")}</h3>
           <div className="flex items-center gap-2">

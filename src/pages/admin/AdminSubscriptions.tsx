@@ -44,6 +44,19 @@ interface DashboardStats {
   [key: string]: unknown;
 }
 
+const FEATURE_ICONS: Record<string, string> = {
+  docs_per_type: "fa-file-circle-exclamation",
+  objects_limit: "fa-boxes-stacked",
+  sms_alerts: "fa-message",
+  email_alerts: "fa-envelope",
+  geo_tracking: "fa-location-dot",
+  priority_support: "fa-headset",
+  verified_badge: "fa-badge-check",
+  history_days: "fa-clock-rotate-left",
+  ads_free: "fa-ban",
+  export_data: "fa-download",
+};
+
 const statusBadge = (status: string, t: (k: string) => string) => {
   switch (status) {
     case "ACTIVE": return <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-700">{t("admin_active")}</span>;
@@ -51,6 +64,18 @@ const statusBadge = (status: string, t: (k: string) => string) => {
     default: return <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-700">{t("admin_expired")}</span>;
   }
 };
+
+function formatFeatureValue(val: any, type: string): string {
+  if (val === null || val === undefined) return "—";
+  if (type === "boolean") return val ? "Oui" : "Non";
+  if (typeof val === "number") return val.toLocaleString();
+  if (Array.isArray(val)) return val.join(", ");
+  return String(val);
+}
+
+function featureIcon(code: string): string {
+  return FEATURE_ICONS[code] || "fa-circle";
+}
 
 export default function AdminSubscriptions() {
   const { t } = useI18n();
@@ -69,6 +94,8 @@ export default function AdminSubscriptions() {
   const [form, setForm] = useState({
     name: "", price: 0, duration_months: 1, is_featured: false, features: {} as Record<string, any>,
   });
+
+  const featMap = new Map(features.map((f) => [f.code, f]));
 
   const loadData = useCallback(() => {
     Promise.all([
@@ -159,22 +186,63 @@ export default function AdminSubscriptions() {
           {plans.length === 0 ? (<EmptyState icon="fa-solid fa-tags" message={t("admin_no_subscriptions")} />
           ) : (
             plans.map((plan) => {
-              const featuresHtml = Object.entries(plan.features || {}).map(([key, val]) => (
-                <div key={key} className="flex items-center gap-2 text-xs text-gray-600">
-                  <i className={`fa-solid w-3 ${val === true ? "fa-check text-green-500" : "fa-circle-dot text-gray-300"}`} />
-                  <span>{key}: <strong className="text-gray-900">{String(val)}</strong></span>
-                </div>
-              ));
+              const featureEntries = Object.entries(plan.features || {});
               return (
-                <div key={plan.id} className={`bg-white border rounded-2xl p-6 shadow-sm relative ${plan.is_featured ? "border-primary border-2" : "border-gray-200/60"}`}>
+                <div key={plan.id} className={`bg-white border rounded-2xl shadow-sm relative flex flex-col ${plan.is_featured ? "border-primary border-2" : "border-gray-200/60"}`}>
                   {plan.is_featured && <div className="absolute -top-2.5 right-5 bg-primary text-white text-[10px] font-extrabold px-3 py-1 rounded-full">{t("admin_subscriptions_recommended")}</div>}
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="font-bricolage font-bold text-gray-900 text-lg">{plan.name}</h3>
-                    <button onClick={() => openEdit(plan.id)} className="text-gray-400 hover:text-primary transition-colors"><i className="fa-solid fa-pen-to-square" /></button>
+                  <div className="p-6 flex-1">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-bricolage font-bold text-gray-900 text-lg">{plan.name}</h3>
+                        <div className="text-2xl font-bricolage font-extrabold text-primary mt-1">
+                          {plan.price === 0 ? "Gratuit" : `${plan.price?.toLocaleString()} XAF`}
+                          <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold ml-1">
+                            {plan.price > 0 ? `/ ${plan.duration_months || 1} mois` : ""}
+                          </span>
+                        </div>
+                      </div>
+                      <button onClick={() => openEdit(plan.id)} className="text-gray-400 hover:text-primary transition-colors p-1"><i className="fa-solid fa-pen-to-square" /></button>
+                    </div>
+
+                    {featureEntries.length > 0 ? (
+                      <div className="space-y-1.5 mt-5">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Avantages inclus</p>
+                        {featureEntries.map(([key, val]) => {
+                          const def = featMap.get(key);
+                          const label = def?.label || key;
+                          const type = def?.type || "string";
+                          const icon = featureIcon(key);
+                          const formatted = formatFeatureValue(val, type);
+                          const isBool = type === "boolean";
+                          const enabled = val === true || (typeof val === "number" && val > 0) || (Array.isArray(val) && val.length > 0);
+                          const desc = def?.description || "";
+                          return (
+                            <div key={key} className={`flex items-start gap-2.5 py-1.5 px-2 rounded-lg ${enabled ? "bg-green-50/50" : "bg-gray-50"}`}>
+                              <div className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 ${enabled ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-300"}`}>
+                                <i className={`fa-solid ${icon} text-[10px]`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <span className={`text-[12px] font-medium ${enabled ? "text-gray-800" : "text-gray-400"}`}>{label}</span>
+                                {(key === "docs_per_type" || key === "objects_limit") && desc && (
+                                  <p className="text-[9.5px] text-gray-400 mt-0.5 leading-tight">{desc}</p>
+                                )}
+                              </div>
+                              <span className={`text-[11px] font-bold flex-shrink-0 ${enabled ? "text-gray-900" : "text-gray-300"}`}>
+                                {isBool ? (enabled ? <i className="fa-solid fa-check text-green-500" /> : <i className="fa-solid fa-xmark text-gray-300" />) : formatted}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center py-8 text-gray-300 text-xs">Aucun avantage défini</div>
+                    )}
                   </div>
-                  <div className="text-2xl font-bricolage font-extrabold text-primary mb-6">{plan.price?.toLocaleString()} <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">XAF / {plan.duration_months || 1} {t("abonnement_month")}</span></div>
-                  <div className="space-y-3 mb-6">{featuresHtml}</div>
-                  <button onClick={() => openEdit(plan.id)} className="w-full py-2 border border-[#EAE3D8] rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors">{t("admin_subscriptions_edit_offer")}</button>
+                  <div className="px-6 pb-6">
+                    <button onClick={() => openEdit(plan.id)} className="w-full py-2.5 border border-[#EAE3D8] rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 hover:border-primary hover:text-primary transition-all">
+                      <i className="fa-solid fa-pen mr-1.5" />Modifier ce plan
+                    </button>
+                  </div>
                 </div>
               );
             })
@@ -248,25 +316,42 @@ export default function AdminSubscriptions() {
                 <div className="flex flex-col gap-2"><label className="text-[10px] font-bold text-gray-400 uppercase">{t("admin_subscriptions_duration")}</label><input type="number" value={form.duration_months} onChange={(e) => setForm({ ...form, duration_months: Number(e.target.value) })} className="px-4 py-2.5 border border-[#EAE3D8] rounded-xl text-sm outline-none focus:border-primary transition-all" /></div>
               </div>
               {features.length > 0 && (
-                <div className="space-y-3 pt-4 border-t border-[#EAE3D8]">
+                <div className="space-y-1 pt-4 border-t border-[#EAE3D8]">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Avantages du plan</p>
                   {features.map((feat) => (
-                    <div key={feat.code} className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-gray-700">{feat.label}</span>
-                        {feat.description && <span className="text-[10px] text-gray-400">{feat.description}</span>}
+                    <div key={feat.code} className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <i className={`fa-solid ${featureIcon(feat.code)} text-[10px] text-primary`} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-gray-700">{feat.label}</span>
+                          {feat.description && <span className="text-[10px] text-gray-400">{feat.description}</span>}
+                        </div>
                       </div>
                       {feat.type === "boolean" ? (
-                        <input type="checkbox" checked={form.features[feat.code] || false} onChange={(e) => setForm({ ...form, features: { ...form.features, [feat.code]: e.target.checked } })} className="w-4 h-4 accent-primary" />
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" checked={form.features[feat.code] || false} onChange={(e) => setForm({ ...form, features: { ...form.features, [feat.code]: e.target.checked } })} className="sr-only peer" />
+                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
+                        </label>
                       ) : (
-                        <input type="number" value={form.features[feat.code] || ""} onChange={(e) => setForm({ ...form, features: { ...form.features, [feat.code]: e.target.value === "" ? null : Number(e.target.value) } })} className="w-20 px-2 py-1 border border-[#EAE3D8] rounded-lg text-xs" />
+                        <input type="number" value={form.features[feat.code] ?? ""} onChange={(e) => setForm({ ...form, features: { ...form.features, [feat.code]: e.target.value === "" ? null : Number(e.target.value) } })} className="w-20 px-2 py-1.5 border border-[#EAE3D8] rounded-lg text-xs text-center outline-none focus:border-primary" placeholder="0" />
                       )}
                     </div>
                   ))}
                 </div>
               )}
-              <div className="flex items-center justify-between pt-4">
-                <span className="text-sm font-medium">{t("admin_subscriptions_featured")}</span>
-                <input type="checkbox" checked={form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} className="w-5 h-5 accent-primary" />
+              <div className="flex items-center justify-between py-2 px-2 rounded-lg bg-amber-50/50 border border-amber-100/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-amber-100 flex items-center justify-center">
+                    <i className="fa-solid fa-star text-amber-500 text-[10px]" />
+                  </div>
+                  <span className="text-xs font-semibold text-gray-700">{t("admin_subscriptions_featured")}</span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} className="sr-only peer" />
+                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
+                </label>
               </div>
               <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
                 <button type="button" onClick={() => setModalOpen(false)} className="px-5 py-2 text-sm text-gray-500 font-medium hover:text-gray-700 transition-colors">{t("admin_subscriptions_cancel")}</button>

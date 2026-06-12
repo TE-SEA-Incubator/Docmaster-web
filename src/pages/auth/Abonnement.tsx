@@ -93,6 +93,7 @@ export default function Abonnement() {
         planId: selectedPlan!.id,
         months,
         paymentMethod,
+        phone,
       });
       if (result.success) {
         setPollingStatus(t("abonnement_payment_pending"));
@@ -140,8 +141,8 @@ export default function Abonnement() {
     // If it's the standard features object from DB
     if (typeof raw === "object" && !Array.isArray(raw)) {
       const featureMap: Record<string, { label: string; icon: string }> = {
-        objects: { label: "Appareils & Objets", icon: "fa-mobile-screen" },
-        docs_per_type: { label: "Documents par type", icon: "fa-file-shield" },
+        objects: { label: "Objets personnels (coffre)", icon: "fa-mobile-screen" },
+        docs_per_type: { label: "Déclarations actives par type", icon: "fa-file-shield" },
         vault: { label: "Coffre-fort numérique", icon: "fa-vault" },
         prioritaire: { label: "Support Prioritaire", icon: "fa-headset" },
         certification: { label: "Certification DocMaster", icon: "fa-certificate" },
@@ -219,25 +220,32 @@ export default function Abonnement() {
       <div className="custom-scroll p-4 md:p-6 flex flex-col gap-5 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
 
         {/* Greeting */}
-        <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-4 flex-wrap">
+          {user?.photo_url ? (
+            <img 
+              src={user.photo_url} 
+              alt="Profil" 
+              className="w-12 h-12 rounded-full object-cover border-2 border-primary"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg">
+              {`${user?.prenom?.charAt(0) || ''}${user?.nom?.charAt(0) || ''}`.toUpperCase()}
+            </div>
+          )}
           <div>
             <h1 className="font-bricolage text-lg md:text-xl font-extrabold text-textMain tracking-tight leading-tight">
               {t("abonnement_greeting")}, <span>{user?.prenom || t("dashboard_user")}</span>
             </h1>
             <p className="text-[12.5px] md:text-[13.5px] text-textMuted font-medium mt-0.5 italic">{t("abonnement_manage")}</p>
           </div>
-          <div className="text-[11.5px] text-textMuted font-medium bg-white border border-borderMain px-3 py-1.5 rounded-[9px] flex items-center gap-2 whitespace-nowrap">
-            <i className="fa-regular fa-calendar text-primary" />
-            <span>{today}</span>
-          </div>
         </div>
 
         {/* Current plan card */}
-        <div className="bg-green-dark rounded-[20px] p-5 md:p-6 relative overflow-hidden shadow-2xl shadow-green-950/40 min-h-[190px] flex items-center">
-          <div className="absolute w-80 h-80 rounded-full bg-primary/10 -top-24 -right-24 blur-3xl pointer-events-none" />
-          <div className="absolute w-40 h-40 rounded-full bg-white/5 bottom-0 left-24 blur-2xl pointer-events-none" />
+        <div className="bg-green-dark rounded-[20px] p-5 md:p-6 relative overflow-hidden shadow-2xl shadow-green-950/40 w-full">
+          <div className="absolute w-40 h-40 md:w-80 md:h-80 rounded-full bg-primary/10 -top-12 -right-12 md:-top-24 md:-right-24 blur-3xl pointer-events-none" />
+          <div className="absolute w-20 h-20 md:w-40 md:h-40 rounded-full bg-white/5 bottom-0 left-12 md:left-24 blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div className="relative z-10 w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-8">
             <div className="flex-1 w-full">
               <div className="inline-flex items-center gap-2 bg-primary/20 border border-primary/30 rounded-full px-4 py-1.5 mb-5">
                 <i className="fa-solid fa-bolt text-primary text-[10px] animate-pulse" />
@@ -265,9 +273,9 @@ export default function Abonnement() {
                   <i className="fa-solid fa-file-circle-check text-primary text-lg" />
                   <div className="flex flex-col">
                     <span className="text-white/90 text-[12px] font-bold leading-none">
-                      {usage?.limits?.docs_per_type || 0} Document{(usage?.limits?.docs_per_type || 0) > 1 ? "s" : ""}
+                      {usage?.limits?.docs_per_type || 0} Déclaration{(usage?.limits?.docs_per_type || 0) > 1 ? "s" : ""}
                     </span>
-                    <span className="text-white/40 text-[10px] uppercase font-bold mt-1">Par type</span>
+                    <span className="text-white/40 text-[10px] uppercase font-bold mt-1">Active(s) par type</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-white/10 border border-white/10 backdrop-blur-xl rounded-2xl px-4 py-2 transition-transform hover:scale-105">
@@ -321,7 +329,7 @@ export default function Abonnement() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-fr">
             {loadingPlans ? (
               <>
                 {[1, 2, 3, 4].map((i) => (
@@ -349,7 +357,7 @@ export default function Abonnement() {
                 return (
                   <div
                     key={plan.id || idx}
-                    className={`plan-card rounded-[20px] p-5 flex flex-col ${isFeatured ? "featured bg-green-dark relative overflow-hidden" : "bg-white border border-borderMain"}`}
+                    className={`plan-card rounded-[20px] p-5 flex flex-col h-full ${isFeatured ? "featured bg-green-dark relative overflow-hidden" : "bg-white border border-borderMain"}`}
                     style={isFeatured ? { background: "#1E3A2F" } : {}}
                   >
                     {isFeatured && <div className="absolute w-40 h-40 rounded-full bg-primary/8 -bottom-10 -right-10 pointer-events-none" />}

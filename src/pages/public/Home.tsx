@@ -352,8 +352,8 @@ function HowItWorksSection({ t }) {
                 <p className="text-textMuted text-[13px] leading-relaxed">{t(step.descKey)}</p>
               </div>
               {i < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-[60px] -right-3 w-9 h-9 bg-primary rounded-full flex items-center justify-center z-10 shadow-lg shadow-primary/30 border-2 border-white">
-                  <i className="fa-solid fa-chevron-right text-white text-xs" />
+                <div className="hidden lg:block absolute top-[60px] -right-5 w-9 h-9 border-2 border-dashed border-primary rounded-full flex items-center justify-center z-10 bg-white">
+                  <i className="fa-solid fa-chevron-right text-primary text-xs" />
                 </div>
               )}
             </div>
@@ -1053,11 +1053,28 @@ function AppStoreBadge({ t }) {
 }
 
 function StickyAppBar({ t }) {
+  const [visible, setVisible] = useState(() => {
+    return localStorage.getItem("sticky-app-bar-closed") !== "true";
+  });
+
+  if (!visible) return null;
+
   return (
     <div id="sticky-app-bar"
-      className="w-full bg-[#111111] text-white px-5 py-4 md:py-5"
+      className="fixed bottom-0 left-0 right-0 z-50 w-full bg-[#111111] text-white px-5 py-4 md:py-5 shadow-2xl"
+      style={{ animation: "slideUp .3s ease-out" }}
     >
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 relative">
+        <button
+          onClick={() => {
+            setVisible(false);
+            localStorage.setItem("sticky-app-bar-closed", "true");
+          }}
+          className="absolute -top-3 -right-3 sm:top-1/2 sm:-right-4 sm:-translate-y-1/2 w-7 h-7 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+          aria-label="Close"
+        >
+          <i className="fa-solid fa-xmark text-white/70 text-sm" />
+        </button>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
             <i className="fa-solid fa-mobile-screen text-[#1E3A2F] text-lg" />

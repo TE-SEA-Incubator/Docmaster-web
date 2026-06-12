@@ -31,6 +31,7 @@ import documentTypeRoutes from "./src/routes/document-type.routes.js";
 import settingRoutes from "./src/routes/setting.routes.js";
 import withdrawalRoutes from "./src/routes/withdrawal.routes.js";
 import smsRoutes from "./src/routes/sms.routes.js";
+import earningsRoutes from "./src/routes/earnings.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -238,6 +239,7 @@ export function createApp(): Application {
   app.use("/api/settings", settingRoutes);
   app.use("/api/withdrawals", withdrawalRoutes);
   app.use("/api/sms", smsRoutes);
+  app.use("/api/earnings", earningsRoutes);
 
   // ═════════════════════════════════════════════════════════════════
   // ERROR HANDLING - 404 Handler

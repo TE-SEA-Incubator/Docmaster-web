@@ -157,6 +157,15 @@ export class ClaimController {
 
           // 3. Award points
           await userRepo.updatePoints(claim.finder_id, pointsReward);
+
+          // 4. Record earnings history + send notifications
+          const { EarningsService } = await import('../services/earnings.service.ts');
+          await new EarningsService().recordReturnPoints(
+            claim.finder_id,
+            pointsReward,
+            finderRewardAmount,
+            { docId: lostDecl.id, claimId: claim.id, docType: docType.nom }
+          );
           
           console.log(`💰 [Claim] Finder ${claim.finder_id} rewarded with ${finderRewardAmount} XAF and ${pointsReward} pts after validation.`);
         }

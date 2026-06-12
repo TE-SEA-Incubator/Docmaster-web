@@ -3,14 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
 import Topbar from "../../layout/Topbar";
 import { useI18n } from "../../context/I18nContext";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import InfoAlert from "../../components/ui/InfoAlert";
+import DatePicker from "../../components/ui/DatePicker";
 
 interface DocTypeItem {
   id: string;
   code: string;
   nom: string;
   icone: string;
+  delai_expiration_mois: number;
 }
 
 interface LocationData {
@@ -37,6 +38,8 @@ export default function Trouver() {
   const [tagInput, setTagInput] = useState("");
   const [ville, setVille] = useState("");
   const [dateFound, setDateFound] = useState(() => new Date().toISOString().split("T")[0]);
+  const [dateExpirationTrouve, setDateExpirationTrouve] = useState("");
+  const [rewardChoice, setRewardChoice] = useState("NON_MERCI");
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [fileRecto, setFileRecto] = useState<File | null>(null);
   const [fileVerso, setFileVerso] = useState<File | null>(null);
@@ -49,12 +52,11 @@ export default function Trouver() {
   const [progress, setProgress] = useState(0);
   const [success, setSuccess] = useState(false);
   const [refNumber, setRefNumber] = useState("");
+  const [alertMsg, setAlertMsg] = useState<string | null>(null);
 
-  const mapRef = useRef<L.Map | null>(null);
-  const markerRef = useRef<L.Marker | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInitRef = useRef(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
 
   useEffect(() => {
     documentTypesService.getActive().then((res) => {
@@ -64,12 +66,6 @@ export default function Trouver() {
       }
     });
   }, []);
-
-  useEffect(() => {
-    if (step === 3 && !mapInitRef.current) {
-      setTimeout(initMap, 150);
-    }
-  }, [step]);
 
   const initMap = useCallback(() => {
     if (mapInitRef.current || !mapContainerRef.current) return;
@@ -192,22 +188,22 @@ export default function Trouver() {
 
   const goToStep = (n: number) => {
     if (n === 2 && !selectedType) {
-      alert(t("trouver_select_type"));
+      setAlertMsg(t("trouver_select_type"));
       return;
     }
     if (n > step && step === 2 && n === 3) {
       if (!ownerName || ownerName.trim().length < 2) {
-        alert(t("trouver_enter_owner"));
+        setAlertMsg(t("trouver_enter_owner"));
         return;
       }
       if (docNum && !/\d/.test(docNum)) {
-        alert(t("trouver_digit_required"));
+        setAlertMsg(t("trouver_digit_required"));
         return;
       }
     }
     if (n > step && step === 3 && n === 4) {
       if (!ville || ville.trim().length < 2) {
-        alert(t("trouver_enter_city"));
+        setAlertMsg(t("trouver_enter_city"));
         return;
       }
       if (dateFound) {
@@ -215,7 +211,7 @@ export default function Trouver() {
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         if (d > today) {
-          alert(t("trouver_future_date"));
+          setAlertMsg(t("trouver_future_date"));
           return;
         }
       }
@@ -266,43 +262,37 @@ export default function Trouver() {
 
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert(t("trouver_geolocation_not_supported"));
+      setAlertMsg(t("trouver_geolocation_not_supported"));
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const map = mapRef.current;
-        const marker = markerRef.current;
-        if (!map || !marker) return;
-        const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
-        map.setView(latlng, 16);
-        marker.setLatLng(latlng);
-        updateLocation(latlng);
+        updateLocation(pos.coords.latitude, pos.coords.longitude);
       },
-      () => alert(t("trouver_position_failed")),
+      () => setAlertMsg(t("trouver_position_failed")),
       { enableHighAccuracy: true }
     );
   };
 
   const submitDeclaration = async () => {
     if (!consent) {
-      alert(t("trouver_accept_terms"));
+      setAlertMsg(t("trouver_accept_terms"));
       return;
     }
     if (!selectedType) {
-      alert(t("trouver_select_type"));
+      setAlertMsg(t("trouver_select_type"));
       return;
     }
     if (!ownerName) {
-      alert(t("trouver_enter_owner_short"));
+      setAlertMsg(t("trouver_enter_owner_short"));
       return;
     }
     if (!ville) {
-      alert(t("trouver_enter_city"));
+      setAlertMsg(t("trouver_enter_city"));
       return;
     }
     if (docNum && !/\d/.test(docNum)) {
-      alert(t("trouver_digit_required"));
+      setAlertMsg(t("trouver_digit_required"));
       return;
     }
     if (dateFound) {
@@ -310,7 +300,7 @@ export default function Trouver() {
       const today = new Date();
       today.setHours(23, 59, 59, 999);
       if (d > today) {
-        alert(t("trouver_future_date"));
+        setAlertMsg(t("trouver_future_date"));
         return;
       }
     }
@@ -326,6 +316,7 @@ export default function Trouver() {
     formData.append("region", t("trouver_region_not_specified"));
     formData.append("pays", t("trouver_country_cameroon"));
     formData.append("date_perte", dateFound);
+    if (dateExpirationTrouve) formData.append("date_expiration", dateExpirationTrouve);
     formData.append("mode_contact", contactMode);
     formData.append("telephone_contact", contactTel);
 
@@ -345,6 +336,13 @@ export default function Trouver() {
       formData.append("found_location_city", locationData.city || ville);
     }
 
+    const metadata = {
+      autre_type: autreType,
+      tags: tags,
+      reward_choice: rewardChoice
+    };
+    formData.append("metadata", JSON.stringify(metadata));
+
     let p = 0;
     const interval = setInterval(() => {
       p += 10;
@@ -362,14 +360,14 @@ export default function Trouver() {
         setRefNumber(result.data?.identifiant_doc_dm || "DOC-FND-SUCCESS");
         setSuccess(true);
       } else {
-        alert(result.message || t("trouver_publish_error"));
+        setAlertMsg(result.message || t("trouver_publish_error"));
         setSubmitting(false);
         setProgress(0);
       }
     } catch (e: any) {
       clearInterval(interval);
       const msg = e.response?.data?.message || e.response?.data?.error || t("trouver_server_error");
-      alert(msg);
+      setAlertMsg(msg);
       setSubmitting(false);
       setProgress(0);
     }
@@ -448,6 +446,7 @@ export default function Trouver() {
         title={t("trouver_title")}
         breadcrumbs={[{ label: t("trouver_breadcrumb_found"), to: "/trouver" }, { label: t("trouver_breadcrumb_current") }]}
       />
+      {alertMsg && <InfoAlert message={alertMsg} onClose={() => setAlertMsg(null)} />}
       <div
         className="p-4 sm:p-6 lg:p-8 custom-scrollbar max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto pb-24 md:pb-0"
       >
@@ -622,6 +621,23 @@ export default function Trouver() {
                   </div>
                 </div>
 
+                {(() => {
+                  const selDoc = docTypes.find((d) => d.id === selectedType);
+                  return selDoc && (selDoc.delai_expiration_mois ?? 0) > 0 ? (
+                    <div>
+                      <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
+                        Date d'expiration <span className="text-textMuted font-normal">(si visible)</span>
+                      </label>
+                      <DatePicker
+                        value={dateExpirationTrouve}
+                        onChange={(v) => setDateExpirationTrouve(v)}
+                        placeholder="AAAA-MM-JJ"
+                        className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(245,166,75,0.1)]"
+                      />
+                    </div>
+                  ) : null;
+                })()}
+
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
                     {t("trouver_doc_condition")}
@@ -746,17 +762,6 @@ export default function Trouver() {
               </div>
 
               <div className="flex flex-col gap-4 mb-4">
-                {/* Map */}
-                <div className="w-full h-[400px] sm:h-[450px] rounded-[18px] border border-borderMain overflow-hidden shadow-inner bg-surface2 relative">
-                  <div
-                    id="map-loader"
-                    className="absolute inset-0 z-10 bg-surface2 flex flex-col items-center justify-center gap-2 transition-opacity duration-500"
-                  >
-                    <i className="fa-solid fa-spinner fa-spin text-primary text-xl"></i>
-                  </div>
-                  <div ref={mapContainerRef} className="w-full h-full"></div>
-                </div>
-
                 {/* Search */}
                 <div className="relative group/search">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted group-focus-within/search:text-primary transition-colors">
@@ -776,13 +781,6 @@ export default function Trouver() {
                     className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-all shadow-sm"
                   >
                     <i className="fa-solid fa-arrow-right text-[11px]"></i>
-                  </button>
-                  <button
-                    onClick={useCurrentLocation}
-                    className="absolute -bottom-12 right-0 bg-white border border-borderMain rounded-xl px-3 py-2 text-[11px] font-bold text-textMain hover:border-primary hover:text-primary transition-all shadow-sm flex items-center gap-1.5 z-[1002]"
-                  >
-                    <i className="fa-solid fa-location-crosshairs text-primary"></i>
-                    {t("trouver_my_location")}
                   </button>
                   <div
                     id="map-search-results"
@@ -832,10 +830,10 @@ export default function Trouver() {
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
                     {t("trouver_date_found")}
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={dateFound}
-                    onChange={(e) => setDateFound(e.target.value)}
+                    onChange={(v) => setDateFound(v)}
+                    placeholder="AAAA-MM-JJ"
                     className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(245,166,75,0.1)]"
                   />
                 </div>
@@ -1062,6 +1060,32 @@ export default function Trouver() {
                       <span className="text-textMuted">{t("trouver_summary_photos")}</span>
                       <span className="font-bold text-green-mid">{photoCount}</span>
                     </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-[#4b5563] mb-2 block uppercase tracking-[0.3px]">
+                    Souhaitez-vous une récompense ?
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { id: "NON_MERCI", label: "Non merci 🙅‍♂️", desc: "Geste gratuit" },
+                      { id: "POINTS", label: "Points DocMaster 🌟", desc: "+50 pts bonus" },
+                      { id: "GRE", label: "Gré du propriétaire 💰", desc: "À sa discrétion" },
+                    ].map((opt) => (
+                      <div
+                        key={opt.id}
+                        onClick={() => setRewardChoice(opt.id)}
+                        className={`cursor-pointer p-3 border-2 rounded-xl transition-all ${
+                          rewardChoice === opt.id
+                            ? "border-primary bg-[#fef0dc]"
+                            : "border-[#eae3d8] bg-white"
+                        }`}
+                      >
+                        <div className="text-[12px] font-bold text-textMain">{opt.label}</div>
+                        <div className="text-[10px] text-textMuted">{opt.desc}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

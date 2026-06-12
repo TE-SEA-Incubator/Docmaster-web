@@ -1,6 +1,11 @@
 import apiClient from "./api";
 import type { ApiResponse, UserProfile } from "../types/api";
 
+export type ProfileUpdateResponse = {
+  message: string;
+  user: UserProfile;
+};
+
 export const authService = {
   async registerUser(data: {
     nom: string;
@@ -59,8 +64,8 @@ export const authService = {
     return res.data;
   },
 
-  async updateProfile(data: Partial<UserProfile>) {
-    const res = await apiClient.put<ApiResponse<UserProfile>>("auth/profile", data);
+  async updateProfile(data: Partial<UserProfile> | FormData) {
+    const res = await apiClient.put<ProfileUpdateResponse>("auth/profile", data);
     return res.data;
   },
 
@@ -70,7 +75,7 @@ export const authService = {
   },
 
   async changePassword(currentPassword: string, newPassword: string) {
-    const res = await apiClient.post<ApiResponse>("auth/change-password", {
+    const res = await apiClient.put<ApiResponse & { success: boolean }>("auth/password", {
       current_password: currentPassword,
       new_password: newPassword,
     });

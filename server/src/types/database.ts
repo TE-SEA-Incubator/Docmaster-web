@@ -77,6 +77,7 @@ export interface DocumentDeclaration {
     date_perte?: string;
     telephone_contact?: string;
     email_contact?: string;
+    metadata?: any;
     created_at: Date;
     deleted_at?: Date | null;
     deleted_reason?: string | null;

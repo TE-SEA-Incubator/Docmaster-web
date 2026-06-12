@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import type { Document } from "../../types/api";
 import { useI18n } from "../../context/I18nContext";
 
@@ -24,9 +25,11 @@ export default function ShareModal({ doc, onClose }: ShareModalProps) {
     if (shareLink) navigator.clipboard.writeText(shareLink);
   };
 
-  return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()} style={{ zIndex: 150 }}>
-      <div className="modal-box max-w-lg w-[90%] overflow-hidden border border-slate-200 shadow-2xl bg-white">
+  return createPortal(
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()} style={{ zIndex: 210 }}>
+      <div className="modal-box max-w-lg w-[90%] overflow-hidden border border-slate-200 shadow-2xl bg-white animate-in">
+        {/* Grab handle for mobile */}
+        <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mt-3 mb-1 md:hidden" />
         <div className="p-8 md:p-10">
           <div className="flex justify-between items-start mb-8">
             <div className="flex items-center gap-4">
@@ -94,6 +97,7 @@ export default function ShareModal({ doc, onClose }: ShareModalProps) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

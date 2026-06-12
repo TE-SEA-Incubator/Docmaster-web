@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import Footer from "../../layout/Footer";
+import DatePicker from "../../components/ui/DatePicker";
 
 interface DocResult {
   id: string | number;
@@ -59,7 +60,7 @@ export default function Rechercher() {
   const [docTypes, setDocTypes] = useState<DocType[]>([]);
   const [visibleCount, setVisibleCount] = useState(9);
   const [totalCount, setTotalCount] = useState(0);
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  const [filterDate, setFilterDate] = useState("");
 
   const loadDocs = useCallback(async (searchQuery?: string) => {
     setLoading(true);
@@ -255,14 +256,14 @@ export default function Rechercher() {
                 )}
               </div>
               <div className="relative min-w-[200px]">
-                <div className="absolute left-0 inset-y-0 flex items-center pl-4 pointer-events-none">
+                <div className="absolute left-0 inset-y-0 flex items-center pl-4 pointer-events-none z-10">
                   <i className="fa-solid fa-calendar-days text-primary text-sm" />
                 </div>
-                <input
-                  ref={dateInputRef}
-                  type="text"
+                <DatePicker
+                  value={filterDate}
+                  onChange={(v) => setFilterDate(v)}
                   placeholder={t("rechercher_filter_date")}
-                  className="w-full h-full pl-11 pr-4 py-4 bg-white rounded-2xl border-2 border-transparent hover:border-primary/30 focus:border-primary transition-all outline-none text-[14px] font-medium text-gray-700 placeholder:text-gray-400 cursor-pointer shadow-sm"
+                  className="w-full pl-11 pr-4 py-4 bg-white rounded-2xl border-2 border-transparent hover:border-primary/30 focus:border-primary transition-all outline-none text-[14px] font-medium text-gray-700 placeholder:text-gray-400 cursor-pointer shadow-sm"
                 />
               </div>
             </div>

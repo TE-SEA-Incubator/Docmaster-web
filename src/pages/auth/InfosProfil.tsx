@@ -4,10 +4,12 @@ import { authService } from "../../services/authService";
 import { useI18n } from "../../context/I18nContext";
 import Topbar from "../../layout/Topbar";
 import DatePicker from "../../components/ui/DatePicker";
-import type { ApiResponse, UserProfile } from "../../types/api";
+import type { UserProfile } from "../../types/api";
 
-function validateRequired(v: any) {
-  return v && String(v).trim().length > 0;
+function resolvePhotoUrl(p: string | undefined | null): string {
+  if (!p) return "";
+  if (p.startsWith("http") || p.startsWith("data:")) return p;
+  return "/" + p.replace(/^\//, "");
 }
 
 export default function InfosProfil() {
@@ -16,18 +18,17 @@ export default function InfosProfil() {
   const [tab, setTab] = useState<"personal" | "preferences">("personal");
 
   const [form, setForm] = useState({
-    nom: user?.nom || "",
-    prenom: user?.prenom || "",
-    email: user?.email || "",
-    telephone: user?.telephone || "",
-    ville: user?.ville || "",
-    date_naissance: user?.date_naissance || "",
-    lieu_naissance: user?.lieu_naissance || "",
-    currency: user?.currency || "XAF",
+    nom: "",
+    prenom: "",
+    email: "",
+    telephone: "",
+    ville: "",
+    date_naissance: "",
+    lieu_naissance: "",
+    currency: "XAF",
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
 
@@ -37,30 +38,26 @@ export default function InfosProfil() {
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (user?.photo_url) {
-      setPhotoPreview(
-        user.photo_url.startsWith("http") || user.photo_url.startsWith("data:")
-          ? user.photo_url
-          : "/" + user.photo_url.replace(/^\//, "")
-      );
-    }
-    if (user?.date_naissance) {
-      try {
-        const d = new Date(user.date_naissance);
-        if (!isNaN(d.getTime())) {
-          setForm((prev) => ({ ...prev, date_naissance: d.toISOString().split("T")[0] }));
-        }
-      } catch {
-        /* ignore */
-      }
+    if (!user) return;
+    setForm({
+      nom: user.nom || "",
+      prenom: user.prenom || "",
+      email: user.email || "",
+      telephone: user.telephone || "",
+      ville: user.ville || "",
+      date_naissance: user.date_naissance || "",
+      lieu_naissance: user.lieu_naissance || "",
+      currency: user.currency || "XAF",
+    });
+    if (user.photo_url) {
+      setPhotoPreview(resolvePhotoUrl(user.photo_url));
     }
   }, [user]);
 
-  const fields = ["telephone", "ville", "date_naissance", "lieu_naissance"] as const;
-  const isIncomplete = fields.some((f) => {
-    const v = f === "telephone" ? form.telephone : f === "ville" ? form.ville : f === "date_naissance" ? form.date_naissance : form.lieu_naissance;
-    return !v || String(v).trim() === "";
-  });
+  const isIncomplete = (() => {
+    const req = [form.telephone, form.ville, form.date_naissance, form.lieu_naissance];
+    return req.some((v) => !v || String(v).trim() === "");
+  })();
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,59 +76,61 @@ export default function InfosProfil() {
     e.preventDefault();
     setFeedback(null);
 
-    if (!validateRequired(form.nom) || !validateRequired(form.prenom)) {
+    if (!form.nom.trim() || !form.prenom.trim()) {
       setFeedback({ ok: false, msg: t("profil_firstname_required") });
       return;
     }
 
+    const validDate =
+      form.date_naissance && !isNaN(new Date(form.date_naissance).getTime())
+        ? form.date_naissance
+        : "";
+
     setSaving(true);
     try {
-      let result: ApiResponse<UserProfile>;
-
-      const validDate = form.date_naissance && !isNaN(new Date(form.date_naissance).getTime()) ? form.date_naissance : "";
+      let body: FormData | Partial<UserProfile>;
 
       if (photoFile) {
         const fd = new FormData();
-        fd.append("nom", String(form.nom).trim());
-        fd.append("prenom", String(form.prenom).trim());
-        fd.append("ville", String(form.ville).trim());
-        fd.append("telephone", String(form.telephone).trim());
+        fd.append("nom", form.nom.trim());
+        fd.append("prenom", form.prenom.trim());
+        fd.append("telephone", form.telephone.trim());
+        fd.append("ville", form.ville.trim());
         if (validDate) fd.append("date_naissance", validDate);
-        fd.append("lieu_naissance", String(form.lieu_naissance).trim());
+        fd.append("lieu_naissance", form.lieu_naissance.trim());
         fd.append("currency", form.currency);
         fd.append("photo_profile", photoFile);
-
-        result = await authService.updateProfile(fd as unknown as Partial<UserProfile>);
+        body = fd;
       } else {
-        result = await authService.updateProfile({
-          nom: String(form.nom).trim(),
-          prenom: String(form.prenom).trim(),
-          ville: String(form.ville).trim(),
-          telephone: String(form.telephone).trim(),
+        body = {
+          nom: form.nom.trim(),
+          prenom: form.prenom.trim(),
+          telephone: form.telephone.trim(),
+          ville: form.ville.trim(),
           ...(validDate ? { date_naissance: validDate } : {}),
-          lieu_naissance: String(form.lieu_naissance).trim(),
+          lieu_naissance: form.lieu_naissance.trim(),
           currency: form.currency,
-        });
+        };
       }
 
-      if (result.success || result.data) {
-        const updated = result.data || result.user || result;
-        updateUser(updated);
+      const result = await authService.updateProfile(body);
+
+      if (result.user) {
+        updateUser(result.user);
         setPhotoFile(null);
-        setFeedback({ ok: true, msg: t("profil_update_success") });
-
-        if (updated.photo_url) {
-          setPhotoPreview(
-            updated.photo_url.startsWith("http") ? updated.photo_url : "/" + updated.photo_url.replace(/^\//, "")
-          );
+        if (result.user.photo_url) {
+          setPhotoPreview(resolvePhotoUrl(result.user.photo_url));
         }
-
+        setFeedback({ ok: true, msg: t("profil_update_success") });
         setTimeout(() => setFeedback(null), 4000);
       } else {
-        setFeedback({ ok: false, msg: result.message || t("profil_update_error") });
+        setFeedback({ ok: false, msg: t("profil_update_error") });
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.response?.data?.message || t("profil_network_error");
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        t("profil_network_error");
       setFeedback({ ok: false, msg });
     } finally {
       setSaving(false);
@@ -153,9 +152,13 @@ export default function InfosProfil() {
 
     setPwSaving(true);
     try {
-      await authService.changePassword(pwForm.current, pwForm.new);
-      setPwForm({ current: "", new: "", confirm: "" });
-      setFeedback({ ok: true, msg: t("profil_password_success") });
+      const result = await authService.changePassword(pwForm.current, pwForm.new);
+      if (result.success) {
+        setPwForm({ current: "", new: "", confirm: "" });
+        setFeedback({ ok: true, msg: t("profil_password_success") });
+      } else {
+        setFeedback({ ok: false, msg: result.message || t("profil_password_change_error") });
+      }
       setTimeout(() => setFeedback(null), 4000);
     } catch (err: any) {
       const msg = err?.response?.data?.error || t("profil_password_change_error");
@@ -180,8 +183,6 @@ export default function InfosProfil() {
       <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         <div className="max-w-4xl mx-auto w-full flex flex-col gap-5">
 
-
-          {/* Completion notice */}
           {isIncomplete && (
             <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-blue-500 shadow-sm shrink-0">
@@ -194,7 +195,6 @@ export default function InfosProfil() {
             </div>
           )}
 
-          {/* Feedback */}
           {feedback && (
             <div
               className={`p-4 rounded-2xl flex items-center gap-3 text-[13px] font-semibold border ${
@@ -208,9 +208,7 @@ export default function InfosProfil() {
             </div>
           )}
 
-          {/* Profile form card */}
           <div className="bg-white border border-borda rounded-[18px] overflow-hidden">
-            {/* Tabs */}
             <div className="flex border-b border-borda bg-surface-2/50">
               <button
                 onClick={() => setTab("personal")}
@@ -238,9 +236,7 @@ export default function InfosProfil() {
 
             <div className="p-5 sm:p-6">
               <form onSubmit={handleSave} className="space-y-6">
-                {/* TAB PERSONNEL */}
                 <div className={tab !== "personal" ? "hidden" : "space-y-6"}>
-                  {/* Photo */}
                   <div className="flex flex-col sm:flex-row items-center gap-5 pb-4 border-b border-bgMain">
                     <div className="relative group">
                       <div className="w-24 h-24 rounded-2xl bg-primary-light flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
@@ -326,7 +322,6 @@ export default function InfosProfil() {
                   </div>
                 </div>
 
-                {/* TAB PREFERENCES */}
                 <div className={tab !== "preferences" ? "hidden" : "space-y-6"}>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
@@ -377,7 +372,6 @@ export default function InfosProfil() {
                   </div>
                 </div>
 
-                {/* Footer */}
                 <div className="md:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-bgMain">
                   <p className="text-[12px] text-textMuted">&nbsp;</p>
                   <button
@@ -396,7 +390,6 @@ export default function InfosProfil() {
             </div>
           </div>
 
-          {/* Change password card */}
           <div className="bg-white border border-borda rounded-[18px] p-5 sm:p-6">
             <h2 className="font-bricolage text-base font-black text-textMain mb-5 flex items-center gap-2">
               <i className="fa-solid fa-lock text-primary" />

@@ -1,26 +1,32 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
+import { documentTypesService } from "../../services/declarationsService";
 import { useDocuments } from "../../hooks/useDocuments";
 import { useI18n } from "../../context/I18nContext";
+import { useAuth } from "../../context/AuthContext";
+import apiClient from "../../services/api";
 import Topbar from "../../layout/Topbar";
 import DocumentCard from "../../components/cards/DocumentCard";
 import DocumentDetailModal from "../../components/ui/DocumentDetailModal";
 import ShareModal from "../../components/modals/Sharemodal";
 import ReportLostModal from "../../components/ui/ReportLostModal";
 import DatePicker from "../../components/ui/DatePicker";
-import type { Document } from "../../types/api";
+import type { Document, DocTypeCatalog } from "../../types/api";
 
-const docTypes = [
-  { id: "cni", icon: "fa-solid fa-id-card", labelKey: "mesdocuments_tab_cni", cat: "identity" },
-  { id: "passport", icon: "fa-solid fa-passport", labelKey: "mesdocuments_tab_passeport", cat: "travel" },
-  { id: "permis", icon: "fa-solid fa-car", labelKey: "mesdocuments_tab_permis", cat: "vehicle" },
-  { id: "diplome", icon: "fa-solid fa-graduation-cap", labelKey: "mesdocuments_tab_diplome", cat: "study" },
-  { id: "naissance", icon: "fa-solid fa-baby", labelKey: "mesdocuments_tab_acte", cat: "identity" },
-  { id: "autre", icon: "fa-solid fa-file", labelKey: "mesdocuments_tab_autre", cat: "other" },
-];
+function addMonths(dateStr: string, months: number): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + months);
+  if (d.getDate() !== day) d.setDate(0);
+  return d.toISOString().split("T")[0];
+}
 
 export default function MesDocuments() {
   const { t } = useI18n();
-  const { documents: docs, loading, register, remove, reportLost } = useDocuments();
+  const { user } = useAuth();
+  const { documents: docs, loading, fetch: fetchDocs, register, remove, reportLost } = useDocuments();
+  const [docTypes, setDocTypes] = useState<DocTypeCatalog[]>([]);
   const [filterCat, setFilterCat] = useState("all");
   const [search, setSearch] = useState("");
   const [showBanner, setShowBanner] = useState(true);
@@ -43,11 +49,33 @@ export default function MesDocuments() {
   const rectoRef = useRef<HTMLInputElement>(null);
   const versoRef = useRef<HTMLInputElement>(null);
 
+  const selectedDocType = useMemo(
+    () => (selectedType ? docTypes.find((dt) => dt.code === selectedType) : null),
+    [selectedType, docTypes]
+  );
+  const hasExpiration = (selectedDocType?.delai_expiration_mois ?? 0) > 0;
+
+  const updateIssued = (v: string) => {
+    setForm((prev) => ({
+      ...prev,
+      issued: v,
+      expiry: hasExpiration && v ? addMonths(v, selectedDocType!.delai_expiration_mois) : prev.expiry,
+    }));
+  };
+
+  useEffect(() => {
+    documentTypesService.getActive().then((res) => {
+      if (res.success && Array.isArray(res.data)) {
+        setDocTypes(res.data);
+      }
+    });
+  }, []);
+
   const verifiedCount = docs.filter((d) => d.is_verified).length;
   const pendingCount = docs.filter((d) => !d.is_verified).length;
 
   const filtered = docs.filter((d) => {
-    const matchCat = filterCat === "all" || d.type_doc === filterCat || docTypes.some((t) => t.id === filterCat && t.id === d.type_doc);
+    const matchCat = filterCat === "all" || d.type_doc === filterCat;
     const matchSearch = !search || (d.nom_sur_doc || "").toLowerCase().includes(search.toLowerCase()) || (d.numero_doc || "").includes(search);
     return matchCat && matchSearch;
   });
@@ -68,24 +96,19 @@ export default function MesDocuments() {
     if (!consent || !selectedType || !form.name || !rectoFile) return;
     setSubmitting(true);
     try {
-      const data = new FormData();
-      data.append("type_id", selectedType);
-      data.append("numero", form.number);
-      data.append("nom_complet", form.name);
-      if (form.issued) data.append("date_delivrance", form.issued);
-      if (form.expiry) data.append("date_expiration", form.expiry);
-      if (form.authority) data.append("autorite", form.authority);
-      if (form.notes) data.append("notes", form.notes);
-      if (rectoFile) data.append("recto", rectoFile);
-      if (versoFile) data.append("verso", versoFile);
+      const fd = new FormData();
+      fd.append("type_doc", selectedType);
+      fd.append("numero_doc", form.number);
+      fd.append("nom_sur_doc", form.name);
+      if (form.issued) fd.append("date_delivrance", form.issued);
+      if (form.expiry) fd.append("date_expiration", form.expiry);
+      if (form.authority) fd.append("nom_autorite", form.authority);
+      if (form.notes) fd.append("notes", form.notes);
+      if (rectoFile) fd.append("photo_recto", rectoFile);
+      if (versoFile) fd.append("photo_verso", versoFile);
 
-      await register({
-        type_id: selectedType,
-        numero: form.number,
-        nom_complet: form.name,
-        date_delivrance: form.issued,
-        date_expiration: form.expiry,
-      });
+      await apiClient.post("documents", fd);
+      await fetchDocs();
       setSubmitting(false);
       setShowAddModal(false);
       setShowSuccess(true);
@@ -144,14 +167,9 @@ export default function MesDocuments() {
     </button>
   );
 
-  const catLabelsT = {
-    cni: t("mesdocuments_category_cni"),
-    passport: t("mesdocuments_category_passeport"),
-    permis: t("mesdocuments_category_permis"),
-    diplome: t("mesdocuments_category_diplome"),
-    naissance: t("mesdocuments_category_acte"),
-    autre: t("mesdocuments_category_autre"),
-  };
+  const catLabelsT = Object.fromEntries(
+    docTypes.map((dt) => [dt.code, dt.nom])
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -163,7 +181,6 @@ export default function MesDocuments() {
         ]}
       />
       <div className="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-8 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
-
 
         {/* Info banner */}
         {showBanner && (
@@ -185,7 +202,7 @@ export default function MesDocuments() {
         )}
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="max-sm:hidden grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-white border border-borderMain rounded-[16px] p-4 flex flex-col gap-2">
             <div className="w-9 h-9 rounded-[10px] bg-primary/10 flex items-center justify-center">
               <i className="fa-solid fa-folder-open text-primary text-sm" />
@@ -228,17 +245,20 @@ export default function MesDocuments() {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <FilterTab id="all" label={t("mesdocuments_filter_all")} />
-            <FilterTab id="cni" label={t("mesdocuments_filter_identity")} />
-            <FilterTab id="passport" label={t("mesdocuments_filter_travel")} />
-            <FilterTab id="diplome" label={t("mesdocuments_filter_study")} />
-            <FilterTab id="permis" label={t("mesdocuments_filter_vehicle")} />
+            {docTypes.map((dt) => (
+              <FilterTab key={dt.code} id={dt.code} label={dt.nom} />
+            ))}
           </div>
         </div>
 
         {/* Documents grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              const fullName = [user?.prenom, user?.nom].filter(Boolean).join(" ") || "";
+              setForm((prev) => ({ ...prev, name: fullName }));
+              setShowAddModal(true);
+            }}
             className="drop-zone rounded-[18px] p-6 flex flex-col items-center justify-center gap-3 min-h-[180px] cursor-pointer group border-2 border-dashed border-[#D1C9BC] bg-[#FAF7F2] hover:border-primary hover:bg-[#FEF0DC] transition-all"
           >
             <div className="w-12 h-12 rounded-2xl bg-primary/10 border-2 border-primary/25 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
@@ -274,9 +294,12 @@ export default function MesDocuments() {
       </div>
 
       {/* ── ADD DOCUMENT MODAL ── */}
-      {showAddModal && (
+      {showAddModal && createPortal(
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeAddModal()}>
-          <div className="modal-box">
+          <div className="modal-box animate-in">
+            {/* Grab handle for mobile */}
+            <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-5 sm:hidden" />
+            
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="font-bricolage text-xl font-extrabold text-textMain">{t("mesdocuments_modal_title")}</h2>
@@ -303,18 +326,30 @@ export default function MesDocuments() {
               <div>
                 <p className="text-[13.5px] font-semibold text-textMain mb-4">{t("mesdocuments_modal_choose_type")}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                  {docTypes.map((dt) => (
-                    <button
-                      key={dt.id}
-                      onClick={() => { setSelectedType(dt.id); }}
-                      className={`doc-type-btn ${selectedType === dt.id ? "selected" : ""}`}
-                    >
-                      <div className="w-10 h-10 rounded-[11px] bg-green-light flex items-center justify-center mx-auto mb-2">
-                        <i className={`${dt.icon} text-green-mid text-lg`} />
-                      </div>
-                      <div className="text-[12.5px] font-bold text-textMain">{t(dt.labelKey)}</div>
-                    </button>
-                  ))}
+                  {docTypes.map((dt) => {
+                    const isSelected = selectedType === dt.code;
+                    return (
+                      <button
+                        key={dt.code}
+                        onClick={() => {
+                          setSelectedType(dt.code);
+                          if (form.issued && (dt.delai_expiration_mois ?? 0) > 0) {
+                            setForm((prev) => ({ ...prev, expiry: addMonths(prev.issued, dt.delai_expiration_mois) }));
+                          }
+                        }}
+                        className={`doc-type-btn transition-all duration-200 ${
+                          isSelected ? "selected border-primary bg-[#FEF0DC]/40 scale-[1.02]" : "border-[#EAE3D8] bg-white"
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-[11px] flex items-center justify-center mx-auto mb-2 transition-all duration-200 ${
+                          isSelected ? "bg-primary/20 text-primary" : "bg-green-light text-green-mid"
+                        }`}>
+                          <i className={`fa-solid fa-${dt.icone} text-lg`} />
+                        </div>
+                        <div className="text-[12.5px] font-bold text-textMain">{dt.nom}</div>
+                      </button>
+                    );
+                  })}
                 </div>
                 <button onClick={() => goStep(2)} disabled={!selectedType}
                   className="w-full py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-dark transition-all active:scale-[.98]">
@@ -337,16 +372,23 @@ export default function MesDocuments() {
                     <input type="text" className="form-input" placeholder={t("mesdocuments_placeholder_number")} value={form.number}
                       onChange={(e) => setForm({ ...form, number: e.target.value })} />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  {hasExpiration ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="form-label">{t("mesdocuments_issue_date")} <span className="text-red-500 ml-0.5">*</span></label>
+                        <DatePicker value={form.issued} onChange={updateIssued} className="form-input" placeholder={t("mesdocuments_placeholder_date")} />
+                      </div>
+                      <div>
+                        <label className="form-label">{t("mesdocuments_expiry_date")}</label>
+                        <DatePicker value={form.expiry} onChange={(v) => setForm({ ...form, expiry: v })} className="form-input opacity-60" placeholder={t("mesdocuments_placeholder_date")} disabled />
+                      </div>
+                    </div>
+                  ) : (
                     <div>
                       <label className="form-label">{t("mesdocuments_issue_date")}</label>
                       <DatePicker value={form.issued} onChange={(v) => setForm({ ...form, issued: v })} className="form-input" placeholder={t("mesdocuments_placeholder_date")} />
                     </div>
-                    <div>
-                      <label className="form-label">{t("mesdocuments_expiry_date")}</label>
-                      <DatePicker value={form.expiry} onChange={(v) => setForm({ ...form, expiry: v })} className="form-input" placeholder={t("mesdocuments_placeholder_date")} />
-                    </div>
-                  </div>
+                  )}
                   <div>
                     <label className="form-label">{t("mesdocuments_issuing_authority")}</label>
                     <input type="text" className="form-input" placeholder={t("mesdocuments_placeholder_authority")} value={form.authority}
@@ -396,7 +438,7 @@ export default function MesDocuments() {
                     className="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
                     <i className="fa-solid fa-arrow-left text-[12px]" /> {t("mesdocuments_back")}
                   </button>
-                  <button onClick={() => goStep(3)} disabled={!form.name || !form.number || !rectoFile}
+                  <button onClick={() => goStep(3)} disabled={!form.name || !form.number || !rectoFile || (hasExpiration && !form.issued)}
                     className="flex-1 py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98] disabled:opacity-40">
                     {t("mesdocuments_continue")} <i className="fa-solid fa-arrow-right text-[12px] ml-1" />
                   </button>
@@ -411,7 +453,7 @@ export default function MesDocuments() {
                   <p className="text-[12px] font-bold text-textMuted uppercase tracking-wide mb-3">{t("mesdocuments_summary")}</p>
                   <div className="space-y-2">
                     {[{ label: t("mesdocuments_summary_name"), val: form.name }, { label: t("mesdocuments_summary_type"), val: selectedType }, { label: t("mesdocuments_summary_number"), val: form.number },
-                      { label: t("mesdocuments_summary_issued"), val: form.issued || "—" }, { label: t("mesdocuments_summary_expiry"), val: form.expiry || "—" },
+                      { label: t("mesdocuments_summary_issued"), val: form.issued || "—" }, ...(hasExpiration ? [{ label: t("mesdocuments_summary_expiry"), val: form.expiry || "—" }] : []),
                       { label: t("mesdocuments_summary_documents"), val: `${rectoFile ? 1 : 0} ${t("mesdocuments_summary_files")}` },
                     ].map((i) => (
                       <div key={i.label} className="flex justify-between text-[13.5px]">
@@ -443,7 +485,8 @@ export default function MesDocuments() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── VIEW MODAL ── */}
@@ -452,6 +495,7 @@ export default function MesDocuments() {
           doc={selectedDoc}
           catLabels={catLabelsT}
           onClose={() => setShowViewModal(false)}
+          onShare={() => { setShowViewModal(false); setShowShareModal(true); }}
         />
       )}
 
@@ -461,9 +505,9 @@ export default function MesDocuments() {
       )}
 
       {/* ── DELETE CONFIRM ── */}
-      {showDeleteModal && selectedDoc && (
+      {showDeleteModal && selectedDoc && createPortal(
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowDeleteModal(false)}>
-          <div className="modal-box max-w-sm" style={{ padding: "24px" }}>
+          <div className="modal-box max-w-sm animate-in" style={{ padding: "24px" }}>
             <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
               <i className="fa-solid fa-trash text-red-500 text-lg" />
             </div>
@@ -478,7 +522,8 @@ export default function MesDocuments() {
                 className="flex-1 py-2.5 rounded-[12px] bg-red-500 text-white font-bold hover:bg-red-600 transition-colors">{t("mesdocuments_delete")}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── REPORT LOST MODAL ── */}

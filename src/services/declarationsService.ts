@@ -53,8 +53,8 @@ export const declarationsService = {
     return res.data;
   },
 
-  async payRecoveryFee(data: { declaration_id: string; method: string; telephone: string }) {
-    const res = await apiClient.post<ApiResponse>("declarations/pay-recovery", data);
+  async payRecoveryFee(data: { docId: string; paymentMethod: string; phone: string }) {
+    const res = await apiClient.post<ApiResponse>("payments/pay-recovery", data);
     return res.data;
   },
 

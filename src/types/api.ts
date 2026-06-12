@@ -18,6 +18,7 @@ export interface DocTypeCatalog {
   nom: string;
   icone: string;
   is_active: boolean;
+  delai_expiration_mois: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -173,13 +174,27 @@ export interface Subscription {
 
 export interface Referral {
   id: string;
-  referrer_id?: string;
-  referred_id?: string;
-  referred_name?: string;
-  referred_email?: string;
+  parrain_id?: string;
+  filleul_id?: string;
+  points_gagnes?: number;
   status: string;
-  reward?: number;
+  recompense_attribuee?: boolean;
   created_at?: string;
+  nom?: string;
+  prenom?: string;
+  photo_url?: string;
+  filleul_created_at?: string;
+}
+
+export interface EarningsRecord {
+  id: string;
+  user_id: string;
+  type: string;
+  amount: number;
+  currency: string;
+  description: string | null;
+  metadata: any;
+  created_at: string;
 }
 
 export interface Transaction {

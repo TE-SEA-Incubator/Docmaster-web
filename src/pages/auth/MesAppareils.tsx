@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../context/I18nContext";
 import { devicesService } from "../../services/devicesService";
@@ -553,7 +554,7 @@ export default function MesAppareils() {
       {/* Page body */}
       <div className="custom-scroll p-4 md:p-6 flex flex-col gap-6 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
+        <div className="max-sm:hidden grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
           <div className="bg-white rounded-[16px] p-[18px] border border-[#1A1A1A]/20 flex items-center gap-3.5 shadow-[0_2px_10px_rgba(0,0,0,.04)] hover:translate-y-[-2px] hover:shadow-[0_6px_20px_rgba(0,0,0,.07)] transition-all">
             <div className="w-[46px] h-[46px] rounded-[13px] bg-[#EEF2FF] text-[#6366F1] flex items-center justify-center text-lg flex-shrink-0"><i className="fa-solid fa-laptop" /></div>
             <div>
@@ -843,15 +844,17 @@ export default function MesAppareils() {
       {/* ───────────────── MODALS ───────────────── */}
 
       {/* Verify Modal */}
-      {verifyModalOpen && (
+      {verifyModalOpen && createPortal(
         <div
-          className="fixed inset-0 bg-green-dark/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-          style={{ animation: "fadeIn 0.25s ease" }}
+          className="fixed inset-0 flex items-end md:items-center justify-center md:p-4 z-[210]"
+          style={{ background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(12px)", animation: "fadeIn 0.25s ease" }}
         >
           <div
-            className="bg-white rounded-[22px] w-full max-w-[450px] text-center p-8"
-            style={{ animation: "popUp 0.35s cubic-bezier(.34,1.56,.64,1)" }}
+            className="bg-white rounded-t-[22px] md:rounded-[22px] w-full max-w-[450px] text-center shadow-[0_-10px_40px_rgba(0,0,0,0.2)] animate-in"
+            style={{ padding: 32, animation: "popUp 0.35s cubic-bezier(.34,1.56,.64,1)" }}
           >
+            {/* Grab handle for mobile */}
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden" />
             <div
               style={{
                 width: 70,
@@ -944,19 +947,22 @@ export default function MesAppareils() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Add/Edit Modal */}
-      {addModalOpen && (
+      {addModalOpen && createPortal(
         <div
-          className="fixed inset-0 bg-green-dark/40 backdrop-blur-sm z-[100] flex items-end md:items-center justify-center p-4 pb-[70px] md:pb-0"
-          style={{ animation: "fadeIn 0.25s ease" }}
+          className="fixed inset-0 flex items-end md:items-center justify-center md:p-4 z-[210]"
+          style={{ background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(12px)", animation: "fadeIn 0.25s ease" }}
         >
           <div
-            className="bg-white rounded-[22px] w-full max-w-[580px] max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-t-[22px] md:rounded-[22px] w-full max-w-[580px] max-h-[90vh] overflow-y-auto shadow-[0_-10px_40px_rgba(0,0,0,0.2)] animate-in"
             style={{ animation: "popUp 0.35s cubic-bezier(.34,1.56,.64,1)" }}
           >
+            {/* Grab handle for mobile */}
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mt-3 mb-1 md:hidden" />
             <div className="modal-header">
               <div>
                 <h2 style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 19, fontWeight: 800, color: "#1A1A1A" }}>
@@ -1045,7 +1051,7 @@ export default function MesAppareils() {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-3.5">
                 <div className="field-group">
                   <label className="field-label"><i className="fa-solid fa-calendar-plus" style={{ color: "#F5A64B", fontSize: 10 }} /> Date d'achat</label>
                   <DatePicker value={fDateAchat} onChange={(v) => setFDateAchat(v)} className="field-input" icon="fa-solid fa-calendar" placeholder="jj/mm/aaaa" />
@@ -1155,18 +1161,19 @@ export default function MesAppareils() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Detail Panel */}
-      {detailOpen && detailDevice && (
+      {detailOpen && detailDevice && createPortal(
         <div
-          className="fixed inset-0 bg-green-dark/40 backdrop-blur-sm z-[90] flex items-center justify-end"
-          style={{ animation: "fadeIn 0.25s ease" }}
+          className="fixed inset-0 flex items-center justify-end z-[210]"
+          style={{ background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(12px)", animation: "fadeIn 0.25s ease" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeDetail(); }}
         >
           <div
-            className="bg-white h-full w-full max-w-[420px] overflow-y-auto pb-[70px] md:pb-0"
+            className="bg-white h-full w-full max-w-[420px] overflow-y-auto pb-0"
             style={{ animation: "slideFromRight 0.3s ease", boxShadow: "-10px 0 40px rgba(0,0,0,.15)" }}
           >
             <div style={{ padding: "22px 22px 0" }}>
@@ -1284,16 +1291,19 @@ export default function MesAppareils() {
               })()}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Confirm Lost Modal */}
-      {confirmLostOpen && (
+      {confirmLostOpen && createPortal(
         <div
-          className="fixed inset-0 z-[200] flex items-end md:items-center justify-center p-4 pb-[70px] md:pb-0"
-          style={{ background: "rgba(30,58,47,.85)", backdropFilter: "blur(8px)" }}
+          className="fixed inset-0 flex items-end md:items-center justify-center md:p-4 z-[210]"
+          style={{ background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(12px)" }}
         >
-          <div className="modal animate-in" style={{ maxWidth: 400, textAlign: "center", padding: 32 }}>
+          <div className="bg-white rounded-t-[28px] md:rounded-[28px] w-full max-w-md text-center shadow-[0_-10px_40px_rgba(0,0,0,0.2)] animate-in" style={{ padding: 32 }}>
+            {/* Grab handle for mobile */}
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden" />
             <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
               <i className="fa-solid fa-triangle-exclamation" style={{ color: "#ef4444", fontSize: 24 }} />
             </div>
@@ -1371,16 +1381,19 @@ export default function MesAppareils() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Success Modal */}
-      {successOpen && (
+      {successOpen && createPortal(
         <div
-          className="fixed inset-0 z-[300] flex items-center justify-center p-4"
-          style={{ background: "rgba(30,58,47,.85)", backdropFilter: "blur(8px)" }}
+          className="fixed inset-0 flex items-end md:items-center justify-center md:p-4 z-[210]"
+          style={{ background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(12px)" }}
         >
-          <div className="modal animate-in" style={{ maxWidth: 400, textAlign: "center", padding: 32, borderRadius: 24 }}>
+          <div className="bg-white rounded-t-[24px] md:rounded-[24px] w-full max-w-md text-center shadow-[0_-10px_40px_rgba(0,0,0,0.2)] animate-in" style={{ padding: 32 }}>
+            {/* Grab handle for mobile */}
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden" />
             <div style={{ width: 70, height: 70, borderRadius: "50%", background: "#E8F5EE", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 32 }}>
               <i className="fa-solid fa-check" style={{ color: "#10B981" }} />
             </div>
@@ -1410,7 +1423,8 @@ export default function MesAppareils() {
               D'accord
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

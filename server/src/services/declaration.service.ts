@@ -198,7 +198,15 @@ export class DeclarationService {
     if (declaration.reporter_id) {
       console.log(`🔵 [9] Attribution points à ${declaration.reporter_id}...`);
       const points = await this.settingRepository.getByKey('points_per_declaration');
-      await this.awardPoints(declaration.reporter_id, Number(points) || 5);
+      const pts = Number(points) || 5;
+      await this.awardPoints(declaration.reporter_id, pts);
+
+      const { EarningsService } = await import('./earnings.service.ts');
+      await new EarningsService().recordDeclarationPoints(declaration.reporter_id, pts, {
+        declarationId: declaration.id,
+        docType: declaration.doc_type
+      });
+
       console.log(`🟢 [9] ${points} points attribués`);
     }
 

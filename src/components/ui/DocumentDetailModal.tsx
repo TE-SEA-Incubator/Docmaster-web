@@ -1,24 +1,27 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useI18n } from "../../context/I18nContext";
 import type { Document } from "../../types/api";
-import ShareModal from "./ShareModal";
+import { generateDocumentPDF } from "../../utils/pdf";
+import { subscriptionsService } from "../../services/subscriptionsService";
 
 interface DocumentDetailModalProps {
   doc: Document;
   catLabels: Record<string, string>;
   onClose: () => void;
+  onShare?: () => void;
 }
 
 export default function DocumentDetailModal({
   doc,
   catLabels,
   onClose,
+  onShare,
 }: DocumentDetailModalProps) {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<"recto" | "verso">("recto");
   const [isZoomed, setIsZoomed] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [showShare, setShowShare] = useState(false);
 
   const getImageUrl = (url?: string) => {
     if (!url) return "";
@@ -33,17 +36,36 @@ export default function DocumentDetailModal({
     setRotation((prev) => (prev + 90) % 360);
   };
 
-  return (
+  const handleDownload = async () => {
+    try {
+      const subRes = await subscriptionsService.getMySubscription();
+      const isFree = !subRes?.data || subRes.data.plan_id === "free";
+      await generateDocumentPDF({
+        type_doc: doc.type_doc || "",
+        numero_doc: doc.numero_doc,
+        nom_sur_doc: doc.nom_sur_doc,
+        date_delivrance: doc.date_delivrance,
+        date_expiration: doc.date_expiration,
+        nom_autorite: doc.nom_autorite,
+        photo_recto: doc.photo_recto,
+        photo_verso: doc.photo_verso,
+      }, isFree);
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
+  };
+
+  return createPortal(
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[210]"
         onClick={onClose}
       />
 
       {/* Modal Container - Mobile First */}
-      <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-        <div className="w-full md:max-w-6xl md:rounded-3xl md:shadow-2xl bg-white flex flex-col md:flex-row h-full md:h-auto max-h-screen md:max-h-[90vh] overflow-hidden animate-in fade-in slide-in-from-bottom-10 md:slide-in-from-bottom-0 pb-[70px] md:pb-0">
+      <div className="fixed inset-0 z-[211] flex items-end md:items-center justify-center p-0 md:p-4">
+        <div className="w-full md:max-w-6xl md:rounded-3xl md:shadow-2xl bg-white flex flex-col md:flex-row h-full md:h-auto max-h-screen md:max-h-[90vh] overflow-hidden animate-in fade-in slide-in-from-bottom-10 md:slide-in-from-bottom-0 pb-0">
           {/* Left: Image Viewer - Mobile/Tablet Full Width First */}
           <div className="relative w-full md:w-3/5 h-64 md:h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center group overflow-hidden">
             {/* Background pattern */}
@@ -328,12 +350,12 @@ export default function DocumentDetailModal({
 
             {/* Action Buttons - Bottom */}
             <div className="px-4 md:px-8 py-4 md:py-6 bg-gradient-to-t from-white via-white to-transparent border-t border-slate-100 flex flex-col md:flex-row gap-3">
-              <button className="flex-1 h-12 md:h-14 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl font-bold text-sm md:text-base uppercase tracking-wider flex items-center justify-center gap-2 hover:from-slate-800 hover:to-slate-700 transition-all active:scale-[0.98] shadow-lg shadow-slate-900/20">
+              <button onClick={handleDownload} className="flex-1 h-12 md:h-14 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl font-bold text-sm md:text-base uppercase tracking-wider flex items-center justify-center gap-2 hover:from-slate-800 hover:to-slate-700 transition-all active:scale-[0.98] shadow-lg shadow-slate-900/20">
                 <i className="fa-solid fa-download" /> {t("detail_telecharger")}
               </button>
 
               <button
-                onClick={() => setShowShare(true)}
+                onClick={() => { onClose(); onShare?.(); }}
                 className="flex-1 h-12 md:h-14 bg-white border-2 border-primary text-primary rounded-xl font-bold text-sm md:text-base uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all active:scale-[0.98]"
               >
                 <i className="fa-solid fa-share-nodes" /> {t("detail_partager")}
@@ -348,7 +370,7 @@ export default function DocumentDetailModal({
         </div>
       </div>
 
-      {showShare && <ShareModal doc={doc} onClose={() => setShowShare(false)} />}
-    </>
+    </>,
+    document.body
   );
 }
