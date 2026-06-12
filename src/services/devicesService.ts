@@ -27,10 +27,17 @@ export const devicesService = {
   },
 
   async registerMyDevice(formData: FormData) {
-    const res = await apiClient.post<ApiResponse<Device>>("devices/my-devices", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return res.data;
+    try {
+      const res = await apiClient.post<ApiResponse<Device>>("devices/my-devices", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw error;
+    }
   },
 
   async reportLost(serial: string) {

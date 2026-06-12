@@ -596,6 +596,9 @@ export default function Declarer() {
                     <div className="doc-check">
                       <i className="fa-solid fa-check"></i>
                     </div>
+                    <span className={`exp-badge ${(doc.delai_expiration_mois ?? 0) > 0 ? "has-exp" : "no-exp"}`}>
+                      {(doc.delai_expiration_mois ?? 0) > 0 ? t("has_expiration") : t("no_expiration")}
+                    </span>
                     <div className="card-icon">
                       <i className={`fa-solid fa-${doc.icone || "file"}`}></i>
                     </div>

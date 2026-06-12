@@ -146,6 +146,8 @@ export const ar = {
   declarer_field_date_delivrance: "تاريخ الإصدار",
   declarer_field_titulaire: "الحامل",
   declarer_field_numero_passeport: "رقم جواز السفر",
+  has_expiration: "له تاريخ انتهاء",
+  no_expiration: "بدون انتهاء",
   declarer_field_date_expiration: "تاريخ الانتهاء",
   declarer_field_titulaire_permis: "الحامل (الرخصة)",
   declarer_field_numero_permis: "رقم الرخصة",

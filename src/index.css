@@ -577,4 +577,27 @@ h1, h2, h3, h4, .brand {
   border-radius: 10px;
 }
 
+.exp-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 1px 6px;
+  border-radius: 6px;
+  line-height: 1.5;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.exp-badge.has-exp {
+  background: #2D5A42;
+  color: #fff;
+}
+.exp-badge.no-exp {
+  background: #EAE3D8;
+  color: #6B7280;
+}
+
 

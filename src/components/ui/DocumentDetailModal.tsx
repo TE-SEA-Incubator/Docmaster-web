@@ -57,17 +57,17 @@ export default function DocumentDetailModal({
 
   return createPortal(
     <>
-      {/* Overlay */}
+      {/* Overlay - desktop only */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[210]"
+        className="hidden md:block fixed inset-0 bg-black/40 backdrop-blur-sm z-[210]"
         onClick={onClose}
       />
 
-      {/* Modal Container - Mobile First */}
+      {/* Modal Container - Mobile as full page, Desktop as modal */}
       <div className="fixed inset-0 z-[211] flex items-end md:items-center justify-center p-0 md:p-4">
-        <div className="w-full md:max-w-6xl md:rounded-3xl md:shadow-2xl bg-white flex flex-col md:flex-row h-full md:h-auto max-h-screen md:max-h-[90vh] overflow-hidden animate-in fade-in slide-in-from-bottom-10 md:slide-in-from-bottom-0 pb-0">
+        <div className="w-full md:max-w-6xl md:rounded-3xl md:shadow-2xl bg-white flex flex-col md:flex-row h-full md:h-auto max-h-screen md:max-h-[90vh] overflow-hidden pb-0">
           {/* Left: Image Viewer - Mobile/Tablet Full Width First */}
-          <div className="relative w-full md:w-3/5 h-64 md:h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center group overflow-hidden">
+          <div className="relative w-full md:w-3/5 h-[45vh] md:h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center group overflow-hidden">
             {/* Background pattern */}
             <div className="absolute inset-0 opacity-10">
               <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,.05)_25%,rgba(255,255,255,.05)_50%,transparent_50%,transparent_75%,rgba(255,255,255,.05)_75%,rgba(255,255,255,.05))] bg-[length:40px_40px]" />
@@ -346,25 +346,20 @@ export default function DocumentDetailModal({
                     : "—"}
                 </p>
               </div>
-            </div>
 
-            {/* Action Buttons - Bottom */}
-            <div className="px-4 md:px-8 py-4 md:py-6 bg-gradient-to-t from-white via-white to-transparent border-t border-slate-100 flex flex-col md:flex-row gap-3">
-              <button onClick={handleDownload} className="flex-1 h-12 md:h-14 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl font-bold text-sm md:text-base uppercase tracking-wider flex items-center justify-center gap-2 hover:from-slate-800 hover:to-slate-700 transition-all active:scale-[0.98] shadow-lg shadow-slate-900/20">
-                <i className="fa-solid fa-download" /> {t("detail_telecharger")}
-              </button>
+              {/* Action Buttons - scroll with content on mobile */}
+              <div className="pt-6 flex flex-col gap-2">
+                <button onClick={handleDownload} className="w-full h-10 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:from-slate-800 hover:to-slate-700 transition-all active:scale-[0.98]">
+                  <i className="fa-solid fa-download" /> {t("detail_telecharger")}
+                </button>
 
-              <button
-                onClick={() => { onClose(); onShare?.(); }}
-                className="flex-1 h-12 md:h-14 bg-white border-2 border-primary text-primary rounded-xl font-bold text-sm md:text-base uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all active:scale-[0.98]"
-              >
-                <i className="fa-solid fa-share-nodes" /> {t("detail_partager")}
-              </button>
-
-              {/* Secondary Action - Mobile Visible */}
-              <button className="md:hidden h-12 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center hover:bg-slate-200 transition-all">
-                <i className="fa-solid fa-ellipsis text-lg" />
-              </button>
+                <button
+                  onClick={() => { onClose(); onShare?.(); }}
+                  className="w-full h-10 bg-white border-2 border-primary text-primary rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all active:scale-[0.98]"
+                >
+                  <i className="fa-solid fa-share-nodes" /> {t("detail_partager")}
+                </button>
+              </div>
             </div>
           </div>
         </div>

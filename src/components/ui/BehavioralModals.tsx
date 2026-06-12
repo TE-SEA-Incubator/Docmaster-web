@@ -72,7 +72,7 @@ const BehavioralModals: React.FC = () => {
   if (!activeModal) return null;
 
   return createPortal(
-    <div className="modal-overlay" style={{ zIndex: 210 }}>
+    <div className="modal-overlay" style={{ zIndex: 210 }} onClick={(e) => e.target === e.currentTarget && closeModal()}>
       {activeModal === 'statistique' && (
         <div 
           className="relative bg-white w-full max-w-2xl rounded-t-[28px] md:rounded-[32px] overflow-hidden shadow-2xl animate-slide-up flex flex-col md:flex-row min-h-[400px] modal-box"

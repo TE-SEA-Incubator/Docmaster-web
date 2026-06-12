@@ -146,6 +146,8 @@ export const fr = {
   declarer_field_date_delivrance: "Date de délivrance",
   declarer_field_titulaire: "Titulaire",
   declarer_field_numero_passeport: "Numéro de passeport",
+  has_expiration: "Avec expiration",
+  no_expiration: "Sans expiration",
   declarer_field_date_expiration: "Date d'expiration",
   declarer_field_titulaire_permis: "Titulaire (Permis)",
   declarer_field_numero_permis: "Numéro de permis",

@@ -313,9 +313,12 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
                   const sel = selectedTypes.includes(dt.id);
                   return (
                     <button key={dt.id} onClick={() => toggleType(dt.id)}
-                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all relative ${
                         sel ? "border-primary bg-primary/5 shadow-sm" : "border-borda bg-white hover:border-primary/50"
                       }`}>
+                      <span className={`exp-badge ${(dt.delai_expiration_mois ?? 0) > 0 ? "has-exp" : "no-exp"}`}>
+                        {(dt.delai_expiration_mois ?? 0) > 0 ? t("has_expiration") : t("no_expiration")}
+                      </span>
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${
                         sel ? "bg-primary/20 text-primary" : "bg-bgMain text-textMuted"
                       }`}><i className={dt.icon} /></div>

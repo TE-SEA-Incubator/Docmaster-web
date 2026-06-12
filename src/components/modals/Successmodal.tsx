@@ -3,12 +3,14 @@ import { useI18n } from "../../context/I18nContext";
 
 interface SuccessModalProps {
   refNumber: string;
+  onClose: () => void;
   onNewDeclaration: () => void;
   onMyDeclarations: () => void;
 }
 
 export default function SuccessModal({
   refNumber,
+  onClose,
   onNewDeclaration,
   onMyDeclarations,
 }: SuccessModalProps) {
@@ -23,6 +25,7 @@ export default function SuccessModal({
     <div
       className="modal-overlay"
       style={{ zIndex: 210 }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="bg-white rounded-[28px] shadow-2xl max-w-md w-full p-10 text-center animate-in zoom-in duration-300 modal-box">
         {/* Grab handle for mobile */}

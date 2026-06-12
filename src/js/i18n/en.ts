@@ -146,6 +146,8 @@ export const en = {
   declarer_field_date_delivrance: "Issue date",
   declarer_field_titulaire: "Holder",
   declarer_field_numero_passeport: "Passport number",
+  has_expiration: "Has expiry",
+  no_expiration: "No expiry",
   declarer_field_date_expiration: "Expiry date",
   declarer_field_titulaire_permis: "Holder (License)",
   declarer_field_numero_permis: "License number",

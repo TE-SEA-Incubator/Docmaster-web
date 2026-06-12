@@ -337,10 +337,13 @@ export default function MesDocuments() {
                             setForm((prev) => ({ ...prev, expiry: addMonths(prev.issued, dt.delai_expiration_mois) }));
                           }
                         }}
-                        className={`doc-type-btn transition-all duration-200 ${
+                        className={`doc-type-btn relative transition-all duration-200 ${
                           isSelected ? "selected border-primary bg-[#FEF0DC]/40 scale-[1.02]" : "border-[#EAE3D8] bg-white"
                         }`}
                       >
+                        <span className={`exp-badge ${(dt.delai_expiration_mois ?? 0) > 0 ? "has-exp" : "no-exp"}`}>
+                          {(dt.delai_expiration_mois ?? 0) > 0 ? t("has_expiration") : t("no_expiration")}
+                        </span>
                         <div className={`w-10 h-10 rounded-[11px] flex items-center justify-center mx-auto mb-2 transition-all duration-200 ${
                           isSelected ? "bg-primary/20 text-primary" : "bg-green-light text-green-mid"
                         }`}>

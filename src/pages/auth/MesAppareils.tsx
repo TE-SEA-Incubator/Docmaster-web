@@ -262,8 +262,8 @@ export default function MesAppareils() {
       } else {
         alert(result.message || "Erreur lors de l'enregistrement");
       }
-    } catch {
-      alert("Erreur lors de l'enregistrement");
+    } catch (error: any) {
+      alert(error?.message || "Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
     }

@@ -540,6 +540,9 @@ export default function Trouver() {
                             : "border-[#eae3d8]"
                         }`}
                       >
+                        <span className={`exp-badge ${(d.delai_expiration_mois ?? 0) > 0 ? "has-exp" : "no-exp"}`}>
+                          {(d.delai_expiration_mois ?? 0) > 0 ? t("has_expiration") : t("no_expiration")}
+                        </span>
                         <div
                           className={`w-9 h-9 rounded-[10px] ${st.bg} flex items-center justify-center mx-auto mb-2`}
                         >
