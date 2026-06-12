@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
+import { NotificationFeedbackType } from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
@@ -8,6 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Input, Typography } from "@/components/ui";
 import { useCreateDocument } from "@/hooks/useDocuments";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { notify } from "@/lib/haptics";
 import { colors } from "@/theme/colors";
 
 /**
@@ -34,7 +35,7 @@ export default function CreateDocumentModal() {
         numero,
         nom_complet: nomComplet,
       });
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      notify(NotificationFeedbackType.Success);
       Alert.alert(
         result.queued ? "Enregistré hors-ligne" : "Document enregistré",
         result.queued
@@ -43,7 +44,7 @@ export default function CreateDocumentModal() {
       );
       router.back();
     } catch {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      notify(NotificationFeedbackType.Error);
       Alert.alert("Erreur", "Impossible d'enregistrer le document.");
     }
   };

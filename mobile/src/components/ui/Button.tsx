@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,6 +7,7 @@ import {
 } from "react-native";
 
 import { cn } from "@/lib/cn";
+import { impact } from "@/lib/haptics";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
@@ -67,7 +67,7 @@ export function Button({
       hitSlop={8}
       onPress={(e) => {
         if (haptic) {
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          impact();
         }
         onPress?.(e);
       }}
