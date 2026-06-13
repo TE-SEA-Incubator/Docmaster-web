@@ -401,6 +401,13 @@ export default function Declarer() {
         if (contactPhone && contactPhone.replace(/\s/g, "").length > 4) formData.append("telephone_contact", contactPhone);
         if (contactEmail) formData.append("email_contact", contactEmail);
 
+        const metadata: Record<string, string> = {};
+        if (lieuPrecis) metadata["Lieu exact"] = lieuPrecis;
+        if (lossTime) metadata["Heure de perte"] = lossTime;
+        if (circumstances) metadata["Circonstances"] = circumstances;
+        if (quartier) metadata["Quartier"] = quartier;
+        if (Object.keys(metadata).length > 0) formData.append("metadata", JSON.stringify(metadata));
+
         const res = await declarationsService.createLost(formData);
         console.log("[Declarer] createLost response:", res);
         if (res.success && res.data) {
@@ -547,6 +554,7 @@ export default function Declarer() {
                         setFormData((prev) => ({ ...prev, [key]: fullName }));
                       });
                     }
+                    if (user?.email) setContactEmail(user.email);
                   }}
                   className={`doc-type-card ${ownerType === "me" ? "selected" : ""}`}
                 >

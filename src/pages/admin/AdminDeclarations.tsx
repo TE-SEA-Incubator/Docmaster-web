@@ -33,6 +33,7 @@ export default function AdminDeclarations() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<DetailData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [loadingRowId, setLoadingRowId] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const pageSize = 20;
@@ -52,9 +53,10 @@ export default function AdminDeclarations() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const openDetail = async (d: Declaration) => {
-    setSelected(null);
     setPdfUrl(null);
+    setLoadingRowId(d.id);
     setDetailLoading(true);
+    setSelected(d as DetailData);
     try {
       const res = await declarationsService.getById(d.id);
       const detail = (res as any).data || d;
@@ -64,6 +66,7 @@ export default function AdminDeclarations() {
       setSelected(d as DetailData);
     } finally {
       setDetailLoading(false);
+      setLoadingRowId(null);
     }
   };
 
@@ -222,7 +225,7 @@ export default function AdminDeclarations() {
                 declarations.map((d) => {
                   const ref = d.identifiant_doc_dm || (d.id ? d.id.substring(0, 8) : "N/A");
                   return (
-                    <tr key={d.id} className="hover:bg-gray-50/60 transition-colors cursor-pointer" onClick={() => openDetail(d)}>
+                    <tr key={d.id} className={`hover:bg-gray-50/60 transition-colors cursor-pointer relative ${loadingRowId === d.id ? "pointer-events-none opacity-60" : ""}`} onClick={() => openDetail(d)}>
                       <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-400">{d.created_at ? new Date(d.created_at).toLocaleString("fr-FR") : "—"}</td>
                       <td className="px-4 py-3 font-mono text-xs font-bold text-primary-dark">{ref}</td>
                       <td className="px-4 py-3">
@@ -232,7 +235,7 @@ export default function AdminDeclarations() {
                           <div className="w-10 h-10 rounded-lg bg-[#F4EFE6] flex items-center justify-center text-[10px] text-gray-400 italic">N/A</div>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-bold text-sm">{d.doc_type || d.document_type_name || "—"}</td>
+                      <td className="px-4 py-3 font-bold text-sm">{d.docTypeInfo?.nom || d.doc_type || "—"}</td>
                       <td className="px-4 py-3 text-sm font-medium">{d.owner_name || d.nom_complet || "N/A"}</td>
                       <td className="px-4 py-3">
                         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${d.declaration_type === "LOST" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-700"}`}>
@@ -339,7 +342,7 @@ export default function AdminDeclarations() {
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">Type de document</span>
-                        <span className="font-semibold">{selected.doc_type || selected.document_type_name || "—"}</span>
+                        <span className="font-semibold">{selected.docTypeInfo?.nom || selected.doc_type || "—"}</span>
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">Propriétaire</span>
@@ -418,6 +421,19 @@ export default function AdminDeclarations() {
                       <div>
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">Description</span>
                         <p className="text-sm text-gray-600 bg-gray-50 rounded-xl p-3">{selected.description}</p>
+                      </div>
+                    )}
+                    {selected.metadata && Object.keys(selected.metadata).length > 0 && (
+                      <div>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-0.5">Informations complémentaires</span>
+                        <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
+                          {Object.entries(selected.metadata).map(([label, value]) => (
+                            <div key={label} className="flex items-center gap-2 text-sm">
+                              <span className="font-semibold text-gray-500">{label} :</span>
+                              <span className="text-gray-700">{value || "—"}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

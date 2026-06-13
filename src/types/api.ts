@@ -132,6 +132,7 @@ export interface Declaration {
   mode_contact?: string;
   consent?: boolean;
   found_location?: string;
+  metadata?: Record<string, string>;
   is_lost?: boolean;
   is_found?: boolean;
   reference?: string;

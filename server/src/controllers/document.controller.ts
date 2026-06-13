@@ -18,9 +18,9 @@ export const registerMyDocument = async (req: Request, res: Response) => {
       });
     }
 
-    // Handle uploaded files
-    const photo_recto = files?.photo_recto?.[0]?.path;
-    const photo_verso = files?.photo_verso?.[0]?.path;
+    // Handle uploaded files (prefer multer files, fallback to body URLs)
+    const photo_recto = files?.photo_recto?.[0]?.path || data.photo_recto || null;
+    const photo_verso = files?.photo_verso?.[0]?.path || data.photo_verso || null;
 
     // 1. Validate subscription limits
     const validation = await subscriptionService.validateAction(userId, 'REGISTER_OBJECT');

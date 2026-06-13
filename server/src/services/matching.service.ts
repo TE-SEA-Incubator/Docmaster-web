@@ -224,7 +224,26 @@ export class MatchingService {
       score += 20;
     }
 
-    // 4. Object Type (Already filtered by doc_type, but we can refine if needed)
+    // 3.5 Neighborhood (Quartier)
+    if (d1.quartier && d2.quartier && d1.quartier.toLowerCase() === d2.quartier.toLowerCase()) {
+      score += 10;
+    }
+
+    // 4. Date proximity (loss vs found date)
+    if (d1.date_perte && d2.date_perte) {
+      const diff = Math.abs(new Date(d1.date_perte).getTime() - new Date(d2.date_perte).getTime());
+      const daysDiff = diff / (1000 * 60 * 60 * 24);
+      if (daysDiff <= 3) score += 15;
+      else if (daysDiff <= 7) score += 10;
+      else if (daysDiff <= 14) score += 5;
+    }
+
+    // 5. Physical condition match
+    if (d1.etat_physique && d2.etat_physique && d1.etat_physique === d2.etat_physique) {
+      score += 5;
+    }
+
+    // 6. Object Type (Already filtered by doc_type, but we can refine if needed)
     score += 10; 
 
     return Math.min(score, 100);

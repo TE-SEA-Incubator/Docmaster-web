@@ -21,6 +21,7 @@ interface DeclarationExtended extends Declaration {
   etat_physique?: string;
   date_expiration?: string;
   document_number?: string;
+  metadata?: Record<string, string>;
 }
 
 type Filter = "all" | "perdu" | "trouve";
@@ -403,6 +404,16 @@ export default function MesDeclarations() {
                     "{detailItem.description || t("mesdeclarations_no_description")}"
                   </div>
                 </div>
+
+                {/* Metadata */}
+                {detailItem.metadata && Object.keys(detailItem.metadata).length > 0 && (
+                  <div className="pt-4 border-t border-borda space-y-2">
+                    <p className="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-2">Informations complémentaires</p>
+                    {Object.entries(detailItem.metadata).map(([label, value]) => (
+                      <DetailRow key={label} icon="fa-solid fa-tag" label={label} value={value || "—"} />
+                    ))}
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="pt-4 sm:pt-6 flex flex-col gap-2 sm:gap-3">

@@ -119,6 +119,14 @@ export class CreateDeclarationDTO {
   @MaxLength(100)
   transactions_id?: string;
 
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  quartier?: string;
+
+  @IsOptional()
+  metadata?: any;
+
   // 🔥 CONTOURNEMENT : On accepte soit une String JSON (FormData) soit un Objet, sans forcer la sous-validation lourde
   @IsOptional()
   found_location?: string | any;

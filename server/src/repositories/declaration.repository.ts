@@ -15,8 +15,8 @@ export class DeclarationRepository {
         fingerprint, found_location, etat_physique, photo_recto, 
         photo_verso, description, date_expiration, mode_contact, 
         payment_status, transactions_id, date_naissance, urgence_niveau, recompense_montant, date_perte,
-        telephone_contact, email_contact, metadata
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
+        telephone_contact, email_contact, quartier, metadata
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
       RETURNING *
     `;
 
@@ -47,6 +47,7 @@ export class DeclarationRepository {
       data.date_perte || null,
       data.telephone_contact || null,
       data.email_contact || null,
+      data.quartier || null,
       data.metadata ? JSON.stringify(data.metadata) : null,
     ];
 
@@ -270,9 +271,10 @@ export class DeclarationRepository {
         date_expiration = COALESCE($15, date_expiration),
         telephone_contact = COALESCE($16, telephone_contact),
         email_contact = COALESCE($17, email_contact),
-        mode_contact = COALESCE($18, mode_contact),
-        found_location = COALESCE($19, found_location)
-      WHERE id = $20 AND reporter_id = $21
+        quartier = COALESCE($18, quartier),
+        mode_contact = COALESCE($19, mode_contact),
+        found_location = COALESCE($20, found_location)
+      WHERE id = $21 AND reporter_id = $22
       RETURNING *`;
 
     const { rows } = await pool.query(query, [
@@ -293,6 +295,7 @@ export class DeclarationRepository {
       data.date_expiration,
       data.telephone_contact,
       data.email_contact,
+      data.quartier,
       data.mode_contact,
       data.found_location ? JSON.stringify(data.found_location) : null,
       id,

@@ -46,6 +46,16 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
       }
     }
 
+    // Parse metadata from FormData JSON string
+    if (req.body.metadata && typeof req.body.metadata === 'string') {
+      try {
+        req.body.metadata = JSON.parse(req.body.metadata);
+      } catch (e) {
+        console.error('❌ Erreur parsing metadata (Lost):', e);
+        req.body.metadata = undefined;
+      }
+    }
+
     // Extract files
     const photo_recto = files?.photo_recto?.[0]?.path;
     const photo_verso = files?.photo_verso?.[0]?.path;
@@ -147,6 +157,17 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
             errors: { "found_location": ["La localisation est mal formée (city, lat et long requis)"] }
           });
         }
+      }
+    }
+
+    // Parse metadata from FormData JSON string
+    if (req.body.metadata && typeof req.body.metadata === 'string') {
+      try {
+        req.body.metadata = JSON.parse(req.body.metadata);
+        console.log('🟢 [Controller] metadata parsé avec succès');
+      } catch (e) {
+        console.error('❌ [Controller] Erreur parsing metadata:', e);
+        req.body.metadata = undefined;
       }
     }
 
