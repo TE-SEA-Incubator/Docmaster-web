@@ -74,9 +74,121 @@ router.post('/request', authMiddleware, controller.requestWithdrawal);
  */
 router.get('/my-requests', authMiddleware, controller.getMyWithdrawals);
 
-// Admin routes (should be protected by admin middleware, but for now we'll just add them)
+/**
+ * @swagger
+ * /withdrawals/admin/pending:
+ *   get:
+ *     summary: Lister les demandes de retrait en attente (Admin)
+ *     tags: [Withdrawals]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des demandes en attente
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               data:
+ *                 - id: "uuid"
+ *                   user_id: "uuid"
+ *                   amount: 5000
+ *                   currency: "FCFA"
+ *                   payment_method: "MTN_MOMO"
+ *                   payment_details: "677000000"
+ *                   status: "PENDING"
+ *                   created_at: "2024-06-15T10:00:00Z"
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get('/admin/pending', authMiddleware, controller.getAllPendingWithdrawals);
+
+/**
+ * @swagger
+ * /withdrawals/admin/approve/{id}:
+ *   post:
+ *     summary: Approuver une demande de retrait (Admin)
+ *     tags: [Withdrawals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Identifiant UUID de la demande de retrait
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               admin_comment: { type: string, example: "Retrait approuvé" }
+ *     responses:
+ *       200:
+ *         description: Demande approuvée
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Demande de retrait approuvée"
+ *               data: { id: "uuid", status: "APPROVED" }
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       404:
+ *         description: Demande introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post('/admin/approve/:id', authMiddleware, controller.approveWithdrawal);
+
+/**
+ * @swagger
+ * /withdrawals/admin/reject/{id}:
+ *   post:
+ *     summary: Rejeter une demande de retrait (Admin)
+ *     tags: [Withdrawals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Identifiant UUID de la demande de retrait
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               admin_comment: { type: string, example: "Fonds insuffisants" }
+ *     responses:
+ *       200:
+ *         description: Demande rejetée
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Demande de retrait rejetée"
+ *               data: { id: "uuid", status: "REJECTED" }
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       404:
+ *         description: Demande introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post('/admin/reject/:id', authMiddleware, controller.rejectWithdrawal);
 
 export default router;

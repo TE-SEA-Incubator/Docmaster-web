@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { documentsService } from "../../services/documentsService";
 import type { Document } from "../../types/api";
 import { useI18n } from "../../context/I18nContext";
 
@@ -10,174 +11,110 @@ interface ShareModalProps {
 
 export default function ShareModal({ doc, onClose }: ShareModalProps) {
   const { t } = useI18n();
-  const [copied, setCopied] = useState(false);
-  const [method, setMethod] = useState<"link" | "email">("link");
+  const [duration, setDuration] = useState("7");
+  const [generating, setGenerating] = useState(false);
+  const [shareLink, setShareLink] = useState("");
+  const [error, setError] = useState("");
 
-  const shareLink = `${window.location.origin}/documents/${doc.id}`;
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(shareLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const generateLink = async () => {
+    setGenerating(true);
+    setError("");
+    try {
+      const days = parseInt(duration);
+      const res = await documentsService.createShare(doc.id, isNaN(days) ? undefined : days);
+      setShareLink(res.data?.shareUrl || "");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Erreur lors de la génération du lien");
+    } finally {
+      setGenerating(false);
+    }
   };
 
-  const shareMethods = [
-    {
-      id: "email",
-      label: t("share_email"),
-      icon: "fa-envelope",
-      color: "from-blue-500 to-blue-600",
-    },
-    {
-      id: "whatsapp",
-      label: t("share_whatsapp"),
-      icon: "fa-whatsapp",
-      color: "from-green-500 to-green-600",
-    },
-    {
-      id: "link",
-      label: t("share_copy_link"),
-      icon: "fa-link",
-      color: "from-slate-600 to-slate-700",
-    },
+  const copyLink = () => {
+    if (shareLink) navigator.clipboard.writeText(shareLink);
+  };
+
+  const durationOptions = [
+    { value: "1", label: t("share_expire_24h") || "24 heures" },
+    { value: "7", label: t("share_expire_7d") || "7 jours" },
+    { value: "30", label: t("share_expire_30d") || "30 jours" },
+    { value: "0", label: t("share_permanent") || "Permanent" },
   ];
 
   return createPortal(
-    <div
-      className="modal-overlay"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      style={{ zIndex: 210 }}
-    >
-      <div 
-        className="w-full md:max-w-md bg-white rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-5 md:zoom-in-95 modal-box"
-        style={{ padding: 0 }}
-      >
-        {/* Grab handle for mobile */}
-        <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-3 md:hidden" />
-
-        {/* Header */}
-        <div className="px-6 py-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bricolage text-2xl font-black text-slate-900">
-              {t("share_title")}
-            </h3>
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
-            >
-              <i className="fa-solid fa-xmark text-lg" />
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()} style={{ zIndex: 210 }}>
+      <div className="modal-box max-w-lg w-[90%] overflow-hidden border border-slate-200 shadow-2xl bg-white animate-in">
+        <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mt-3 mb-1 md:hidden" />
+        <div className="p-8 md:p-10">
+          <div className="flex justify-between items-start mb-8">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-900 shadow-sm">
+                <i className="fa-solid fa-paper-plane" />
+              </div>
+              <div>
+                <h3 className="font-bricolage text-2xl font-extrabold text-slate-900 leading-tight">{t("share_secure_heading")}</h3>
+                <p className="text-[12px] text-slate-500 font-medium">{t("share_secure_subtitle")}</p>
+              </div>
+            </div>
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors">
+              <i className="fa-solid fa-xmark" />
             </button>
           </div>
-          <p className="text-sm text-slate-600">
-            {doc.nom_sur_doc || "Document"}
-          </p>
-        </div>
 
-        {/* Content */}
-        <div className="px-6 py-6 space-y-6">
-          {/* Quick Share Methods */}
-          <div className="space-y-3">
-            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
-              {t("share_quick")}
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              {shareMethods.map((method) => (
-                <button
-                  key={method.id}
-                  className={`py-4 rounded-2xl font-bold text-white transition-all active:scale-95 flex flex-col items-center gap-2 ${
-                    method.id === "link"
-                      ? "bg-gradient-to-br from-slate-600 to-slate-700"
-                      : `bg-gradient-to-br ${method.color}`
-                  }`}
-                >
-                  <i className={`fa-brands ${method.icon} text-xl`} />
-                  <span className="text-xs font-bold">{method.label}</span>
-                </button>
-              ))}
+          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 mb-8 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center border border-slate-200">
+              <i className="fa-solid fa-file-shield text-slate-600" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{t("share_file_selected")}</p>
+              <p className="text-[14px] font-extrabold text-slate-900">{doc.nom_sur_doc || "Document"}</p>
             </div>
           </div>
 
-          {/* Link Share */}
-          <div className="space-y-3">
-            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
-              {t("share_link_heading")}
-            </p>
-            <div className="flex gap-2">
-              <div className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 font-mono overflow-hidden text-ellipsis whitespace-nowrap">
-                {shareLink}
+          <div className="space-y-6">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 mb-2 uppercase tracking-widest ml-1">{t("share_validity")}</label>
+              <div className="relative">
+                <select value={duration} onChange={(e) => { setDuration(e.target.value); setShareLink(""); }}
+                  className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl font-poppins text-[14px] text-slate-700 outline-none focus:border-primary transition-all appearance-none cursor-pointer">
+                  {durationOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <i className="fa-solid fa-chevron-down absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
               </div>
-              <button
-                onClick={copyToClipboard}
-                className={`px-4 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all ${
-                  copied
-                    ? "bg-emerald-500 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {copied ? (
-                  <>
-                    <i className="fa-solid fa-check mr-2" /> {t("share_copied")}
-                  </>
-                ) : (
-                  <>
-                    <i className="fa-solid fa-copy mr-2" /> {t("share_copy")}
-                  </>
-                )}
+            </div>
+
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-[13px] text-red-700 font-medium">
+                <i className="fa-solid fa-circle-exclamation mr-2" />{error}
+              </div>
+            )}
+
+            {shareLink ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl">
+                  <i className="fa-solid fa-check-circle text-green-600 flex-shrink-0" />
+                  <span className="text-[13px] text-green-800 font-medium flex-1 truncate">{shareLink}</span>
+                  <button onClick={copyLink}
+                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-[11px] font-bold hover:bg-green-700 transition-all flex-shrink-0">
+                    {t("share_copy")}
+                  </button>
+                </div>
+                <button onClick={() => setShareLink("")}
+                  className="w-full py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-[13px] hover:bg-slate-50 transition-all">
+                  {t("share_generate_new")}
+                </button>
+              </div>
+            ) : (
+              <button onClick={generateLink} disabled={generating}
+                className="w-full h-14 bg-green-dark text-white rounded-[18px] font-bold text-[14px] uppercase tracking-wider hover:bg-green-mid transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50">
+                {generating ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-link" />}
+                {generating ? t("share_generating") : t("share_generate")}
               </button>
-            </div>
+            )}
           </div>
-
-          {/* Permissions */}
-          <div className="space-y-3 p-4 bg-blue-50 rounded-2xl border border-blue-200">
-            <p className="text-xs font-black text-blue-700 uppercase tracking-widest">
-              <i className="fa-solid fa-shield-check mr-1.5" />
-              {t("share_secure_heading")}
-            </p>
-            <div className="space-y-2">
-              {[
-                { label: t("share_perm_read_only"), checked: true },
-                { label: t("share_perm_download"), checked: true },
-                { label: t("share_perm_share"), checked: false },
-              ].map((perm, i) => (
-                <label key={i} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    defaultChecked={perm.checked}
-                    className="w-4 h-4 rounded border-slate-300"
-                  />
-                  <span className="text-sm text-blue-900 font-medium">
-                    {perm.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Expiration */}
-          <div className="space-y-3">
-            <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
-              {t("share_expiration")}
-            </p>
-            <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:border-primary focus:outline-none">
-              <option value="7">{t("share_7days")}</option>
-              <option value="30">{t("share_30days")}</option>
-              <option value="90">{t("share_90days")}</option>
-              <option value="never">{t("share_never_expire")}</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 h-12 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-slate-50 transition-all"
-          >
-            {t("share_cancel")}
-          </button>
-          <button className="flex-1 h-12 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl font-bold text-sm uppercase tracking-wider hover:from-slate-800 hover:to-slate-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-            <i className="fa-solid fa-check" /> {t("share_confirm")}
-          </button>
         </div>
       </div>
     </div>,

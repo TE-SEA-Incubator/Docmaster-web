@@ -74,6 +74,7 @@ export default function Dashboard() {
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [skeletonDone, setSkeletonDone] = useState(false);
+  const [selectedPerfDoc, setSelectedPerfDoc] = useState<any>(null);
 
   const loading = docsLoading || notifsLoading || declsLoading || devLoading || gStatsLoading || perfLoading;
 
@@ -109,6 +110,7 @@ export default function Dashboard() {
   const docCount = docs.length;
   const lostCount = docs.filter((d) => d.is_lost).length || 0;
   const verifiedCount = docs.filter((d) => d.is_verified).length || 0;
+  const newCount = Math.max(0, docCount - verifiedCount - lostCount);
   const activeDecls = declarations.filter((d: Declaration) => !["RETURNED", "CANCELLED", "CLAIMED"].includes(d.status));
 
   const planName = subscription?.plan_name || "Standard";
@@ -117,6 +119,14 @@ export default function Dashboard() {
   const quotaPct = Math.min((docCountSub / docLimit) * 100, 100);
 
   const perfData = Array.isArray(perfStats) ? perfStats : [];
+
+  const CIRC = 2 * Math.PI * 50;
+  const donutTotal = docCount || 1;
+  const donutSegments = [
+    { count: verifiedCount, color: "#10B981" },
+    { count: lostCount, color: "#F5A64B" },
+    { count: newCount, color: "#7C3AED" },
+  ].filter((s) => s.count > 0);
 
   if (!skeletonDone && loading) {
     return (
@@ -257,7 +267,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {Array.isArray(perfData) && perfData.length > 0 ? (
                   perfData.slice(0, 8).map((doc: any, idx: number) => (
-                    <PerfCard key={doc.name || idx} doc={doc} />
+                    <PerfCard key={doc.name || idx} doc={doc} onClick={() => setSelectedPerfDoc(doc)} />
                   ))
                 ) : (
                   <>
@@ -281,9 +291,14 @@ export default function Dashboard() {
                 <div className="donut-wrap relative w-32 h-32">
                   <svg width="128" height="128" viewBox="0 0 128 128">
                     <circle cx="64" cy="64" r="50" fill="none" stroke="#EAE3D8" strokeWidth="13" />
-                    <circle cx="64" cy="64" r="50" fill="none" stroke="#10B981" strokeWidth="13" strokeDasharray="125.7 188.5" strokeDashoffset="0" />
-                    <circle cx="64" cy="64" r="50" fill="none" stroke="#F5A64B" strokeWidth="13" strokeDasharray="125.7 188.5" strokeDashoffset="-125.7" />
-                    <circle cx="64" cy="64" r="50" fill="none" stroke="#7C3AED" strokeWidth="13" strokeDasharray="62.8 251.3" strokeDashoffset="-251.3" />
+                    {donutSegments.map((seg, i) => {
+                      const prevArcs = donutSegments.slice(0, i).reduce((sum, s) => sum + (s.count / donutTotal) * CIRC, 0);
+                      const arc = (seg.count / donutTotal) * CIRC;
+                      return (
+                        <circle key={seg.color} cx="64" cy="64" r="50" fill="none" stroke={seg.color} strokeWidth="13"
+                          strokeDasharray={`${arc} ${CIRC - arc}`} strokeDashoffset={-prevArcs} />
+                      );
+                    })}
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <div className="font-bricolage text-[26px] font-extrabold text-textMain leading-none">{docCount}</div>
@@ -291,9 +306,9 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 w-full">
-                  <DonutRow color="bg-[#10B981]" label={t("dashboard_donut_recovered")} value={verifiedCount} />
-                  <DonutRow color="bg-primary" label={t("dashboard_donut_in_progress")} value={lostCount} />
-                  <DonutRow color="bg-[#7C3AED]" label={t("dashboard_donut_new")} value={Math.max(0, docCount - verifiedCount - lostCount)} />
+                  {verifiedCount > 0 && <DonutRow color="bg-[#10B981]" label={t("dashboard_donut_recovered")} value={verifiedCount} />}
+                  {lostCount > 0 && <DonutRow color="bg-primary" label={t("dashboard_donut_in_progress")} value={lostCount} />}
+                  {newCount > 0 && <DonutRow color="bg-[#7C3AED]" label={t("dashboard_donut_new")} value={newCount} />}
                 </div>
               </div>
             </div>
@@ -304,7 +319,7 @@ export default function Dashboard() {
                 <div className="font-bricolage text-[14px] sm:text-[14.5px] font-bold text-textMain flex items-center gap-2">
                   <i className="fa-solid fa-bell text-primary text-[12px] sm:text-[13px]" /> {t("dashboard_notifications")}
                 </div>
-                <button onClick={() => setNotifModalOpen(true)} className="text-[11.5px] font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all">
+                <button onClick={() => (window as any).__openNotifModal?.()} className="text-[11.5px] font-semibold text-primary flex items-center gap-1 hover:gap-2 transition-all">
                   {t("dashboard_see_all")} <i className="fa-solid fa-arrow-right text-[9px]" />
                 </button>
               </div>
@@ -358,7 +373,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-
+      {selectedPerfDoc && <PerfModal doc={selectedPerfDoc} onClose={() => setSelectedPerfDoc(null)} />}
     </div>
   );
 }
@@ -543,12 +558,12 @@ function TrackingFoundCard({ decl, navigate }: { decl: Declaration; navigate: (p
 }
 
 const typeImages: Record<string, string> = {
-  CNI: "/src/assets/images/carte.jpeg",
-  PASSPORT: "/src/assets/images/passport.jpg",
-  PASSEPORT: "/src/assets/images/passport.jpg",
-  "PERMIS DE CONDUIRE": "/src/assets/images/app_mockup.png",
-  DIPLÔME: "/src/assets/images/devices_docs.png",
-  "CARTE BANCAIRE": "/src/assets/images/1.webp",
+  CNI: "/src/assets/images/cni-poubelle.jpeg",
+  PASSPORT: "/src/assets/images/passport.png",
+  PASSEPORT: "/src/assets/images/passport.png",
+  "PERMIS DE CONDUIRE": "/src/assets/images/permis.jpg",
+  DIPLÔME: "/src/assets/images/bacc.png",
+  "CARTE BANCAIRE": "/src/assets/images/1.png",
   "CARTE GRISE": "/src/assets/images/docmaster.png",
 };
 
@@ -563,7 +578,7 @@ const typeConfigs: Record<string, { icon: string; color: string; label: string }
   DEFAULT: { icon: "fa-file-lines", color: "bg-gray-50 text-gray-600", label: "dashboard_label_doc" },
 };
 
-function PerfCard({ doc }: { doc: any }) {
+function PerfCard({ doc, onClick }: { doc: any; onClick?: () => void }) {
   const { t } = useI18n();
   const name = (doc.name || "").toUpperCase();
   const cfg = typeConfigs[name] || typeConfigs.DEFAULT;
@@ -574,7 +589,7 @@ function PerfCard({ doc }: { doc: any }) {
   const activityText = latest ? `${latest.type === "LOST" ? t("dashboard_perf_lost") : t("dashboard_perf_found")} ${timeAgo(latest.date, t)}${latest.ville ? ` ${t("dashboard_perf_in")} ${latest.ville}` : ""}` : t("dashboard_perf_no_activity");
 
   return (
-    <div className="bg-white border border-borda rounded-2xl overflow-hidden hover:border-primary/50 transition-all group cursor-pointer shadow-sm">
+    <div onClick={onClick} className="bg-white border border-borda rounded-2xl overflow-hidden hover:border-primary/50 transition-all group cursor-pointer shadow-sm">
       <div className="relative h-24 overflow-hidden bg-surface2">
         <img src={typeImages[name] || "/src/assets/images/devices_docs.png"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-90" alt={doc.name} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60" />
@@ -611,6 +626,103 @@ function SkeletonCard() {
     <div className="animate-pulse bg-white border border-borda rounded-2xl p-4 h-32">
       <div className="h-4 bg-bgMain rounded w-3/4 mb-3" />
       <div className="h-3 bg-bgMain rounded w-1/2" />
+    </div>
+  );
+}
+
+function PerfModal({ doc, onClose }: { doc: any; onClose: () => void }) {
+  const { t } = useI18n();
+  const { navigate } = useNavigate();
+  const name = (doc.name || "").toUpperCase();
+  const cfg = typeConfigs[name] || typeConfigs.DEFAULT;
+  const image = typeImages[name] || "/src/assets/images/devices_docs.png";
+  const trend = parseFloat(doc.trend) || 0;
+  const isUp = trend >= 0;
+  const recentItems = doc.recent_items || [];
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end md:items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-hidden shadow-2xl mx-4 flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="relative h-44 overflow-hidden flex-shrink-0">
+          <img src={image} alt={doc.name} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+            <i className="fa-solid fa-xmark text-sm" />
+          </button>
+          <div className="absolute bottom-3 left-4 flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl ${cfg.color} flex items-center justify-center`}>
+              <i className={`fa-solid ${cfg.icon} text-lg`} />
+            </div>
+            <div>
+              <div className="text-white font-bricolage text-lg font-extrabold">{t(cfg.label)}</div>
+              <div className={`text-[11px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${isUp ? "bg-green-500/20 text-green-200" : "bg-red-500/20 text-red-200"}`}>
+                <i className={`fa-solid ${isUp ? "fa-arrow-up" : "fa-arrow-down"} text-[8px]"}`} /> {Math.abs(trend)}%
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-surface2 rounded-xl p-3 text-center">
+              <div className="font-bricolage text-xl font-extrabold text-textMain">{(parseInt(doc.count) || 0).toLocaleString()}</div>
+              <div className="text-[10px] text-textMuted font-medium">{t("dashboard_perf_this_month")}</div>
+            </div>
+            <div className="bg-surface2 rounded-xl p-3 text-center">
+              <div className="font-bricolage text-xl font-extrabold text-textMain">{(parseInt(doc.previous_count) || 0).toLocaleString()}</div>
+              <div className="text-[10px] text-textMuted font-medium">{t("dashboard_perf_last_month")}</div>
+            </div>
+            <div className="bg-surface2 rounded-xl p-3 text-center">
+              <div className={`font-bricolage text-xl font-extrabold ${isUp ? "text-green-600" : trend < 0 ? "text-red-500" : "text-textMain"}`}>
+                {isUp ? "+" : ""}{trend}%
+              </div>
+              <div className="text-[10px] text-textMuted font-medium">{t("dashboard_perf_trend")}</div>
+            </div>
+          </div>
+
+          {recentItems.length > 0 && (
+            <div>
+              <h4 className="font-bricolage text-[13px] font-bold text-textMain mb-2 flex items-center gap-2">
+                <i className="fa-solid fa-clock-rotate-left text-primary text-[11px]" /> {t("dashboard_perf_recent")}
+              </h4>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {recentItems.slice(0, 8).map((item: any, i: number) => {
+                  const isLost = item.type === "LOST";
+                  const dateStr = item.date ? new Date(item.date).toLocaleDateString("fr-FR") : "";
+                  return (
+                    <div key={item.id || i} className="flex items-center gap-3 bg-surface2 rounded-xl px-3 py-2.5">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isLost ? "bg-amber-100" : "bg-green-100"}`}>
+                        <i className={`fa-solid ${isLost ? "fa-arrow-down text-amber-600" : "fa-arrow-up text-green-600"} text-xs`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] font-semibold text-textMain truncate">
+                          {isLost ? t("dashboard_perf_lost") : t("dashboard_perf_found")}
+                        </div>
+                        <div className="text-[10px] text-textMuted italic flex items-center gap-1">
+                          {item.ville && <><i className="fa-solid fa-location-dot text-[8px]" /> {item.ville} · </>}
+                          <i className="fa-regular fa-clock text-[8px]" /> {dateStr}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {recentItems.length === 0 && (
+            <div className="text-center py-6 text-textMuted text-xs italic">
+              <i className="fa-solid fa-inbox text-2xl text-gray-200 block mb-2" /> {t("dashboard_perf_no_activity")}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-shrink-0 border-t border-borda p-4 flex justify-end">
+          <button onClick={() => { onClose(); navigate("/mes-declarations"); }} className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-dark transition-all flex items-center gap-2">
+            {t("dashboard_perf_view_all")} <i className="fa-solid fa-arrow-right text-[9px]" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

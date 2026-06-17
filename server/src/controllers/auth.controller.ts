@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/auth.service.ts';
 import { generateToken } from '../config/jwt.ts';
+import { activityLogService } from '../services/activity-log.service.ts';
 
 export class AuthController {
   private userService = new UserService();
@@ -53,6 +54,16 @@ export class AuthController {
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
       });
 
+      activityLogService.log({
+        user_id: user.id,
+        action_type: 'REGISTER',
+        entity_type: 'user',
+        entity_id: user.id,
+        description: `Inscription de ${user.prenom} ${user.nom}`,
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+      }).catch(() => {});
+
       res.status(201).json({
         message: 'User registered successfully',
         user: userWithoutPassword,
@@ -92,6 +103,16 @@ export class AuthController {
         sameSite: 'strict',
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
       });
+
+      activityLogService.log({
+        user_id: user.id,
+        action_type: 'LOGIN',
+        entity_type: 'user',
+        entity_id: user.id,
+        description: `Connexion de ${user.prenom} ${user.nom}`,
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+      }).catch(() => {});
 
       res.status(200).json({
         message: 'Login successful',
@@ -229,6 +250,17 @@ export class AuthController {
       }
 
       const { mot_de_passe: _, ...userWithoutPassword } = updatedUser;
+
+      activityLogService.log({
+        user_id: userId,
+        action_type: 'UPDATE_PROFILE',
+        entity_type: 'user',
+        entity_id: userId,
+        description: `Mise à jour du profil`,
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+      }).catch(() => {});
+
       res.status(200).json({
         message: 'Profile updated successfully',
         user: userWithoutPassword

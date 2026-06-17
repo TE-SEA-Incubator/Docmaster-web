@@ -45,7 +45,23 @@ class SubscriptionService {
     // 2. Handle Payment
     if (plan.price > 0) {
       const orderId = `SUB-${uuidv4().substring(0, 8)}`;
-      
+      const amountToPay = plan.price * months;
+
+      if (paymentDetails.method === 'POINTS') {
+        const { pointsService } = await import('./points.service.ts');
+        const pointsNeeded = await pointsService.calculatePointsNeeded(amountToPay);
+        await pointsService.redeemPoints(userId, pointsNeeded, 'POINTS_REDEMPTION', `Paiement abonnement plan ${plan.name}`, { planId, months });
+        
+        // Log transaction
+        await query(
+          `INSERT INTO transactions (user_id, amount, currency, status, payment_method, type, external_ref, metadata) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [userId, amountToPay, 'POINTS', 'SUCCESS', 'POINTS', 'subscription', orderId, JSON.stringify({ planId, months, orderId })]
+        );
+        
+        return await this.activateSubscription(userId, planId, months);
+      }
+
       // Map frontend method to Nokash method
       let nokashMethod: any = 'MTN_MOMO';
       if (paymentDetails.method === 'ORANGE_MONEY') nokashMethod = 'ORANGE_MONEY';
@@ -53,7 +69,7 @@ class SubscriptionService {
 
       const nokashRes = await nokashService.initiatePayment({
         payment_method: nokashMethod,
-        amount: plan.price * months,
+        amount: amountToPay,
         order_id: orderId,
         user_phone: paymentDetails.phone,
         country: 'CM'
@@ -78,11 +94,12 @@ class SubscriptionService {
 
       // Create PENDING transaction
       await query(
-        `INSERT INTO transactions (user_id, amount, status, payment_method, type, external_ref, metadata) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        `INSERT INTO transactions (user_id, amount, currency, status, payment_method, type, external_ref, metadata) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
           userId, 
-          plan.price * months, 
+          amountToPay, 
+          'XAF',
           'PENDING', 
           paymentDetails.method || 'MOMO', 
           'subscription', 
@@ -257,8 +274,9 @@ class SubscriptionService {
 
       case 'ADD_ALERT': {
         const alertType = metadata.alertType; // 'email', 'sms', 'push'
-        const allowedAlerts = features.alerts || [];
-        if (!allowedAlerts.includes(alertType) && !allowedAlerts.includes('all')) {
+        const key = alertType === 'sms' ? 'sms_alerts' : alertType === 'email' ? 'email_alerts' : alertType;
+        const allowed = features[key] === true || features.alerts?.includes(alertType) || features.alerts?.includes('all');
+        if (!allowed) {
           return { 
             allowed: false, 
             reason: `Votre plan ne supporte pas les alertes par ${alertType}.`
@@ -273,6 +291,17 @@ class SubscriptionService {
           return { 
             allowed: false, 
             reason: "Géolocalisation avancée non incluse dans votre plan."
+          };
+        }
+        return { allowed: true };
+      }
+
+      case 'EXPIRATION_MGMT': {
+        const allowed = features.expiration_management === true;
+        if (!allowed) {
+          return {
+            allowed: false,
+            reason: "Votre plan ne permet pas de définir une date d'expiration sur les documents. Passez à une offre supérieure."
           };
         }
         return { allowed: true };

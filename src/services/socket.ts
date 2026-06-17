@@ -38,7 +38,9 @@ class SocketService {
     if (!token) return null;
 
     this.isInitialized = true;
-    const socketUrl = API_BASE_URL.replace("/api", "");
+    // URL de base pour socket.io doit être la racine du domaine/port de l'API
+    // On extrait la partie base de l'URL sans le /api
+    const socketUrl = API_BASE_URL.replace(/\/api\/?$/, "");
 
     this.socket = io(socketUrl, {
       auth: { token },
@@ -63,6 +65,30 @@ class SocketService {
 
     this.socket.on("notification", (notification: AppNotification) => {
       this.handleNotification(notification);
+    });
+
+    this.socket.on("MATCHING:CYCLE_START", (data: unknown) => {
+      window.dispatchEvent(new CustomEvent("docmaster:matching-cycle-start", { detail: data }));
+    });
+
+    this.socket.on("MATCHING:CHECKING", (data: unknown) => {
+      window.dispatchEvent(new CustomEvent("docmaster:matching-checking", { detail: data }));
+    });
+
+    this.socket.on("MATCHING:MATCH_FOUND", (data: unknown) => {
+      window.dispatchEvent(new CustomEvent("docmaster:matching-match-found", { detail: data }));
+    });
+
+    this.socket.on("MATCHING:ATTEMPT", (data: unknown) => {
+      window.dispatchEvent(new CustomEvent("docmaster:matching-attempt", { detail: data }));
+    });
+
+    this.socket.on("MATCHING:CYCLE_END", (data: unknown) => {
+      window.dispatchEvent(new CustomEvent("docmaster:matching-cycle-end", { detail: data }));
+    });
+
+    this.socket.on("MATCHING:CYCLE_ERROR", (data: unknown) => {
+      window.dispatchEvent(new CustomEvent("docmaster:matching-cycle-error", { detail: data }));
     });
 
     this.socket.io?.on?.("reconnect_attempt", () => {

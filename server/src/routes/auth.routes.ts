@@ -184,6 +184,43 @@ router.get('/profile', authMiddleware, (req, res) => authController.getProfile(r
  */
 router.put('/profile', authMiddleware, upload.single('photo_profile'), (req, res) => authController.updateProfile(req, res));
 
+/**
+ * @swagger
+ * /auth/password:
+ *   put:
+ *     summary: Changer le mot de passe de l'utilisateur connecté
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword: { type: string, example: "ancien_mdp123" }
+ *               newPassword: { type: string, example: "nouveau_mdp456!" }
+ *     responses:
+ *       200:
+ *         description: Mot de passe changé avec succès
+ *         content:
+ *           application/json:
+ *             example: { message: "Password changed successfully" }
+ *       400:
+ *         description: Champs manquants
+ *         content:
+ *           application/json:
+ *             example: { error: "Current password and new password are required" }
+ *       401:
+ *         description: Mot de passe actuel incorrect
+ *         content:
+ *           application/json:
+ *             example: { error: "Current password is incorrect" }
+ *       500:
+ *         description: Erreur serveur
+ */
 router.put('/password', authMiddleware, (req, res) => authController.changePassword(req, res));
 
 /**

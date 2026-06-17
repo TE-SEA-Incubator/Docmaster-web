@@ -55,6 +55,9 @@ export interface Document {
   date_expiration?: string;
   nom_autorite?: string;
   notes?: string;
+  validity_option?: 'EXPIRING' | 'PERMANENT';
+  is_archived?: boolean;
+  archived_at?: string;
   created_at: string;
   updated_at?: string;
   [key: string]: unknown;
@@ -136,6 +139,21 @@ export interface Declaration {
   is_lost?: boolean;
   is_found?: boolean;
   reference?: string;
+}
+
+export type MatchStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED';
+
+export interface Match {
+  id: string;
+  lost_declaration_id: string;
+  found_declaration_id: string;
+  score: number;
+  status: MatchStatus;
+  created_at: string;
+  updated_at?: string;
+  // Joined declarations for display
+  lost_declaration?: Declaration;
+  found_declaration?: Declaration;
 }
 
 export interface Notification {

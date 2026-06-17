@@ -41,12 +41,12 @@ export function useDocuments() {
     return res;
   }, [fetch]);
 
-  const share = useCallback(async (data: { document_id: string; email?: string; code_partage?: string }) => {
-    const res = await documentsService.share(data);
+  const createShare = useCallback(async (documentId: string, daysValid?: number) => {
+    const res = await documentsService.createShare(documentId, daysValid);
     return res;
   }, []);
 
-  return { documents, loading, error, fetch, register, remove, reportLost, share };
+  return { documents, loading, error, fetch, register, remove, reportLost, createShare };
 }
 
 export function useDocumentShare(code?: string) {

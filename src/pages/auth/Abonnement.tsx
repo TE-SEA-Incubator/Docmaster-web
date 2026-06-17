@@ -1,11 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { subscriptionsService } from "../../services/subscriptionsService";
-import { paymentsService } from "../../services/paymentsService";
+import { paymentsService, type SavedPaymentMethod } from "../../services/paymentsService";
 import { useI18n } from "../../context/I18nContext";
 import Topbar from "../../layout/Topbar";
 import PaymentModal from "../../components/modals/PaymentModal";
+import SuccessModal from "../../components/modals/Successmodal";
 import type { Plan, Transaction } from "../../types/api";
+
+const METHOD_ICONS: Record<string, { icon: string; color: string; bg: string }> = {
+  MTN: { icon: "fa-mobile-screen-button", color: "text-yellow-500", bg: "bg-yellow-50" },
+  ORANGE: { icon: "fa-mobile-screen-button", color: "text-orange-500", bg: "bg-orange-50" },
+  BANK: { icon: "fa-university", color: "text-blue-400", bg: "bg-blue-50" },
+};
 
 export default function Abonnement() {
   const { user } = useAuth();
@@ -31,10 +38,17 @@ export default function Abonnement() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [processing, setProcessing] = useState(false);
   const [payError, setPayError] = useState("");
+  const [paySuccess, setPaySuccess] = useState(false);
   const [pollingStatus, setPollingStatus] = useState<string | null>(null);
 
   // Cancel modal
   const [cancelOpen, setCancelOpen] = useState(false);
+
+  // Payment methods
+  const [savedMethods, setSavedMethods] = useState<SavedPaymentMethod[]>([]);
+  const [showMethodsModal, setShowMethodsModal] = useState(false);
+  const [showAddMethodModal, setShowAddMethodModal] = useState(false);
+  const [addMethodType, setAddMethodType] = useState<"MTN" | "ORANGE" | "BANK">("MTN");
 
   const today = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
@@ -68,11 +82,21 @@ export default function Abonnement() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  const fetchMethods = useCallback(async () => {
+    try {
+      const res = await paymentsService.getPaymentMethods();
+      if (res.success && res.data) setSavedMethods(res.data);
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchMethods(); }, [fetchMethods]);
+
   // ── Subscribe ──
   const openSubscribeModal = (plan: Plan) => {
     setSelectedPlan(plan);
     setPollingStatus(null);
     setPayError("");
+    setPaySuccess(false);
     setModalOpen(true);
   };
 
@@ -83,11 +107,18 @@ export default function Abonnement() {
     setPayError("");
   };
 
-  const handlePay = async (method: "orange" | "mtn", phone: string) => {
+  const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
+    // 1. Close modal immediately
+    closeSubscribeModal();
+    // 2. Set processing
     setProcessing(true);
     setPayError("");
     try {
-      const paymentMethod = method === "orange" ? "ORANGE_MONEY" : "MTN_MOMO";
+      let paymentMethod = "";
+      if (method === "orange") paymentMethod = "ORANGE_MONEY";
+      else if (method === "mtn") paymentMethod = "MTN_MOMO";
+      else paymentMethod = "POINTS";
+      
       const months = billingPeriod === "annual" ? 12 : 1;
       const result = await subscriptionsService.subscribe({
         planId: selectedPlan!.id,
@@ -96,15 +127,21 @@ export default function Abonnement() {
         phone,
       });
       if (result.success) {
-        setPollingStatus(t("abonnement_payment_pending"));
-        startPolling();
+        if (paymentMethod === 'POINTS') {
+            setProcessing(false);
+            setPaySuccess(true);
+            loadData();
+        } else {
+            setPollingStatus(t("abonnement_payment_pending"));
+            startPolling();
+        }
       } else {
         setPayError(result.message || t("abonnement_subscribe_error"));
+        setProcessing(false);
       }
     } catch (e: any) {
       const msg = e.response?.data?.message || e.response?.data?.error || t("abonnement_subscribe_error");
       setPayError(msg);
-    } finally {
       setProcessing(false);
     }
   };
@@ -195,6 +232,23 @@ export default function Abonnement() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Loading Overlay */}
+      {processing && (
+        <div className="fixed inset-0 z-[10001] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="font-bold text-primary font-bricolage">Traitement du paiement...</p>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {paySuccess && (
+        <SuccessModal
+          refNumber="Paiement réussi"
+          onClose={() => setPaySuccess(false)}
+          onNewDeclaration={() => { setPaySuccess(false); }}
+          onMyDeclarations={() => { setPaySuccess(false); }}
+        />
+      )}
       <style>{`
         .plan-card { transition: all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .plan-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 50px rgba(0,0,0,.15); }
@@ -451,17 +505,34 @@ export default function Abonnement() {
             <h3 className="font-bricolage text-base font-bold text-textMain mb-4 flex items-center gap-2">
               <i className="fa-solid fa-credit-card text-primary text-sm" /> Moyen de paiement
             </h3>
-            <div className="flex items-center gap-3 p-3.5 bg-bgMain border border-borderMain rounded-[12px] mb-3">
-              <div className="w-10 h-7 bg-[#F96900] rounded-[6px] flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-[9px] font-extrabold tracking-tight">MTN</span>
+            {savedMethods.length === 0 ? (
+              <div className="p-4 text-center text-textMuted text-[12px] border border-dashed border-borderMain rounded-[12px] mb-3">
+                <i className="fa-solid fa-credit-card text-xl opacity-30 mb-2" />
+                <p>Aucun moyen de paiement enregistré</p>
               </div>
-              <div className="flex-1">
-                <div className="text-[13px] font-semibold text-textMain">MTN Mobile Money</div>
-                <div className="text-[11.5px] text-textMuted">{user?.telephone || "+237 6XX XXX XXX"}</div>
+            ) : (
+              <div className="space-y-2 mb-3">
+                {savedMethods.map((m) => {
+                  const mi = METHOD_ICONS[m.method_type] || METHOD_ICONS.MTN;
+                  return (
+                    <div key={m.id} className="flex items-center gap-3 p-3 bg-bgMain border border-borderMain rounded-[12px]">
+                      <div className={`w-9 h-9 rounded-[10px] ${mi.bg} flex items-center justify-center`}>
+                        <i className={`fa-solid ${mi.icon} ${mi.color} text-sm`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-textMain truncate">{m.account_name || `${m.method_type} - ${m.account_number}`}</p>
+                        <p className="text-[11px] text-textMuted">{m.account_number}{m.is_default ? " · Défaut" : ""}</p>
+                      </div>
+                      {m.is_default && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Actif</span>}
+                    </div>
+                  );
+                })}
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Actif</span>
-            </div>
-            <button className="w-full py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2">
+            )}
+            <button
+              onClick={() => { setAddMethodType("MTN"); setShowAddMethodModal(true); }}
+              className="w-full py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
+            >
               <i className="fa-solid fa-plus text-[11px]" /> Ajouter un moyen de paiement
             </button>
           </div>
@@ -656,6 +727,120 @@ export default function Abonnement() {
           </div>
         </div>
       )}
+
+      {/* ─── Add Payment Method Modal ─── */}
+      {showAddMethodModal && (
+        <SubscriptionAddMethodModal
+          methodType={addMethodType}
+          onClose={() => setShowAddMethodModal(false)}
+          onDone={() => { setShowAddMethodModal(false); fetchMethods(); }}
+          t={t}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ─── Add Payment Method Modal (for Abonnement page) ─── */
+
+function SubscriptionAddMethodModal({ methodType, onClose, onDone, t }: any) {
+  const [accountName, setAccountName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [validationErr, setValidationErr] = useState("");
+
+  const typeIcon = methodType === "BANK" ? "fa-university" : "fa-mobile-screen-button";
+  const typeColor = methodType === "MTN" ? "text-yellow-500" : methodType === "ORANGE" ? "text-orange-500" : "text-blue-400";
+  const typeBg = methodType === "MTN" ? "bg-yellow-50" : methodType === "ORANGE" ? "bg-orange-50" : "bg-blue-50";
+  const typeLabel = methodType === "BANK" ? "Virement bancaire" : `${methodType} Mobile Money`;
+
+  const handleSave = async () => {
+    setValidationErr("");
+    if (!accountNumber) return;
+
+    if (methodType === "MTN" || methodType === "ORANGE") {
+      const { validatePhone } = await import("../../utils/phoneValidation");
+      const err = validatePhone(accountNumber, methodType);
+      if (err) { setValidationErr(err); return; }
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      await paymentsService.createPaymentMethod({
+        method_type: methodType,
+        account_name: accountName,
+        account_number: accountNumber,
+        bank_name: methodType === "BANK" ? bankName : undefined,
+      });
+      setSuccess(true);
+      setTimeout(() => onDone(), 1200);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Erreur lors de l'enregistrement");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-[20px] w-[420px] max-w-[94vw] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b border-borda">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-[10px] ${typeBg} flex items-center justify-center`}>
+              <i className={`fa-solid ${typeIcon} ${typeColor} text-sm`} />
+            </div>
+            <h3 className="font-bricolage text-[16px] font-bold text-textMain">{typeLabel}</h3>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+            <i className="fa-solid fa-xmark text-textMuted" />
+          </button>
+        </div>
+
+        {success ? (
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-green-light flex items-center justify-center mx-auto mb-4">
+              <i className="fa-solid fa-check-circle text-green-mid text-3xl" />
+            </div>
+            <p className="font-bricolage text-[16px] font-bold text-textMain">Moyen de paiement enregistré</p>
+          </div>
+        ) : (
+          <div className="p-5 space-y-4">
+            {(error || validationErr) && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-[12px] text-red-600 text-[12px] font-semibold">
+                <i className="fa-solid fa-circle-exclamation mr-1" /> {error || validationErr}
+              </div>
+            )}
+            <div>
+              <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">Nom du compte</label>
+              <input type="text" value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="Ex: Jean Dupont"
+                className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
+            </div>
+            <div>
+              <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">Numéro de compte / mobile</label>
+              <input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)}
+                placeholder={methodType === "BANK" ? "Numéro de compte" : "+237 XXXXXXXXX"}
+                className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
+              {methodType === "MTN" && <p className="text-[11px] text-textMuted mt-1">{t("payment_phone_mtn_hint")}</p>}
+              {methodType === "ORANGE" && <p className="text-[11px] text-textMuted mt-1">{t("payment_phone_orange_hint")}</p>}
+            </div>
+            {methodType === "BANK" && (
+              <div>
+                <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">Nom de la banque</label>
+                <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="Ex: Société Générale"
+                  className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" />
+              </div>
+            )}
+            <button onClick={handleSave} disabled={saving || !accountNumber}
+              className="w-full py-3 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98] flex items-center justify-center gap-2">
+              {saving ? <><i className="fa-solid fa-spinner fa-spin" /> Enregistrement...</> : <><i className="fa-solid fa-floppy-disk" /> Enregistrer</>}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

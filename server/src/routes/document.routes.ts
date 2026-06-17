@@ -26,32 +26,39 @@ const router = Router();
  *     security:
  *       - bearerAuth: []
  *     requestBody:
+ *       required: true
  *       content:
  *         multipart/form-data:
  *           schema:
  *             type: object
  *             required: [type_doc, numero_doc, nom_complet]
  *             properties:
- *               type_doc: { type: string, example: "CNI" }
- *               numero_doc: { type: string, example: "123456789" }
- *               nom_complet: { type: string, example: "Jean Dupont" }
- *               date_expiration: { type: string, format: date }
- *               photo_recto: { type: string, format: binary }
- *               photo_verso: { type: string, format: binary }
+ *               type_doc: { type: string, example: "CNI", description: "Code du type de document (CNI, PASSEPORT, etc.)" }
+ *               numero_doc: { type: string, example: "123456789", description: "Numéro du document" }
+ *               nom_complet: { type: string, example: "Jean Dupont", description: "Nom complet tel qu'inscrit sur le document" }
+ *               nom_autorite: { type: string, example: "Ministère de l'Intérieur", description: "Autorité ayant délivré le document" }
+ *               date_delivrance: { type: string, format: date, example: "2020-01-15", description: "Date de délivrance du document" }
+ *               date_expiration: { type: string, format: date, example: "2030-01-15", description: "Date d'expiration du document" }
+ *               notes: { type: string, example: "Document en bon état", description: "Notes personnelles sur le document" }
+ *               photo_recto: { type: string, format: binary, description: "Photo du recto du document" }
+ *               photo_verso: { type: string, format: binary, description: "Photo du verso du document" }
  *     responses:
  *       201:
  *         description: Document enregistré avec succès
  *         content:
  *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserDocument'
  *             example:
  *               success: true
  *               message: "Document personnel enregistré avec succès"
- *               data: { id: "uuid", type_doc: "CNI", identifiant_doc_dm: "DM-12345" }
+ *               data: { id: "uuid", type_doc: "CNI", numero_doc: "123456789", identifiant_doc_dm: "DM-12345", status: "SAFE" }
  *       401:
  *         description: Non authentifié
  *         content:
  *           application/json:
- *             example: { success: false, message: "Utilisateur non authentifié" }
+ *             schema:
+ *               $ref: '#/components/schemas/Error401'
  *       403:
  *         description: Limite d'abonnement atteinte
  *         content:
@@ -61,25 +68,39 @@ const router = Router();
  *         description: Erreur serveur
  *         content:
  *           application/json:
- *             example: { success: false, message: "Erreur lors de l'enregistrement" }
+ *             schema:
+ *               $ref: '#/components/schemas/Error500'
  *   get:
- *     summary: Lister mes documents
+ *     summary: Lister mes documents personnels
  *     tags: [Documents]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Liste récupérée avec succès
+ *         description: Liste des documents récupérée avec succès
  *         content:
  *           application/json:
- *             example:
- *               success: true
- *               count: 2
- *               data: [{ id: "uuid", type_doc: "CNI", status: "SAFE", identifiant_doc_dm: "DM-123" }]
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 count: { type: integer, example: 2 }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/UserDocument'
  *       401:
  *         description: Non authentifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error401'
  *       500:
  *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error500'
  */
 router.post('/', authMiddleware, upload.fields([
   { name: 'photo_recto', maxCount: 1 },
@@ -92,7 +113,7 @@ router.get('/', authMiddleware, getMyDocuments);
  * @swagger
  * /documents/{id}:
  *   delete:
- *     summary: Supprimer un document
+ *     summary: Supprimer un document personnel
  *     tags: [Documents]
  *     security:
  *       - bearerAuth: []
@@ -102,6 +123,7 @@ router.get('/', authMiddleware, getMyDocuments);
  *         required: true
  *         schema:
  *           type: string
+ *         description: Identifiant UUID du document
  *     responses:
  *       200:
  *         description: Document supprimé avec succès
@@ -110,13 +132,22 @@ router.get('/', authMiddleware, getMyDocuments);
  *             example: { success: true, message: "Document supprimé avec succès" }
  *       401:
  *         description: Non authentifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error401'
  *       404:
  *         description: Document non trouvé ou non autorisé
  *         content:
  *           application/json:
- *             example: { success: false, message: "Document non trouvé ou accès non autorisé" }
+ *             schema:
+ *               $ref: '#/components/schemas/Error404'
  *       500:
  *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error500'
  */
 router.delete('/:id', authMiddleware, deleteDocument);
 
@@ -134,6 +165,7 @@ router.delete('/:id', authMiddleware, deleteDocument);
  *         required: true
  *         schema:
  *           type: string
+ *         description: Identifiant UUID du document
  *     requestBody:
  *       required: true
  *       content:
@@ -142,7 +174,7 @@ router.delete('/:id', authMiddleware, deleteDocument);
  *             type: object
  *             required: [password]
  *             properties:
- *               password: { type: string, example: "monmotdepasse123" }
+ *               password: { type: string, example: "monmotdepasse123", description: "Mot de passe de confirmation" }
  *     responses:
  *       200:
  *         description: Déclaration de perte enregistrée
@@ -156,8 +188,22 @@ router.delete('/:id', authMiddleware, deleteDocument);
  *             example: { success: false, message: "Mot de passe incorrect" }
  *       401:
  *         description: Non authentifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error401'
+ *       404:
+ *         description: Document introuvable
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error404'
  *       500:
  *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error500'
  */
 router.patch('/:id/lost', authMiddleware, reportDocumentLost);
 

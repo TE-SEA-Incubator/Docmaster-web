@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useI18n } from "../context/I18nContext";
 import { useNotifications } from "../hooks/useNotifications";
+import { getPhotoUrl } from "../utils/image";
 
 interface Breadcrumb {
   label: string;
@@ -147,9 +148,13 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
           to="/infos-profil"
           className="flex items-center gap-2 px-2 py-1 border border-[#E0D5C4] rounded-[10px] bg-white hover:border-primary transition-all"
         >
-          <div className="w-7 h-7 rounded-[8px] bg-gradient-to-br from-green-dark to-green-mid flex items-center justify-center font-bricolage text-xs font-extrabold text-white">
-            {user?.initial || "DM"}
-          </div>
+          {user?.photo_url ? (
+            <img src={getPhotoUrl(user.photo_url)} alt="" className="w-7 h-7 rounded-[8px] object-cover" />
+          ) : (
+            <div className="w-7 h-7 rounded-[8px] bg-gradient-to-br from-green-dark to-green-mid flex items-center justify-center font-bricolage text-xs font-extrabold text-white">
+              {user?.initial || "DM"}
+            </div>
+          )}
           <span className="text-xs font-semibold text-textMain hidden sm:block">{user?.prenom || ""}</span>
         </Link>
       </div>

@@ -4,6 +4,7 @@ import { SettingRepository } from '../repositories/setting.repository.js';
 import { UserRepository } from '../repositories/auth.repository.js';
 import { TransactionRepository } from '../repositories/transaction.repository.js';
 import { notificationService } from '../services/notification.service.js';
+import { activityLogService } from '../services/activity-log.service.js';
 import { pool } from '../database/db.js';
 
 const withdrawalRepo = new WithdrawalRepository();
@@ -33,6 +34,15 @@ export class WithdrawalController {
       }
 
       res.json({ success: true, message: 'Retrait approuvé et marqué comme terminé.', data: withdrawal });
+
+      activityLogService.log({
+        user_id: (req as any).user.id,
+        action_type: 'APPROVE_WITHDRAWAL',
+        entity_type: 'withdrawal',
+        entity_id: withdrawalId,
+        description: `Approbation du retrait de ${withdrawal.amount} XAF`,
+        metadata: { adminNote },
+      }).catch(() => {});
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
@@ -61,6 +71,15 @@ export class WithdrawalController {
       }
 
       res.json({ success: true, message: 'Retrait rejeté. Les fonds ont été restitués à l\'utilisateur.', data: withdrawal });
+
+      activityLogService.log({
+        user_id: (req as any).user.id,
+        action_type: 'REJECT_WITHDRAWAL',
+        entity_type: 'withdrawal',
+        entity_id: withdrawalId,
+        description: `Rejet du retrait de ${withdrawal.amount} XAF`,
+        metadata: { adminNote },
+      }).catch(() => {});
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
@@ -135,6 +154,17 @@ export class WithdrawalController {
         message: 'Demande de retrait enregistrée avec succès. Elle sera traitée sous peu.',
         data: withdrawal 
       });
+
+      activityLogService.log({
+        user_id: userId,
+        action_type: 'REQUEST_WITHDRAWAL',
+        entity_type: 'withdrawal',
+        entity_id: withdrawal.id,
+        description: `Demande de retrait de ${amount} XAF via ${paymentMethod}`,
+        metadata: { amount, paymentMethod },
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+      }).catch(() => {});
 
     } catch (error: any) {
       console.error('Withdrawal Request Error:', error);

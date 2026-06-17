@@ -14,6 +14,7 @@ const RechercherAuth = lazy(() => import("./pages/auth/Rechercher"));
 const Declarer = lazy(() => import("./pages/auth/Declarer"));
 const Recuperer = lazy(() => import("./pages/auth/Recuperer"));
 const Rendre = lazy(() => import("./pages/auth/Trouver"));
+const ValidationRemise = lazy(() => import("./pages/auth/ValidationRemise"));
 const Conditions = lazy(() => import("./pages/public/Conditions"));
 const Confidentialite = lazy(() => import("./pages/public/Confidentialite"));
 const SharedDocument = lazy(() => import("./pages/public/SharedDocument"));
@@ -37,6 +38,7 @@ const AdminDeclarations = lazy(() => import("./pages/admin/AdminDeclarations"));
 const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 const AdminDocumentTypes = lazy(() => import("./pages/admin/AdminDocumentTypes"));
 const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
+const AdminMatchingMonitor = lazy(() => import("./pages/admin/AdminMatchingMonitor"));
 
 export default function App() {
   return (
@@ -59,10 +61,10 @@ export default function App() {
           <Route path="/declarer" element={<ProtectedRoute><Declarer /></ProtectedRoute>} />
           <Route path="/recuperer" element={<ProtectedRoute><Recuperer /></ProtectedRoute>} />
           <Route path="/trouver" element={<Rendre />} />
+          <Route path="/remise" element={<ValidationRemise />} />
           <Route path="/conditions" element={<Conditions />} />
           <Route path="/confidentialite" element={<Confidentialite />} />
           <Route path="/partage" element={<SharedDocument />} />
-          <Route path="/partage.html" element={<SharedDocument />} />
 
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/mes-documents" element={<ProtectedRoute><MesDocuments /></ProtectedRoute>} />
@@ -88,6 +90,7 @@ export default function App() {
           <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
           <Route path="/admin/document-types" element={<AdminDocumentTypes />} />
           <Route path="/admin/activity-log" element={<AdminActivityLog />} />
+          <Route path="/admin/matching" element={<AdminMatchingMonitor />} />
         </Route>
       </Routes>
     </Suspense>

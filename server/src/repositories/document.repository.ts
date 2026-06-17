@@ -10,9 +10,10 @@ export class DocumentRepository {
       INSERT INTO my_documents (
         user_id, type_doc, numero_doc, nom_sur_doc, 
         date_expiration, date_delivrance, nom_autorite, notes,
-        fingerprint, photo_recto, photo_verso, is_protected
+        fingerprint, photo_recto, photo_verso, is_protected,
+        validity_option
       ) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
       RETURNING *`;
 
     const { rows } = await pool.query(query, [
@@ -27,7 +28,8 @@ export class DocumentRepository {
       data.fingerprint,
       data.photo_recto,
       data.photo_verso,
-      data.is_protected !== undefined ? data.is_protected : true
+      data.is_protected !== undefined ? data.is_protected : true,
+      data.validity_option || 'EXPIRING'
     ]);
 
     return rows[0];
@@ -78,8 +80,11 @@ export class DocumentRepository {
         photo_recto = COALESCE($9, photo_recto),
         photo_verso = COALESCE($10, photo_verso),
         is_protected = COALESCE($11, is_protected),
-        is_lost = COALESCE($12, is_lost)
-      WHERE id = $13 AND user_id = $14
+        is_lost = COALESCE($12, is_lost),
+        validity_option = COALESCE($13, validity_option),
+        is_archived = COALESCE($14, is_archived),
+        archived_at = COALESCE($15, archived_at)
+      WHERE id = $16 AND user_id = $17
       RETURNING *`;
 
     const { rows } = await pool.query(query, [
@@ -95,6 +100,9 @@ export class DocumentRepository {
       data.photo_verso,
       data.is_protected,
       data.is_lost,
+      data.validity_option,
+      data.is_archived,
+      data.archived_at,
       id,
       userId
     ]);
@@ -119,5 +127,51 @@ export class DocumentRepository {
     const query = 'UPDATE my_documents SET is_lost = $1, declaration_id = $2 WHERE id = $3 AND user_id = $4 RETURNING *';
     const { rows } = await pool.query(query, [isLost, declarationId, id, userId]);
     return rows[0] || null;
+  }
+
+  /**
+   * Find expiring documents (validity_option = 'EXPIRING', not archived, expiring within N days)
+   */
+  async findExpiringDocuments(daysAhead: number): Promise<UserDocument[]> {
+    const query = `
+      SELECT * FROM my_documents
+      WHERE validity_option = 'EXPIRING'
+        AND is_archived = false
+        AND date_expiration IS NOT NULL
+        AND date_expiration <= CURRENT_DATE + $1::integer
+        AND date_expiration > CURRENT_DATE
+        AND expiration_reminded = false
+      ORDER BY date_expiration ASC
+    `;
+    const { rows } = await pool.query(query, [daysAhead]);
+    return rows;
+  }
+
+  /**
+   * Archive all expired documents (validity_option = 'EXPIRING', date_expiration < NOW())
+   */
+  async archiveExpiredDocuments(): Promise<number> {
+    const query = `
+      UPDATE my_documents
+      SET is_archived = true,
+          archived_at = NOW()
+      WHERE validity_option = 'EXPIRING'
+        AND is_archived = false
+        AND date_expiration IS NOT NULL
+        AND date_expiration < CURRENT_DATE
+      RETURNING id
+    `;
+    const { rows } = await pool.query(query);
+    return rows.length;
+  }
+
+  /**
+   * Mark a document as reminded for expiration
+   */
+  async markExpirationReminded(id: string): Promise<void> {
+    await pool.query(
+      'UPDATE my_documents SET expiration_reminded = true, expiration_reminded_at = NOW() WHERE id = $1',
+      [id]
+    );
   }
 }

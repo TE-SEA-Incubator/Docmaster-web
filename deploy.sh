@@ -140,7 +140,7 @@ execute_remote_deployment() {
         # Exécution optionnelle des migrations de base de données
         if [ "$MIGRATE" = true ]; then
             echo "→ Exécution des migrations de base de données (Knex/Prisma)..."
-            npm run migrate || echo "⚠️ Attention : Pas de script de migration trouvé ou échec de l'exécution."
+            npm run db:migrate || echo "⚠️ Attention : Échec de l'exécution du script de migration (db:migrate)."
         fi
         
         echo "✓ Frontend et Backend configurés et compilés avec succès."

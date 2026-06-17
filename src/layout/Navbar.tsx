@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useI18n } from "../context/I18nContext";
 import { useAuth } from "../context/AuthContext";
+import { getPhotoUrl } from "../utils/image";
 
 export default function Navbar() {
   const { t, lang, setLanguage } = useI18n();
@@ -93,9 +94,18 @@ export default function Navbar() {
           {user ? (
             <Link
               to="/dashboard"
-              className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-primary text-green-dark rounded-[14px] text-sm font-black hover:bg-primary-dark transition-all shadow-lg shadow-primary/30 active:scale-95"
+              className="hidden md:flex items-center gap-2.5 px-3 py-1.5 bg-white/10 backdrop-blur rounded-[14px] hover:bg-white/20 transition-all group"
             >
-              Dashboard <i className="fa-solid fa-arrow-right text-[10px]" />
+              {user.photo_url ? (
+                <img src={getPhotoUrl(user.photo_url)} alt="" className="w-7 h-7 rounded-[10px] object-cover" />
+              ) : (
+                <div className="w-7 h-7 rounded-[10px] bg-primary flex items-center justify-center font-bricolage text-[10px] font-extrabold text-green-dark">
+                  {user.initial || "DM"}
+                </div>
+              )}
+              <span className="text-sm font-semibold text-white group-hover:text-primary transition-colors">
+                {user.prenom || ""}
+              </span>
             </Link>
           ) : (
             <Link
@@ -131,15 +141,39 @@ export default function Navbar() {
           >
             <i className="fa-solid fa-magnifying-glass w-4" /> {t("nav_search")}
           </Link>
-          <div className="pt-2">
+          <div className="flex items-center gap-3 px-4 py-3 border-t border-white/10 mt-2">
+            {user?.photo_url ? (
+              <img src={getPhotoUrl(user.photo_url)} alt="" className="w-8 h-8 rounded-[10px] object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-[10px] bg-primary flex items-center justify-center font-bricolage text-[11px] font-extrabold text-green-dark">
+                {user?.initial || "DM"}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-white truncate">
+                {user?.prenom || ""} {user?.nom || ""}
+              </div>
+              <div className="text-[10px] text-white/50">{user?.email || ""}</div>
+            </div>
             <Link
-              to={user ? "/dashboard" : "/login"}
+              to="/dashboard"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center justify-center gap-2 w-full py-3.5 bg-primary text-green-dark rounded-2xl font-black text-sm shadow-lg shadow-primary/30"
+              className="text-primary text-xs"
             >
-              {user ? "Dashboard" : t("nav_login")} <i className="fa-solid fa-arrow-right text-[10px]" />
+              <i className="fa-solid fa-arrow-right" />
             </Link>
           </div>
+          {!user && (
+            <div className="pt-2">
+              <Link
+                to="/login"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-center gap-2 w-full py-3.5 bg-primary text-green-dark rounded-2xl font-black text-sm shadow-lg shadow-primary/30"
+              >
+                {t("nav_login")} <i className="fa-solid fa-arrow-right text-[10px]" />
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </nav>

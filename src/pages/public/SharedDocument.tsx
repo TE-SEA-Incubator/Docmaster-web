@@ -20,19 +20,20 @@ export default function SharedDocument() {
 
   const { document: doc, loading, error } = useDocumentShare(token);
   const [showingVerso, setShowingVerso] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-bgMain flex flex-col items-center justify-center p-4">
         <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-6">
-          <img src="/assets/images/logo.png" alt="DocMaster" className="w-10 h-10 animate-pulse" />
+          <img src="/assets/images/docmaster.png" alt="DocMaster" className="w-10 h-10 animate-pulse" />
         </div>
         <div className="bg-white rounded-[32px] border border-borderMain shadow-2xl p-12 text-center max-w-md w-full">
-          <i className="fa-solid fa-circle-notch fa-spin text-4xl text-primary mb-4" />
-          <p className="font-bold text-textMain">{t("shared_loading")}</p>
-          <p className="text-textMuted text-xs mt-2 leading-relaxed">
-            {t("shared_loading_desc")}
-          </p>
+            <i className="fa-solid fa-circle-notch fa-spin text-4xl text-primary mb-4" />
+            <p className="font-bold text-textMain">{t("shared_loading")}</p>
+            <p className="text-textMuted text-xs mt-2 leading-relaxed">
+              {t("shared_loading_desc")}
+            </p>
         </div>
       </div>
     );
@@ -42,7 +43,7 @@ export default function SharedDocument() {
     return (
       <div className="min-h-screen bg-bgMain flex flex-col items-center justify-center p-4">
         <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-6">
-          <img src="/assets/images/logo.png" alt="DocMaster" className="w-10 h-10" />
+          <img src="/assets/images/docmaster.png" alt="DocMaster" className="w-10 h-10" />
         </div>
         <div className="bg-white rounded-[32px] border border-borderMain shadow-2xl p-12 text-center max-w-md w-full">
           <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
@@ -76,7 +77,7 @@ export default function SharedDocument() {
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-10">
           <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-4 hover:scale-105 transition-transform">
-            <img src="/assets/images/logo.png" alt="DocMaster" className="w-10 h-10" />
+            <img src="/assets/images/favicon.png" alt="DocMaster" className="w-10 h-10" />
           </div>
           <h1 className="font-bricolage text-3xl font-extrabold mb-2 tracking-tight">{t("shared_title")}</h1>
           <p className="text-textMuted text-sm leading-relaxed max-w-md">
@@ -87,30 +88,70 @@ export default function SharedDocument() {
         {/* Main Content Card */}
         <div className="bg-white rounded-[32px] border border-borderMain shadow-2xl shadow-black/5 overflow-hidden transition-all duration-300 hover:shadow-black/10">
           {/* Document Preview Area */}
-          <div className="relative h-64 sm:h-80 bg-slate-100 border-b border-borderMain flex items-center justify-center overflow-hidden">
+          <div className="relative h-72 sm:h-96 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-borderMain flex items-center justify-center overflow-hidden group cursor-pointer"
+               onClick={() => activePhoto && setLightboxOpen(true)}>
             {activePhoto ? (
-              <img
-                src={getFullImageUrl(activePhoto)}
-                className="w-full h-full object-contain p-2"
-                alt="Document"
-              />
+              <>
+                <img
+                  src={getFullImageUrl(activePhoto)}
+                  className="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-[1.03]"
+                  alt="Document"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur rounded-xl px-4 py-2 shadow-lg flex items-center gap-2 text-sm font-bold text-textMain">
+                    <i className="fa-solid fa-expand" />
+                    Plein écran
+                  </div>
+                </div>
+              </>
             ) : (
-              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-4xl">
-                <i className="fa-solid fa-file-lines" />
+              <div className="flex flex-col items-center gap-3 text-textMuted/50">
+                <i className="fa-solid fa-file-lines text-6xl" />
+                <p className="text-[13px] font-semibold">Aucun aperçu disponible</p>
               </div>
             )}
 
             {/* Flip button */}
             {hasVerso && (
               <button
-                onClick={() => setShowingVerso(!showingVerso)}
+                onClick={(e) => { e.stopPropagation(); setShowingVerso(!showingVerso); }}
                 className="absolute bottom-4 right-4 px-4 py-2.5 rounded-full bg-black/60 backdrop-blur-md text-white font-bold text-[11px] flex items-center gap-2 hover:bg-primary hover:scale-105 transition-all shadow-lg active:scale-95"
               >
-                <i className="fa-solid fa-arrows-rotate animate-spin-slow" />
+                <i className="fa-solid fa-arrows-rotate" />
                 {showingVerso ? t("shared_see_recto") : t("shared_see_verso")}
               </button>
             )}
           </div>
+
+          {/* Lightbox */}
+          {lightboxOpen && activePhoto && (
+            <div
+              className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"
+              onClick={() => setLightboxOpen(false)}
+            >
+              <button
+                onClick={() => setLightboxOpen(false)}
+                className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-2xl transition-all z-10"
+              >
+                <i className="fa-solid fa-xmark" />
+              </button>
+              {hasVerso && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowingVerso(!showingVerso); }}
+                  className="absolute bottom-6 right-6 px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-[13px] flex items-center gap-2 transition-all z-10 backdrop-blur"
+                >
+                  <i className="fa-solid fa-arrows-rotate" />
+                  {showingVerso ? "Voir recto" : "Voir verso"}
+                </button>
+              )}
+              <img
+                src={getFullImageUrl(activePhoto)}
+                className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+                alt="Document plein écran"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
 
           {/* Details Area */}
           <div className="p-8 md:p-10">

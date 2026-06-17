@@ -31,6 +31,8 @@ export default function DocumentDetailModal({
 
   const currentImage = activeTab === "recto" ? getImageUrl(doc.photo_recto) : getImageUrl(doc.photo_verso);
   const hasVerse = !!doc.photo_verso;
+  const isPermanent = doc.validity_option === 'PERMANENT';
+  const isExpired = !isPermanent && doc.date_expiration && new Date(doc.date_expiration) < new Date();
 
   const rotateImage = () => {
     setRotation((prev) => (prev + 90) % 360);
@@ -158,13 +160,31 @@ export default function DocumentDetailModal({
               </div>
             )}
 
-            {/* Security Badge */}
-            <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full backdrop-blur">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] md:text-xs font-bold text-emerald-400 uppercase tracking-widest">
-                {t("detail_securise")}
-              </span>
-            </div>
+            {/* Validity Badge */}
+            {isPermanent && (
+              <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 rounded-full backdrop-blur">
+                <i className="fa-solid fa-infinity text-[10px] md:text-xs text-blue-400" />
+                <span className="text-[10px] md:text-xs font-bold text-blue-400 uppercase tracking-widest">
+                  {t("detail_permanent")}
+                </span>
+              </div>
+            )}
+            {isExpired && (
+              <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded-full backdrop-blur">
+                <i className="fa-solid fa-clock text-[10px] md:text-xs text-orange-400" />
+                <span className="text-[10px] md:text-xs font-bold text-orange-400 uppercase tracking-widest">
+                  {t("detail_expired")}
+                </span>
+              </div>
+            )}
+            {!isPermanent && !isExpired && doc.validity_option === 'EXPIRING' && (
+              <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full backdrop-blur">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] md:text-xs font-bold text-emerald-400 uppercase tracking-widest">
+                  {t("detail_securise")}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Right: Details Panel - Scrollable */}
@@ -251,13 +271,15 @@ export default function DocumentDetailModal({
                   },
                   {
                     label: t("detail_expiration"),
-                    value: doc.date_expiration
-                      ? new Date(doc.date_expiration).toLocaleDateString("fr-FR", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })
-                      : "N/A",
+                    value: isPermanent
+                      ? t("detail_no_expiry")
+                      : doc.date_expiration
+                        ? new Date(doc.date_expiration).toLocaleDateString("fr-FR", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "—",
                     icon: "fa-calendar-times",
                   },
                 ].map((item) => (

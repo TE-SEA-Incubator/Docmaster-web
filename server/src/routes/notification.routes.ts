@@ -24,12 +24,29 @@ router.use(authMiddleware);
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Liste récupérée
+ *         description: Liste des notifications récupérée
  *         content:
  *           application/json:
- *             example:
- *               success: true
- *               data: [{ id: "uuid", title: "Document trouvé", message: "...", is_read: false }]
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Notification'
+ *       401:
+ *         description: Non authentifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error401'
+ *       500:
+ *         description: Erreur serveur
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error500'
  */
 router.get('/', notificationController.getMyNotifications);
 
@@ -45,9 +62,30 @@ router.get('/', notificationController.getMyNotifications);
  *       - in: path
  *         name: id
  *         required: true
+ *         schema:
+ *           type: string
+ *         description: Identifiant UUID de la notification
  *     responses:
  *       200:
- *         description: Succès
+ *         description: Notification marquée comme lue
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessTrue'
+ *       401:
+ *         description: Non authentifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error401'
+ *       404:
+ *         description: Notification introuvable
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error404'
+ *       500:
+ *         description: Erreur serveur
  */
 router.patch('/:id/read', notificationController.markAsRead);
 
@@ -61,7 +99,19 @@ router.patch('/:id/read', notificationController.markAsRead);
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Succès
+ *         description: Toutes les notifications marquées comme lues
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessTrue'
+ *       401:
+ *         description: Non authentifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error401'
+ *       500:
+ *         description: Erreur serveur
  */
 router.patch('/read-all', notificationController.markAllRead);
 

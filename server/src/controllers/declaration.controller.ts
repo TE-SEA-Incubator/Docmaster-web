@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { DeclarationService } from '../services/declaration.service.ts';
 import { PdfService } from '../services/pdf.service.ts';
 import { subscriptionService } from '../services/subscription.service.ts';
+import { activityLogService } from '../services/activity-log.service.ts';
 import { CreateDeclarationDTO, RequestDeleteDeclarationDTO } from '../dtos/declaration.dto.ts';
 import { validateDTO, mapFormDataToObject, formatValidationErrors } from '../utils/validation.utils.ts';
 
@@ -92,6 +93,17 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
       message: 'Déclaration de perte enregistrée',
       data: result
     });
+
+    activityLogService.log({
+      user_id: userId,
+      action_type: 'CREATE_DECLARATION',
+      entity_type: 'declaration',
+      entity_id: result.id,
+      description: `Déclaration de perte (${req.body.doc_type || 'inconnu'})`,
+      metadata: { declaration_type: 'LOST', doc_type: req.body.doc_type },
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent'],
+    }).catch(() => {});
   } catch (error: any) {
     console.error('❌ Erreur création déclaration perte:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -223,6 +235,17 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
       message: 'Déclaration de document trouvé enregistrée',
       data: result
     });
+
+    activityLogService.log({
+      user_id: userId,
+      action_type: 'CREATE_DECLARATION',
+      entity_type: 'declaration',
+      entity_id: result.id,
+      description: `Déclaration de document trouvé (${req.body.doc_type || 'inconnu'})`,
+      metadata: { declaration_type: 'FOUND', doc_type: req.body.doc_type },
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent'],
+    }).catch(() => {});
   } catch (error: any) {
     console.error('🔴 [Controller] === ERREUR ===');
     console.error('🔴 [Controller] Message:', error.message);

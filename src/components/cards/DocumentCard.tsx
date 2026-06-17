@@ -18,8 +18,10 @@ export default function DocumentCard({ doc, catLabels, onView, onShare, onDelete
     return `${window.location.origin}/${url.replace(/^\//, "")}`;
   };
 
+  const isExpired = doc.date_expiration && doc.validity_option === 'EXPIRING' && new Date(doc.date_expiration) < new Date();
+
   return (
-    <div className={`doc-card ${doc.is_lost ? "is-lost" : ""}`}>
+    <div className={`doc-card ${doc.is_lost ? "is-lost" : ""} ${doc.is_archived ? "opacity-60" : ""}`}>
       <div className="card-thumb relative cursor-pointer" onClick={() => onView(doc)}>
         {doc.photo_recto ? (
           <img src={getPhotoUrl(doc.photo_recto)} alt="" className="w-full h-full object-cover" />
@@ -27,6 +29,11 @@ export default function DocumentCard({ doc, catLabels, onView, onShare, onDelete
           <div className="w-full h-full flex items-center justify-center bg-slate-100">
             <i className="fa-regular fa-file text-3xl text-slate-300" />
           </div>
+        )}
+        {doc.is_archived && (
+          <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-700 text-white text-[9px] font-bold">
+            <i className="fa-solid fa-box-archive text-[7px]" /> {t("doccard_archived")}
+          </span>
         )}
         {doc.is_lost && (
           <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-600 text-[9px] font-bold">
@@ -36,6 +43,16 @@ export default function DocumentCard({ doc, catLabels, onView, onShare, onDelete
         {doc.is_verified && (
           <span className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[9px] font-bold">
             <i className="fa-solid fa-check text-[7px]" /> {t("doccard_verified")}
+          </span>
+        )}
+        {doc.validity_option === 'PERMANENT' && (
+          <span className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[9px] font-bold">
+            <i className="fa-solid fa-infinity text-[7px]" /> {t("doccard_permanent")}
+          </span>
+        )}
+        {isExpired && (
+          <span className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[9px] font-bold">
+            <i className="fa-solid fa-clock text-[7px]" /> {t("doccard_expired")}
           </span>
         )}
       </div>

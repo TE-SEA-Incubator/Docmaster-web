@@ -328,7 +328,44 @@ router.get('/:id', authMiddleware, getDeclarationById);
  *       500:
  *         description: Erreur serveur
  */
-router.post('/:id/initiate-recovery', authMiddleware, initiateRecovery);
+/**
+ * @swagger
+ * /declarations/recover:
+ *   post:
+ *     summary: Initier la récupération d'un document (par body)
+ *     tags: [Declarations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [amount, method, phone]
+ *             properties:
+ *               amount: { type: number, example: 5000, description: "Montant de la récompense en FCFA" }
+ *               method: { type: string, example: "MTN_MOMO", enum: [MTN_MOMO, ORANGE_MONEY, CARD] }
+ *               phone: { type: string, example: "677000000", description: "Numéro de téléphone pour le paiement" }
+ *     responses:
+ *       200:
+ *         description: Récupération initiée avec succès
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Paiement initié. Veuillez valider sur votre téléphone."
+ *               data: { paymentId: "uuid", status: "PENDING" }
+ *       400:
+ *         description: Erreur de validation (montant insuffisant, déjà en cours)
+ *         content:
+ *           application/json:
+ *             example: { success: false, message: "Le document est déjà en cours de récupération" }
+ *       401:
+ *         description: Non authentifié
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post('/recover', authMiddleware, initiateRecovery);
 
 /**

@@ -55,6 +55,9 @@ const FEATURE_ICONS: Record<string, string> = {
   history_days: "fa-clock-rotate-left",
   ads_free: "fa-ban",
   export_data: "fa-download",
+  expiration_management: "fa-calendar-clock",
+  expiration_reminders: "fa-bell",
+  auto_archive: "fa-box-archive",
 };
 
 const statusBadge = (status: string, t: (k: string) => string) => {
@@ -90,19 +93,25 @@ export default function AdminSubscriptions() {
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const pageSize = 10;
   const [form, setForm] = useState({
     name: "", price: 0, duration_months: 1, is_featured: false, features: {} as Record<string, any>,
   });
 
+  const showToast = useCallback((message: string, type: "success" | "error") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  }, []);
+
   const featMap = new Map(features.map((f) => [f.code, f]));
 
   const loadData = useCallback(() => {
     Promise.all([
-      adminService.getDashboardStats().then(setStats).catch(() => {}),
-      adminService.getAllSubscriptions().then(setSubs).catch(() => setSubs([])),
-      adminService.getPlans().then(setPlans).catch(() => setPlans([])),
-      adminService.getFeatureDefinitions().then(setFeatures).catch(() => setFeatures([])),
+      adminService.getDashboardStats().then(setStats).catch(() => { console.error("Échec chargement stats"); }),
+      adminService.getAllSubscriptions().then(setSubs).catch(() => { console.error("Échec chargement abonnements"); setSubs([]); }),
+      adminService.getPlans().then(setPlans).catch(() => { console.error("Échec chargement plans"); setPlans([]); }),
+      adminService.getFeatureDefinitions().then(setFeatures).catch(() => { console.error("Échec chargement définitions features"); setFeatures([]); }),
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -117,23 +126,40 @@ export default function AdminSubscriptions() {
   const paginatedSubs = filteredSubs.slice((page - 1) * pageSize, page * pageSize);
 
   const openNew = () => { setEditingId(null); setForm({ name: "", price: 0, duration_months: 1, is_featured: false, features: {} }); setModalOpen(true); };
-  const openEdit = (id: string) => {
+  const openEdit = async (id: string) => {
     setEditingId(id);
-    const plan = plans.find((p) => p.id === id);
-    if (plan) setForm({ name: plan.name, price: plan.price, duration_months: plan.duration_months || 1, is_featured: plan.is_featured || false, features: plan.features || {} });
     setModalOpen(true);
+    try {
+      const plan = await adminService.getPlanById(id);
+      setForm({ name: plan.name, price: plan.price, duration_months: plan.duration_months || 1, is_featured: plan.is_featured || false, features: plan.features || {} });
+    } catch {
+      showToast("Impossible de charger les données du plan", "error");
+    }
   };
+
+  const slugify = (text: string) =>
+    text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     setSaving(true);
     try {
-      const data = { name: form.name, price: form.price, duration_months: form.duration_months, is_featured: form.is_featured, features: form.features };
-      if (editingId) { await adminService.updatePlan(editingId, data); } else { await adminService.createPlan(data); }
+      const data: Record<string, any> = { name: form.name, price: form.price, duration_months: form.duration_months, is_featured: form.is_featured, features: form.features };
+      if (editingId) {
+        await adminService.updatePlan(editingId, data);
+        showToast("Plan modifié avec succès", "success");
+      } else {
+        const suffix = Math.random().toString(36).substring(2, 6);
+        data.id = slugify(form.name) + "-" + suffix;
+        await adminService.createPlan(data);
+        showToast("Plan créé avec succès", "success");
+      }
       setModalOpen(false);
-      adminService.getPlans().then(setPlans).catch(() => {});
-    } catch {} finally { setSaving(false); }
+      adminService.getPlans().then(setPlans).catch(() => { console.error("Échec rafraîchissement plans"); });
+    } catch {
+      showToast("Erreur lors de l'enregistrement du plan", "error");
+    } finally { setSaving(false); }
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -141,13 +167,22 @@ export default function AdminSubscriptions() {
     try {
       await adminService.updateSubscriptionStatus(id, status);
       setSubs((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
-    } catch {} finally { setStatusUpdating(null); }
+      showToast("Statut mis à jour", "success");
+    } catch {
+      showToast("Erreur lors de la mise à jour du statut", "error");
+    } finally { setStatusUpdating(null); }
   };
 
   if (loading) { return <LoadingSpinner />; }
 
   return (
     <div>
+      {toast && (
+        <div className={`fixed top-5 right-5 z-[100] px-5 py-3 rounded-xl shadow-lg text-sm font-bold text-white slide-right ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}>
+          <i className={`fa-solid ${toast.type === "success" ? "fa-check-circle" : "fa-exclamation-circle"} mr-2`} />
+          {toast.message}
+        </div>
+      )}
       <header className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-2">

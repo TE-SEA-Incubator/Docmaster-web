@@ -39,6 +39,8 @@ export default function MesDocuments() {
 
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [validityOption, setValidityOption] = useState<'EXPIRING' | 'PERMANENT'>('EXPIRING');
+  const [showInfo, setShowInfo] = useState<'EXPIRING' | 'PERMANENT' | null>(null);
   const [form, setForm] = useState({ name: "", number: "", issued: "", expiry: "", authority: "", notes: "" });
   const [rectoFile, setRectoFile] = useState<File | null>(null);
   const [versoFile, setVersoFile] = useState<File | null>(null);
@@ -74,7 +76,10 @@ export default function MesDocuments() {
   const verifiedCount = docs.filter((d) => d.is_verified).length;
   const pendingCount = docs.filter((d) => !d.is_verified).length;
 
+  const showArchived = filterCat === "__archived";
   const filtered = docs.filter((d) => {
+    if (showArchived) return d.is_archived;
+    if (d.is_archived) return false;
     const matchCat = filterCat === "all" || d.type_doc === filterCat;
     const matchSearch = !search || (d.nom_sur_doc || "").toLowerCase().includes(search.toLowerCase()) || (d.numero_doc || "").includes(search);
     return matchCat && matchSearch;
@@ -83,6 +88,7 @@ export default function MesDocuments() {
   function resetForm() {
     setStep(1);
     setSelectedType(null);
+    setValidityOption('EXPIRING');
     setForm({ name: "", number: "", issued: "", expiry: "", authority: "", notes: "" });
     setRectoFile(null);
     setVersoFile(null);
@@ -100,8 +106,14 @@ export default function MesDocuments() {
       fd.append("type_doc", selectedType);
       fd.append("numero_doc", form.number);
       fd.append("nom_sur_doc", form.name);
-      if (form.issued) fd.append("date_delivrance", form.issued);
-      if (form.expiry) fd.append("date_expiration", form.expiry);
+      fd.append("validity_option", validityOption);
+      if (validityOption === 'PERMANENT') {
+        fd.append("date_expiration", "");
+        fd.append("date_delivrance", "");
+      } else {
+        if (form.issued) fd.append("date_delivrance", form.issued);
+        if (form.expiry) fd.append("date_expiration", form.expiry);
+      }
       if (form.authority) fd.append("nom_autorite", form.authority);
       if (form.notes) fd.append("notes", form.notes);
       if (rectoFile) fd.append("photo_recto", rectoFile);
@@ -248,6 +260,7 @@ export default function MesDocuments() {
             {docTypes.map((dt) => (
               <FilterTab key={dt.code} id={dt.code} label={dt.nom} />
             ))}
+            <FilterTab id="__archived" label={t("mesdocuments_filter_archived")} />
           </div>
         </div>
 
@@ -303,7 +316,7 @@ export default function MesDocuments() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="font-bricolage text-xl font-extrabold text-textMain">{t("mesdocuments_modal_title")}</h2>
-                <p className="text-[12.5px] text-textMuted mt-0.5">{t("mesdocuments_step")} {step} {t("mesdocuments_of")} 3</p>
+                <p className="text-[12.5px] text-textMuted mt-0.5">{t("mesdocuments_step")} {step} {t("mesdocuments_of")} 4</p>
               </div>
               <button onClick={closeAddModal}
                 className="w-9 h-9 rounded-full bg-bgMain border border-borderMain flex items-center justify-center hover:border-red-300 hover:text-red-500 transition-colors text-textMuted">
@@ -313,56 +326,194 @@ export default function MesDocuments() {
 
             {/* Steps indicator */}
             <div className="flex items-center mb-7">
-              {[1, 2, 3].map((s) => (
+              {[1, 2, 3, 4].map((s) => (
                 <div key={s} className="flex items-center flex-1">
                   <div className={`step-dot ${s < step ? "done" : s === step ? "active" : "pending"}`}>{s}</div>
-                  {s < 3 && <div className={`step-line ${s < step ? "done" : ""}`} />}
+                  {s < 4 && <div className={`step-line ${s < step ? "done" : ""}`} />}
                 </div>
               ))}
             </div>
 
-            {/* Step 1: Type */}
+            {/* Step 1: Validity Option */}
             {step === 1 && (
               <div>
-                <p className="text-[13.5px] font-semibold text-textMain mb-4">{t("mesdocuments_modal_choose_type")}</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                  {docTypes.map((dt) => {
-                    const isSelected = selectedType === dt.code;
-                    return (
-                      <button
-                        key={dt.code}
-                        onClick={() => {
-                          setSelectedType(dt.code);
-                          if (form.issued && (dt.delai_expiration_mois ?? 0) > 0) {
-                            setForm((prev) => ({ ...prev, expiry: addMonths(prev.issued, dt.delai_expiration_mois) }));
-                          }
-                        }}
-                        className={`doc-type-btn relative transition-all duration-200 ${
-                          isSelected ? "selected border-primary bg-[#FEF0DC]/40 scale-[1.02]" : "border-[#EAE3D8] bg-white"
-                        }`}
-                      >
-                        <span className={`exp-badge ${(dt.delai_expiration_mois ?? 0) > 0 ? "has-exp" : "no-exp"}`}>
-                          {(dt.delai_expiration_mois ?? 0) > 0 ? t("has_expiration") : t("no_expiration")}
-                        </span>
-                        <div className={`w-10 h-10 rounded-[11px] flex items-center justify-center mx-auto mb-2 transition-all duration-200 ${
-                          isSelected ? "bg-primary/20 text-primary" : "bg-green-light text-green-mid"
-                        }`}>
-                          <i className={`fa-solid fa-${dt.icone} text-lg`} />
+                <p className="text-[13.5px] font-semibold text-textMain mb-4">{t("mesdocuments_validity_option")}</p>
+                <div className="flex flex-col gap-4 mb-6">
+                  <button
+                    onClick={() => { setValidityOption('EXPIRING'); setSelectedType(null); }}
+                    className={`w-full p-5 rounded-[16px] border-2 transition-all text-left ${
+                      validityOption === 'EXPIRING'
+                        ? 'border-primary bg-[#FEF0DC]/40 scale-[1.01] shadow-lg shadow-primary/10'
+                        : 'border-borderMain bg-white hover:border-primary/40 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center text-xl ${
+                        validityOption === 'EXPIRING' ? 'bg-primary text-white' : 'bg-amber-50 text-amber-600'
+                      }`}>
+                        <i className="fa-solid fa-calendar-clock" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            validityOption === 'EXPIRING' ? 'border-primary' : 'border-textMuted'
+                          }`}>
+                            {validityOption === 'EXPIRING' && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                          </div>
+                          <span className="text-[15px] font-extrabold text-textMain">{t("mesdocuments_option_expiring")}</span>
                         </div>
-                        <div className="text-[12.5px] font-bold text-textMain">{dt.nom}</div>
-                      </button>
-                    );
-                  })}
+                        <p className="text-[12.5px] text-textMuted mt-1 ml-7 leading-relaxed">
+                          {t("mesdocuments_option_expiring_desc")}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* En savoir plus - Option A */}
+                  <div className="px-1">
+                    <button
+                      onClick={() => setShowInfo(showInfo === 'EXPIRING' ? null : 'EXPIRING')}
+                      className="flex items-center gap-2 text-[12px] font-semibold text-primary hover:text-primary-dark transition-colors"
+                    >
+                      <i className={`fa-solid fa-chevron-${showInfo === 'EXPIRING' ? 'down' : 'right'} text-[10px]`} />
+                      {t("mesdocuments_learn_more")}
+                    </button>
+                    {showInfo === 'EXPIRING' && (
+                      <div className="mt-3 p-4 bg-amber-50/60 border border-amber-100 rounded-[12px] text-[12.5px] text-textMain space-y-2 leading-relaxed animate-in slide-in-from-top-1 fade-in duration-200">
+                        <p className="flex items-start gap-2">
+                          <span className="text-primary font-bold flex-shrink-0">📌</span>
+                          <span>{t("mesdocuments_info_expiring_docs")}</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-primary font-bold flex-shrink-0">🔔</span>
+                          <span>{t("mesdocuments_info_expiring_reminders")}</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-primary font-bold flex-shrink-0">📦</span>
+                          <span>{t("mesdocuments_info_expiring_archive")}</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-primary font-bold flex-shrink-0">💡</span>
+                          <span>{t("mesdocuments_info_expiring_tip")}</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => { setValidityOption('PERMANENT'); setSelectedType(null); }}
+                    className={`w-full p-5 rounded-[16px] border-2 transition-all text-left ${
+                      validityOption === 'PERMANENT'
+                        ? 'border-primary bg-[#FEF0DC]/40 scale-[1.01] shadow-lg shadow-primary/10'
+                        : 'border-borderMain bg-white hover:border-primary/40 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center text-xl ${
+                        validityOption === 'PERMANENT' ? 'bg-primary text-white' : 'bg-blue-50 text-blue-600'
+                      }`}>
+                        <i className="fa-solid fa-infinity" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            validityOption === 'PERMANENT' ? 'border-primary' : 'border-textMuted'
+                          }`}>
+                            {validityOption === 'PERMANENT' && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                          </div>
+                          <span className="text-[15px] font-extrabold text-textMain">{t("mesdocuments_option_permanent")}</span>
+                        </div>
+                        <p className="text-[12.5px] text-textMuted mt-1 ml-7 leading-relaxed">
+                          {t("mesdocuments_option_permanent_desc")}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* En savoir plus - Option B */}
+                  <div className="px-1">
+                    <button
+                      onClick={() => setShowInfo(showInfo === 'PERMANENT' ? null : 'PERMANENT')}
+                      className="flex items-center gap-2 text-[12px] font-semibold text-primary hover:text-primary-dark transition-colors"
+                    >
+                      <i className={`fa-solid fa-chevron-${showInfo === 'PERMANENT' ? 'down' : 'right'} text-[10px]`} />
+                      {t("mesdocuments_learn_more")}
+                    </button>
+                    {showInfo === 'PERMANENT' && (
+                      <div className="mt-3 p-4 bg-blue-50/60 border border-blue-100 rounded-[12px] text-[12.5px] text-textMain space-y-2 leading-relaxed animate-in slide-in-from-top-1 fade-in duration-200">
+                        <p className="flex items-start gap-2">
+                          <span className="text-blue-500 font-bold flex-shrink-0">📌</span>
+                          <span>{t("mesdocuments_info_permanent_docs")}</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-blue-500 font-bold flex-shrink-0">♾️</span>
+                          <span>{t("mesdocuments_info_permanent_validity")}</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-blue-500 font-bold flex-shrink-0">💡</span>
+                          <span>{t("mesdocuments_info_permanent_tip")}</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <button onClick={() => goStep(2)} disabled={!selectedType}
-                  className="w-full py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-dark transition-all active:scale-[.98]">
+                <button onClick={() => goStep(2)}
+                  className="w-full py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]">
                   {t("mesdocuments_continue")} <i className="fa-solid fa-arrow-right text-[12px] ml-1" />
                 </button>
               </div>
             )}
 
-            {/* Step 2: Info + Photos */}
+            {/* Step 2: Type (filtered by validity option) */}
             {step === 2 && (
+              <div>
+                <p className="text-[12.5px] font-medium text-textMuted mb-1">
+                  {validityOption === 'EXPIRING' ? t("mesdocuments_choose_expiring_type") : t("mesdocuments_choose_permanent_type")}
+                </p>
+                <p className="text-[13.5px] font-semibold text-textMain mb-4">{t("mesdocuments_modal_choose_type")}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                  {docTypes
+                    .filter((dt) => validityOption === 'EXPIRING' ? (dt.delai_expiration_mois ?? 0) > 0 : (dt.delai_expiration_mois ?? 0) === 0)
+                    .map((dt) => {
+                      const isSelected = selectedType === dt.code;
+                      return (
+                        <button
+                          key={dt.code}
+                          onClick={() => {
+                            setSelectedType(dt.code);
+                            if (form.issued && (dt.delai_expiration_mois ?? 0) > 0) {
+                              setForm((prev) => ({ ...prev, expiry: addMonths(prev.issued, dt.delai_expiration_mois) }));
+                            }
+                          }}
+                          className={`doc-type-btn relative transition-all duration-200 ${
+                            isSelected ? "selected border-primary bg-[#FEF0DC]/40 scale-[1.02]" : "border-[#EAE3D8] bg-white"
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-[11px] flex items-center justify-center mx-auto mb-2 transition-all duration-200 ${
+                            isSelected ? "bg-primary/20 text-primary" : "bg-green-light text-green-mid"
+                          }`}>
+                            <i className={`fa-solid fa-${dt.icone || "file-lines"} text-lg`} />
+                          </div>
+                          <div className="text-[12.5px] font-bold text-textMain">{dt.nom}</div>
+                        </button>
+                      );
+                    })}
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => goStep(1)}
+                    className="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
+                    <i className="fa-solid fa-arrow-left text-[12px]" /> {t("mesdocuments_back")}
+                  </button>
+                  <button onClick={() => goStep(3)} disabled={!selectedType}
+                    className="flex-1 py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98] disabled:opacity-40">
+                    {t("mesdocuments_continue")} <i className="fa-solid fa-arrow-right text-[12px] ml-1" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Info + Photos */}
+            {step === 3 && (
               <div>
                 <div className="flex flex-col gap-4 mb-6">
                   <div>
@@ -375,7 +526,7 @@ export default function MesDocuments() {
                     <input type="text" className="form-input" placeholder={t("mesdocuments_placeholder_number")} value={form.number}
                       onChange={(e) => setForm({ ...form, number: e.target.value })} />
                   </div>
-                  {hasExpiration ? (
+                  {validityOption === 'EXPIRING' ? (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="form-label">{t("mesdocuments_issue_date")} <span className="text-red-500 ml-0.5">*</span></label>
@@ -437,26 +588,27 @@ export default function MesDocuments() {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => goStep(1)}
+                  <button onClick={() => goStep(2)}
                     className="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
                     <i className="fa-solid fa-arrow-left text-[12px]" /> {t("mesdocuments_back")}
                   </button>
-                  <button onClick={() => goStep(3)} disabled={!form.name || !form.number || !rectoFile || (hasExpiration && !form.issued)}
+                  <button onClick={() => goStep(4)} disabled={!form.name || !form.number || !rectoFile || (validityOption === 'EXPIRING' && !form.issued)}
                     className="flex-1 py-3 rounded-[13px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98] disabled:opacity-40">
                     {t("mesdocuments_continue")} <i className="fa-solid fa-arrow-right text-[12px] ml-1" />
                   </button>
                 </div>
               </div>
             )}
-
-            {/* Step 3: Confirm */}
-            {step === 3 && (
+            
+            {/* Step 4: Confirm */}
+            {step === 4 && (
               <div>
                 <div className="p-4 bg-bgMain border border-borderMain rounded-[14px] mb-5">
                   <p className="text-[12px] font-bold text-textMuted uppercase tracking-wide mb-3">{t("mesdocuments_summary")}</p>
                   <div className="space-y-2">
                     {[{ label: t("mesdocuments_summary_name"), val: form.name }, { label: t("mesdocuments_summary_type"), val: selectedType }, { label: t("mesdocuments_summary_number"), val: form.number },
-                      { label: t("mesdocuments_summary_issued"), val: form.issued || "—" }, ...(hasExpiration ? [{ label: t("mesdocuments_summary_expiry"), val: form.expiry || "—" }] : []),
+                      { label: t("mesdocuments_summary_validity"), val: validityOption === 'PERMANENT' ? t("mesdocuments_option_permanent") : t("mesdocuments_option_expiring") },
+                      ...(validityOption === 'EXPIRING' ? [{ label: t("mesdocuments_summary_issued"), val: form.issued || "—" }, { label: t("mesdocuments_summary_expiry"), val: form.expiry || "—" }] : []),
                       { label: t("mesdocuments_summary_documents"), val: `${rectoFile ? 1 : 0} ${t("mesdocuments_summary_files")}` },
                     ].map((i) => (
                       <div key={i.label} className="flex justify-between text-[13.5px]">
@@ -476,7 +628,7 @@ export default function MesDocuments() {
                 </div>
 
                 <div className="flex gap-3">
-                  <button onClick={() => goStep(2)}
+                  <button onClick={() => goStep(3)}
                     className="px-5 py-3 rounded-[13px] bg-bgMain border border-borderMain text-textMain font-bold hover:border-textMain transition-colors flex items-center gap-2">
                     <i className="fa-solid fa-arrow-left text-[12px]" /> {t("mesdocuments_back")}
                   </button>

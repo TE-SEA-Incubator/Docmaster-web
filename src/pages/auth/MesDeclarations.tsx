@@ -437,17 +437,7 @@ export default function MesDeclarations() {
                     </button>
                   )}
 
-                  <div className="flex gap-2 sm:gap-3">
-                    <button
-                      onClick={() => navigate(`/partage?id=${detailItem.id}`)}
-                      className="flex-1 py-2.5 sm:py-3 bg-green-dark text-white rounded-xl font-bold text-xs sm:text-sm hover:bg-green-mid transition-colors flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-green-dark/10"
-                    >
-                      <i className="fa-solid fa-share-nodes" /> {t("mesdeclarations_share")}
-                    </button>
-                    <button className="flex-1 py-2.5 sm:py-3 border border-borda text-textMuted rounded-xl font-bold text-xs sm:text-sm hover:bg-bgMain transition-colors">
-                      <i className="fa-solid fa-flag mr-1" /> {t("mesdeclarations_report")}
-                    </button>
-                  </div>
+                  
 
                   <button
                     onClick={() => setConfirmDeleteId(detailItem.id)}

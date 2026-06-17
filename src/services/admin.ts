@@ -89,6 +89,42 @@ interface AdminUser {
   [key: string]: unknown;
 }
 
+interface MatchCriterion {
+  name: string;
+  points: number;
+  max: number;
+  matched: boolean;
+  icon: string;
+  detail?: string;
+}
+
+interface RecentMatch {
+  id: string;
+  lost_declaration_id: string;
+  found_declaration_id: string;
+  score: number;
+  status: string;
+  created_at: string;
+  details?: { criteria: MatchCriterion[] } | null;
+  lost_identifiant: string;
+  lost_owner_name: string;
+  lost_doc_type: string;
+  lost_ville: string;
+  lost_quartier: string;
+  found_identifiant: string;
+  found_owner_name: string;
+  found_doc_type: string;
+  found_ville: string;
+  found_quartier: string;
+}
+
+interface MatchingStats {
+  totalMatches: number;
+  highConfidence: number;
+  potential: number;
+  averageScore: number;
+}
+
 export const adminService = {
   async getDashboardStats(): Promise<DashboardStats> {
     const res = await apiClient.get("subscriptions/admin/stats");
@@ -115,19 +151,19 @@ export const adminService = {
     return res.data.data;
   },
 
+  async getPlanById(id: string): Promise<Plan> {
+    const res = await apiClient.get(`plans/${id}`);
+    return res.data.data;
+  },
+
   async createPlan(data: Partial<Plan>): Promise<unknown> {
     const res = await apiClient.post("plans", data);
     return res.data.data;
   },
 
   async getFeatureDefinitions(): Promise<FeatureDefinition[]> {
-    return [
-      { code: "max_documents", label: "Documents", type: "number", description: "Max documents" },
-      { code: "max_devices", label: "Appareils", type: "number", description: "Max appareils" },
-      { code: "has_analytics", label: "Analytiques", type: "boolean", description: "Accès aux statistiques" },
-      { code: "has_priority_support", label: "Support prioritaire", type: "boolean", description: "Assistance prioritaire" },
-      { code: "has_api_access", label: "API Access", type: "boolean", description: "Accès API" },
-    ];
+    const res = await apiClient.get("plans/features/definitions");
+    return res.data.data;
   },
 
   async getDocumentTypes(): Promise<DocumentType[]> {
@@ -198,6 +234,16 @@ export const adminService = {
   async getAllTransactions(): Promise<Transaction[]> {
     const res = await apiClient.get("payments/admin/all");
     return res.data.transactions;
+  },
+
+  async getRecentMatches(): Promise<RecentMatch[]> {
+    const res = await apiClient.get("admin/matching/recent");
+    return res.data?.data ?? [];
+  },
+
+  async getMatchingStats(): Promise<MatchingStats> {
+    const res = await apiClient.get("admin/matching/stats");
+    return res.data?.data ?? { totalMatches: 0, highConfidence: 0, potential: 0, averageScore: 0 };
   },
 
 };

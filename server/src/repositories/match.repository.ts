@@ -13,7 +13,18 @@ export class MatchRepository {
     foundId: string,
     score: number,
     status: string = "PENDING",
+    details?: Record<string, unknown> | null,
   ) {
+    if (details) {
+      const query = `
+        INSERT INTO matches (lost_declaration_id, found_declaration_id, score, status, details)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (lost_declaration_id, found_declaration_id) DO NOTHING
+        RETURNING *
+      `;
+      const { rows } = await pool.query(query, [lostId, foundId, score, status, JSON.stringify(details)]);
+      return rows[0];
+    }
     const query = `
       INSERT INTO matches (lost_declaration_id, found_declaration_id, score, status)
       VALUES ($1, $2, $3, $4)

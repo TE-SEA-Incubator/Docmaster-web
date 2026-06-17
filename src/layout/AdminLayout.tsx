@@ -7,7 +7,7 @@ import { notificationsService } from "../services/notificationsService";
 import type { Notification } from "../types/api";
 
 export default function AdminLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
@@ -62,9 +62,9 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-[#F4EFE6] flex">
       <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-[260px]">
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarOpen ? "lg:ml-[260px]" : ""}`}>
         <AdminTopbar
-          onToggleSidebar={() => setSidebarOpen(true)}
+          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
           unreadCount={unreadCount}
           onNotifToggle={() => setNotifOpen(!notifOpen)}
           adminInitial={adminInitial}

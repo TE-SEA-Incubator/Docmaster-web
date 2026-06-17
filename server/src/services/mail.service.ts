@@ -179,6 +179,51 @@ export class MailService {
   }
 
   /**
+   * Send an expiration reminder email
+   */
+  async sendExpirationReminderEmail(to: string, userName: string, docType: string, daysLeft: number, expiresAt?: Date): Promise<void> {
+    const fromName = "DocMaster Rappels";
+    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'notifications@dm.cm';
+    const dateStr = expiresAt ? new Date(expiresAt).toLocaleDateString('fr-FR') : 'bientôt';
+
+    const subject = `Rappel : Votre ${docType} expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`;
+
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
+      to,
+      subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 60px; height: 60px; background-color: #FEF0DC; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
+              <span style="font-size: 30px;">⏰</span>
+            </div>
+          </div>
+          <h2 style="color: #f5a64b; text-align: center;">Document bientôt expiré</h2>
+          <p>Bonjour ${userName},</p>
+          <p>Votre document <strong>${docType}</strong> expire dans <strong>${daysLeft} jour${daysLeft > 1 ? 's' : ''}</strong> (le ${dateStr}).</p>
+          <p>Pensez à le renouveler auprès de l'autorité compétente pour éviter tout désagrément.</p>
+          <p style="font-size: 13px; color: #64748b;">Si votre document est déjà renouvelé, mettez à jour sa date d'expiration dans votre coffre-fort DocMaster.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://docmaster.net'}/mes-documents" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Voir mes documents</a>
+          </div>
+          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
+          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
+            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
+          </p>
+        </div>
+      `,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`📧 Rappel d'expiration envoyé à : ${to}`);
+    } catch (error: any) {
+      console.error(`❌ Erreur lors de l'envoi du rappel d'expiration à ${to}:`, error.message);
+    }
+  }
+
+  /**
    * Send a notification when a document match is found
    */
   async sendMatchNotificationEmail(to: string, userName: string, docType: string, matchType: 'LOST_SIDE' | 'FOUND_SIDE'): Promise<void> {

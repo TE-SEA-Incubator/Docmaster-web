@@ -16,8 +16,8 @@ export const createShare = async (req: Request, res: Response) => {
     const share = await shareService.createShareLink(documentId, userId, daysValid);
     
     // Construct the full URL (in production this should be based on config)
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    const shareUrl = `${baseUrl}/partage.html?token=${share.share_token}`;
+    const baseUrl = process.env.FRONTEND_URL || 'https://docmaster.net';
+    const shareUrl = `${baseUrl}/partage?token=${share.share_token}`;
 
     res.status(201).json({
       success: true,

@@ -77,9 +77,120 @@ router.get('/:id', authMiddleware, getDeletionRequestById);
  */
 router.post('/declarations/:id/request-deletion', authMiddleware, requestDeletionDeclaration);
 
-// Admin routes
+/**
+ * @swagger
+ * /deletion-requests/admin/pending:
+ *   get:
+ *     summary: Lister les demandes de suppression en attente (Admin)
+ *     tags: [DeletionRequests]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Liste des demandes en attente
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               data:
+ *                 - id: "uuid"
+ *                   declaration_id: "uuid"
+ *                   user_id: "uuid"
+ *                   reason: "Document retrouvé ailleurs"
+ *                   reason_type: "OTHER"
+ *                   status: "PENDING"
+ *                   created_at: "2024-06-15T10:00:00Z"
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       500:
+ *         description: Erreur serveur
+ */
 router.get('/admin/pending', authMiddleware, getPendingDeletionRequests);
+
+/**
+ * @swagger
+ * /deletion-requests/admin/{id}/approve:
+ *   post:
+ *     summary: Approuver une demande de suppression (Admin)
+ *     tags: [DeletionRequests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Identifiant UUID de la demande de suppression
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               admin_comment: { type: string, example: "Suppression approuvée après vérification" }
+ *     responses:
+ *       200:
+ *         description: Demande approuvée et exécutée
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Demande de suppression approuvée et exécutée"
+ *               data: { id: "uuid", status: "EXECUTED" }
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       404:
+ *         description: Demande introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post('/admin/:id/approve', authMiddleware, approveDeletionRequest);
+
+/**
+ * @swagger
+ * /deletion-requests/admin/{id}/reject:
+ *   post:
+ *     summary: Rejeter une demande de suppression (Admin)
+ *     tags: [DeletionRequests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Identifiant UUID de la demande de suppression
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               admin_comment: { type: string, example: "Raison non justifiée" }
+ *     responses:
+ *       200:
+ *         description: Demande rejetée
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Demande de suppression rejetée"
+ *               data: { id: "uuid", status: "REJECTED" }
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès réservé aux administrateurs
+ *       404:
+ *         description: Demande introuvable
+ *       500:
+ *         description: Erreur serveur
+ */
 router.post('/admin/:id/reject', authMiddleware, rejectDeletionRequest);
 
 export default router;

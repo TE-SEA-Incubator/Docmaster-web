@@ -63,6 +63,11 @@ export const declarationsService = {
     return res.data;
   },
 
+  async validateRecoveryCode(data: { docId: string; code: string }) {
+    const res = await apiClient.post<ApiResponse>("declarations/validate-code", data);
+    return res.data;
+  },
+
   async getDeletionRequests() {
     const res = await apiClient.get<ApiResponse>("declarations/deletion-requests");
     return res.data;

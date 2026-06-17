@@ -41,6 +41,22 @@ export class DocumentService {
       data.date_delivrance = undefined;
     }
 
+    // Handle validity option
+    if (data.validity_option === 'PERMANENT') {
+      data.date_expiration = undefined;
+    } else if (data.validity_option === 'EXPIRING' && data.user_id) {
+      // Check if user's plan allows expiration management
+      const planCheck = await subscriptionService.validateAction(data.user_id, 'EXPIRATION_MGMT');
+      if (!(planCheck as any).allowed) {
+        throw new Error('Votre abonnement ne permet pas la gestion des dates d\'expiration. Passez à une offre supérieure ou choisissez l\'option "Permanent".');
+      }
+    }
+
+    // Default to EXPIRING if not set
+    if (!data.validity_option) {
+      data.validity_option = 'EXPIRING';
+    }
+
     // Automatically calculate fingerprint if type and number are provided
     if (data.type_doc && data.numero_doc) {
       data.fingerprint = calculateDocumentFingerprint(data.type_doc, data.numero_doc);

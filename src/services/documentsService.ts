@@ -1,6 +1,15 @@
 import apiClient from "./api";
 import type { ApiResponse, Document } from "../types/api";
 
+export interface ShareData {
+  id: string;
+  document_id: string;
+  share_token: string;
+  shareUrl: string;
+  expires_at: string | null;
+  created_at: string;
+}
+
 export const documentsService = {
   async register(data: {
     type_id: string;
@@ -34,23 +43,23 @@ export const documentsService = {
     return res.data;
   },
 
-  async share(data: { document_id: string; email?: string; code_partage?: string }) {
-    const res = await apiClient.post<ApiResponse>("documents/share", data);
+  async createShare(documentId: string, daysValid?: number) {
+    const res = await apiClient.post<ApiResponse<ShareData>>(`shares/${documentId}`, { daysValid });
     return res.data;
   },
 
-  async getSharedDocument(code: string) {
-    const res = await apiClient.get<ApiResponse<Document>>(`documents/share/${code}`);
+  async getSharedDocument(token: string) {
+    const res = await apiClient.get<ApiResponse<Document>>(`shares/public/${token}`);
     return res.data;
   },
 
   async getDocumentShares(docId: string) {
-    const res = await apiClient.get<ApiResponse>(`documents/${docId}/shares`);
+    const res = await apiClient.get<ApiResponse>(`shares/${docId}`);
     return res.data;
   },
 
   async revokeShare(shareId: string) {
-    const res = await apiClient.delete<ApiResponse>(`documents/shares/${shareId}`);
+    const res = await apiClient.delete<ApiResponse>(`shares/${shareId}`);
     return res.data;
   },
 };

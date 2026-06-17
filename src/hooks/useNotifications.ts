@@ -26,12 +26,19 @@ export function useNotifications() {
 
   useEffect(() => { fetch(); }, [fetch]);
 
+  useEffect(() => {
+    const handler = () => fetch();
+    window.addEventListener("docmaster:notification-read", handler);
+    return () => window.removeEventListener("docmaster:notification-read", handler);
+  }, [fetch]);
+
   const markAsRead = useCallback(async (id: string) => {
     const res = await notificationsService.markAsRead(id);
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true, lue: true } : n))
     );
     setUnreadCount((prev) => Math.max(0, prev - 1));
+    window.dispatchEvent(new CustomEvent("docmaster:notification-read"));
     return res;
   }, []);
 
@@ -39,6 +46,7 @@ export function useNotifications() {
     const res = await notificationsService.markAllAsRead();
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true, lue: true })));
     setUnreadCount(0);
+    window.dispatchEvent(new CustomEvent("docmaster:notification-read"));
     return res;
   }, []);
 

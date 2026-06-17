@@ -32,6 +32,9 @@ import settingRoutes from "./src/routes/setting.routes.js";
 import withdrawalRoutes from "./src/routes/withdrawal.routes.js";
 import smsRoutes from "./src/routes/sms.routes.js";
 import earningsRoutes from "./src/routes/earnings.routes.js";
+import pointsRoutes from "./src/routes/points.routes.js";
+import paymentMethodRoutes from "./src/routes/payment-method.routes.js";
+import adminRoutes from "./src/routes/admin.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -65,8 +68,11 @@ export function createApp(): Application {
             "http://217.154.126.24:3003",
             "https://217.154.126.24:3003",
             "https://docmaster.net",
+            "docmaster.net",
+            "www.docmaster.net",
 
-            
+
+
             // Swagger validators
             "validator.swagger.io"
           ],
@@ -103,6 +109,9 @@ export function createApp(): Application {
     "http://217.154.126.24:5000",
     "http://217.154.126.24",
     "https://docmaster.net",
+    "https://www.docmaster.net",
+    "www.docmaster.net",
+    "docmaster.net",
   ];
 
   // Add custom domains from environment if set
@@ -240,6 +249,9 @@ export function createApp(): Application {
   app.use("/api/withdrawals", withdrawalRoutes);
   app.use("/api/sms", smsRoutes);
   app.use("/api/earnings", earningsRoutes);
+  app.use("/api/points", pointsRoutes);
+  app.use("/api/payment-methods", paymentMethodRoutes);
+  app.use("/api/admin", adminRoutes);
 
   // ═════════════════════════════════════════════════════════════════
   // ERROR HANDLING - 404 Handler

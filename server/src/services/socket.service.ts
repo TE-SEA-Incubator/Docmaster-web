@@ -58,6 +58,7 @@ export class SocketService {
       try {
         const decoded = jwt.verify(token, JWT_SECRET) as any;
         (socket as any).userId = decoded.id;
+        (socket as any).userRole = decoded.role || 'USER';
         next();
       } catch (err) {
         next(new Error('Authentication error: Invalid token'));
@@ -66,7 +67,14 @@ export class SocketService {
 
     this.io.on('connection', (socket: Socket) => {
       const userId = (socket as any).userId;
-      console.log(`🔌 User connected to socket: ${userId} (${socket.id})`);
+      const userRole = (socket as any).userRole;
+      console.log(`🔌 User connected to socket: ${userId} (${socket.id}) role=${userRole}`);
+
+      // Join admin room if admin
+      if (userRole === 'ADMIN') {
+        socket.join('admin');
+        console.log(`👑 Admin ${userId} joined admin room`);
+      }
 
       // Add socket to user's list
       const sockets = this.userSockets.get(userId) || [];
@@ -103,6 +111,14 @@ export class SocketService {
     } else {
       console.log(`📭 User ${userId} is not connected via socket`);
     }
+  }
+
+  /**
+   * Send to admin users only
+   */
+  public sendToAdmins(event: string, data: any): void {
+    if (!this.io) return;
+    this.io.to('admin').emit(event, data);
   }
 
   /**

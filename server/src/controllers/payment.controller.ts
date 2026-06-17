@@ -169,52 +169,67 @@ export const payRecovery = async (req: Request, res: Response) => {
         const docType = docTypeRes.rows[0];
         const finalAmount = docType ? Number(docType.prix_retrouvaille) : (amount || 5000);
 
-        // 3. Initiate Nokash Payment
+        // 3. Initiate Payment
         const orderId = `REC-${uuidv4().substring(0, 8)}`;
         let nokashRes;
-        try {
-          nokashRes = await nokashService.initiatePayment({
-            payment_method: paymentMethod,
-            amount: finalAmount,
-            order_id: orderId,
-            user_phone: req.body.phone, // Phone provided in body
-            country: 'CM'
-          });
+        let isPoints = paymentMethod === 'POINTS';
 
-          if (nokashRes.status !== 'REQUEST_OK') {
-            // Nokash returns a message explaining the problem; map common cases to 400
-            const nokashMsg = (nokashRes.message || '').toString();
-            if (nokashMsg.toLowerCase().includes('intégr') && nokashMsg.toLowerCase().includes('méthode')) {
-              console.warn('[PayRecovery] Nokash method not integrated:', nokashMsg);
-              return res.status(400).json({ success: false, message: `La méthode de paiement demandée n'est pas activée sur votre compte de paiement. Veuillez vérifier la configuration Nokash.` });
+        if (!isPoints) {
+          try {
+            nokashRes = await nokashService.initiatePayment({
+              payment_method: paymentMethod,
+              amount: finalAmount,
+              order_id: orderId,
+              user_phone: req.body.phone,
+              country: 'CM'
+            });
+
+            if (nokashRes.status !== 'REQUEST_OK') {
+              const nokashMsg = (nokashRes.message || '').toString();
+              if (nokashMsg.toLowerCase().includes('intégr') && nokashMsg.toLowerCase().includes('méthode')) {
+                console.warn('[PayRecovery] Nokash method not integrated:', nokashMsg);
+                return res.status(400).json({ success: false, message: `La méthode de paiement demandée n'est pas activée sur votre compte de paiement.` });
+              }
+              throw new Error(`Nokash: ${nokashMsg || 'Erreur lors de l\'initialisation'}`);
             }
-            throw new Error(`Nokash: ${nokashMsg || 'Erreur lors de l\'initialisation'}`);
+          } catch (err: any) {
+            if (err.status === 400) {
+              return res.status(400).json({ success: false, message: err.message });
+            }
+            const em = (err && err.message) ? err.message.toLowerCase() : '';
+            if (em.includes('méthode') && em.includes('nokash')) {
+              return res.status(400).json({ success: false, message: 'La méthode de paiement sélectionnée n\'est pas disponible pour votre application Nokash.' });
+            }
+            console.error('❌ [PayRecovery] Nokash call failed:', err);
+            return res.status(502).json({ success: false, message: 'Échec de la communication avec le service de paiement externe.' });
           }
-        } catch (err: any) {
-          // If nokashService threw a network/other error, surface a clearer response
-          const em = (err && err.message) ? err.message.toLowerCase() : '';
-          if (em.includes('méthode') && em.includes('nokash')) {
-            return res.status(400).json({ success: false, message: 'La méthode de paiement sélectionnée n\'est pas disponible pour votre application Nokash.' });
-          }
-          console.error('❌ [PayRecovery] Nokash call failed:', err);
-          return res.status(502).json({ success: false, message: 'Échec de la communication avec le service de paiement externe.' });
+        } else {
+          // If points, validate points balance
+          const { pointsService } = await import('../services/points.service.ts');
+          const pointsNeeded = await pointsService.calculatePointsNeeded(finalAmount);
+          await pointsService.redeemPoints(userId, pointsNeeded, 'POINTS_REDEMPTION', `Paiement récupération doc ${docId}`, { docId });
         }
 
-        // 4. Create PENDING transaction
+        // 4. Create PENDING transaction (or SUCCESS if points)
         await query(
             `INSERT INTO transactions (user_id, amount, currency, status, payment_method, type, external_ref, metadata) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
             [
                 userId, 
                 finalAmount, 
-                'XAF', 
-                'PENDING', 
-                paymentMethod || 'MOBILE_MONEY',
+                isPoints ? 'POINTS' : 'XAF', 
+                isPoints ? 'SUCCESS' : 'PENDING', 
+                paymentMethod,
                 'recovery_fee', 
-                nokashRes.data.id,
+                isPoints ? orderId : nokashRes.data.id,
                 JSON.stringify({ docId })
             ]
         );
+
+        if (isPoints) {
+          await activateRecovery(userId, docId, orderId);
+          return res.status(200).json({ success: true, message: 'Paiement par points réussi.' });
+        }
 
         startNokashPaymentPolling({
           externalRef: nokashRes.data.id,

@@ -84,6 +84,19 @@ export interface DocumentDeclaration {
     deleted_reason?: string | null;
 }
 
+export type MatchStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED';
+
+export interface Match {
+    id: string;
+    lost_declaration_id: string;
+    found_declaration_id: string;
+    score: number;
+    status: MatchStatus;
+    created_at: Date;
+    updated_at?: Date;
+}
+
+
 export interface UserDocument {
     id: string;
     user_id: string;
@@ -100,6 +113,11 @@ export interface UserDocument {
     is_protected: boolean;
     is_lost: boolean;
     declaration_id?: string;
+    validity_option: 'EXPIRING' | 'PERMANENT';
+    is_archived: boolean;
+    archived_at?: Date;
+    expiration_reminded: boolean;
+    expiration_reminded_at?: Date;
     created_at: Date;
 }
 
