@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Docmaster",
+    "slug": "docmaster",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "docmaster",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#F4EFE6"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "net.docmaster.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Docmaster utilise la caméra pour scanner et photographier vos documents.",
+        "NSPhotoLibraryUsageDescription": "Docmaster accède à vos photos pour joindre des documents."
+      }
+    },
+    "android": {
+      "package": "net.docmaster.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F4EFE6"
+      },
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Docmaster utilise la caméra pour scanner vos documents."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiBaseUrl": "https://api-v2.docmaster.net/api"
+    }
+  }
+}
