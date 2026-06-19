@@ -1,0 +1,81 @@
+{
+  "expo": {
+    "name": "docmaster",
+    "slug": "docmaster",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "docmaster",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "icon": "./assets/expo.icon"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.docmaster"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F4EFE6",
+          "image": "./assets/docmaster.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "android": {
+            "image": "./assets/docmaster.png",
+            "imageWidth": 200
+          },
+          "ios": {
+            "image": "./assets/docmaster.png",
+            "imageWidth": 200
+          }
+        }
+      ],
+      "expo-secure-store",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "DocMaster a besoin d'accéder à vos photos pour les documents.",
+          "cameraPermission": "DocMaster a besoin d'accéder à votre appareil photo pour scanner vos documents.",
+          "microphonePermission": false
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "ndkVersion": "28.2.13676358"
+          }
+        }
+      ],
+      "expo-audio"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d62d23a5-c7ac-4b7e-849a-b8fb8f194d67"
+      }
+    }
+  }
+}

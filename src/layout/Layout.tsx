@@ -8,7 +8,7 @@ import Footer from "./Footer";
 import NotificationModal from "../components/ui/NotificationModal";
 import PlayStoreBanner from "../components/ui/PlayStoreBanner";
 
-const authPages = ["/dashboard", "/mes-documents", "/mes-appareils", "/mes-declarations", "/abonnement", "/parrainage", "/mes-gains", "/infos-profil", "/declarer", "/trouver", "/rechercher", "/recuperer"];
+const authPages = ["/dashboard", "/mes-documents", "/mes-appareils", "/mes-declarations", "/abonnement", "/parrainage", "/mes-gains", "/infos-profil", "/declarer", "/trouver", "/rechercher", "/recuperer", "/rendre"];
 const publicPages = ["/", "/login", "/forgot-password", "/reset-password", "/recherche-publique", "/conditions", "/confidentialite", "/partage", "/partage.html"];
 
 export default function Layout() {

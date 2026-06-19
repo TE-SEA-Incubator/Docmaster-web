@@ -5,8 +5,9 @@ import { paymentsService, type SavedPaymentMethod } from "../../services/payment
 import { settingsService } from "../../services/settingsService";
 import { authService } from "../../services/authService";
 import { earningsService } from "../../services/earningsService";
+import { declarationsService } from "../../services/declarationsService";
 import Topbar from "../../layout/Topbar";
-import type { Transaction, EarningsRecord } from "../../types/api";
+import type { Transaction, EarningsRecord, Declaration } from "../../types/api";
 
 function fmtAmount(n: number) {
   return n.toLocaleString("fr-FR");
@@ -32,6 +33,7 @@ export default function MesGains() {
   const [minWithdrawal, setMinWithdrawal] = useState(500);
   const [earningsHistory, setEarningsHistory] = useState<EarningsRecord[]>([]);
   const [earningsLoading, setEarningsLoading] = useState(true);
+  const [declarations, setDeclarations] = useState<Declaration[]>([]);
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -45,11 +47,12 @@ export default function MesGains() {
     setTxLoading(true);
     setEarningsLoading(true);
     try {
-      const [txRes, settingsRes, statsRes, earningsRes] = await Promise.all([
+      const [txRes, settingsRes, statsRes, earningsRes, declRes] = await Promise.all([
         paymentsService.getMyTransactions(),
         settingsService.getAll(),
         authService.getEarningsStats(),
         earningsService.getMyEarnings(),
+        declarationsService.getMyDeclarations(),
       ]);
 
       if (txRes.success && txRes.data) {
@@ -68,6 +71,10 @@ export default function MesGains() {
       if (earningsRes.success && earningsRes.data) {
         const raw = earningsRes.data as any;
         setEarningsHistory(Array.isArray(raw) ? raw : raw.data || []);
+      }
+
+      if (declRes.success && declRes.data) {
+        setDeclarations(Array.isArray(declRes.data) ? declRes.data : []);
       }
     } catch {
       // silent
@@ -113,6 +120,19 @@ export default function MesGains() {
   const nextLevelPoints = 500;
   const pointsToNext = Math.max(nextLevelPoints - totalPoints, 0);
   const levelLabel = totalPoints >= 500 ? t("mesgains_level_gold") : t("mesgains_level_silver");
+
+  // Potential earnings from FOUND declarations not yet returned
+  const potentialDeclarations = declarations.filter(
+    (d) => d.declaration_type === "FOUND" && ["AVAILABLE", "MATCHED"].includes(d.status)
+  );
+  const totalPotentialXaf = potentialDeclarations.reduce((acc, d) => {
+    const prix = d.docTypeInfo?.prix_retrouvaille ?? 0;
+    const pct = d.docTypeInfo?.finder_percent ?? 80;
+    return acc + (prix * pct) / 100;
+  }, 0);
+  const totalPotentialPts = potentialDeclarations.reduce((acc, d) => {
+    return acc + (d.docTypeInfo?.points_recompense ?? 0);
+  }, 0);
 
   const handleWithdraw = () => {
     if (balance < minWithdrawal) {
@@ -175,6 +195,14 @@ export default function MesGains() {
               label={t("mesgains_xaf_withdrawn")}
             />
           </div>
+
+          <PotentialEarningsCard
+            declarations={potentialDeclarations}
+            totalXaf={totalPotentialXaf}
+            totalPts={totalPotentialPts}
+            fmtAmount={fmtAmount}
+            t={t}
+          />
 
           <PointsCard
             totalPoints={totalPoints}
@@ -475,6 +503,105 @@ function PointsRow({ label, detail, pts, color, max }: any) {
       </div>
       <div className="bg-borda rounded-[99px] overflow-hidden h-[6px]">
         <div className={`h-full rounded-[99px] ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+/* ── Potential Earnings Card ── */
+
+function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t }: any) {
+  if (declarations.length === 0) return null;
+
+  return (
+    <div className="bg-white border border-borda rounded-[18px] overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-borda">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-[9px] bg-amber-50 flex items-center justify-center">
+            <i className="fa-solid fa-sack-dollar text-amber-500 text-sm" />
+          </div>
+          <div>
+            <h2 className="font-bricolage text-[15px] font-bold text-textMain">
+              {t("mesgains_potential_title")}
+            </h2>
+            <p className="text-[11px] text-textMuted">{t("mesgains_potential_desc")}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Totals */}
+      <div className="px-5 py-4 bg-amber-50/50 border-b border-borda">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[11px] bg-amber-100 flex items-center justify-center">
+              <i className="fa-solid fa-coins text-amber-500 text-lg" />
+            </div>
+            <div>
+              <p className="font-bricolage text-xl font-extrabold text-textMain leading-none">
+                {fmtAmount(totalXaf)} <span className="text-sm font-bold text-textMuted">XAF</span>
+              </p>
+              <p className="text-[11px] text-textMuted mt-0.5">{t("mesgains_potential_xaf")}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[11px] bg-primary/10 flex items-center justify-center">
+              <i className="fa-solid fa-star text-primary text-lg" />
+            </div>
+            <div>
+              <p className="font-bricolage text-xl font-extrabold text-textMain leading-none">
+                {fmtAmount(totalPts)} <span className="text-sm font-bold text-textMuted">pts</span>
+              </p>
+              <p className="text-[11px] text-textMuted mt-0.5">{t("mesgains_potential_pts")}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Per-declaration breakdown */}
+      <div className="divide-y divide-borda">
+        {declarations.map((decl: Declaration) => {
+          const prix = decl.docTypeInfo?.prix_retrouvaille ?? 0;
+          const pct = decl.docTypeInfo?.finder_percent ?? 80;
+          const xafGain = (prix * pct) / 100;
+          const ptsGain = decl.docTypeInfo?.points_recompense ?? 0;
+          const icon = decl.docTypeInfo?.icone || "file";
+          const statusColor = decl.status === "MATCHED" ? "bg-green-light text-green-mid" : "bg-primary/10 text-primary";
+
+          return (
+            <div key={decl.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors">
+              <div className="w-9 h-9 rounded-[10px] bg-amber-50 flex items-center justify-center flex-shrink-0">
+                <i className={`fa-solid fa-${icon} text-amber-500 text-sm`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-textMain truncate leading-tight">
+                  {decl.docTypeInfo?.nom || decl.doc_type || "Document"}
+                </p>
+                <p className="text-[11px] text-textMuted mt-0.5">
+                  {decl.identifiant_doc_dm || decl.id.slice(0, 8)}
+                  {decl.ville ? ` · ${decl.ville}` : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColor}`}>
+                  {decl.status === "MATCHED" ? t("mesgains_potential_matched") : t("mesgains_potential_available")}
+                </span>
+                <div className="text-right">
+                  <p className="font-bricolage text-[13px] font-extrabold text-amber-500">
+                    +{fmtAmount(xafGain)} XAF
+                  </p>
+                  <p className="text-[10px] font-bold text-primary">+{ptsGain} pts</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="px-5 py-3 bg-amber-50/30 border-t border-borda">
+        <p className="text-[11px] text-textMuted text-center">
+          <i className="fa-solid fa-circle-info text-amber-400 mr-1" />
+          {t("mesgains_potential_note")}
+        </p>
       </div>
     </div>
   );

@@ -65,8 +65,8 @@ export const devicesService = {
     return res.data;
   },
 
-  async verifyDevice(imei: string) {
-    const res = await apiClient.post<ApiResponse>("devices/verify", { imei });
+  async verifyDevice(identifier: string) {
+    const res = await apiClient.get<ApiResponse>(`devices/verify/${identifier}`);
     return res.data;
   },
 

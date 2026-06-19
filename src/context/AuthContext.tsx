@@ -165,6 +165,7 @@ export function AuthProvider({ children }) {
     deleteToken();
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem("docmaster_admin_login");
+    localStorage.removeItem("dm_devices_cache");
     setUser(null);
   }, []);
 

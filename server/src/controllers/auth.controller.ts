@@ -71,9 +71,14 @@ export class AuthController {
         code_invitation: user.code_invitation,
       });
     } catch (error: any) {
-      // Handle duplicate email
       if (error.message.includes('duplicate key')) {
-        res.status(409).json({ error: 'Email already exists' });
+        if (error.message.includes('users_email_key')) {
+          res.status(409).json({ error: 'Cet email est déjà utilisé' });
+        } else if (error.message.includes('users_telephone_key')) {
+          res.status(409).json({ error: 'Ce numéro de téléphone est déjà utilisé' });
+        } else {
+          res.status(409).json({ error: 'Un conflit est survenu lors de l\'inscription' });
+        }
       } else {
         res.status(500).json({ error: error.message || 'Registration failed' });
       }

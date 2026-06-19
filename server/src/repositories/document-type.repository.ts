@@ -45,8 +45,9 @@ export class DocumentTypeRepository {
     const query = `
       INSERT INTO document_types (
         nom, code, description, prix_retrouvaille, finder_percent, 
-        app_percent, points_recompense, delai_expiration_mois, icone, categorie, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        app_percent, points_recompense, delai_expiration_mois, icone, categorie, is_active,
+        fields, color, bg
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `;
     const values = [
@@ -60,7 +61,10 @@ export class DocumentTypeRepository {
       data.delai_expiration_mois,
       data.icone,
       data.categorie,
-      data.is_active !== undefined ? data.is_active : true
+      data.is_active !== undefined ? data.is_active : true,
+      data.fields,
+      data.color,
+      data.bg
     ];
     const { rows } = await pool.query(query, values);
     return rows[0];
@@ -75,7 +79,7 @@ export class DocumentTypeRepository {
     let idx = 1;
 
     Object.entries(data).forEach(([key, value]) => {
-      if (['nom', 'code', 'description', 'prix_retrouvaille', 'finder_percent', 'app_percent', 'points_recompense', 'delai_expiration_mois', 'icone', 'categorie', 'is_active'].includes(key)) {
+      if (['nom', 'code', 'description', 'prix_retrouvaille', 'finder_percent', 'app_percent', 'points_recompense', 'delai_expiration_mois', 'icone', 'categorie', 'is_active', 'fields', 'color', 'bg'].includes(key)) {
         fields.push(`${key} = $${idx++}`);
         values.push(value);
       }

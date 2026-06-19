@@ -8,6 +8,8 @@ import {
   getPerformanceStats,
   searchPublicFound,
   getDeclarationById,
+  getRenderContext,
+  validateRecovery,
   initiateRecovery,
   generatePdf,
   deleteDeclaration
@@ -286,6 +288,56 @@ router.get('/', authMiddleware, searchDeclarations);
  *         description: Erreur serveur
  */
 router.get('/:id', authMiddleware, getDeclarationById);
+
+/**
+ * @swagger
+ * /declarations/{id}/render-context:
+ *   get:
+ *     summary: Obtenir tout le contexte pour la page de remise/récupération
+ *     tags: [Declarations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Contexte récupéré avec succès
+ *       403:
+ *         description: Action non autorisée
+ *       404:
+ *         description: Déclaration introuvable
+ */
+router.get('/:id/render-context', authMiddleware, getRenderContext);
+
+/**
+ * @swagger
+ * /declarations/{id}/validate-recovery:
+ *   post:
+ *     summary: Valider le code de remise et traiter les récompenses
+ *     tags: [Declarations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [code]
+ *             properties:
+ *               code: { type: string, example: "123456" }
+ */
+router.post('/:id/validate-recovery', authMiddleware, validateRecovery);
 
 /**
  * @swagger

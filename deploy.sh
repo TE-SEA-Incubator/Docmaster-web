@@ -62,7 +62,7 @@ compress_assets() {
     log_info "Compression du Frontend React (en excluant le dossier /server et les builds locaux)..."
     cd "$SCRIPT_DIR"
     rm -f "../$ARCHIVE_FRONT"
-    7z a "../$ARCHIVE_FRONT" ./* -xr!'server' -xr!'node_modules' -xr!'.git' -xr!'dist' -xr!'build' -xr!'Docmaster_Backend' -xr!'Docmaster_Backend_V2' -xr!'*.7z' >/dev/null
+    7z a "../$ARCHIVE_FRONT" ./* -xr!'server' -xr!'node_modules' -xr!'.git' -xr!'dist' -xr!'build' -xr!'Docmaster_Backend' -xr!'Docmaster_Backend_V2' -xr!'*.7z' -xr!'mobile' >/dev/null
 
     log_info "Compression du Backend (Dossier /server)..."
     # Copy production env file to server folder before compressing

@@ -13,7 +13,8 @@ const RechercherPublic = lazy(() => import("./pages/public/Rechercher"));
 const RechercherAuth = lazy(() => import("./pages/auth/Rechercher"));
 const Declarer = lazy(() => import("./pages/auth/Declarer"));
 const Recuperer = lazy(() => import("./pages/auth/Recuperer"));
-const Rendre = lazy(() => import("./pages/auth/Trouver"));
+const Rendre = lazy(() => import("./pages/auth/Rendre"));
+const Trouver = lazy(() => import("./pages/auth/Trouver"));
 const ValidationRemise = lazy(() => import("./pages/auth/ValidationRemise"));
 const Conditions = lazy(() => import("./pages/public/Conditions"));
 const Confidentialite = lazy(() => import("./pages/public/Confidentialite"));
@@ -60,7 +61,8 @@ export default function App() {
           <Route path="/recherche-publique" element={<RechercherPublic />} />
           <Route path="/declarer" element={<ProtectedRoute><Declarer /></ProtectedRoute>} />
           <Route path="/recuperer" element={<ProtectedRoute><Recuperer /></ProtectedRoute>} />
-          <Route path="/trouver" element={<Rendre />} />
+          <Route path="/trouver" element={<Trouver />} />
+          <Route path="/rendre" element={<ProtectedRoute><Rendre /></ProtectedRoute>} />
           <Route path="/remise" element={<ValidationRemise />} />
           <Route path="/conditions" element={<Conditions />} />
           <Route path="/confidentialite" element={<Confidentialite />} />

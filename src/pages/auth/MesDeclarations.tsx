@@ -421,7 +421,7 @@ export default function MesDeclarations() {
                     <button
                       onClick={() =>
                         navigate(
-                          `/${(detailItem.declaration_type || detailItem.type || "").toUpperCase() === "LOST" ? "recuperer" : "rendre"}?id=${detailItem.id}`
+                          `/recuperer?id=${detailItem.id}`
                         )
                       }
                       className={`w-full py-3 sm:py-4 text-white rounded-xl font-black text-sm sm:text-base shadow-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 sm:gap-3 ${

@@ -541,7 +541,7 @@ function TrackingFoundCard({ decl, navigate }: { decl: Declaration; navigate: (p
         <StepIndicator steps={[t("dashboard_found_step_found"), t("dashboard_found_step_reported"), t("dashboard_found_step_owner"), t("dashboard_found_step_returned")]} current={step} color={colorKey} />
         {decl.status === "MATCHED" && decl.status !== "RETURNED" && (
           <div className="mt-6 flex justify-end">
-            <button onClick={() => navigate(`/trouver?id=${decl.id}`)} className="px-4 py-2 bg-green-600 text-white rounded-[10px] text-[11px] font-bold hover:bg-green-700 transition-all flex items-center gap-2 shadow-lg shadow-green-500/20">
+            <button onClick={() => navigate(`/rendre?id=${decl.id}`)} className="px-4 py-2 bg-green-600 text-white rounded-[10px] text-[11px] font-bold hover:bg-green-700 transition-all flex items-center gap-2 shadow-lg shadow-green-500/20">
               <i className="fa-solid fa-hand-holding-heart" /> {t("dashboard_return_document")}
             </button>
           </div>

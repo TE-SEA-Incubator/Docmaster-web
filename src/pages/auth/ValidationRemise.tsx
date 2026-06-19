@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { declarationsService } from "../../services/declarationsService";
+import { claimsService } from "../../services/claimsService";
 import type { Declaration } from "../../types/api";
 import Topbar from "../../layout/Topbar";
 import { useI18n } from "../../context/I18nContext";
@@ -86,8 +87,8 @@ export default function ValidationRemise() {
     setAlertMsg(null);
 
     try {
-      const result = await declarationsService.validateRecoveryCode({
-        docId,
+      const result = await claimsService.validateRecoveryCode({
+        claim_id: docId || "",
         code: fullCode,
       });
 

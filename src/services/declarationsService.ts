@@ -36,6 +36,11 @@ export const declarationsService = {
     return res.data;
   },
 
+  async getRenderContext(id: string) {
+    const res = await apiClient.get<ApiResponse<Declaration>>(`declarations/${id}/render-context`);
+    return res.data;
+  },
+
   async searchPublic(query: string) {
     const res = await apiClient.get<ApiResponse<Declaration[]>>("declarations/search-public", {
       params: { q: query },
@@ -65,6 +70,11 @@ export const declarationsService = {
 
   async validateRecoveryCode(data: { docId: string; code: string }) {
     const res = await apiClient.post<ApiResponse>("declarations/validate-code", data);
+    return res.data;
+  },
+
+  async validateRecovery(id: string, code: string) {
+    const res = await apiClient.post<ApiResponse>(`declarations/${id}/validate-recovery`, { code });
     return res.data;
   },
 

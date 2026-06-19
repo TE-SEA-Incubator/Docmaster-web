@@ -119,6 +119,80 @@ const DOC_META: Record<string, DocumentMetadata> = {
       { id: "annee", label: "declarer_field_annee", type: "text", icon: "fa-calendar-days", placeholder: "declarer_placeholder_annee" },
     ],
   },
+  carte_sejour: {
+    label: "declarer_doc_type_carte_sejour",
+    icon: "fa-stamp",
+    color: "#0EA5E9",
+    fields: [
+      { id: "titulaire", label: "declarer_field_titulaire", type: "text", icon: "fa-user", placeholder: "declarer_placeholder_nom" },
+      { id: "numero", label: "declarer_field_numero_sejour", type: "text", icon: "fa-barcode", placeholder: "declarer_placeholder_numero_sejour" },
+      { id: "date_naissance", label: "declarer_field_date_naissance", type: "date", icon: "fa-calendar", optional: true },
+      { id: "date_delivrance", label: "declarer_field_date_delivrance", type: "date", icon: "fa-calendar", optional: true },
+    ],
+  },
+  carte_vote: {
+    label: "declarer_doc_type_carte_vote",
+    icon: "fa-check-to-slot",
+    color: "#10B981",
+    fields: [
+      { id: "titulaire", label: "declarer_field_titulaire", type: "text", icon: "fa-user", placeholder: "declarer_placeholder_nom" },
+      { id: "numero", label: "declarer_field_numero_vote", type: "text", icon: "fa-barcode", placeholder: "declarer_placeholder_numero_vote" },
+      { id: "date_naissance", label: "declarer_field_date_naissance", type: "date", icon: "fa-calendar", optional: true },
+    ],
+  },
+  carte_blue: {
+    label: "declarer_doc_type_carte_blue",
+    icon: "fa-credit-card",
+    color: "#3B82F6",
+    fields: [
+      { id: "titulaire", label: "declarer_field_nom_carte", type: "text", icon: "fa-user", placeholder: "declarer_placeholder_nom_carte" },
+      { id: "numero", label: "declarer_field_numero_carte", type: "text", icon: "fa-barcode", placeholder: "declarer_placeholder_numero_carte" },
+      { id: "date_delivrance", label: "declarer_field_date_delivrance", type: "date", icon: "fa-calendar", optional: true },
+    ],
+  },
+  titre_financier: {
+    label: "declarer_doc_type_titre_financier",
+    icon: "fa-house-chimney",
+    color: "#F59E0B",
+    fields: [
+      { id: "titulaire", label: "declarer_field_proprietaire", type: "text", icon: "fa-user", placeholder: "declarer_placeholder_nom" },
+      { id: "numero", label: "declarer_field_numero_titre", type: "text", icon: "fa-barcode", placeholder: "declarer_placeholder_numero_titre" },
+      { id: "ville", label: "declarer_field_localisation", type: "text", icon: "fa-location-dot", placeholder: "declarer_placeholder_ville_ex_kribi" },
+    ],
+  },
+  acte_naissance: {
+    label: "declarer_doc_type_acte_naissance",
+    icon: "fa-file-lines",
+    color: "#EC4899",
+    fields: [
+      { id: "titulaire", label: "declarer_field_titulaire", type: "text", icon: "fa-user", placeholder: "declarer_placeholder_nom" },
+      { id: "numero", label: "declarer_field_numero_acte", type: "text", icon: "fa-barcode", placeholder: "declarer_placeholder_numero_acte" },
+      { id: "date_naissance", label: "declarer_field_date_naissance", type: "date", icon: "fa-calendar" },
+      { id: "lieu_naissance", label: "declarer_field_lieu_naissance_acte", type: "text", icon: "fa-location-dot", placeholder: "declarer_placeholder_ville_ex_douala" },
+    ],
+  },
+  acte_mariage: {
+    label: "declarer_doc_type_acte_mariage",
+    icon: "fa-ring",
+    color: "#F43F5E",
+    fields: [
+      { id: "titulaire", label: "declarer_field_titulaire", type: "text", icon: "fa-user", placeholder: "declarer_placeholder_nom" },
+      { id: "numero", label: "declarer_field_numero_acte", type: "text", icon: "fa-barcode", placeholder: "declarer_placeholder_numero_acte" },
+      { id: "date_marriage", label: "declarer_field_date_marriage", type: "date", icon: "fa-calendar" },
+      { id: "lieu_marriage", label: "declarer_field_lieu_marriage", type: "text", icon: "fa-location-dot", placeholder: "declarer_placeholder_ville_ex_douala" },
+    ],
+  },
+  acte_deces: {
+    label: "declarer_doc_type_acte_deces",
+    icon: "fa-scroll",
+    color: "#6B7280",
+    fields: [
+      { id: "titulaire", label: "declarer_field_titulaire", type: "text", icon: "fa-user", placeholder: "declarer_placeholder_nom" },
+      { id: "numero", label: "declarer_field_numero_acte", type: "text", icon: "fa-barcode", placeholder: "declarer_placeholder_numero_acte" },
+      { id: "date_deces", label: "declarer_field_date_deces", type: "date", icon: "fa-calendar" },
+      { id: "lieu_deces", label: "declarer_field_lieu_deces", type: "text", icon: "fa-location-dot", placeholder: "declarer_placeholder_ville_ex_douala" },
+    ],
+  },
   autre: {
     label: "declarer_doc_type_autre",
     icon: "fa-file",

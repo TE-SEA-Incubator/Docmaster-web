@@ -142,21 +142,27 @@ export default function MesAppareils() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const photoSerialInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchDevices = useCallback(async () => {
-    setLoading(true);
+  const CACHE_KEY = "dm_devices_cache";
+
+  const fetchDevices = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       let result = await devicesService.getMyDevices();
       if (!result.success || !Array.isArray(result.data)) {
         result = await devicesService.getAll();
       }
       if (result.success && Array.isArray(result.data)) {
-        setDevices(result.data.map(normalizeDevice));
+        const normalized = result.data.map(normalizeDevice);
+        setDevices(normalized);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(normalized));
       }
     } catch {
       try {
         const result = await devicesService.getAll();
         if (result.success && Array.isArray(result.data)) {
-          setDevices(result.data.map(normalizeDevice));
+          const normalized = result.data.map(normalizeDevice);
+          setDevices(normalized);
+          localStorage.setItem(CACHE_KEY, JSON.stringify(normalized));
         }
       } catch {
         // ignore
@@ -167,7 +173,19 @@ export default function MesAppareils() {
   }, []);
 
   useEffect(() => {
-    fetchDevices();
+    // Load from cache initially
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        setDevices(JSON.parse(cached));
+        setLoading(false); // don't show spinner if we have cache
+        fetchDevices(false); // refresh in background
+      } catch {
+        fetchDevices(true);
+      }
+    } else {
+      fetchDevices(true);
+    }
   }, [fetchDevices]);
 
   const filtered = devices.filter((d) => {

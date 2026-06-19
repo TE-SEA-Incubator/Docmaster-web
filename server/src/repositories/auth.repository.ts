@@ -13,6 +13,15 @@ export class UserRepository {
   }
 
   /**
+   * Find user by telephone
+   */
+  async findByTelephone(telephone: string): Promise<User | null> {
+    const query = 'SELECT * FROM users WHERE telephone = $1';
+    const { rows } = await pool.query(query, [telephone]);
+    return rows[0] || null;
+  }
+
+  /**
    * Find user by ID
    */
   async findById(id: string): Promise<User | null> {

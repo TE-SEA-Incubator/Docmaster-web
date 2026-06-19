@@ -537,6 +537,104 @@ export class DeclarationService {
   }
 
   /**
+   * Validate recovery code and process all rewards/status updates
+   */
+  async validateRecovery(declarationId: string, userId: string, code: string) {
+    // 1. Find the active claim
+    // We try direct find, then counterpart find (like in ClaimController)
+    let claim = await this.claimRepository.findActiveByDocId(declarationId);
+    
+    if (!claim) {
+      const matches = await this.matchRepository.findByDeclarationId(declarationId);
+      if (matches && matches.length > 0) {
+        for (const match of matches) {
+          const counterpartId = match.lost_declaration_id === declarationId ? match.found_declaration_id : match.lost_declaration_id;
+          const potentialClaim = await this.claimRepository.findActiveByDocId(counterpartId);
+          if (potentialClaim) {
+            claim = potentialClaim;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!claim) {
+      throw new Error("Aucune réclamation active trouvée pour ce document.");
+    }
+
+    // 2. Verify code
+    if (claim.verification_code !== code) {
+      await this.claimRepository.incrementAttempts(claim.id);
+      throw new Error("Code de vérification invalide.");
+    }
+
+    // 3. Process Success - All actions identified in plan
+    
+    // 3.1 Update Claim & Declarations Status
+    await this.claimRepository.updateStatus(claim.id, 'VALIDATED');
+    await this.declarationRepository.updateStatus(claim.doc_id, 'RETURNED');
+    
+    const matches = await this.matchRepository.findByDeclarationId(claim.doc_id);
+    if (matches && matches.length > 0) {
+      for (const match of matches) {
+        const otherId = match.lost_declaration_id === claim.doc_id ? match.found_declaration_id : match.lost_declaration_id;
+        await this.declarationRepository.updateStatus(otherId, 'RETURNED');
+      }
+    }
+
+    // 3.2 Reward Finder (Financial & Social)
+    const lostDecl = await this.declarationRepository.findById(claim.doc_id);
+    if (lostDecl && claim.finder_id) {
+      let docType = null;
+      if (lostDecl.doc_type && this.isUuid(lostDecl.doc_type)) {
+        docType = await this.docTypeRepository.findById(lostDecl.doc_type);
+      }
+      
+      if (docType) {
+        const basePrice = Number(docType.prix_retrouvaille) || 5000;
+        const finderPercent = Number(docType.finder_percent) || 80;
+        const pointsReward = Number(docType.points_recompense) || 20;
+        const rewardAmount = (basePrice * finderPercent) / 100;
+
+        // Credit Balance
+        await pool.query('UPDATE users SET wallet_balance = COALESCE(wallet_balance, 0) + $1 WHERE id = $2', [rewardAmount, claim.finder_id]);
+        
+        // Credit Points
+        await this.awardPoints(claim.finder_id, pointsReward);
+
+        // Record Transaction
+        await this.transactionRepository.create({
+          id: uuidv4(),
+          user_id: claim.finder_id,
+          amount: rewardAmount,
+          currency: 'XAF',
+          status: 'SUCCESS',
+          payment_method: 'VIRTUAL_WALLET',
+          type: 'finder_payout',
+          metadata: { docId: lostDecl.id, claimId: claim.id }
+        });
+
+        // Record Earnings & Send Notifications
+        const { EarningsService } = await import('./earnings.service.ts');
+        await new EarningsService().recordReturnPoints(
+          claim.finder_id,
+          pointsReward,
+          rewardAmount,
+          { docId: lostDecl.id, claimId: claim.id, docType: docType.nom }
+        );
+
+        // Notify Owner
+        await this.notificationService.notifyDocumentRecovered(claim.owner_id, docType.nom, lostDecl.id);
+      }
+    }
+
+    return {
+      success: true,
+      message: "Code validé avec succès ! Récompenses créditées."
+    };
+  }
+
+  /**
    * Check if a string is a valid UUID
    */
   private isUuid(str: string): boolean {

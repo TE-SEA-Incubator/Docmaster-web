@@ -35,6 +35,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       deleteToken();
       localStorage.removeItem("docmaster_user_session");
+      localStorage.removeItem("dm_devices_cache");
       if (
         !window.location.pathname.includes("/login") &&
         window.location.pathname !== "/"

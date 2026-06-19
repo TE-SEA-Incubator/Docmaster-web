@@ -44,6 +44,20 @@ export class UserService {
    * Register a new user with referral code generation
    */
   async registerUser(data: any): Promise<User> {
+    // Pre-check: email already used?
+    const existingEmail = await this.userRepository.findByEmail(data.email);
+    if (existingEmail) {
+      throw new Error('duplicate key value violates unique constraint "users_email_key"');
+    }
+
+    // Pre-check: telephone already used?
+    if (data.telephone) {
+      const existingPhone = await this.userRepository.findByTelephone(data.telephone);
+      if (existingPhone) {
+        throw new Error('duplicate key value violates unique constraint "users_telephone_key"');
+      }
+    }
+
     // If frontend says it's verified, double check in DB for security
     let isVerified = false;
     if (data.is_verified) {

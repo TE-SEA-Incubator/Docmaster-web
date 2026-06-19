@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../context/I18nContext";
+import { authService } from "../../services/authService";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api/";
 
@@ -84,6 +85,11 @@ export default function Login() {
   const [pwMatch, setPwMatch] = useState<boolean | null>(null);
   const [pseudoAvailable, setPseudoAvailable] = useState<boolean | null>(null);
   const [pinValues, setPinValues] = useState(["", "", "", "", "", ""]);
+  const [pinSending, setPinSending] = useState(false);
+  const [pinError, setPinError] = useState("");
+  const [pinMethod, setPinMethod] = useState<"SMS" | "EMAIL" | null>(null);
+  const [pinTarget, setPinTarget] = useState("");
+  const [pinSent, setPinSent] = useState(false);
   const [showReferral, setShowReferral] = useState(() => !!localStorage.getItem("dm_referral_code"));
   const [referralLocked, setReferralLocked] = useState(() => !!localStorage.getItem("dm_referral_locked"));
   const [regError, setRegError] = useState("");
@@ -145,6 +151,100 @@ export default function Login() {
     return score;
   }, []);
 
+  const focusPinIdx = (i: number) => {
+    document.querySelector<HTMLInputElement>(`[data-pin-idx="${i}"]`)?.focus();
+  };
+
+  const handlePinInput = (idx: number, raw: string) => {
+    const digit = raw.replace(/\D/g, "").slice(-1);
+    if (!digit) return;
+    const next = [...pinValues];
+    next[idx] = digit;
+    setPinValues(next);
+    if (idx < 5) focusPinIdx(idx + 1);
+  };
+
+  const handlePinKey = (idx: number, e: React.KeyboardEvent) => {
+    if (e.key !== "Backspace") return;
+    e.preventDefault();
+    if (pinValues[idx]) {
+      const next = [...pinValues];
+      next[idx] = "";
+      setPinValues(next);
+    } else if (idx > 0) {
+      const next = [...pinValues];
+      next[idx - 1] = "";
+      setPinValues(next);
+      focusPinIdx(idx - 1);
+    }
+  };
+
+  const handlePinPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!digits) return;
+    const next = [...pinValues];
+    for (let i = 0; i < digits.length && i < 6; i++) next[i] = digits[i];
+    setPinValues(next);
+    focusPinIdx(Math.min(digits.length, 5));
+  };
+
+  const sendVerificationAndProceed = async () => {
+    setRegStep(4);
+    setPinSending(true);
+    setPinError("");
+    setPinValues(["", "", "", "", "", ""]);
+    setPinSent(false);
+    try {
+      const res = await authService.sendVerificationPin({
+        email: regForm.email,
+        telephone: regForm.telephone,
+      }) as { method: "SMS" | "EMAIL"; target: string };
+      setPinMethod(res.method);
+      setPinTarget(res.target);
+      setPinSent(true);
+    } catch (err: any) {
+      setPinError(err.response?.data?.error || "Erreur d'envoi du code");
+    } finally {
+      setPinSending(false);
+    }
+  };
+
+  const handleVerifyPin = async () => {
+    setPinSending(true);
+    setPinError("");
+    try {
+      await authService.verifyEmailPin({
+        email: regForm.email,
+        pin: pinValues.join(""),
+      });
+      setRegStep(5);
+    } catch (err: any) {
+      setPinError(err.response?.data?.error || "Code invalide ou expiré");
+    } finally {
+      setPinSending(false);
+    }
+  };
+
+  const handleResendPin = async () => {
+    setPinSending(true);
+    setPinError("");
+    setPinValues(["", "", "", "", "", ""]);
+    try {
+      const res = await authService.sendVerificationPin({
+        email: regForm.email,
+        telephone: regForm.telephone,
+      }) as { method: "SMS" | "EMAIL"; target: string };
+      setPinMethod(res.method);
+      setPinTarget(res.target);
+      setPinSent(true);
+    } catch (err: any) {
+      setPinError(err.response?.data?.error || "Erreur d'envoi du code");
+    } finally {
+      setPinSending(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -194,9 +294,10 @@ export default function Login() {
   };
 
   const canGoNext = (step: number): boolean => {
-    if (step === 1) return !!(regForm.nom && regForm.prenom && regForm.email && regForm.telephone && regForm.password && pwStrength >= 2);
-    if (step === 2) return pwMatch === true;
-    if (step === 3) return pinValues.every((v) => v !== "");
+    if (step === 1) return !!(regForm.nom && regForm.prenom);
+    if (step === 2) return !!(regForm.email && regForm.telephone);
+    if (step === 3) return !!(regForm.password && pwStrength >= 2 && pwMatch === true);
+    if (step === 4) return pinSent && pinValues.every((v) => v !== "") && !pinSending;
     return true;
   };
 
@@ -418,7 +519,7 @@ export default function Login() {
                 </p>
               </div>
 
-              {renderStepDots(regStep, 4)}
+              {renderStepDots(regStep, 5)}
 
               {regError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-[14px] text-red-600 text-[12px] font-semibold flex items-center gap-2">
@@ -428,376 +529,198 @@ export default function Login() {
 
               {/* Step 1: Identity */}
               {regStep === 1 && (
-                <>
-                  <div className="flex flex-wrap gap-2.5">
-                    <button
-                      type="button"
-                      onClick={handleGoogleLogin}
-                      disabled={regLoading}
-                      className="flex-1 min-w-[100px] py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[11px] xl:text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all disabled:opacity-50 whitespace-nowrap"
-                    >
-                      {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
-                    </button>
-                    <button
-                      type="button"
-                      className="flex-1 min-w-[100px] py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[11px] xl:text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all whitespace-nowrap"
-                    >
-                      <i className="fa-brands fa-facebook text-blue-500" /> Facebook
-                    </button>
-                    <button
-                      type="button"
-                      className="flex-1 min-w-[100px] py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[11px] xl:text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all whitespace-nowrap"
-                    >
-                      <i className="fa-brands fa-apple text-[#1a1a1a]" /> Apple
-                    </button>
+                <div className="flex flex-col animate-fade-in-scale">
+                  <div className="flex justify-center mb-6">
+                    <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                      <i className="fa-solid fa-user-astronaut animate-bounce" style={{ animationDuration: "3s" }} />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-black/10 after:content-[''] after:flex-1 after:h-[1px] after:bg-black/10">
+                  <div className="text-center mb-6">
+                    <h3 className="font-bricolage text-[20px] font-bold text-textMain mb-1">Bienvenue !</h3>
+                    <p className="text-[13px] text-textMuted">Commençons par faire connaissance.</p>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <FieldInput icon="fa-regular fa-user" type="text" value={regForm.nom} onChange={(v) => setRegForm((f) => ({ ...f, nom: v }))} placeholder={t("profil_placeholder_lastname")} />
+                    <FieldInput icon="fa-regular fa-user" type="text" value={regForm.prenom} onChange={(v) => setRegForm((f) => ({ ...f, prenom: v }))} placeholder={t("profil_placeholder_firstname")} />
+                  </div>
+                  <button type="button" onClick={() => setRegStep(2)} disabled={!canGoNext(1)} className="w-full py-4 bg-primary text-white rounded-[16px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60 mt-8">
+                    {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
+                  </button>
+                  <div className="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium my-6 before:content-[''] before:flex-1 before:h-[1px] before:bg-black/10 after:content-[''] after:flex-1 after:h-[1px] after:bg-black/10">
                       {t("login_or_register_with")}
                   </div>
                   <div className="flex gap-2.5">
-                    <div className="flex-1">
-                      <FieldInput
-                        icon="fa-regular fa-user"
-                        type="text"
-                        value={regForm.nom}
-                        onChange={(v) => setRegForm((f) => ({ ...f, nom: v }))}
-                        placeholder={t("profil_placeholder_lastname")}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <FieldInput
-                        icon="fa-regular fa-user"
-                        type="text"
-                        value={regForm.prenom}
-                        onChange={(v) => setRegForm((f) => ({ ...f, prenom: v }))}
-                        placeholder={t("profil_placeholder_firstname")}
-                      />
-                    </div>
+                    <button type="button" onClick={handleGoogleLogin} disabled={regLoading} className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all disabled:opacity-50">
+                      {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-brands fa-google text-[#db4437]" />}
+                    </button>
+                    <button type="button" className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all">
+                      <i className="fa-brands fa-facebook text-blue-500" />
+                    </button>
+                    <button type="button" className="flex-1 py-3 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[13.5px] font-semibold text-gray-700 flex items-center justify-center gap-2 shadow-sm active:scale-[0.97] transition-all">
+                      <i className="fa-brands fa-apple text-[#1a1a1a]" />
+                    </button>
                   </div>
-                  <FieldInput
-                    icon="fa-solid fa-phone"
-                    type="tel"
-                    value={regForm.telephone}
-                    onChange={(v) => setRegForm((f) => ({ ...f, telephone: v }))}
-                    placeholder={t("profil_placeholder_phone")}
-                  />
-                  <FieldInput
-                    icon="fa-regular fa-envelope"
-                    type="email"
-                    value={regForm.email}
-                    onChange={(v) => setRegForm((f) => ({ ...f, email: v }))}
-                    placeholder={t("login_email_placeholder")}
-                  />
-                  <div>
-                    <FieldInput
-                      icon="fa-solid fa-lock"
-                      type={pwVisible ? "text" : "password"}
-                      value={regForm.password}
-                      onChange={(v) => {
-                        setRegForm((f) => ({ ...f, password: v }));
-                        setPwStrength(calcPwStrength(v));
-                      }}
-                      placeholder={t("reset_placeholder_password")}
-                      id="m-pw1"
-                    />
-                    {regForm.password && (
-                      <div className="flex gap-1 mt-1.5">
-                        {[1, 2, 3, 4].map((i) => (
-                          <div
-                            key={i}
-                            className={`h-1 flex-1 rounded-full ${
-                              pwStrength >= i
-                                ? i <= 2
-                                  ? i === 1 ? "bg-red-500" : "bg-yellow-500"
-                                  : "bg-green-500"
-                                : "bg-black/10"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setRegStep(2)}
-                    disabled={!canGoNext(1)}
-                    className="w-full py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60 mt-1"
-                  >
-                    {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
-                  </button>
-                </>
+                </div>
               )}
 
-              {/* Step 2: Confirm password */}
+              {/* Step 2: Contact */}
               {regStep === 2 && (
-                <>
-                  <div className="flex items-start gap-4 p-4 bg-primary/8 rounded-[14px] border border-primary/20">
-                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                      <i className="fa-solid fa-shield-halved text-white text-[16px]" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-textMain text-[14px] mb-0.5">{t("login_security_title")}</p>
-                      <p className="text-[12.5px] text-textMuted leading-[1.6]">
-                        {t("login_security_desc")}
-                      </p>
+                <div className="flex flex-col animate-fade-in-scale">
+                  <div className="flex justify-center mb-6">
+                    <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                      <i className="fa-solid fa-envelope-open-text animate-pulse" />
                     </div>
                   </div>
-                  <FieldInput
-                    icon="fa-solid fa-lock"
-                    type="text"
-                    value={regForm.password}
-                    placeholder={t("login_password_placeholder")}
-                    id="m-pw1-show"
-                  />
-                  <div>
-                    <FieldInput
-                      icon="fa-solid fa-lock-open"
-                      type={pwVisible ? "text" : "password"}
-                      value={regForm.passwordConfirm}
-                      onChange={(v) => {
-                        setRegForm((f) => ({ ...f, passwordConfirm: v }));
-                        setPwMatch(v === regForm.password && v.length > 0);
-                      }}
-                      placeholder={t("reset_placeholder_confirm")}
-                      id="m-pw2"
-                    />
-                    {regForm.passwordConfirm && pwMatch === false && (
-                      <p className="text-[12px] font-medium mt-1.5 text-red-500">
-                        <i className="fa-solid fa-circle-xmark mr-1" />
-                        {t("login_error_pw_mismatch")}
-                      </p>
-                    )}
-                    {pwMatch === true && (
-                      <p className="text-[12px] font-medium mt-1.5 text-green-600">
-                        <i className="fa-solid fa-circle-check mr-1" />
-                        {t("login_success_pw_match")}
-                      </p>
-                    )}
+                  <div className="text-center mb-6">
+                    <h3 className="font-bricolage text-[20px] font-bold text-textMain mb-1">Contact</h3>
+                    <p className="text-[13px] text-textMuted">Comment pouvons-nous vous joindre ?</p>
                   </div>
-                  <div className="flex gap-2.5 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => setRegStep(1)}
-                      className="px-4 py-3.5 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[14px] font-semibold text-textMain flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
-                    >
+                  <div className="flex flex-col gap-3">
+                    <FieldInput icon="fa-regular fa-envelope" type="email" value={regForm.email} onChange={(v) => setRegForm((f) => ({ ...f, email: v }))} placeholder={t("login_email_placeholder")} />
+                    <FieldInput icon="fa-solid fa-phone" type="tel" value={regForm.telephone} onChange={(v) => setRegForm((f) => ({ ...f, telephone: v }))} placeholder={t("profil_placeholder_phone")} />
+                  </div>
+                  <div className="flex gap-2.5 mt-8">
+                    <button type="button" onClick={() => setRegStep(1)} className="px-5 py-4 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[16px] text-textMain flex items-center justify-center transition-all active:scale-[0.97]">
                       <i className="fa-solid fa-arrow-left" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setRegStep(3)}
-                      disabled={!canGoNext(2)}
-                      className="flex-1 py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60"
-                    >
-                      {t("login_btn_validate")} <i className="fa-solid fa-arrow-right" />
+                    <button type="button" onClick={() => setRegStep(3)} disabled={!canGoNext(2)} className="flex-1 py-4 bg-primary text-white rounded-[16px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60">
+                      {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
                     </button>
                   </div>
-                </>
+                </div>
               )}
 
-              {/* Step 3: PIN */}
+              {/* Step 3: Security */}
               {regStep === 3 && (
-                <>
-                  <div className="flex flex-col items-center text-center gap-2 py-2">
-                    <div className="w-14 h-14 bg-green-dark rounded-full flex items-center justify-center mb-1">
-                      <i className="fa-solid fa-mobile-screen-button text-primary text-[22px]" />
+                <div className="flex flex-col animate-fade-in-scale">
+                  <div className="flex justify-center mb-6">
+                    <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                      <i className="fa-solid fa-shield-halved" />
                     </div>
-                    <p className="text-[13px] text-textMuted leading-[1.6]">
-                      {t("login_pin_sms_sent")}{" "}
-                      <span className="font-semibold text-textMain">{regForm.telephone}</span>
-                    </p>
+                  </div>
+                  <div className="text-center mb-6">
+                    <h3 className="font-bricolage text-[20px] font-bold text-textMain mb-1">Sécurité</h3>
+                    <p className="text-[13px] text-textMuted">Protégez votre compte avec un mot de passe fort.</p>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <FieldInput icon="fa-solid fa-lock" type={pwVisible ? "text" : "password"} value={regForm.password} onChange={(v) => { setRegForm((f) => ({ ...f, password: v })); setPwStrength(calcPwStrength(v)); }} placeholder={t("reset_placeholder_password")} id="m-pw1" />
+                      {regForm.password && renderPwBars(regForm.password)}
+                    </div>
+                    <div>
+                      <FieldInput icon="fa-solid fa-lock-open" type={pwVisible ? "text" : "password"} value={regForm.passwordConfirm} onChange={(v) => { setRegForm((f) => ({ ...f, passwordConfirm: v })); setPwMatch(v === regForm.password && v.length > 0); }} placeholder={t("reset_placeholder_confirm")} id="m-pw2" />
+                      {regForm.passwordConfirm && pwMatch === false && (
+                        <p className="text-[12px] font-medium mt-1.5 text-red-500"><i className="fa-solid fa-circle-xmark mr-1" /> {t("login_error_pw_mismatch")}</p>
+                      )}
+                      {pwMatch === true && (
+                        <p className="text-[12px] font-medium mt-1.5 text-green-600"><i className="fa-solid fa-circle-check mr-1" /> {t("login_success_pw_match")}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2.5 mt-8">
+                    <button type="button" onClick={() => setRegStep(2)} className="px-5 py-4 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[16px] text-textMain flex items-center justify-center transition-all active:scale-[0.97]">
+                      <i className="fa-solid fa-arrow-left" />
+                    </button>
+                    <button type="button" onClick={sendVerificationAndProceed} disabled={!canGoNext(3) || pinSending} className="flex-1 py-4 bg-primary text-white rounded-[16px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60">
+                      {pinSending ? <i className="fa-solid fa-spinner fa-spin" /> : <>{t("login_btn_validate")} <i className="fa-solid fa-arrow-right" /></>}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: PIN */}
+              {regStep === 4 && (
+                <div className="flex flex-col animate-fade-in-scale">
+                  <div className="flex justify-center mb-6">
+                    <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                      <i className="fa-solid fa-mobile-screen-button" />
+                    </div>
+                  </div>
+                  <div className="text-center mb-6">
+                    <h3 className="font-bricolage text-[20px] font-bold text-textMain mb-1">Vérification</h3>
+                    {pinMethod === "SMS" ? (
+                      <p className="text-[13px] text-textMuted">{t("login_pin_sms_sent")} <span className="font-semibold text-textMain">{pinTarget}</span></p>
+                    ) : (
+                      <p className="text-[13px] text-textMuted">{t("login_pin_email_sent")} <span className="font-semibold text-textMain">{pinTarget}</span></p>
+                    )}
                   </div>
                   <div className="flex justify-center gap-2.5 my-2">
                     {pinValues.map((val, idx) => (
-                      <input
-                        key={idx}
-                        className={`w-12 h-14 text-center text-[22px] font-bold bg-white border-2 rounded-[14px] outline-none transition-all font-poppins text-textMain ${
-                          val ? "border-green-dark bg-green-light" : "border-[#E0D5C4]"
-                        } focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.18)]`}
-                        maxLength={1}
-                        type="text"
-                        inputMode="numeric"
-                        value={val}
-                        onChange={(e) => {
-                          const newPin = [...pinValues];
-                          newPin[idx] = e.target.value.replace(/[^0-9]/g, "");
-                          setPinValues(newPin);
-                          if (e.target.value && idx < 5) {
-                            const next = document.querySelector<HTMLInputElement>(
-                              `[data-pin-idx="${idx + 1}"]`
-                            );
-                            next?.focus();
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Backspace" && !val && idx > 0) {
-                            const prev = document.querySelector<HTMLInputElement>(
-                              `[data-pin-idx="${idx - 1}"]`
-                            );
-                            prev?.focus();
-                          }
-                        }}
-                        data-pin-idx={idx}
-                      />
+                      <input key={idx} className={`w-12 h-14 text-center text-[22px] font-bold bg-white border-2 rounded-[14px] outline-none transition-all font-poppins text-textMain ${val ? "border-green-dark bg-green-light" : "border-[#E0D5C4]"} focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.18)]`} maxLength={1} type="text" inputMode="numeric" autoComplete="one-time-code" value={val} disabled={pinSending} onChange={(e) => handlePinInput(idx, e.target.value)} onKeyDown={(e) => handlePinKey(idx, e)} onPaste={handlePinPaste} data-pin-idx={idx} />
                     ))}
                   </div>
-                  <p className="text-[12px] text-textMuted text-center">
-                    {t("login_pin_not_received")}{" "}
-                    <button className="text-primary font-semibold hover:underline">
-                      {t("login_pin_resend")}
-                    </button>
+                  <p className="text-[12px] text-textMuted text-center mt-4">
+                    {t("login_pin_not_received")} <button type="button" onClick={handleResendPin} disabled={pinSending} className="text-primary font-semibold hover:underline disabled:opacity-50">{pinSending ? <i className="fa-solid fa-spinner fa-spin" /> : t("login_pin_resend")}</button>
                   </p>
-                  <div className="flex gap-2.5 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => setRegStep(2)}
-                      className="px-4 py-3.5 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[14px] font-semibold text-textMain flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
-                    >
+                  <div className="flex gap-2.5 mt-8">
+                    <button type="button" onClick={() => setRegStep(3)} disabled={pinSending} className="px-5 py-4 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[16px] text-textMain flex items-center justify-center transition-all active:scale-[0.97] disabled:opacity-50">
                       <i className="fa-solid fa-arrow-left" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setRegStep(4)}
-                      disabled={!canGoNext(3)}
-                      className="flex-1 py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60"
-                    >
-                      {t("login_btn_verify")} <i className="fa-solid fa-arrow-right" />
+                    <button type="button" onClick={handleVerifyPin} disabled={!canGoNext(4)} className="flex-1 py-4 bg-primary text-white rounded-[16px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60">
+                      {pinSending ? <i className="fa-solid fa-spinner fa-spin" /> : <>{t("login_btn_verify")} <i className="fa-solid fa-arrow-right" /></>}
                     </button>
                   </div>
-                </>
+                </div>
               )}
 
-              {/* Step 4: Pseudo */}
-              {regStep === 4 && (
-                <>
-                  <div className="flex items-start gap-4 p-4 bg-primary/8 rounded-[14px] border border-primary/20">
-                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                      <i className="fa-solid fa-id-badge text-white text-[16px]" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-textMain text-[14px] mb-0.5">
-                        {t("login_identity_title")}
-                      </p>
-                      <p className="text-[12.5px] text-textMuted leading-[1.6]">
-                        {t("login_identity_desc")}
-                      </p>
+              {/* Step 5: Pseudo */}
+              {regStep === 5 && (
+                <div className="flex flex-col animate-fade-in-scale">
+                  <div className="flex justify-center mb-6">
+                    <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                      <i className="fa-solid fa-rocket animate-pulse" />
                     </div>
                   </div>
-                  <div className="flex flex-col">
-                    <label className="text-[12px] font-bold text-textMuted uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                      <i className="fa-solid fa-at text-primary text-[11px]" /> {t("login_pseudo_label")}
-                    </label>
-                    <div className="relative flex items-center group">
-                      <span className="absolute left-3.5 text-[#c4bab0] text-[14px] font-bold">
-                        @
-                      </span>
-                      <input
-                        type="text"
-                        value={regForm.pseudo}
-                        onChange={(e) => setRegForm((f) => ({ ...f, pseudo: e.target.value }))}
-                        placeholder="jean_dupont42"
-                        className="w-full py-3.5 pl-7 pr-[42px] bg-[#faf8f5] border-[1.5px] border-[#E0D5C4] rounded-[14px] font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.15)] focus:bg-white placeholder:text-[#c4bab0]"
-                        required
-                      />
-                      {regForm.pseudo && (
-                        <span className="absolute right-3.5 text-[14px]">
-                          <i
-                            className={`fa-solid ${
-                              pseudoAvailable === true
-                                ? "fa-check-circle text-green-500"
-                                : pseudoAvailable === false
-                                  ? "fa-xmark-circle text-red-500"
-                                  : "fa-circle-notch fa-spin text-gray-400"
-                            }`}
-                          />
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11.5px] text-textMuted mt-1.5">
-{t("login_pseudo_hint")}
-                    </p>
+                  <div className="text-center mb-6">
+                    <h3 className="font-bricolage text-[20px] font-bold text-textMain mb-1">Dernière étape !</h3>
+                    <p className="text-[13px] text-textMuted">Choisissez votre nom d'utilisateur DocMaster.</p>
                   </div>
-                  {pseudoSuggestions.length > 0 && (
-                    <div>
-                      <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-2">
-                        {t("login_suggestions")}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {pseudoSuggestions.map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            onClick={() => setRegForm((f) => ({ ...f, pseudo: s }))}
-                            className="px-3.5 py-2 rounded-full border-[1.5px] border-[#E0D5C4] text-[13px] font-semibold text-textMain bg-white hover:bg-green-dark hover:text-white hover:border-green-dark transition-all"
-                          >
-                            @{s}
-                          </button>
-                        ))}
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col">
+                      <label className="text-[12px] font-bold text-textMuted uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                        <i className="fa-solid fa-at text-primary text-[11px]" /> {t("login_pseudo_label")}
+                      </label>
+                      <div className="relative flex items-center group">
+                        <span className="absolute left-3.5 text-[#c4bab0] text-[14px] font-bold">@</span>
+                        <input type="text" value={regForm.pseudo} onChange={(e) => setRegForm((f) => ({ ...f, pseudo: e.target.value }))} placeholder="jean_dupont42" className="w-full py-3.5 pl-7 pr-[42px] bg-[#faf8f5] border-[1.5px] border-[#E0D5C4] rounded-[14px] font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.15)] focus:bg-white placeholder:text-[#c4bab0]" required />
+                        {regForm.pseudo && (
+                          <span className="absolute right-3.5 text-[14px]">
+                            <i className={`fa-solid ${pseudoAvailable === true ? "fa-check-circle text-green-500" : pseudoAvailable === false ? "fa-xmark-circle text-red-500" : "fa-circle-notch fa-spin text-gray-400"}`} />
+                          </span>
+                        )}
                       </div>
                     </div>
-                  )}
-                  <div className="flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowReferral(!showReferral)}
-                      className="flex items-center gap-2 text-[12.5px] font-semibold text-textMuted hover:text-primary transition-colors w-fit"
-                    >
-                      <i className="fa-solid fa-users text-primary text-[11px]" />
-                      {t("login_referral_question")}
-                      <i
-                        className={`fa-solid fa-chevron-down text-[10px] transition-transform ${
-                          showReferral ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-                    {showReferral && (
-                      <div className="flex flex-col gap-1.5">
-                        <FieldInput
-                          icon="fa-solid fa-link"
-                          type="text"
-                          value={regForm.referral}
-                          onChange={(v) => {
-                            setRegForm((f) => ({ ...f, referral: v }));
-                            if (!referralLocked) {
-                              localStorage.setItem("dm_referral_code", v);
-                            }
-                          }}
-                          disabled={referralLocked}
-                          placeholder={t("login_referral_placeholder")}
-                        />
-                        <p className="text-[11.5px] text-textMuted">
-                          {t("login_referral_desc_1")}{" "}
-                          <span className="font-semibold text-primary">
-{t("login_referral_desc_2")}
-                          </span>
-                          .
-                        </p>
+                    {pseudoSuggestions.length > 0 && (
+                      <div>
+                        <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-2">{t("login_suggestions")}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {pseudoSuggestions.map((s) => (
+                            <button key={s} type="button" onClick={() => setRegForm((f) => ({ ...f, pseudo: s }))} className="px-3.5 py-2 rounded-full border-[1.5px] border-[#E0D5C4] text-[13px] font-semibold text-textMain bg-white hover:bg-green-dark hover:text-white hover:border-green-dark transition-all">@{s}</button>
+                          ))}
+                        </div>
                       </div>
                     )}
+                    <div className="flex flex-col gap-2">
+                      <button type="button" onClick={() => setShowReferral(!showReferral)} className="flex items-center gap-2 text-[12.5px] font-semibold text-textMuted hover:text-primary transition-colors w-fit">
+                        <i className="fa-solid fa-users text-primary text-[11px]" /> {t("login_referral_question")}
+                        <i className={`fa-solid fa-chevron-down text-[10px] transition-transform ${showReferral ? "rotate-180" : ""}`} />
+                      </button>
+                      {showReferral && (
+                        <div className="flex flex-col gap-1.5 animate-fade-in-scale">
+                          <FieldInput icon="fa-solid fa-link" type="text" value={regForm.referral} onChange={(v) => { setRegForm((f) => ({ ...f, referral: v })); if (!referralLocked) localStorage.setItem("dm_referral_code", v); }} disabled={referralLocked} placeholder={t("login_referral_placeholder")} />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2.5 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => setRegStep(3)}
-                      className="px-4 py-3.5 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[14px] text-[14px] font-semibold text-textMain flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
-                    >
+                  <div className="flex gap-2.5 mt-8">
+                    <button type="button" onClick={() => setRegStep(4)} className="px-5 py-4 bg-white/65 backdrop-blur-md border-[1.5px] border-white/90 rounded-[16px] text-textMain flex items-center justify-center transition-all active:scale-[0.97]">
                       <i className="fa-solid fa-arrow-left" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={handleRegister}
-                      disabled={!regForm.pseudo || regLoading}
-                      className="flex-1 py-3.5 bg-green-dark text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/20 active:scale-[0.98] disabled:opacity-60"
-                    >
-                      {regLoading ? (
-                        <i className="fa-solid fa-spinner fa-spin" />
-                      ) : (
-                        <>
-<i className="fa-solid fa-rocket" /> {t("login_btn_create")}
-                        </>
-                      )}
+                    <button type="button" onClick={handleRegister} disabled={!regForm.pseudo || regLoading} className="flex-1 py-4 bg-green-dark text-white rounded-[16px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/20 active:scale-[0.98] disabled:opacity-60">
+                      {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-solid fa-rocket" /> {t("login_btn_create")}</>}
                     </button>
                   </div>
-                </>
+                </div>
               )}
             </div>
           )}
@@ -998,7 +921,7 @@ export default function Login() {
                   </p>
                 </div>
 
-                {renderStepDots(regStep, 4)}
+                {renderStepDots(regStep, 5)}
 
                 {regError && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-[14px] text-red-600 text-[12px] font-semibold flex items-center gap-2">
@@ -1008,27 +931,17 @@ export default function Login() {
 
                 {/* Step 1 Desktop */}
                 {regStep === 1 && (
-                  <>
-                    <div className="flex flex-wrap gap-2.5">
-                      <button type="button" className="flex-1 min-w-[100px] py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[11px] xl:text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] whitespace-nowrap">
-                        <i className="fa-brands fa-facebook text-blue-500" /> Facebook
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={handleGoogleLogin}
-                        disabled={regLoading}
-                        className="flex-1 min-w-[100px] py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[11px] xl:text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] disabled:opacity-50 whitespace-nowrap"
-                      >
-                        {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
-                      </button>
-                      <button type="button" className="flex-1 min-w-[100px] py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[11px] xl:text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] whitespace-nowrap">
-                        <i className="fa-brands fa-apple text-[#1a1a1a]" /> Apple
-                      </button>
+                  <div className="flex flex-col animate-fade-in-scale">
+                    <div className="flex justify-center mb-6">
+                      <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                        <i className="fa-solid fa-user-astronaut animate-bounce" style={{ animationDuration: "3s" }} />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium before:content-[''] before:flex-1 before:h-[1px] before:bg-borda after:content-[''] after:flex-1 after:h-[1px] after:bg-borda">
-                    {t("login_or_register_with")}
+                    <div className="text-center mb-6">
+                      <h3 className="font-bricolage text-[22px] font-bold text-textMain mb-1">Bienvenue !</h3>
+                      <p className="text-[14px] text-textMuted">Commençons par faire connaissance.</p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-4">
                       <div className="flex-1">
                         <FieldInput icon="fa-regular fa-user" type="text" value={regForm.nom} onChange={(v) => setRegForm((f) => ({ ...f, nom: v }))} placeholder={t("profil_placeholder_lastname")} />
                       </div>
@@ -1036,203 +949,184 @@ export default function Login() {
                         <FieldInput icon="fa-regular fa-user" type="text" value={regForm.prenom} onChange={(v) => setRegForm((f) => ({ ...f, prenom: v }))} placeholder={t("profil_placeholder_firstname")} />
                       </div>
                     </div>
-                    <div className="flex gap-3">
-                      <div className="flex-1">
-                        <FieldInput icon="fa-solid fa-phone" type="tel" value={regForm.telephone} onChange={(v) => setRegForm((f) => ({ ...f, telephone: v }))} placeholder={t("profil_placeholder_phone")} />
-                      </div>
-                      <div className="flex-1">
-                        <FieldInput icon="fa-regular fa-envelope" type="email" value={regForm.email} onChange={(v) => setRegForm((f) => ({ ...f, email: v }))} placeholder={t("login_email_placeholder")} />
-                      </div>
-                    </div>
-                    <div>
-                      <FieldInput
-                        icon="fa-solid fa-lock"
-                        type={pwVisible ? "text" : "password"}
-                        value={regForm.password}
-                        onChange={(v) => {
-                          setRegForm((f) => ({ ...f, password: v }));
-                          setPwStrength(calcPwStrength(v));
-                        }}
-                        placeholder={t("reset_placeholder_password")}
-                        id="d-pw1"
-                      />
-                      {regForm.password && renderPwBars(regForm.password)}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setRegStep(2)}
-                      disabled={!canGoNext(1)}
-                      className="w-full py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60 mt-1"
-                    >
-                    {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
+                    <button type="button" onClick={() => setRegStep(2)} disabled={!canGoNext(1)} className="w-full py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60 mt-6">
+                      {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
                     </button>
-                  </>
+                    <div className="flex items-center gap-2.5 text-textMuted text-[11.5px] font-medium my-6 before:content-[''] before:flex-1 before:h-[1px] before:bg-borda after:content-[''] after:flex-1 after:h-[1px] after:bg-borda">
+                      {t("login_or_register_with")}
+                    </div>
+                    <div className="flex gap-2.5">
+                      <button type="button" onClick={handleGoogleLogin} disabled={regLoading} className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97] disabled:opacity-50">
+                        {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-brands fa-google text-[#db4437]" /> Google</>}
+                      </button>
+                      <button type="button" className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
+                        <i className="fa-brands fa-facebook text-blue-500" /> Facebook
+                      </button>
+                      <button type="button" className="flex-1 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[13px] font-semibold text-gray-700 flex items-center justify-center gap-2 transition-all hover:border-gray-300 hover:bg-white active:scale-[0.97]">
+                        <i className="fa-brands fa-apple text-[#1a1a1a]" /> Apple
+                      </button>
+                    </div>
+                  </div>
                 )}
 
                 {/* Step 2 Desktop */}
                 {regStep === 2 && (
-                  <>
-                    <div className="flex items-start gap-4 p-4 bg-primary/8 rounded-[14px] border border-primary/20">
-                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                        <i className="fa-solid fa-shield-halved text-white text-[16px]" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-textMain text-[14px] mb-0.5">{t("login_security_title")}</p>
-                        <p className="text-[12.5px] text-textMuted leading-[1.6]">{t("login_security_desc")}</p>
+                  <div className="flex flex-col animate-fade-in-scale">
+                    <div className="flex justify-center mb-6">
+                      <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                        <i className="fa-solid fa-envelope-open-text animate-pulse" />
                       </div>
                     </div>
-                    <FieldInput icon="fa-solid fa-lock" type="text" value={regForm.password} placeholder={t("login_password_placeholder")} id="d-pw1-show" />
-                    <div>
-                      <FieldInput
-                        icon="fa-solid fa-lock-open"
-                        type={pwVisible ? "text" : "password"}
-                        value={regForm.passwordConfirm}
-                        onChange={(v) => {
-                          setRegForm((f) => ({ ...f, passwordConfirm: v }));
-                          setPwMatch(v === regForm.password && v.length > 0);
-                        }}
-                        placeholder={t("reset_placeholder_confirm")}
-                        id="d-pw2"
-                      />
-                      {regForm.passwordConfirm && pwMatch === false && (
-                        <p className="text-[12px] font-medium mt-1.5 text-red-500"><i className="fa-solid fa-circle-xmark mr-1" />Les mots de passe ne correspondent pas.</p>
-                      )}
-                      {pwMatch === true && (
-                        <p className="text-[12px] font-medium mt-1.5 text-green-600"><i className="fa-solid fa-circle-check mr-1" />Parfait, les mots de passe correspondent !</p>
-                      )}
+                    <div className="text-center mb-6">
+                      <h3 className="font-bricolage text-[22px] font-bold text-textMain mb-1">Contact</h3>
+                      <p className="text-[14px] text-textMuted">Comment pouvons-nous vous joindre ?</p>
                     </div>
-                    <div className="flex gap-3 mt-1">
-                      <button type="button" onClick={() => setRegStep(1)} className="px-5 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[14px] font-semibold text-textMain flex items-center justify-center gap-2 transition-all hover:bg-white active:scale-[0.97]">
-                        <i className="fa-solid fa-arrow-left" /> {t("login_back")}
+                    <div className="flex flex-col gap-4">
+                      <FieldInput icon="fa-regular fa-envelope" type="email" value={regForm.email} onChange={(v) => setRegForm((f) => ({ ...f, email: v }))} placeholder={t("login_email_placeholder")} />
+                      <FieldInput icon="fa-solid fa-phone" type="tel" value={regForm.telephone} onChange={(v) => setRegForm((f) => ({ ...f, telephone: v }))} placeholder={t("profil_placeholder_phone")} />
+                    </div>
+                    <div className="flex gap-3 mt-8">
+                      <button type="button" onClick={() => setRegStep(1)} className="px-6 py-3.5 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-textMain flex items-center justify-center transition-all hover:bg-white active:scale-[0.97]">
+                        <i className="fa-solid fa-arrow-left" />
                       </button>
-                      <button type="button" onClick={() => setRegStep(3)} disabled={!canGoNext(2)} className="flex-1 py-3 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60">
-                        {t("login_btn_validate")} <i className="fa-solid fa-arrow-right" />
+                      <button type="button" onClick={() => setRegStep(3)} disabled={!canGoNext(2)} className="flex-1 py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60">
+                        {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {/* Step 3 Desktop */}
                 {regStep === 3 && (
-                  <>
-                    <div className="flex items-start gap-4 p-4 bg-green-light rounded-[14px] border border-green-mid/20">
-                      <div className="w-10 h-10 bg-green-dark rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                        <i className="fa-solid fa-mobile-screen-button text-primary text-[16px]" />
+                  <div className="flex flex-col animate-fade-in-scale">
+                    <div className="flex justify-center mb-6">
+                      <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                        <i className="fa-solid fa-shield-halved" />
+                      </div>
+                    </div>
+                    <div className="text-center mb-6">
+                      <h3 className="font-bricolage text-[22px] font-bold text-textMain mb-1">Sécurité</h3>
+                      <p className="text-[14px] text-textMuted">Protégez votre compte avec un mot de passe fort.</p>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <FieldInput icon="fa-solid fa-lock" type={pwVisible ? "text" : "password"} value={regForm.password} onChange={(v) => { setRegForm((f) => ({ ...f, password: v })); setPwStrength(calcPwStrength(v)); }} placeholder={t("reset_placeholder_password")} id="d-pw1" />
+                        {regForm.password && renderPwBars(regForm.password)}
                       </div>
                       <div>
-                        <p className="font-semibold text-textMain text-[14px] mb-0.5">Vérification de l'email</p>
-                        <p className="text-[12.5px] text-textMuted leading-[1.6]">Un code PIN à 6 chiffres a été envoyé à l'adresse <span className="font-semibold text-textMain">{regForm.email}</span></p>
+                        <FieldInput icon="fa-solid fa-lock-open" type={pwVisible ? "text" : "password"} value={regForm.passwordConfirm} onChange={(v) => { setRegForm((f) => ({ ...f, passwordConfirm: v })); setPwMatch(v === regForm.password && v.length > 0); }} placeholder={t("reset_placeholder_confirm")} id="d-pw2" />
+                        {regForm.passwordConfirm && pwMatch === false && (
+                          <p className="text-[12px] font-medium mt-1.5 text-red-500"><i className="fa-solid fa-circle-xmark mr-1" /> Les mots de passe ne correspondent pas.</p>
+                        )}
+                        {pwMatch === true && (
+                          <p className="text-[12px] font-medium mt-1.5 text-green-600"><i className="fa-solid fa-circle-check mr-1" /> Parfait, les mots de passe correspondent !</p>
+                        )}
                       </div>
                     </div>
-                    <div className="flex justify-center gap-3 py-2">
-                      {pinValues.map((val, idx) => (
-                        <input
-                          key={idx}
-                          className={`w-12 h-14 text-center text-[22px] font-bold bg-white border-2 rounded-[14px] outline-none transition-all font-poppins text-textMain ${val ? "border-green-dark bg-green-light" : "border-[#E0D5C4]"} focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.18)]`}
-                          maxLength={1}
-                          type="text"
-                          inputMode="numeric"
-                          value={val}
-                          onChange={(e) => {
-                            const newPin = [...pinValues];
-                            newPin[idx] = e.target.value.replace(/[^0-9]/g, "");
-                            setPinValues(newPin);
-                            if (e.target.value && idx < 5) {
-                              const next = document.querySelector<HTMLInputElement>(`[data-pin-idx="${idx + 1}"]`);
-                              next?.focus();
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Backspace" && !val && idx > 0) {
-                              const prev = document.querySelector<HTMLInputElement>(`[data-pin-idx="${idx - 1}"]`);
-                              prev?.focus();
-                            }
-                          }}
-                          data-pin-idx={idx}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-[12px] text-textMuted text-center">
-                      {t("login_pin_not_received")} <button className="text-primary font-semibold hover:underline">{t("login_pin_resend")}</button>
-                    </p>
-                    <div className="flex gap-3 mt-1">
-                      <button type="button" onClick={() => setRegStep(2)} className="px-5 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[14px] font-semibold text-textMain flex items-center justify-center gap-2 transition-all hover:bg-white active:scale-[0.97]">
-                        <i className="fa-solid fa-arrow-left" /> {t("login_back")}
+                    <div className="flex gap-3 mt-8">
+                      <button type="button" onClick={() => setRegStep(2)} className="px-6 py-3.5 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-textMain flex items-center justify-center transition-all hover:bg-white active:scale-[0.97]">
+                        <i className="fa-solid fa-arrow-left" />
                       </button>
-                      <button type="button" onClick={() => setRegStep(4)} disabled={!canGoNext(3)} className="flex-1 py-3 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60">
-                        {t("login_btn_verify")} <i className="fa-solid fa-arrow-right" />
+                      <button type="button" onClick={sendVerificationAndProceed} disabled={!canGoNext(3) || pinSending} className="flex-1 py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60">
+                        {pinSending ? <i className="fa-solid fa-spinner fa-spin" /> : <>{t("login_btn_validate")} <i className="fa-solid fa-arrow-right" /></>}
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {/* Step 4 Desktop */}
                 {regStep === 4 && (
-                  <>
-                    <div className="flex items-start gap-4 p-4 bg-primary/8 rounded-[14px] border border-primary/20">
-                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                        <i className="fa-solid fa-id-badge text-white text-[16px]" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-textMain text-[14px] mb-0.5">{t("login_identity_title")}</p>
-                        <p className="text-[12.5px] text-textMuted leading-[1.6]">{t("login_identity_desc")}</p>
+                  <div className="flex flex-col animate-fade-in-scale">
+                    <div className="flex justify-center mb-6">
+                      <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                        <i className="fa-solid fa-mobile-screen-button" />
                       </div>
                     </div>
-                    <div className="flex flex-col">
-                      <label className="text-[12px] font-bold text-textMuted uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                      <i className="fa-solid fa-at text-primary text-[11px]" /> {t("login_pseudo_label")}
-                      </label>
-                      <div className="relative flex items-center group">
-                        <span className="absolute left-3.5 text-[#c4bab0] text-[14px] font-bold">@</span>
-                        <input type="text" value={regForm.pseudo} onChange={(e) => setRegForm((f) => ({ ...f, pseudo: e.target.value }))}
-                          placeholder="jean_dupont42"
-                          className="w-full py-3.5 pl-7 pr-[42px] bg-[#faf8f5] border-[1.5px] border-[#E0D5C4] rounded-[14px] font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.15)] focus:bg-white placeholder:text-[#c4bab0]"
-                        />
-                      </div>
-                      <p className="text-[11.5px] text-textMuted mt-1.5">{t("login_pseudo_hint")}</p>
-                    </div>
-                    {pseudoSuggestions.length > 0 && (
-                      <div>
-                        <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-2">{t("login_suggestions_name")}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {pseudoSuggestions.map((s) => (
-                            <button key={s} type="button" onClick={() => setRegForm((f) => ({ ...f, pseudo: s }))}
-                              className="px-3.5 py-2 rounded-full border-[1.5px] border-[#E0D5C4] text-[13px] font-semibold text-textMain bg-white hover:bg-green-dark hover:text-white hover:border-green-dark transition-all">
-                              @{s}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex flex-col gap-2">
-                      <button type="button" onClick={() => setShowReferral(!showReferral)}
-                        className="flex items-center gap-2 text-[12.5px] font-semibold text-textMuted hover:text-primary transition-colors w-fit">
-                        <i className="fa-solid fa-users text-primary text-[11px]" /> {t("login_referral_question")}
-                        <i className={`fa-solid fa-chevron-down text-[10px] transition-transform ${showReferral ? "rotate-180" : ""}`} />
-                      </button>
-                      {showReferral && (
-                        <div className="flex flex-col gap-1.5">
-                          <FieldInput icon="fa-solid fa-link" type="text" value={regForm.referral} onChange={(v) => {
-                            setRegForm((f) => ({ ...f, referral: v }));
-                            if (!referralLocked) {
-                              localStorage.setItem("dm_referral_code", v);
-                            }
-                          }} disabled={referralLocked} placeholder={t("login_referral_placeholder")} />
-                          <p className="text-[11.5px] text-textMuted">{t("login_referral_desc_1")} <span className="font-semibold text-primary">{t("login_referral_desc_2")}</span>.</p>
-                        </div>
+                    <div className="text-center mb-6">
+                      <h3 className="font-bricolage text-[22px] font-bold text-textMain mb-1">Vérification</h3>
+                      {pinMethod === "SMS" ? (
+                        <p className="text-[14px] text-textMuted">{t("login_pin_sms_sent")} <span className="font-semibold text-textMain">{pinTarget}</span></p>
+                      ) : (
+                        <p className="text-[14px] text-textMuted">{t("login_pin_email_sent")} <span className="font-semibold text-textMain">{pinTarget}</span></p>
                       )}
                     </div>
-                    <div className="flex gap-3 mt-1">
-                      <button type="button" onClick={() => setRegStep(3)}
-                        className="px-5 py-3 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-[14px] font-semibold text-textMain flex items-center justify-center gap-2 transition-all hover:bg-white active:scale-[0.97]">
-                        <i className="fa-solid fa-arrow-left" /> {t("login_back")}
+                    <div className="flex justify-center gap-3 my-2">
+                      {pinValues.map((val, idx) => (
+                        <input key={idx} className={`w-12 h-14 text-center text-[22px] font-bold bg-white border-2 rounded-[14px] outline-none transition-all font-poppins text-textMain ${val ? "border-green-dark bg-green-light" : "border-[#E0D5C4]"} focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.18)]`} maxLength={1} type="text" inputMode="numeric" autoComplete="one-time-code" value={val} disabled={pinSending} onChange={(e) => handlePinInput(idx, e.target.value)} onKeyDown={(e) => handlePinKey(idx, e)} onPaste={handlePinPaste} data-pin-idx={idx} />
+                      ))}
+                    </div>
+                    <p className="text-[12px] text-textMuted text-center mt-4">
+                      {t("login_pin_not_received")} <button type="button" onClick={handleResendPin} disabled={pinSending} className="text-primary font-semibold hover:underline disabled:opacity-50">{pinSending ? <i className="fa-solid fa-spinner fa-spin" /> : t("login_pin_resend")}</button>
+                    </p>
+                    <div className="flex gap-3 mt-8">
+                      <button type="button" onClick={() => setRegStep(3)} disabled={pinSending} className="px-6 py-3.5 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-textMain flex items-center justify-center transition-all hover:bg-white active:scale-[0.97] disabled:opacity-50">
+                        <i className="fa-solid fa-arrow-left" />
                       </button>
-                      <button type="button" onClick={handleRegister} disabled={!regForm.pseudo || regLoading}
-                        className="flex-1 py-3.5 bg-green-dark text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/20 active:scale-[0.98] disabled:opacity-60">
+                      <button type="button" onClick={handleVerifyPin} disabled={!canGoNext(4)} className="flex-1 py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60">
+                        {pinSending ? <i className="fa-solid fa-spinner fa-spin" /> : <>{t("login_btn_verify")} <i className="fa-solid fa-arrow-right" /></>}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 5 Desktop */}
+                {regStep === 5 && (
+                  <div className="flex flex-col animate-fade-in-scale">
+                    <div className="flex justify-center mb-6">
+                      <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary text-4xl shadow-lg shadow-primary/10">
+                        <i className="fa-solid fa-rocket animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="text-center mb-6">
+                      <h3 className="font-bricolage text-[22px] font-bold text-textMain mb-1">Dernière étape !</h3>
+                      <p className="text-[14px] text-textMuted">Choisissez votre nom d'utilisateur DocMaster.</p>
+                    </div>
+                    <div className="flex flex-col gap-5">
+                      <div className="flex flex-col">
+                        <label className="text-[12px] font-bold text-textMuted uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                          <i className="fa-solid fa-at text-primary text-[11px]" /> {t("login_pseudo_label")}
+                        </label>
+                        <div className="relative flex items-center group">
+                          <span className="absolute left-3.5 text-[#c4bab0] text-[14px] font-bold">@</span>
+                          <input type="text" value={regForm.pseudo} onChange={(e) => setRegForm((f) => ({ ...f, pseudo: e.target.value }))} placeholder="jean_dupont42" className="w-full py-3.5 pl-7 pr-[42px] bg-[#faf8f5] border-[1.5px] border-[#E0D5C4] rounded-[14px] font-poppins text-[15px] text-textMain outline-none transition-all focus:border-primary focus:shadow-[0_0_0_4px_rgba(245,166,75,0.15)] focus:bg-white placeholder:text-[#c4bab0]" required />
+                          {regForm.pseudo && (
+                            <span className="absolute right-3.5 text-[14px]">
+                              <i className={`fa-solid ${pseudoAvailable === true ? "fa-check-circle text-green-500" : pseudoAvailable === false ? "fa-xmark-circle text-red-500" : "fa-circle-notch fa-spin text-gray-400"}`} />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {pseudoSuggestions.length > 0 && (
+                        <div>
+                          <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-2">{t("login_suggestions")}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {pseudoSuggestions.map((s) => (
+                              <button key={s} type="button" onClick={() => setRegForm((f) => ({ ...f, pseudo: s }))} className="px-3.5 py-2 rounded-full border-[1.5px] border-[#E0D5C4] text-[13px] font-semibold text-textMain bg-white hover:bg-green-dark hover:text-white hover:border-green-dark transition-all">@{s}</button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex flex-col gap-2">
+                        <button type="button" onClick={() => setShowReferral(!showReferral)} className="flex items-center gap-2 text-[12.5px] font-semibold text-textMuted hover:text-primary transition-colors w-fit">
+                          <i className="fa-solid fa-users text-primary text-[11px]" /> {t("login_referral_question")}
+                          <i className={`fa-solid fa-chevron-down text-[10px] transition-transform ${showReferral ? "rotate-180" : ""}`} />
+                        </button>
+                        {showReferral && (
+                          <div className="flex flex-col gap-1.5 animate-fade-in-scale">
+                            <FieldInput icon="fa-solid fa-link" type="text" value={regForm.referral} onChange={(v) => { setRegForm((f) => ({ ...f, referral: v })); if (!referralLocked) localStorage.setItem("dm_referral_code", v); }} disabled={referralLocked} placeholder={t("login_referral_placeholder")} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-3 mt-8">
+                      <button type="button" onClick={() => setRegStep(4)} className="px-6 py-3.5 bg-[#faf8f5] border-[1.5px] border-borda rounded-[14px] text-textMain flex items-center justify-center transition-all hover:bg-white active:scale-[0.97]">
+                        <i className="fa-solid fa-arrow-left" />
+                      </button>
+                      <button type="button" onClick={handleRegister} disabled={!regForm.pseudo || regLoading} className="flex-1 py-3.5 bg-green-dark text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-black/20 active:scale-[0.98] disabled:opacity-60">
                         {regLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-solid fa-rocket" /> {t("login_btn_create")}</>}
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             )}

@@ -41,6 +41,9 @@ export interface DocumentType {
     icone?: string;
     categorie?: string;
     is_active: boolean;
+    fields?: any;
+    color?: string;
+    bg?: string;
     created_at: Date;
     updated_at?: Date;
 }

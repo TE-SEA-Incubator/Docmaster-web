@@ -19,7 +19,10 @@ export const claimsService = {
   },
 
   async validateRecoveryCode(data: { claim_id: string; code: string }) {
-    const res = await apiClient.post<ApiResponse>("claims/validate", data);
+    const res = await apiClient.post<ApiResponse>("claims/validate", {
+      docId: data.claim_id,
+      code: data.code,
+    });
     return res.data;
   },
 

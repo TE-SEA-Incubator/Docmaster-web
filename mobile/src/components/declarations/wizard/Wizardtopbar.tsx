@@ -1,0 +1,169 @@
+import React from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  StatusBar,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ThemedText } from '@/components/themed-text';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import { PRIMARY, TEXT_MAIN, TEXT_MUTED, BORDER, CREAM } from './DOC_TYPE_META';
+
+type WizardTopBarProps = {
+  title: string;
+  subtitle?: string;
+  step: number;
+  totalSteps: number;
+  onBack?: () => void;
+  onClose?: () => void;
+  showClose?: boolean;
+};
+
+export function WizardTopBar({
+  title,
+  subtitle,
+  step,
+  totalSteps,
+  onBack,
+  onClose,
+  showClose = true,
+}: WizardTopBarProps) {
+  const insets = useSafeAreaInsets();
+
+  const handleBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onBack?.();
+  };
+
+  const handleClose = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onClose?.();
+  };
+
+  const progressPercent = ((step) / (totalSteps - 1)) * 100;
+
+  return (
+    <View style={[styles.wrapper, { paddingTop: insets.top + 4 }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={CREAM} />
+
+      <View style={styles.row}>
+        {/* Back button */}
+        <TouchableOpacity
+          style={styles.iconBtn}
+          onPress={handleBack}
+          activeOpacity={0.7}
+          disabled={!onBack}
+        >
+          {onBack ? (
+            <Ionicons name="chevron-back" size={22} color={TEXT_MAIN} />
+          ) : (
+            <View style={{ width: 36 }} />
+          )}
+        </TouchableOpacity>
+
+        {/* Center: title + step counter */}
+        <View style={styles.center}>
+          <ThemedText style={styles.title} numberOfLines={1}>
+            {title}
+          </ThemedText>
+          {subtitle ? (
+            <ThemedText style={styles.subtitle} numberOfLines={1}>
+              {subtitle}
+            </ThemedText>
+          ) : (
+            <ThemedText style={styles.stepCounter}>
+              Étape {step + 1} sur {totalSteps}
+            </ThemedText>
+          )}
+        </View>
+
+        {/* Close button */}
+        {showClose ? (
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={handleClose}
+            activeOpacity={0.7}
+          >
+            <View style={styles.closeBtn}>
+              <Ionicons name="close" size={16} color={TEXT_MUTED} />
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 36 }} />
+        )}
+      </View>
+
+      {/* Thin progress bar at bottom of TopBar */}
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrapper: {
+    backgroundColor: CREAM,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+    paddingHorizontal: 12,
+    paddingBottom: 0,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 10,
+    minHeight: 48,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#EAE3D8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: TEXT_MAIN,
+    letterSpacing: 0.1,
+  },
+  subtitle: {
+    fontSize: 11,
+    color: TEXT_MUTED,
+    marginTop: 1,
+  },
+  stepCounter: {
+    fontSize: 11,
+    color: TEXT_MUTED,
+    marginTop: 1,
+    fontWeight: '500',
+  },
+  progressTrack: {
+    height: 3,
+    backgroundColor: BORDER,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: PRIMARY,
+    borderRadius: 2,
+  },
+});

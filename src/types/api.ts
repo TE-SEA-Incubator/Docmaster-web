@@ -122,7 +122,7 @@ export interface Declaration {
   etat_physique?: string;
   date_expiration?: string;
   document_number?: string;
-  docTypeInfo?: { nom: string };
+  docTypeInfo?: { nom: string; code?: string; prix_retrouvaille?: number; finder_percent?: number; points_recompense?: number; icone?: string };
   // Declaration form fields
   nom_owner?: string;
   prenom_owner?: string;

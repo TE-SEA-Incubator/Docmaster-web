@@ -354,6 +354,58 @@ export const getDeclarationById = async (req: Request, res: Response) => {
   }
 };
 
+export const getRenderContext = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Non authentifié' });
+    }
+
+    const result = await declarationService.getDeclarationById(id);
+    if (!result) {
+      return res.status(404).json({ success: false, message: 'Déclaration introuvable' });
+    }
+
+    // Security check: User must be either the reporter of this declaration 
+    // OR the reporter of the matched counterpart declaration.
+    const isReporter = result.reporter_id === userId;
+    const isCounterPartReporter = result.counterPart?.id === userId;
+
+    if (!isReporter && !isCounterPartReporter && (req as any).user?.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Action non autorisée' });
+    }
+
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('❌ Erreur getRenderContext:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const validateRecovery = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { code } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Non authentifié' });
+    }
+
+    if (!code) {
+      return res.status(400).json({ success: false, message: 'Code de validation requis' });
+    }
+
+    const result = await declarationService.validateRecovery(id, userId, code);
+    res.json(result);
+  } catch (error: any) {
+    console.error('❌ Erreur validateRecovery:', error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const initiateRecovery = async (req: Request, res: Response) => {
   try {
     const id = (req.params.id || req.body.declaration_id) as string;

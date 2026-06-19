@@ -1,0 +1,20 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  ScrollView, View, Pressable, ActivityIndicator, RefreshControl, Text,
+  Modal, TextInput, Alert, Platform, ToastAndroid, Dimensions, Image, StyleSheet,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { useLocalSearchParams, router } from 'expo-router';
+import { BottomTabInset } from '@/constants/theme';
+import { Input } from '@/components/common/Input';
+import { Button } from '@/components/common/Button';
+import { DeviceCard, PRIMARY, type Device, type DeviceType } from '@/components/devices/DeviceCard';
+import { devicesService } from '@/core/api/devicesService';
+import type { Device as ApiDevice } from '@/types/api';
+
+const SCREEN = Dimensions.get('window');
+
+// ... (Rest of the file contents up to just before the broken PhotoPicker)
+// (Since writing the full file is huge and prone to issues, I will read the file and fix it manually in chunks if needed, or reconstruct it.)

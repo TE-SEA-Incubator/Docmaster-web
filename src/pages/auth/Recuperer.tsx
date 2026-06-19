@@ -44,31 +44,31 @@ export default function Recuperer() {
   const mapFullscreenRef = useRef(false);
 
   const displayStep = pickupCode ? 4
+    : step >= 4 ? 4
     : step >= 3 ? 3
-    : step >= 2 ? 2
-    : doc?.status === "MATCHED" || doc?.status === "RESOLVED" || doc?.status === "RETURNED" ? 2
-    : 1;
+    : 2;
 
-  const paid = step >= 2;
-  const collected = step >= 3;
+  const paid = step >= 3;
+  const collected = step >= 4;
 
   // ── Load declaration ──────────────────────────────────────────────────
   useEffect(() => {
     if (!docId) { setLoading(false); return; }
     setLoading(true);
-    declarationsService.getById(docId)
+    declarationsService.getRenderContext(docId)
       .then((res) => {
         if (res.success && res.data) {
           const d = res.data;
           setDoc(d);
+          const ps = (d.payment_status || "").toUpperCase();
+          const ds = (d.status || "").toUpperCase();
           setStep(
-            d.status === "recovered" || d.status === "RETURNED" ? 4
-            : d.status === "paid" || d.status === "PAID" ? 3
-            : d.status === "MATCHED" || d.status === "RESOLVED" ? 2
+            ds === "RETURNED" ? 4
+            : ps === "PAID" || ds === "PAID" || d.claim?.status === "PAID" || d.claim?.status === "VALIDATED" ? 3
             : 1
           );
-          if (d.status === "paid" || d.status === "PAID" || d.status === "RETURNED") {
-            setPickupCode(d.reference || "");
+          if (ps === "PAID" || ds === "PAID" || ds === "RETURNED" || d.claim?.status === "PAID" || d.claim?.status === "VALIDATED") {
+            setPickupCode(d.claim?.verification_code || d.reference || "");
           }
         } else {
           setError(t("recuperer_not_found"));
@@ -82,15 +82,21 @@ export default function Recuperer() {
 
   // ── Payment polling ───────────────────────────────────────────────────
   useEffect(() => {
-    if (step !== 2 || !docId || pickupCode) return;
+    if (step >= 3 || !docId || pickupCode) return;
     const interval = setInterval(async () => {
       try {
-        const res = await declarationsService.checkPaymentStatus(docId);
-        if (res.data?.status === "paid" || res.data?.status === "PAID" || res.data?.status === "completed") {
-          setStep(3);
-          setPickupCode(res.data.reference || "DM-" + Date.now().toString(36).toUpperCase());
-          setShowPaymentModal(false);
-          clearInterval(interval);
+        const res = await declarationsService.getRenderContext(docId);
+        if (res.success && res.data) {
+          const d = res.data;
+          const ps = (d.payment_status || "").toUpperCase();
+          const ds = (d.status || "").toUpperCase();
+          if (ps === "PAID" || ds === "PAID" || d.claim?.status === "PAID" || d.claim?.status === "VALIDATED") {
+            setStep(3);
+            setPickupCode(d.claim?.verification_code || d.reference || "");
+            setShowPaymentModal(false);
+            setDoc(d);
+            clearInterval(interval);
+          }
         }
       } catch {
         // silent
