@@ -63,7 +63,7 @@ export const SuccessOverlay: React.FC<SuccessOverlayProps> = ({
   return (
     <Modal visible={visible} transparent animationType="none">
       <View style={styles.backdrop}>
-        <Animated.View style={[styles.card, { opacity, transform: [{ scale }], paddingBottom: insets.bottom + 24 }]}>
+        <Animated.View style={[styles.card, { opacity, transform: [{ scale }], paddingBottom: insets.bottom + 60 }]}>
           {/* Check icon */}
           <Animated.View style={[styles.iconCircle, { transform: [{ scale: checkScale }] }]}>
             <Ionicons name="checkmark" size={40} color="#fff" />

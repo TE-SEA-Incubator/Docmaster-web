@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ScrollView, View, Pressable, ActivityIndicator, RefreshControl, Text, Image,
-  Modal, TextInput, Alert, Platform, ToastAndroid, Dimensions,
+  TextInput, Alert, Platform, ToastAndroid, Dimensions, Modal,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, router } from 'expo-router';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { BottomTabInset } from '@/constants/theme';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
@@ -14,6 +15,8 @@ import { DeviceCard, PRIMARY, type Device, type DeviceType } from '@/components/
 import { useDevices } from '@/core/hooks/useDevices';
 import { DevicesSkeleton } from '@/components/Skeletons';
 import { DatePickerInput } from '@/components/declarations/wizard/DatePickerInput';
+import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
+import { devicesService } from '@/core/api/devicesService';
 
 const SCREEN = Dimensions.get('window');
 
@@ -54,10 +57,7 @@ const EMPTY_FORM: Omit<Device, 'id' | 'is_lost' | 'status' | 'photo'> & { photo_
 const GAP = 12;
 const COLS = 2;
 const PAD = 20;
-const CARD_W = (SCREEN.width - PAD * 2 - GAP) / 2;
-const CARD_H = 140;
-const TALL_W = SCREEN.width - PAD * 2;
-const TALL_H = 280;
+const CARD_H = 216;
 
 function formatDate(s: string) {
   if (!s) return '—';
@@ -282,6 +282,12 @@ export default function DevicesScreen() {
   const [reportPassword, setReportPassword] = useState('');
   const [reportError, setReportError] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [feedback, setFeedback] = useState<{ visible: boolean; type: FeedbackType; title: string; message?: string; detail?: string; detailLabel?: string }>({
+    visible: false, type: 'success', title: '',
+  });
+
+  const addSheetRef = useRef<BottomSheet>(null);
+  const addSnapPoints = ['92%'];
 
   // Real data only — empty state is rendered when the user has no devices.
   const devices: Device[] = cachedDevices;
@@ -290,6 +296,14 @@ export default function DevicesScreen() {
   const params = useLocalSearchParams<{ openAdd?: string; openVerify?: string }>();
   const openAddConsumed = useRef(false);
   const openVerifyConsumed = useRef(false);
+
+  useEffect(() => {
+    if (showAddModal) {
+      addSheetRef.current?.expand();
+    } else {
+      addSheetRef.current?.close();
+    }
+  }, [showAddModal]);
 
   useEffect(() => {
     if (params.openAdd === 'true' && !openAddConsumed.current) {
@@ -336,12 +350,21 @@ export default function DevicesScreen() {
     if (!form.nom.trim()) errs.nom = 'Requis';
     if (!form.marque.trim()) errs.marque = 'Requis';
     if (Object.keys(errs).length > 0) { setFormErrors(errs); return; }
+
     const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && !key.startsWith('photo_')) {
-         formData.append(key, value as any);
-      }
-    });
+    formData.append('category', form.type);
+    formData.append('brand', form.marque);
+    formData.append('model', form.modele);
+    formData.append('serial_number_imei', form.serial);
+    formData.append('color', form.couleur);
+    formData.append('purchase_date', form.dateAchat || '');
+    formData.append('garantie_end', form.garantie || '');
+    formData.append('purchase_value', String(form.prix || 0));
+    formData.append('currency', 'XAF');
+    formData.append('where_buy', form.lieu);
+    formData.append('assurance', form.assurance);
+    formData.append('notes', form.notes);
+    formData.append('status', 'SAFE');
 
     const appendFile = (fieldName: string, uri: string | null) => {
       if (uri) {
@@ -359,10 +382,18 @@ export default function DevicesScreen() {
 
     const onDone = (error: unknown) => {
       if (error) {
-        Alert.alert('Erreur', "Impossible de sauvegarder l'appareil. Réessayez ou vérifiez votre connexion.");
+        setFeedback({ visible: true, type: 'error', title: 'Erreur', message: "Impossible de sauvegarder l'appareil. Réessayez ou vérifiez votre connexion." });
         return;
       }
       closeAdd();
+      setFeedback({
+        visible: true,
+        type: 'success',
+        title: editingId ? 'Appareil modifié' : 'Appareil ajouté',
+        message: editingId
+          ? 'Les modifications ont été enregistrées avec succès.'
+          : 'Votre appareil a été ajouté à votre inventaire.',
+      });
     };
 
     if (editingId) {
@@ -380,8 +411,11 @@ export default function DevicesScreen() {
         style: 'destructive',
         onPress: () => {
           remove(id, {
-            onSuccess: () => setShowDetail(false),
-            onError: () => Alert.alert('Erreur', "Suppression impossible pour le moment."),
+            onSuccess: () => {
+              setShowDetail(false);
+              setFeedback({ visible: true, type: 'success', title: 'Appareil supprimé', message: "L'appareil a été retiré de votre inventaire." });
+            },
+            onError: () => setFeedback({ visible: true, type: 'error', title: 'Suppression échouée', message: 'Suppression impossible pour le moment. Réessayez.' }),
           });
         },
       },
@@ -397,13 +431,14 @@ export default function DevicesScreen() {
     const finish = (error: unknown) => {
       setConfirming(false);
       if (error) {
-        Alert.alert('Erreur', "L'opération a échoué. Réessayez.");
+        setFeedback({ visible: true, type: 'error', title: 'Opération échouée', message: "L'opération a échoué. Réessayez." });
         return;
       }
       setShowReport(false);
       setShowDetail(false);
-      const msg = reportIsFound ? 'Appareil marqué comme retrouvé !' : 'Appareil signalé avec succès !';
-      if (Platform.OS === 'android') ToastAndroid.show(msg, ToastAndroid.SHORT); else Alert.alert('Succès', msg);
+      const title = reportIsFound ? 'Appareil retrouvé' : 'Appareil signalé';
+      const msg = reportIsFound ? 'Appareil marqué comme retrouvé avec succès !' : 'L\'appareil a été signalé. Les utilisateurs seront notifiés.';
+      setFeedback({ visible: true, type: 'success', title, message: msg });
     };
     if (reportIsFound) {
       reportFound({ id, password: reportPassword }, { onError: finish, onSuccess: () => finish(null) });
@@ -497,14 +532,13 @@ export default function DevicesScreen() {
                 <View
                   key={d.id}
                   style={{
-                    width: i === 0 ? TALL_W : CARD_W,
-                    height: i === 0 ? TALL_H : CARD_H,
+                    width: (SCREEN.width - PAD * 2 - GAP) / 2,
                   }}
                 >
                   <DeviceCard
                     device={d}
                     index={i}
-                    onPress={() => { setDetailDevice(d); setShowDetail(true); }}
+                    onPress={() => router.push(`/device/${d.id}`)}
                     onReportLost={() => openReport(d.id, false)}
                     onReportFound={() => openReport(d.id, true)}
                   />
@@ -516,12 +550,18 @@ export default function DevicesScreen() {
         </View>
       </ScrollView>
 
-      {/* Add/Edit Modal */}
-      <Modal visible={showAddModal} transparent animationType="slide" onRequestClose={closeAdd}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} onPress={closeAdd}>
-          <Pressable style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '92%' }} onPress={(e) => e.stopPropagation()}>
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#F0EAE0' }}>
+      {/* Add/Edit Bottom Sheet */}
+      {showAddModal && (
+        <BottomSheet
+          ref={addSheetRef}
+          snapPoints={addSnapPoints}
+          enablePanDownToClose
+          onClose={closeAdd}
+          handleIndicatorStyle={{ backgroundColor: '#E5E7EB', width: 40, height: 4, borderRadius: 2 }}
+          backgroundStyle={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
+        >
+          <BottomSheetView style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#F0EAE0' }}>
               <View>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>{editingId ? "Modifier l'appareil" : 'Ajouter un appareil'}</Text>
                 <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Conservez toutes les infos importantes</Text>
@@ -557,7 +597,7 @@ export default function DevicesScreen() {
                 <View style={{ flex: 1 }}><Input label="Modèle" placeholder="Ex: Galaxy S23" icon="git-branch-outline" value={form.modele} onChangeText={(v) => updateForm('modele', v)} /></View>
               </View>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-                <View style={{ flex: 1 }}><Input label="N° série / IMEI" placeholder="SN ou IMEI" icon="barcode-outline" value={form.serial} onChangeText={(v) => updateForm('serial', v)} /></View>
+                <View style={{ flex: 1 }}><Input label="N° série / IMEI  code:*#06#" placeholder="SN ou IMEI" icon="barcode-outline" value={form.serial} onChangeText={(v) => updateForm('serial', v)} /></View>
                 <View style={{ flex: 1 }}><Input label="Couleur" placeholder="Ex: Noir" icon="color-palette-outline" value={form.couleur} onChangeText={(v) => updateForm('couleur', v)} /></View>
               </View>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
@@ -578,7 +618,7 @@ export default function DevicesScreen() {
               </View>
 
               <View style={{ marginTop: 14 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>Notes</Text>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>Assurance</Text>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   {['non', 'oui'].map((v) => (
                     <Pressable key={v} onPress={() => updateForm('assurance', v)} style={{ flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1.5, borderColor: form.assurance === v ? PRIMARY : '#E0D5C4', backgroundColor: form.assurance === v ? '#FEF0DC' : '#FFFFFF' }}>
@@ -589,19 +629,23 @@ export default function DevicesScreen() {
                 </View>
               </View>
 
+              <View style={{ marginTop: 14 }}>
+                <Input label="Notes" placeholder="Remarques ou informations complémentaires..." icon="document-text-outline" value={form.notes} onChangeText={(v) => updateForm('notes', v)} />
+              </View>
+
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 24, marginBottom: 40 }}>
                 <View style={{ flex: 1 }}><Button title="Annuler" variant="outline" onPress={closeAdd} /></View>
                 <View style={{ flex: 2 }}><Button title={editingId ? 'Enregistrer' : 'Ajouter'} onPress={handleSave} loading={isCreating || isUpdating} icon={editingId ? 'checkmark-circle-outline' : 'add-circle-outline'} /></View>
               </View>
             </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+          </BottomSheetView>
+        </BottomSheet>
+      )}
 
       {/* Detail Modal */}
       <Modal visible={showDetail} transparent animationType="slide" onRequestClose={() => setShowDetail(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} onPress={() => setShowDetail(false)}>
-          <Pressable style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%' }} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%', marginBottom: insets.bottom + 8 }} onPress={(e) => e.stopPropagation()}>
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginTop: 12 }} />
             <ScrollView style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
               {detailDevice ? (
@@ -679,6 +723,17 @@ export default function DevicesScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <ActionFeedbackModal
+        visible={feedback.visible}
+        type={feedback.type}
+        title={feedback.title}
+        message={feedback.message}
+        detail={feedback.detail}
+        detailLabel={feedback.detailLabel}
+        onDismiss={() => setFeedback((f) => ({ ...f, visible: false }))}
+        onPrimaryAction={() => setFeedback((f) => ({ ...f, visible: false }))}
+      />
     </SafeAreaView>
   );
 }

@@ -258,6 +258,56 @@ const PlanCard = React.memo(function PlanCard({ planName, docLimit, docCount, co
   );
 });
 
+type ReferralCardProps = {
+  code?: string;
+  colors: ReturnType<typeof useThemeColors>;
+};
+
+const ReferralCard = React.memo(function ReferralCard({ code, colors }: ReferralCardProps) {
+  const [copied, setCopied] = React.useState(false);
+  const refCode = code || 'DOC-MASTER';
+
+  const handleCopy = () => {
+    try {
+      const Clipboard = require('expo-clipboard');
+      Clipboard.setStringAsync(refCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  return (
+    <Pressable
+      onPress={handleCopy}
+      style={({ pressed }) => [
+        styles.referralCard,
+        {
+          backgroundColor: colors.purpleBg,
+          borderColor: colors.purple + '30',
+        },
+        pressed && { opacity: 0.85 },
+      ]}
+    >
+      <View style={styles.referralLeft}>
+        <View style={[styles.referralIconBox, { backgroundColor: colors.purple + '25' }]}>
+          <Ionicons name="gift-outline" size={20} color={colors.purple} />
+        </View>
+        <View>
+          <Text style={[styles.referralTitle, { color: colors.text }]}>Mon code d&apos;invitation</Text>
+          <Text style={[styles.referralCode, { color: colors.purple }]}>{refCode}</Text>
+        </View>
+      </View>
+      <View style={[styles.referralCopyBtn, { backgroundColor: copied ? '#16A34A' : colors.purple + '20' }]}>
+        <Ionicons
+          name={copied ? 'checkmark' : 'copy-outline'}
+          size={16}
+          color={copied ? '#fff' : colors.purple}
+        />
+      </View>
+    </Pressable>
+  );
+});
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const clearance = useBottomTabClearance();
@@ -368,6 +418,8 @@ export default function HomeScreen() {
 
           <GainsCard balance={walletBalance} colors={colors} />
 
+          <ReferralCard code={user?.code_invitation} colors={colors} />
+
           {activeDecls.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionTitleRow}>
@@ -379,17 +431,16 @@ export default function HomeScreen() {
                   key={dec.id}
                   type={dec.declaration_type === 'LOST' || dec.is_lost ? 'LOST' : 'FOUND'}
                   docType={dec.docTypeInfo?.nom || dec.doc_type || 'Document'}
-                  status={dec.status}
+                  status={dec.status as any}
                   reference={dec.identifiant_doc_dm || dec.reference || '---'}
                   ownerName={dec.owner_name}
+                  declarationId={dec.id}
                   hasPotentialMatches={dec.matches && dec.matches.length > 0}
                   onPress={() => {
-                    if (dec.matches && dec.matches.length > 0) {
-                      router.push(`/recuperer?id=${dec.id}`);
-                    } else {
-                      router.push(`/document/${dec.id}`);
-                    }
+                    router.push(`/declaration/${dec.id}`);
                   }}
+                  onRecuperer={() => router.push(`/recuperer?id=${dec.id}`)}
+                  onRendre={() => router.push(`/rendre?id=${dec.id}`)}
                 />
               ))}
             </View>
@@ -402,7 +453,7 @@ export default function HomeScreen() {
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes documents</Text>
               </View>
               {docs.length > 0 && (
-                <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+                <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })} onPress={() => router.push('/(tabs)/documents')}>
                   <Text style={[styles.seeAllText, { color: colors.primary }]}>Voir tout</Text>
                 </Pressable>
               )}
@@ -429,8 +480,15 @@ export default function HomeScreen() {
 
           <View style={styles.section}>
             <View style={styles.sectionTitleRow}>
-              <Ionicons name="time-outline" size={16} color={colors.text} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Activités récentes</Text>
+              <View style={styles.sectionTitleLeft}>
+                <Ionicons name="time-outline" size={16} color={colors.text} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Activités récentes</Text>
+              </View>
+              {displayDeclarations.length > 0 && (
+                <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })} onPress={() => router.push('/(tabs)/declarations')}>
+                  <Text style={[styles.seeAllText, { color: colors.primary }]}>Voir tout</Text>
+                </Pressable>
+              )}
             </View>
 
             {displayDeclarations.length === 0 ? (
@@ -764,6 +822,44 @@ const styles = StyleSheet.create({
   },
   activityTime: {
     fontSize: 10,
+  },
+  referralCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  referralLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  referralIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  referralTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  referralCode: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  referralCopyBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   planCard: {
     borderRadius: 20,

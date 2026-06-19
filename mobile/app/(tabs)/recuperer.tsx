@@ -1,19 +1,18 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { declarationsService } from '@/core/api/declarationsService';
-import { claimsService } from '@/core/api/claimsService';
 
 const PRIMARY = '#F5A64B';
 const GREEN_DARK = '#1E312B';
 
 type DeclarationStatus = 'SEARCHING' | 'MATCHED' | 'PAYMENT_PENDING' | 'PAYMENT_DONE' | 'RETURNED' | 'CLAIMED' | 'CANCELLED';
 
-const STEP_LABELS = ['Déclaré', 'Trouvé', 'Paiement', 'Retrait'];
+const STEP_LABELS = ['Déclaré', 'Match', 'Paiement', 'Récupéré'];
 
 function getStepFromStatus(status: DeclarationStatus): number {
   switch (status) {
@@ -40,9 +39,7 @@ export default function RecupererScreen() {
   const [loading, setLoading] = useState(true);
   const [declaration, setDeclaration] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState(0);
-  const [code, setCode] = useState(['', '', '', '', '', '']);
-  const [validatingCode, setValidatingCode] = useState(false);
-  const inputRefs = useRef<(TextInput | null)[]>([]);
+  const [paying, setPaying] = useState(false);
 
   const fetchDeclaration = async () => {
     if (!id) return;
@@ -63,39 +60,20 @@ export default function RecupererScreen() {
 
   useEffect(() => { fetchDeclaration(); }, [id]);
 
-  const handleCodeChange = (value: string, index: number) => {
-    const digit = value.replace(/[^0-9]/g, '').slice(-1);
-    const newCode = [...code];
-    newCode[index] = digit;
-    setCode(newCode);
-    if (digit && index < 5) inputRefs.current[index + 1]?.focus();
-  };
-
-  const handleKeyPress = (e: any, index: number) => {
-    if (e.nativeEvent.key === 'Backspace' && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleValidateCode = async () => {
-    const finalCode = code.join('');
-    if (finalCode.length < 6) {
-      Alert.alert('Code incomplet', 'Veuillez entrer les 6 chiffres du code de sécurité');
-      return;
-    }
-    setValidatingCode(true);
+  const handlePayAndRecover = async () => {
+    setPaying(true);
     try {
-      const res = await claimsService.validateRecoveryCode({ docId: id!, code: finalCode });
+      const res = await declarationsService.initiateRecovery({ declaration_id: id! });
       if (res.success) {
-        Alert.alert('Succès', res.message || 'Code validé avec succès !');
-        setCurrentStep(3);
+        Alert.alert('Succès', 'Paiement initié. Veuillez confirmer le paiement pour récupérer votre document.');
+        setCurrentStep(2);
       } else {
-        Alert.alert('Code invalide', res.message || 'Le code saisi est incorrect');
+        Alert.alert('Erreur', res.message || 'Impossible d\'initier le paiement');
       }
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.message || 'Erreur lors de la validation du code');
+      Alert.alert('Erreur', err?.response?.data?.message || 'Erreur lors du paiement');
     } finally {
-      setValidatingCode(false);
+      setPaying(false);
     }
   };
 
@@ -120,8 +98,8 @@ export default function RecupererScreen() {
   }
 
   const progressPercent = Math.round((currentStep / 3) * 100);
-  const rewardAmount = declaration.reward_amount || 1500;
-  const pointsReward = declaration.reward_points || 50;
+  const recoveryCode = declaration.claim?.verification_code || declaration.reference || '';
+  const finder = declaration.counterPart;
 
   return (
     <SafeAreaView className="flex-1 bg-[#F4EFE6]">
@@ -130,6 +108,15 @@ export default function RecupererScreen() {
         className="px-4 pt-4"
         showsVerticalScrollIndicator={false}
       >
+        {/* Header */}
+        <View className="flex-row items-center justify-between mb-6">
+          <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full bg-white items-center justify-center border border-borderMain">
+            <Ionicons name="chevron-back" size={20} color="#1A1A1A" />
+          </Pressable>
+          <ThemedText className="text-base font-bold text-textMain">Récupérer mon document</ThemedText>
+          <View className="w-10" />
+        </View>
+
         {/* Status Banner */}
         <ThemedView
           style={{ backgroundColor: GREEN_DARK }}
@@ -138,16 +125,16 @@ export default function RecupererScreen() {
           <View className="absolute inset-0 bg-white/5" />
           <View className="flex-row items-center gap-4 mb-4">
             <View className="w-14 h-14 rounded-[22px] bg-white/10 items-center justify-center border border-white/10">
-              <Ionicons name="pulse-outline" size={28} color={PRIMARY} />
+              <Ionicons name="hand-left-outline" size={28} color={PRIMARY} />
             </View>
             <View className="flex-1">
               <ThemedText className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-0.5">
-                Statut du signalement
+                Statut de la récupération
               </ThemedText>
               <ThemedText className="text-base font-bold text-white" numberOfLines={2}>
-                {currentStep >= 3 ? 'Document remis avec succès' :
+                {currentStep >= 3 ? 'Document récupéré avec succès' :
                  currentStep >= 2 ? 'Paiement en cours de traitement' :
-                 currentStep >= 1 ? 'Correspondance trouvée' :
+                 currentStep >= 1 ? 'Correspondance trouvée — Payer pour récupérer' :
                  'En attente de correspondance'}
               </ThemedText>
             </View>
@@ -162,7 +149,7 @@ export default function RecupererScreen() {
         <ThemedView className="bg-white rounded-[32px] border border-borderMain p-6 shadow-sm mb-6">
           <View className="flex-row justify-between items-center mb-6">
             <ThemedText className="text-base font-bold text-textMain">
-              Historique #{id?.slice(0, 8).toUpperCase()}
+              Suivi #{id?.slice(0, 8).toUpperCase()}
             </ThemedText>
             <View className="flex-row items-center gap-1.5 px-3 py-1 bg-green-50 rounded-full border border-green-100">
               <View className="w-1.5 h-1.5 bg-green-500 rounded-full" />
@@ -171,10 +158,10 @@ export default function RecupererScreen() {
           </View>
 
           {[
-            { label: 'Document signalé', done: currentStep >= 0, active: currentStep === 0, date: formatDate(declaration.created_at), icon: 'document-text' },
-            { label: 'Correspondance établie', done: currentStep >= 1, active: currentStep === 1, date: declaration.matched_at ? formatDate(declaration.matched_at) : '—', icon: 'people' },
-            { label: 'Validation propriétaire', done: currentStep >= 2, active: currentStep === 2, date: currentStep >= 2 ? 'En cours' : 'À venir', icon: 'hourglass-outline' },
-            { label: 'Remise & Versement', done: currentStep >= 3, active: currentStep === 3, date: currentStep >= 3 ? formatDate(declaration.returned_at) : 'À venir', icon: 'checkmark-circle' },
+            { label: 'Document déclaré perdu', done: currentStep >= 0, active: currentStep === 0, date: formatDate(declaration.created_at), icon: 'document-text' },
+            { label: 'Correspondance trouvée', done: currentStep >= 1, active: currentStep === 1, date: declaration.matched_at ? formatDate(declaration.matched_at) : '—', icon: 'people' },
+            { label: 'Paiement & Récupération', done: currentStep >= 2, active: currentStep === 2, date: currentStep >= 2 ? 'Effectué' : 'À faire', icon: 'card' },
+            { label: 'Document récupéré', done: currentStep >= 3, active: currentStep === 3, date: currentStep >= 3 ? formatDate(declaration.returned_at) : 'À venir', icon: 'checkmark-circle' },
           ].map((step, idx) => (
             <View key={idx} className="flex-row gap-3 mb-6 relative">
               {idx < 3 && (
@@ -203,30 +190,36 @@ export default function RecupererScreen() {
           ))}
         </ThemedView>
 
-        {/* Gains Cards */}
-        <View className="flex-row gap-3 mb-6">
-          <ThemedView className="flex-1 bg-white rounded-3xl border border-borderMain p-5 flex-row items-center gap-4 shadow-sm">
-            <View className="w-12 h-12 rounded-2xl bg-orange-50 items-center justify-center">
-              <Ionicons name="cash" size={22} color="#D97706" />
+        {/* Payment / Recovery Section */}
+        {currentStep === 1 && (
+          <ThemedView className="bg-white rounded-[40px] border border-borderMain p-8 items-center mb-6 shadow-sm">
+            <View className="w-20 h-20 rounded-full bg-[#FAF7F2] border border-borderMain items-center justify-center mb-5">
+              <Ionicons name="wallet-outline" size={32} color={PRIMARY} />
             </View>
-            <View>
-              <ThemedText className="text-[10px] font-bold text-textMuted uppercase">Gains</ThemedText>
-              <ThemedText className="text-lg font-extrabold text-textMain">{rewardAmount.toLocaleString()} FCFA</ThemedText>
-            </View>
+            <ThemedText className="text-lg font-bold text-textMain mb-2">Payer & Récupérer</ThemedText>
+            <ThemedText className="text-[12px] text-textMuted leading-relaxed mb-8 text-center px-4">
+              Un correspondant a trouvé votre document. Payez les frais de récupération pour obtenir le code de retrait et les coordonnées du trouveur.
+            </ThemedText>
+            <Pressable
+              onPress={handlePayAndRecover}
+              disabled={paying}
+              style={{ backgroundColor: GREEN_DARK }}
+              className="w-full py-4 rounded-[24px] items-center justify-center flex-row gap-2 shadow-lg active:scale-[0.98] disabled:opacity-60"
+            >
+              {paying ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <>
+                  <Ionicons name="lock-open-outline" size={20} color="white" />
+                  <ThemedText className="text-white font-bold text-sm">Payer & Récupérer</ThemedText>
+                </>
+              )}
+            </Pressable>
           </ThemedView>
-          <ThemedView className="flex-1 bg-white rounded-3xl border border-borderMain p-5 flex-row items-center gap-4 shadow-sm">
-            <View className="w-12 h-12 rounded-2xl bg-purple-50 items-center justify-center">
-              <Ionicons name="star" size={22} color="#7C3AED" />
-            </View>
-            <View>
-              <ThemedText className="text-[10px] font-bold text-textMuted uppercase">Points</ThemedText>
-              <ThemedText className="text-lg font-extrabold text-purple-700">+{pointsReward} pts</ThemedText>
-            </View>
-          </ThemedView>
-        </View>
+        )}
 
-        {/* Code Validation */}
-        {currentStep < 3 && (
+        {/* Code Display (after payment) */}
+        {currentStep >= 2 && currentStep < 3 && (
           <ThemedView className="bg-white rounded-[40px] border border-borderMain p-8 items-center mb-6 shadow-sm">
             <View className="w-20 h-20 rounded-full bg-[#FAF7F2] border border-borderMain items-center justify-center mb-5 relative">
               <Ionicons name="key" size={32} color={PRIMARY} />
@@ -234,57 +227,30 @@ export default function RecupererScreen() {
                 <Ionicons name="shield-checkmark" size={14} color="#16A34A" />
               </View>
             </View>
-
-            <ThemedText className="text-lg font-bold text-textMain mb-2">Validation de la remise</ThemedText>
-            <ThemedText className="text-[12px] text-textMuted leading-relaxed mb-8 text-center px-4">
-              Une fois en agence ou face au propriétaire, saisissez le code qu'il vous fournira.
+            <ThemedText className="text-lg font-bold text-textMain mb-2">Votre code de récupération</ThemedText>
+            <ThemedText className="text-[12px] text-textMuted leading-relaxed mb-6 text-center px-4">
+              Fournissez ce code au trouveur pour récupérer votre document.
             </ThemedText>
-
-            <View className="w-full gap-6">
-              <View>
-                <ThemedText className="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-4 text-center">
-                  Code de sécurité
-                </ThemedText>
-                <View className="flex-row justify-center gap-2">
-                  {code.map((digit, idx) => (
-                    <TextInput
-                      key={idx}
-                      ref={(el) => { inputRefs.current[idx] = el; }}
-                      className="w-10 h-14 bg-[#FAF7F2] border border-borderMain rounded-2xl text-center font-bold text-xl text-textMain outline-none"
-                      maxLength={1}
-                      keyboardType="number-pad"
-                      value={digit}
-                      onChangeText={(v) => handleCodeChange(v, idx)}
-                      onKeyPress={(e) => handleKeyPress(e, idx)}
-                      selectTextOnFocus
-                    />
-                  ))}
+            <View className="bg-[#FAF7F2] border border-borderMain rounded-2xl px-8 py-4 mb-6">
+              <ThemedText className="text-3xl font-black text-center tracking-[8px] text-textMain">
+                {recoveryCode || '------'}
+              </ThemedText>
+            </View>
+            {finder && (
+              <View className="w-full p-4 bg-green-50 rounded-2xl border border-green-100 flex-row items-center gap-3">
+                <View className="w-10 h-10 rounded-xl bg-green-dark items-center justify-center">
+                  <Ionicons name="person" size={20} color="white" />
+                </View>
+                <View className="flex-1">
+                  <ThemedText className="text-[13px] font-bold text-green-900">
+                    {finder.nom} {finder.prenom}
+                  </ThemedText>
+                  <ThemedText className="text-[10px] text-green-700/80">
+                    {finder.telephone || 'Contact disponible'}
+                  </ThemedText>
                 </View>
               </View>
-
-              <Pressable
-                onPress={handleValidateCode}
-                disabled={validatingCode || code.join('').length < 6}
-                style={{ backgroundColor: GREEN_DARK }}
-                className="w-full py-4 rounded-[24px] items-center justify-center flex-row gap-2 shadow-lg active:scale-[0.98] disabled:opacity-60"
-              >
-                {validatingCode ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <>
-                    <Ionicons name="checkmark-circle" size={20} color="white" />
-                    <ThemedText className="text-white font-bold text-sm">Valider & percevoir mes gains</ThemedText>
-                  </>
-                )}
-              </Pressable>
-
-              <View className="flex-row items-center justify-center gap-2">
-                <Ionicons name="lock-closed" size={10} color="#9CA3AF" />
-                <ThemedText className="text-[10px] text-textMuted italic">
-                  Le code sera fourni par le propriétaire après validation du paiement
-                </ThemedText>
-              </View>
-            </View>
+            )}
           </ThemedView>
         )}
 
@@ -294,19 +260,18 @@ export default function RecupererScreen() {
             <View className="w-20 h-20 rounded-full bg-green-50 items-center justify-center mb-5">
               <Ionicons name="checkmark-circle" size={40} color="#16A34A" />
             </View>
-            <ThemedText className="text-lg font-bold text-green-700 mb-2">Document remis avec succès !</ThemedText>
+            <ThemedText className="text-lg font-bold text-green-700 mb-2">Document récupéré avec succès !</ThemedText>
             <ThemedText className="text-[12px] text-textMuted text-center mb-6">
-              Vos gains de {rewardAmount.toLocaleString()} FCFA ont été crédités sur votre portefeuille.
+              Votre document vous a été remis. Merci d'avoir utilisé DocMaster.
             </ThemedText>
           </ThemedView>
         )}
 
-        {/* Object Summary */}
+        {/* Document Summary */}
         <ThemedView className="bg-white rounded-[32px] border border-borderMain p-6 shadow-sm mb-6">
           <ThemedText className="text-[11px] font-bold text-textMuted uppercase tracking-widest mb-4">
             Résumé du document
           </ThemedText>
-
           <View className="flex-row items-center gap-4 p-4 bg-[#FAF7F2] rounded-2xl border border-borderMain/50">
             <View className="w-12 h-12 rounded-xl bg-white items-center justify-center border border-borderMain shadow-sm">
               <Ionicons name="document-text" size={24} color="#6B7280" />
@@ -320,50 +285,8 @@ export default function RecupererScreen() {
               </ThemedText>
             </View>
           </View>
-
-          {declaration.counterPart && (
-            <View className="mt-4 p-4 bg-green-50 rounded-2xl border border-green-100 flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-xl bg-green-dark items-center justify-center">
-                <Ionicons name="person" size={20} color="white" />
-              </View>
-              <View className="flex-1">
-                <ThemedText className="text-[13px] font-bold text-green-900">
-                  {declaration.counterPart.nom} {declaration.counterPart.prenom}
-                </ThemedText>
-                <ThemedText className="text-[10px] text-green-700/80">
-                  {declaration.counterPart.telephone || 'Contact disponible'}
-                </ThemedText>
-              </View>
-            </View>
-          )}
         </ThemedView>
       </ScrollView>
-
-      {/* Sticky Bottom Bar */}
-      {currentStep < 3 && (
-        <View
-          className="bg-white border-t border-borderMain px-4 py-3 flex-row items-center justify-between shadow-2xl"
-          style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
-        >
-          <View className="flex-1 mr-3">
-            <View className="flex-row items-center gap-1.5 mb-0.5">
-              <ThemedText className="text-[12px] font-black text-textMain truncate" numberOfLines={1}>
-                {declaration.doc_type || 'Document'}
-              </ThemedText>
-              <View className="w-1.5 h-1.5 rounded-full bg-primary" />
-              <ThemedText className="text-[12px] text-green-600 font-black">+{rewardAmount.toLocaleString()} FCFA</ThemedText>
-            </View>
-            <ThemedText className="text-[10px] text-textMuted">Validation requise • Code à 6 chiffres</ThemedText>
-          </View>
-          <Pressable
-            onPress={() => inputRefs.current[0]?.focus()}
-            style={{ backgroundColor: GREEN_DARK }}
-            className="px-6 py-3 rounded-2xl shadow-lg active:scale-95"
-          >
-            <ThemedText className="text-white font-black text-[12px]">Valider</ThemedText>
-          </Pressable>
-        </View>
-      )}
     </SafeAreaView>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -9,6 +9,7 @@ import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { BottomTabInset } from '@/constants/theme';
 import type { DocTypeCatalog } from '@/types';
+import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
 
 const PRIMARY = '#F5A64B';
 const GREEN_DARK = '#1E3A2F';
@@ -23,6 +24,9 @@ export default function ReportScreen() {
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [feedback, setFeedback] = useState<{ visible: boolean; type: FeedbackType; title: string; message?: string }>({
+    visible: false, type: 'error', title: '',
+  });
 
   const [form, setForm] = useState({
     type_id: '',
@@ -71,7 +75,7 @@ export default function ReportScreen() {
     }
 
     if (errors.length > 0) {
-      Alert.alert('Champs requis', `Veuillez remplir: ${errors.join(', ')}`);
+      setFeedback({ visible: true, type: 'warning', title: 'Champs requis', message: `Veuillez remplir: ${errors.join(', ')}` });
       return;
     }
 
@@ -102,7 +106,7 @@ export default function ReportScreen() {
 
       setSubmitted(true);
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.message || 'Une erreur est survenue. Veuillez réessayer.');
+      setFeedback({ visible: true, type: 'error', title: 'Erreur', message: err?.response?.data?.message || 'Une erreur est survenue. Veuillez réessayer.' });
     } finally {
       setSubmitting(false);
     }
@@ -335,6 +339,15 @@ export default function ReportScreen() {
           />
         </View>
       </ScrollView>
+
+      <ActionFeedbackModal
+        visible={feedback.visible}
+        type={feedback.type}
+        title={feedback.title}
+        message={feedback.message}
+        onDismiss={() => setFeedback((f) => ({ ...f, visible: false }))}
+        onPrimaryAction={() => setFeedback((f) => ({ ...f, visible: false }))}
+      />
     </SafeAreaView>
   );
 }

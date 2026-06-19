@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { View, Text, ScrollView, Dimensions, Pressable, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import Svg, { Circle, Rect, Polygon, Path } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -56,6 +57,13 @@ const BANNERS: BannerItem[] = [
     pattern: 'grid',
   },
 ];
+
+const BANNER_ROUTES: Record<string, string> = {
+  '1': '/(tabs)/documents',
+  '2': '/(tabs)/declarer',
+  '3': '/(tabs)/parrainage',
+  '4': '/(tabs)/gains',
+};
 
 const CirclesPattern = React.memo(({ color }: { color: string }) => (
   <Svg width={CARD_WIDTH} height={CARD_HEIGHT} style={{ position: 'absolute', top: 0, right: 0 }}>
@@ -256,11 +264,17 @@ function BannerCarouselInner() {
                       />
                     ))}
                   </View>
-                  <Pressable style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 4,
-                    backgroundColor: 'rgba(255,255,255,0.15)',
-                    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
-                  }}>
+                  <Pressable
+                    onPress={() => {
+                      const route = BANNER_ROUTES[banner.id];
+                      if (route) router.push(route as any);
+                    }}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', gap: 4,
+                      backgroundColor: 'rgba(255,255,255,0.15)',
+                      paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
+                    }}
+                  >
                     <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>Découvrir</Text>
                     <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
                   </Pressable>

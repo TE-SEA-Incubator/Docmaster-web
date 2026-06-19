@@ -15,6 +15,7 @@ import { DatePickerInput } from '@/components/declarations/wizard/DatePickerInpu
 import { BottomTabInset } from '@/constants/theme';
 import type { Document, DocTypeCatalog } from '@/types';
 import { DocumentsSkeleton } from '@/components/Skeletons';
+import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
 
 function getIcon(type?: string) {
   const t = (type || '').toLowerCase();
@@ -58,6 +59,9 @@ export default function DocumentsScreen() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ visible: boolean; type: FeedbackType; title: string; message?: string; detail?: string; detailLabel?: string }>({
+    visible: false, type: 'success', title: '',
+  });
 
   const uniqueTypes = [...new Set(docs.map(d => d.type_doc).filter(Boolean))] as string[];
 
@@ -170,18 +174,14 @@ export default function DocumentsScreen() {
 
       const res = await documentsService.register(payload);
       if (res.success) {
-        if (Platform.OS === 'android') {
-          ToastAndroid.show('Document enregistré avec succès !', ToastAndroid.SHORT);
-        } else {
-          Alert.alert('Succès', 'Document enregistré avec succès !');
-        }
         closeAdd();
         fetchData();
+        setFeedback({ visible: true, type: 'success', title: 'Document enregistré', message: 'Votre document a été ajouté avec succès à votre coffre-fort numérique.' });
       } else {
-        Alert.alert('Erreur', res.message || 'Une erreur est survenue lors de l\'enregistrement.');
+        setFeedback({ visible: true, type: 'error', title: 'Erreur', message: res.message || "Une erreur est survenue lors de l'enregistrement." });
       }
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.message || 'Erreur réseau lors de l\'enregistrement.');
+      setFeedback({ visible: true, type: 'error', title: 'Erreur réseau', message: err?.response?.data?.message || 'Erreur réseau lors de l\'enregistrement.' });
     } finally {
       setSaving(false);
     }
@@ -487,7 +487,7 @@ export default function DocumentsScreen() {
       {/* 3-Step Creation Modal */}
       <Modal visible={showAddModal} transparent animationType="slide" onRequestClose={closeAdd}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} onPress={closeAdd}>
-          <Pressable style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '92%' }} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '92%', marginBottom: insets.bottom + 8 }} onPress={(e) => e.stopPropagation()}>
             {/* Handle bar */}
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
             
@@ -814,6 +814,17 @@ export default function DocumentsScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <ActionFeedbackModal
+        visible={feedback.visible}
+        type={feedback.type}
+        title={feedback.title}
+        message={feedback.message}
+        detail={feedback.detail}
+        detailLabel={feedback.detailLabel}
+        onDismiss={() => setFeedback((f) => ({ ...f, visible: false }))}
+        onPrimaryAction={() => setFeedback((f) => ({ ...f, visible: false }))}
+      />
     </SafeAreaView>
   );
 }

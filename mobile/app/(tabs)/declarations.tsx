@@ -8,7 +8,7 @@ import {
   RefreshControl,
   StyleSheet,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { declarationsService } from '@/core/api/declarationsService';
@@ -76,13 +76,14 @@ export default function DeclarationsScreen() {
 
   return (
     <View style={styles.root}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />
         }
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 8, paddingBottom: insets.bottom + BottomTabInset + 32 },
+          { paddingTop: 8, paddingBottom: insets.bottom + BottomTabInset + 32 },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -183,12 +184,16 @@ export default function DeclarationsScreen() {
                 status={dec.status as any}
                 reference={dec.identifiant_doc_dm || dec.reference || '---'}
                 ownerName={dec.nom_complet || dec.owner_name}
+                declarationId={dec.id}
                 onPress={() => router.push(`/declaration/${dec.id}`)}
+                onRecuperer={() => router.push(`/recuperer?id=${dec.id}`)}
+                onRendre={() => router.push(`/rendre?id=${dec.id}`)}
               />
             ))}
           </View>
         )}
       </ScrollView>
+      </SafeAreaView>
     </View>
   );
 }
@@ -220,6 +225,7 @@ function EmptyState({ activeFilter }: { activeFilter: FilterKey }) {
 // ── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: CREAM },
+  safeArea: { flex: 1 },
   loadingContainer: { flex: 1, backgroundColor: CREAM, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingHorizontal: 16 },
 

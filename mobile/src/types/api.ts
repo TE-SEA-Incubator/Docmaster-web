@@ -45,6 +45,7 @@ export interface Document {
 
 export interface Device {
   id: string;
+  user_id?: string;
   serial_number?: string;
   marque?: string;
   modele?: string;

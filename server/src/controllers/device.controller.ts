@@ -195,6 +195,29 @@ export const getDeviceMedia = async (req: Request, res: Response) => {
   }
 };
 
+export const getDeviceById = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const id = req.params.id as string;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Utilisateur non authentifié' });
+    }
+
+    const device = await deviceService.getDeviceById(id);
+    if (!device) {
+      return res.status(404).json({ success: false, message: 'Appareil non trouvé' });
+    }
+
+    res.json({ success: true, data: device });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Erreur lors de la récupération de l\'appareil'
+    });
+  }
+};
+
 export const reportDeviceLost = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;

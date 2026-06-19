@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { 
   registerMyDevice, 
   getMyDevices,
+  getDeviceById,
   reportDeviceLost,
   reportDeviceFound,
   deleteDevice,
@@ -275,6 +276,28 @@ router.get('/', authMiddleware, getMyDevices);
  *         description: Erreur serveur
  */
 router.get('/my-devices', authMiddleware, getMyDevices);
+
+/**
+ * @swagger
+ * /devices/{id}:
+ *   get:
+ *     summary: Récupérer un appareil par son ID
+ *     tags: [Devices]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Appareil trouvé
+ *       404:
+ *         description: Appareil introuvable
+ */
+router.get('/:id', authMiddleware, getDeviceById);
 
 /**
  * @swagger

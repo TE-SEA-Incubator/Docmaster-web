@@ -1,10 +1,6 @@
 import React from 'react';
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Platform,
-  StatusBar,
+  View, StyleSheet, TouchableOpacity, Platform, StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
@@ -15,8 +11,6 @@ import { PRIMARY, TEXT_MAIN, TEXT_MUTED, BORDER, CREAM } from './DOC_TYPE_META';
 type WizardTopBarProps = {
   title: string;
   subtitle?: string;
-  step: number;
-  totalSteps: number;
   onBack?: () => void;
   onClose?: () => void;
   showClose?: boolean;
@@ -25,8 +19,6 @@ type WizardTopBarProps = {
 export function WizardTopBar({
   title,
   subtitle,
-  step,
-  totalSteps,
   onBack,
   onClose,
   showClose = true,
@@ -43,20 +35,11 @@ export function WizardTopBar({
     onClose?.();
   };
 
-  const progressPercent = ((step) / (totalSteps - 1)) * 100;
-
   return (
     <View style={[styles.wrapper, { paddingTop: insets.top + 4 }]}>
       <StatusBar barStyle="dark-content" backgroundColor={CREAM} />
-
       <View style={styles.row}>
-        {/* Back button */}
-        <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={handleBack}
-          activeOpacity={0.7}
-          disabled={!onBack}
-        >
+        <TouchableOpacity style={styles.iconBtn} onPress={handleBack} activeOpacity={0.7} disabled={!onBack}>
           {onBack ? (
             <Ionicons name="chevron-back" size={22} color={TEXT_MAIN} />
           ) : (
@@ -64,7 +47,6 @@ export function WizardTopBar({
           )}
         </TouchableOpacity>
 
-        {/* Center: title + step counter */}
         <View style={styles.center}>
           <ThemedText style={styles.title} numberOfLines={1}>
             {title}
@@ -73,20 +55,11 @@ export function WizardTopBar({
             <ThemedText style={styles.subtitle} numberOfLines={1}>
               {subtitle}
             </ThemedText>
-          ) : (
-            <ThemedText style={styles.stepCounter}>
-              Étape {step + 1} sur {totalSteps}
-            </ThemedText>
-          )}
+          ) : null}
         </View>
 
-        {/* Close button */}
         {showClose ? (
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={handleClose}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={styles.iconBtn} onPress={handleClose} activeOpacity={0.7}>
             <View style={styles.closeBtn}>
               <Ionicons name="close" size={16} color={TEXT_MUTED} />
             </View>
@@ -94,11 +67,6 @@ export function WizardTopBar({
         ) : (
           <View style={{ width: 36 }} />
         )}
-      </View>
-
-      {/* Thin progress bar at bottom of TopBar */}
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
       </View>
     </View>
   );
@@ -110,7 +78,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
     paddingHorizontal: 12,
-    paddingBottom: 0,
   },
   row: {
     flexDirection: 'row',
@@ -139,7 +106,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   title: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: TEXT_MAIN,
     letterSpacing: 0.1,
@@ -148,22 +115,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: TEXT_MUTED,
     marginTop: 1,
-  },
-  stepCounter: {
-    fontSize: 11,
-    color: TEXT_MUTED,
-    marginTop: 1,
     fontWeight: '500',
-  },
-  progressTrack: {
-    height: 3,
-    backgroundColor: BORDER,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: PRIMARY,
-    borderRadius: 2,
   },
 });

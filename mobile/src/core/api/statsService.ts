@@ -25,11 +25,13 @@ export type PerformanceDoc = {
 
 export const statsService = {
   async getGlobal() {
-    const res = await apiClient.get<ApiResponse<GlobalStats>>('stats/global');
+    const res = await apiClient.get<ApiResponse<GlobalStats>>('declarations/stats');
     return res.data;
   },
-  async getPerformance() {
-    const res = await apiClient.get<ApiResponse<PerformanceDoc[]>>('stats/performance');
+  async getPerformance(period?: string) {
+    const res = await apiClient.get<ApiResponse<PerformanceDoc[]>>('declarations/performance', {
+      params: period ? { period } : undefined,
+    });
     return res.data;
   },
   async getActiveDocumentTypes() {

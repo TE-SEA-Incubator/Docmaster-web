@@ -213,7 +213,7 @@ export default function MesDocuments() {
           { label: t("mesdocuments_breadcrumb_documents") },
         ]}
       />
-      <div className="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-[calc(2rem+env(safe-area-inset-bottom))] max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
+      <div className="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-[calc(6rem+max(env(safe-area-inset-bottom),0.75rem))] md:pb-[calc(2rem+max(env(safe-area-inset-bottom),0.75rem))] max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
 
         {/* Info banner */}
         {showBanner && (

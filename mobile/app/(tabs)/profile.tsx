@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Pressable, ActivityIndicator, Text } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { BottomTabInset } from '@/constants/theme';
 import { useAuthStore } from '@/core/store/useAuthStore';
+import { documentsService } from '@/core/api/documentsService';
 
 const PRIMARY = '#F5A64B';
 const GREEN_DARK = '#1E3A2F';
@@ -12,12 +13,11 @@ const GREEN_DARK = '#1E3A2F';
 const MENU_ITEMS = [
   { key: 'gains', icon: 'wallet-outline', title: 'Mes gains', route: '/gains', color: '#D97706', bgColor: '#FFFBEB' },
   { key: 'invite', icon: 'people-outline', title: 'Parrainer des amis', route: '/parrainage', color: '#7E22CE', bgColor: '#F3E8FF' },
-  { key: 'manage', icon: 'settings-outline', title: 'Manage profile', route: '/manage-profile', color: '#F97316', bgColor: '#FFF7ED' },
-  { key: 'customize', icon: 'options-outline', title: 'Customize my experience', route: null, color: '#2563EB', bgColor: '#EFF6FF' },
-  { key: 'notifications', icon: 'notifications-outline', title: 'Manage notifications', route: '/notifications', color: '#8B5CF6', bgColor: '#F5F3FF' },
-  { key: 'faq', icon: 'bulb-outline', title: 'FAQ', route: null, color: '#CA8A04', bgColor: '#FEFCE8' },
-  { key: 'subscription', icon: 'star-outline', title: 'Manage subscription', route: '/(tabs)/subscription', color: '#DC2626', bgColor: '#FEF2F2' },
-  { key: 'bug', icon: 'bug-outline', title: 'Report a bug', route: null, color: '#EA580C', bgColor: '#FFF7ED' },
+  { key: 'manage', icon: 'settings-outline', title: 'Modifier mon profil', route: '/manage-profile', color: '#F97316', bgColor: '#FFF7ED' },
+  { key: 'notifications', icon: 'notifications-outline', title: 'Gérer les notifications', route: '/notifications', color: '#8B5CF6', bgColor: '#F5F3FF' },
+  { key: 'faq', icon: 'bulb-outline', title: 'FAQ / Aide', route: '/faq', color: '#CA8A04', bgColor: '#FEFCE8' },
+  { key: 'subscription', icon: 'star-outline', title: 'Gérer mon abonnement', route: '/(tabs)/subscription', color: '#DC2626', bgColor: '#FEF2F2' },
+  { key: 'bug', icon: 'bug-outline', title: 'Signaler un bug', route: null, color: '#EA580C', bgColor: '#FFF7ED' },
 ];
 
 export default function ProfileScreen() {
@@ -25,6 +25,13 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [docCount, setDocCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    documentsService.getAll().then(res => {
+      if (res.success && res.data) setDocCount(res.data.length);
+    }).catch(() => {});
+  }, []);
 
   if (!user) {
     return (
@@ -63,7 +70,7 @@ export default function ProfileScreen() {
             <Pressable onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </Pressable>
-            <Pressable>
+            <Pressable onPress={() => router.push('/manage-profile')}>
               <Ionicons name="pencil" size={22} color="#FFFFFF" />
             </Pressable>
           </View>
@@ -102,7 +109,7 @@ export default function ProfileScreen() {
         }}>
           <View style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: '#444' }}>
             <Text style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Documents</Text>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: PRIMARY }}>12</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: PRIMARY }}>{docCount ?? '...'}</Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: '#444' }}>
             <Text style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Points</Text>

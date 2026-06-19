@@ -1,48 +1,69 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Input } from '@/components/common/Input';
-import { DocFieldDef } from './DOC_TYPE_META';
+import { ThemedText } from '@/components/themed-text';
+import { BORDER, TEXT_MUTED, PRIMARY } from './DOC_TYPE_META';
+import type { DocFieldDef } from './DOC_TYPE_META';
 
 type DocDynamicFieldsProps = {
-  fields: DocFieldDef[];
+  fields?: DocFieldDef[];
   values: Record<string, string>;
   onChange: (field: string, value: string) => void;
 };
 
 export const DocDynamicFields: React.FC<DocDynamicFieldsProps> = ({ fields, values, onChange }) => {
-  if (!fields || fields.length === 0) return null;
+  if (!fields || fields.length === 0) {
+    return (
+      <View style={styles.emptyBox}>
+        <ThemedText style={styles.emptyText}>
+          Aucun champ supplémentaire requis pour ce type de document.
+        </ThemedText>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {fields.map((field) => (
-        <Input
+      {fields.map((field) => {
+        const isRequired = field.required;
+        return (
+          <Input
             key={field.key}
-            label={field.label}
+            label={isRequired ? `${field.label} *` : field.label}
             value={values[field.key] || ''}
             onChangeText={(val) => onChange(field.key, val)}
-            placeholder={field.placeholder || `Entrez ${field.label.toLowerCase()}`}
+            placeholder={field.placeholder || ''}
             containerStyle={styles.fieldContainer}
-        />
-      ))}
+            multiline={field.multiline}
+            keyboardType={field.keyboardType}
+            icon={(field.icon || 'create-outline') as any}
+          />
+        );
+      })}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    gap: 16,
+    gap: 14,
   },
   fieldContainer: {
-    gap: 8,
+    gap: 6,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  input: {
+  emptyBox: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 8,
+    borderColor: BORDER,
+    borderStyle: 'dashed',
+    padding: 24,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 13,
+    color: TEXT_MUTED,
+    textAlign: 'center',
+    lineHeight: 19,
   },
 });

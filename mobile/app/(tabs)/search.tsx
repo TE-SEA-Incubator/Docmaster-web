@@ -1,11 +1,13 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, TextInput, ScrollView, Pressable, ActivityIndicator, Image, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { declarationsService } from '@/core/api/declarationsService';
+import { documentsService } from '@/core/api/documentsService';
 import { BottomTabInset } from '@/constants/theme';
-import type { Declaration } from '@/types';
+import { useAuthStore } from '@/core/store/useAuthStore';
+import type { Declaration, Document } from '@/types';
 
 const PRIMARY = '#F5A64B';
 
@@ -28,48 +30,116 @@ function timeAgo(dateString?: string) {
   return new Date(dateString).toLocaleDateString('fr-FR');
 }
 
+type SearchResult = {
+  id: string;
+  type: 'declaration' | 'document';
+  title: string;
+  subtitle: string;
+  status: string;
+  date: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  bgColor: string;
+  isLost?: boolean;
+};
+
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
+  const { user } = useAuthStore();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Declaration[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [mode, setMode] = useState<'tous' | 'declarations' | 'documents'>('tous');
 
   const handleSearch = useCallback(async () => {
-    const q = query.trim();
+    const q = query.trim().toLowerCase();
     if (!q) return;
     setLoading(true);
     setSearched(true);
     try {
-      const res = await declarationsService.searchPublic(q);
-      if (res.success && res.data) {
-        setResults(res.data);
-      } else {
-        setResults([]);
+      const allResults: SearchResult[] = [];
+
+      if (mode === 'tous' || mode === 'declarations') {
+        const [decRes] = await Promise.all([
+          declarationsService.searchPublic(q).catch(() => ({ success: false, data: [] })),
+        ]);
+        if (decRes.success && decRes.data) {
+          (decRes.data as Declaration[]).forEach(d => {
+            const docName = (d as any).docTypeInfo?.nom || d.doc_type || 'Document';
+            const isLost = (d as any).declaration_type === 'LOST' || d.is_lost;
+            allResults.push({
+              id: d.id,
+              type: 'declaration',
+              title: docName,
+              subtitle: d.owner_name || (d as any).ville || 'Lieu non spécifié',
+              status: isLost ? 'Perdu' : 'Trouvé',
+              date: d.created_at,
+              icon: getDocIcon(docName),
+              color: isLost ? '#EF4444' : '#16A34A',
+              bgColor: isLost ? '#FEF2F2' : '#F0FDF4',
+              isLost,
+            });
+          });
+        }
       }
+
+      if ((mode === 'tous' || mode === 'documents') && user) {
+        const docRes = await documentsService.getAll().catch(() => ({ success: false, data: [] }));
+        if (docRes.success && docRes.data) {
+          (docRes.data as Document[])
+            .filter(d =>
+              d.nom_sur_doc?.toLowerCase().includes(q) ||
+              d.numero_doc?.toLowerCase().includes(q) ||
+              d.type_doc?.toLowerCase().includes(q) ||
+              d.notes?.toLowerCase().includes(q)
+            )
+            .forEach(d => {
+              allResults.push({
+                id: d.id,
+                type: 'document',
+                title: d.type_doc || 'Document',
+                subtitle: d.numero_doc || d.nom_sur_doc || '—',
+                status: d.is_lost ? 'Perdu' : 'Actif',
+                date: d.created_at || '',
+                icon: getDocIcon(d.type_doc),
+                color: d.is_lost ? '#EF4444' : '#16A34A',
+                bgColor: d.is_lost ? '#FEF2F2' : '#F0FDF4',
+                isLost: d.is_lost,
+              });
+            });
+        }
+      }
+
+      setResults(allResults);
     } catch {
       setResults([]);
     } finally {
       setLoading(false);
     }
-  }, [query]);
+  }, [query, mode, user]);
+
+  useEffect(() => {
+    if (searched && query.trim()) handleSearch();
+  }, [mode]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 32, paddingHorizontal: 20, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={{ marginBottom: 20 }}>
           <Text style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>Recherche</Text>
-          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>Trouvez des documents perdus ou trouvés</Text>
+          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>Documents et déclarations</Text>
         </View>
 
         <View style={{
           flexDirection: 'row', alignItems: 'center', gap: 10,
           backgroundColor: '#FAFAFA', borderRadius: 16,
           borderWidth: 1, borderColor: '#F0F0F0',
-          paddingHorizontal: 16, height: 52, marginBottom: 20,
+          paddingHorizontal: 16, height: 52, marginBottom: 12,
         }}>
           <Ionicons name="search-outline" size={20} color="#9CA3AF" />
           <TextInput
@@ -88,6 +158,29 @@ export default function SearchScreen() {
           )}
         </View>
 
+        {/* Filter chips */}
+        {user && (
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+            {(['tous', 'declarations', 'documents'] as const).map(m => (
+              <Pressable
+                key={m}
+                onPress={() => setMode(m)}
+                style={{
+                  paddingVertical: 6, paddingHorizontal: 14, borderRadius: 999,
+                  backgroundColor: mode === m ? PRIMARY : '#F5F5F5',
+                }}
+              >
+                <Text style={{
+                  fontSize: 12, fontWeight: '700',
+                  color: mode === m ? '#FFFFFF' : '#6B7280',
+                }}>
+                  {m === 'tous' ? 'Tout' : m === 'declarations' ? 'Déclarations' : 'Documents'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
         {loading ? (
           <View style={{ paddingVertical: 60, alignItems: 'center' }}>
             <ActivityIndicator size="large" color={PRIMARY} />
@@ -105,7 +198,7 @@ export default function SearchScreen() {
               Recherchez un document
             </Text>
             <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 20, maxWidth: 280 }}>
-              Tapez un nom, numéro ou type de document pour trouver des déclarations publiques
+              Tapez un nom, numéro ou type de document pour trouver des déclarations publiques ou vos documents
             </Text>
           </View>
         ) : results.length === 0 ? (
@@ -118,7 +211,7 @@ export default function SearchScreen() {
             </View>
             <Text style={{ fontSize: 15, fontWeight: '700', color: '#1A1A1A' }}>Aucun résultat</Text>
             <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>
-              Aucune déclaration trouvée pour "{query}"
+              Aucun document trouvé pour "{query}"
             </Text>
           </View>
         ) : (
@@ -126,45 +219,45 @@ export default function SearchScreen() {
             <Text style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 4 }}>
               {results.length} résultat{results.length > 1 ? 's' : ''}
             </Text>
-            {results.map((dec) => {
-              const isLost = dec.type === 'lost' || dec.is_lost;
-              return (
-                <Pressable
-                  key={dec.id}
-                  style={({ pressed }) => ({
-                    flexDirection: 'row', alignItems: 'center', gap: 14,
-                    backgroundColor: pressed ? '#F9F9F9' : '#FAFAFA',
-                    borderRadius: 16, borderWidth: 1, borderColor: '#F0F0F0',
-                    padding: 14,
-                  })}
-                >
-                  <View style={{
-                    width: 44, height: 44, borderRadius: 12,
-                    backgroundColor: isLost ? '#FFF5F5' : '#F0FDF4',
-                    alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <Ionicons name={getDocIcon(dec.doc_type)} size={20} color={isLost ? '#EF4444' : '#16A34A'} />
-                  </View>
-                  <View style={{ flex: 1 }}>
+            {results.map((item) => (
+              <Pressable
+                key={`${item.type}-${item.id}`}
+                onPress={() => router.push(item.type === 'declaration' ? `/declaration/${item.id}` : `/document/${item.id}`)}
+                style={({ pressed }) => ({
+                  flexDirection: 'row', alignItems: 'center', gap: 14,
+                  backgroundColor: pressed ? '#F9F9F9' : '#FFFFFF',
+                  borderRadius: 16, borderWidth: 1, borderColor: '#F0F0F0',
+                  padding: 14,
+                })}
+              >
+                <View style={{
+                  width: 48, height: 48, borderRadius: 12,
+                  backgroundColor: item.bgColor,
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ionicons name={item.icon} size={22} color={item.color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }} numberOfLines={1}>
-                      {dec.docTypeInfo?.nom || dec.doc_type || 'Document'}
+                      {item.title}
                     </Text>
-                    <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }} numberOfLines={1}>
-                      {dec.lieu_perte || dec.lieu_trouvee || 'Lieu non spécifié'} · {timeAgo(dec.created_at)}
-                    </Text>
+                    <View style={{
+                      paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10,
+                      backgroundColor: item.bgColor,
+                    }}>
+                      <Text style={{ fontSize: 9, fontWeight: '700', color: item.color }}>
+                        {item.status}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={{
-                    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
-                    backgroundColor: isLost ? '#FFF5F5' : '#F0FDF4',
-                    borderWidth: 1, borderColor: isLost ? '#FECACA' : '#BBF7D0',
-                  }}>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: isLost ? '#EF4444' : '#16A34A' }}>
-                      {isLost ? 'Perdu' : 'Trouvé'}
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            })}
+                  <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3 }} numberOfLines={1}>
+                    {item.subtitle} · {timeAgo(item.date)}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
+              </Pressable>
+            ))}
           </View>
         )}
       </ScrollView>

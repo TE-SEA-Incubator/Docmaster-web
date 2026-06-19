@@ -105,5 +105,6 @@ export const Spacing = {
 export const BottomTabInset = Platform.select({ ios: 50, android: 12 }) ?? 0;
 // Extra reserved space at the bottom of scroll containers so content never sits
 // underneath the floating tab bar. Use with insets.bottom for full clearance.
-export const TabBarClearance = Platform.select({ ios: 96, android: 90 }) ?? 90;
+// Includes ~48dp tab bar content + ~22dp floating button protrusion.
+export const TabBarClearance = Platform.select({ ios: 80, android: 74 }) ?? 74;
 export const MaxContentWidth = 800;

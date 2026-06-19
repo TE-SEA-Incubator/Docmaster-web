@@ -99,6 +99,7 @@ export default function RootLayout() {
           <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
           <Stack.Screen name="declaration/[id]" options={{ presentation: 'card' }} />
           <Stack.Screen name="document/[id]" options={{ presentation: 'card' }} />
+          <Stack.Screen name="device/[id]" options={{ presentation: 'card' }} />
 
           <Stack.Screen name="manage-profile" options={{ presentation: 'card' }} />
         </Stack>

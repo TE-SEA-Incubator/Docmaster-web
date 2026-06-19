@@ -519,26 +519,56 @@ export default function DocumentDetailScreen() {
             </View>
           </View>
 
-          {/* Status Badges */}
-          <View style={{ flexDirection: 'row', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-            {doc.is_lost && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' }}>
-                <Ionicons name="alert-circle" size={12} color="#EF4444" />
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#EF4444' }}>Perdu</Text>
-              </View>
-            )}
-            {doc.is_verified && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0' }}>
-                <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#16A34A' }}>Certifié</Text>
-              </View>
-            )}
-            {!doc.is_lost && !doc.is_verified && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0' }}>
-                <Ionicons name="shield-checkmark" size={12} color="#16A34A" />
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#16A34A' }}>Actif</Text>
-              </View>
-            )}
+          {/* Status Badges + Actions */}
+          <View style={{ flexDirection: 'row', gap: 6, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', gap: 6, flex: 1, flexWrap: 'wrap' }}>
+              {doc.is_lost && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' }}>
+                  <Ionicons name="alert-circle" size={12} color="#EF4444" />
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#EF4444' }}>Perdu</Text>
+                </View>
+              )}
+              {doc.is_verified && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0' }}>
+                  <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#16A34A' }}>Certifié</Text>
+                </View>
+              )}
+              {!doc.is_lost && !doc.is_verified && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0' }}>
+                  <Ionicons name="shield-checkmark" size={12} color="#16A34A" />
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#16A34A' }}>Actif</Text>
+                </View>
+              )}
+            </View>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              {!doc.is_lost && (
+                <Pressable
+                  onPress={handleReportLost}
+                  style={({ pressed }) => ({
+                    width: 34, height: 34, borderRadius: 17,
+                    backgroundColor: pressed ? '#FEE8E8' : '#FEF2F2',
+                    borderWidth: 1, borderColor: '#FECACA',
+                    alignItems: 'center', justifyContent: 'center',
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                >
+                  <Ionicons name="alert-circle-outline" size={16} color="#EF4444" />
+                </Pressable>
+              )}
+              <Pressable
+                onPress={() => setShareModalVisible(true)}
+                style={({ pressed }) => ({
+                  width: 34, height: 34, borderRadius: 17,
+                  backgroundColor: pressed ? '#FFF3E0' : '#FFF9F2',
+                  borderWidth: 1, borderColor: '#FFE2B7',
+                  alignItems: 'center', justifyContent: 'center',
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Ionicons name="share-outline" size={16} color={PRIMARY} />
+              </Pressable>
+            </View>
           </View>
 
           {/* Info Card */}
@@ -587,20 +617,6 @@ export default function DocumentDetailScreen() {
 
           {/* Action Buttons */}
           <View style={{ gap: 10 }}>
-            {!doc.is_lost && (
-              <Pressable
-                onPress={handleReportLost}
-                style={({ pressed }) => ({
-                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  paddingVertical: 14, borderRadius: 14,
-                  backgroundColor: pressed ? '#FEE8E8' : '#FEF2F2',
-                  borderWidth: 1, borderColor: '#FECACA',
-                })}
-              >
-                <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Déclarer perdu</Text>
-              </Pressable>
-            )}
             <Pressable
               onPress={handleDelete}
               style={({ pressed }) => ({
@@ -612,18 +628,6 @@ export default function DocumentDetailScreen() {
             >
               <Ionicons name="trash-outline" size={18} color="#EF4444" />
               <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Supprimer</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setShareModalVisible(true)}
-              style={({ pressed }) => ({
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-                paddingVertical: 14, borderRadius: 14,
-                backgroundColor: pressed ? '#FFF3E0' : '#FFF9F2',
-                borderWidth: 1, borderColor: '#FFE2B7',
-              })}
-            >
-              <Ionicons name="share-outline" size={18} color={PRIMARY} />
-              <Text style={{ fontSize: 14, fontWeight: '700', color: PRIMARY }}>Partager</Text>
             </Pressable>
             <Pressable
               onPress={handleDownloadPDF}

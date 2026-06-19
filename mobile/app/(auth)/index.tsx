@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, Pressable, View, TextInput,
 import { Link, useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Path, Circle, Defs, G } from 'react-native-svg';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuthStore } from '@/core/store/useAuthStore';
@@ -10,6 +11,20 @@ import { useGoogleAuth } from '@/core/api/googleAuthService';
 import { Colors } from '@/constants/theme';
 
 const LOGO = require('../../assets/docmaster.png');
+
+const STEP_IMAGES = [
+  require('../../assets/onbording/19197294.jpg'),
+  require('../../assets/onbording/document-vectoriel-vectoriel-conception-coloree.png'),
+  require('../../assets/onbording/59337.jpg'),
+  require('../../assets/onbording/Wavy_Bus-06_Single-06.jpg'),
+];
+
+const STEP_DATA = [
+  { title: 'Vos informations', subtitle: 'Créez votre compte DocMaster' },
+  { title: 'Sécurisation', subtitle: 'Confirmez votre mot de passe' },
+  { title: 'Vérification', subtitle: 'Entrez le code à 6 chiffres reçu' },
+  { title: 'Finalisation', subtitle: 'Choisissez votre pseudo unique' },
+];
 
 function FieldInput({
   icon,
@@ -125,40 +140,52 @@ function BlobBackground() {
   );
 }
 
+function MotifBackground() {
+  return (
+    <View style={styles.motifContainer} pointerEvents="none">
+      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+        <Defs />
+        <G opacity={0.08}>
+          <Path
+            d="M0,100 C100,0 200,200 300,100 C400,0 500,150 600,50"
+            stroke="#1E3A2F"
+            strokeWidth={2}
+            fill="none"
+          />
+          <Path
+            d="M0,200 C120,300 250,100 380,250 C510,400 600,200 700,300"
+            stroke="#1E3A2F"
+            strokeWidth={1.5}
+            fill="none"
+          />
+          <Path
+            d="M50,400 C200,300 300,500 450,350 C550,250 650,450 750,300"
+            stroke="#1E3A2F"
+            strokeWidth={1}
+            fill="none"
+          />
+          <Circle cx={80} cy={80} r={40} fill="#1E3A2F" />
+          <Circle cx={320} cy={420} r={30} fill="#1E3A2F" />
+          <Circle cx={600} cy={120} r={25} fill="#1E3A2F" />
+          <Circle cx={700} cy={380} r={35} fill="#1E3A2F" />
+        </G>
+      </Svg>
+    </View>
+  );
+}
+
 function StepDots({ current, total }: { current: number; total: number }) {
   return (
-    <View style={styles.stepDotsRow}>
-      {Array.from({ length: total }, (_, i) => {
-        const step = i + 1;
-        const isActive = step === current;
-        const isDone = step < current;
-        return (
-          <View key={step} style={styles.stepDotItem}>
-            <View
-              style={[
-                styles.stepDotCircle,
-                isActive
-                  ? styles.stepDotActive
-                  : isDone
-                    ? styles.stepDotDone
-                    : styles.stepDotInactive,
-              ]}
-            >
-              <ThemedText
-                style={[
-                  styles.stepDotText,
-                  isActive || isDone ? styles.stepDotTextActive : styles.stepDotTextInactive,
-                ]}
-              >
-                {step}
-              </ThemedText>
-            </View>
-            {step < total && (
-              <View style={[styles.stepDotLine, isDone ? styles.stepDotLineDone : styles.stepDotLineInactive]} />
-            )}
-          </View>
-        );
-      })}
+    <View style={styles.onbDotsRow}>
+      {Array.from({ length: total }, (_, i) => (
+        <View
+          key={i}
+          style={[
+            styles.onbDot,
+            current === i + 1 && styles.onbDotActive,
+          ]}
+        />
+      ))}
     </View>
   );
 }
@@ -311,144 +338,9 @@ export default function LoginScreen() {
     return true;
   };
 
-  const TabPill = () => (
-    <View style={styles.tabPillContainer}>
-      <AnimatedTab
-        active={tab === 'login'}
-        onPress={() => setTab('login')}
-        label="Connexion"
-        icon="log-in"
-      />
-      <AnimatedTab
-        active={tab === 'register'}
-        onPress={() => setTab('register')}
-        label="Inscription"
-        icon="person-add"
-      />
-    </View>
-  );
-
-  const loginContent = (
-    <View style={styles.loginContent}>
-      <View style={styles.loginTitleBlock}>
-        <ThemedText style={styles.loginTitle}>
-          Bon retour 👋
-        </ThemedText>
-        <ThemedText style={styles.loginSubtitle}>
-          Connectez-vous pour continuer
-        </ThemedText>
-      </View>
-
-      {loginError ? (
-        <View style={styles.errorBox}>
-          <ThemedText style={styles.errorText}>
-            {loginError}
-          </ThemedText>
-        </View>
-      ) : null}
-
-      <FieldInput
-        icon="mail-outline"
-        value={loginForm.email}
-        onChangeText={(v) => setLoginForm((f) => ({ ...f, email: v }))}
-        placeholder="votre@email.com"
-        keyboardType="email-address"
-      />
-
-      <FieldInput
-        icon="lock-closed-outline"
-        value={loginForm.password}
-        onChangeText={(v) => setLoginForm((f) => ({ ...f, password: v }))}
-        placeholder="Mot de passe"
-        secureTextEntry={!pwVisible}
-        rightButton={
-          <Pressable onPress={() => setPwVisible(!pwVisible)} style={styles.pwToggle}>
-            <Ionicons
-              name={pwVisible ? 'eye-off-outline' : 'eye-outline'}
-              size={18}
-              color={Colors.light.textSecondary}
-            />
-          </Pressable>
-        }
-      />
-
-      <Link href="/(auth)/forgot-password" asChild>
-        <Pressable style={styles.forgotPwLink}>
-          <ThemedText style={styles.forgotPwText}>
-            <Ionicons name="key-outline" size={12} color={Colors.light.tint} /> Mot de passe oublié ?
-          </ThemedText>
-        </Pressable>
-      </Link>
-
-      <Pressable
-        onPress={handleLogin}
-        disabled={loginLoading}
-        style={[styles.primaryButton, loginLoading && styles.disabledBtn]}
-      >
-        {loginLoading ? (
-          <ActivityIndicator size="small" color="white" />
-        ) : (
-          <>
-            <Ionicons name="log-in" size={16} color="white" />
-            <ThemedText style={styles.primaryButtonText}>
-              Se connecter
-            </ThemedText>
-          </>
-        )}
-      </Pressable>
-
-      <View style={styles.dividerRow}>
-        <View style={styles.dividerLine} />
-        <ThemedText style={styles.dividerText}>ou continuer avec</ThemedText>
-        <View style={styles.dividerLine} />
-      </View>
-
-      <SocialLoginButtons loading={loginLoading} />
-    </View>
-  );
-
-  const registerContent = (
-    <View style={styles.registerContent}>
-      <View style={styles.registerTitleBlock}>
-        <ThemedText style={styles.registerTitle}>
-          Créer un compte
-        </ThemedText>
-        <ThemedText style={styles.registerSubtitle}>
-          Rejoignez DocMaster en quelques étapes
-        </ThemedText>
-      </View>
-
-      <StepDots current={regStep} total={4} />
-
-      {regError ? (
-        <View style={styles.errorBox}>
-          <ThemedText style={styles.errorText}>
-            {regError}
-          </ThemedText>
-        </View>
-      ) : null}
-
-      {regStep === 1 && <Step1Fields />}
-      {regStep === 2 && <Step2Confirm />}
-      {regStep === 3 && <Step3Pin />}
-      {regStep === 4 && <Step4Pseudo />}
-    </View>
-  );
-
   function Step1Fields() {
     return (
       <>
-        <Pressable style={styles.googleBtn}>
-          <Ionicons name="logo-google" size={16} color="#db4437" />
-          <ThemedText style={styles.googleBtnText}>S'inscrire avec Google</ThemedText>
-        </Pressable>
-
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <ThemedText style={styles.dividerText}>ou s'inscrire avec</ThemedText>
-          <View style={styles.dividerLine} />
-        </View>
-
         <View style={styles.nameRow}>
           <View style={styles.nameField}>
             <FieldInput icon="person-outline" value={regForm.nom} onChangeText={(v) => setRegForm((f) => ({ ...f, nom: v }))} placeholder="Nom" />
@@ -485,10 +377,10 @@ export default function LoginScreen() {
         <Pressable
           onPress={() => setRegStep(2)}
           disabled={!canGoNext(1)}
-          style={[styles.primaryButton, styles.mt1, !canGoNext(1) && styles.disabledBtn]}
+          style={[styles.onbNextBtn, !canGoNext(1) && styles.disabledBtn]}
         >
-          <ThemedText style={styles.primaryButtonText}>Continuer</ThemedText>
-          <Ionicons name="arrow-forward" size={16} color="white" />
+          <ThemedText style={styles.onbNextBtnText}>Continuer</ThemedText>
+          <Ionicons name="arrow-forward" size={18} color="white" />
         </Pressable>
       </>
     );
@@ -497,18 +389,6 @@ export default function LoginScreen() {
   function Step2Confirm() {
     return (
       <>
-        <View style={styles.infoBox}>
-          <View style={styles.infoIconCircle}>
-            <Ionicons name="shield-checkmark" size={18} color="white" />
-          </View>
-          <View style={styles.infoTextBlock}>
-            <ThemedText style={styles.infoTitle}>Sécurisez votre compte</ThemedText>
-            <ThemedText style={styles.infoSubtitle}>
-              Confirmez votre mot de passe pour garantir la sécurité de votre compte.
-            </ThemedText>
-          </View>
-        </View>
-
         <FieldInput icon="lock-closed-outline" value={regForm.password} placeholder="Mot de passe" secureTextEntry />
 
         <View>
@@ -539,17 +419,17 @@ export default function LoginScreen() {
           )}
         </View>
 
-        <View style={styles.stepNavRow}>
-          <Pressable onPress={() => setRegStep(1)} style={styles.backBtn}>
+        <View style={styles.onbStepNav}>
+          <Pressable onPress={() => setRegStep(1)} style={styles.onbBackBtn}>
             <Ionicons name="arrow-back" size={18} color={Colors.light.text} />
           </Pressable>
           <Pressable
             onPress={() => setRegStep(3)}
             disabled={!canGoNext(2)}
-            style={[styles.primaryButton, styles.flex1, !canGoNext(2) && styles.disabledBtn]}
+            style={[styles.onbNextBtn, styles.flex1, !canGoNext(2) && styles.disabledBtn]}
           >
-            <ThemedText style={styles.primaryButtonText}>Valider</ThemedText>
-            <Ionicons name="arrow-forward" size={16} color="white" />
+            <ThemedText style={styles.onbNextBtnText}>Valider</ThemedText>
+            <Ionicons name="arrow-forward" size={18} color="white" />
           </Pressable>
         </View>
       </>
@@ -560,9 +440,6 @@ export default function LoginScreen() {
     return (
       <>
         <View style={styles.pinHeader}>
-          <View style={styles.pinIconCircle}>
-            <Ionicons name="phone-portrait-outline" size={24} color={Colors.light.tint} />
-          </View>
           <ThemedText style={styles.pinHeaderText}>
             Un code PIN à 6 chiffres a été envoyé à{'\n'}
             <ThemedText style={styles.pinPhone}>{regForm.telephone}</ThemedText>
@@ -604,17 +481,17 @@ export default function LoginScreen() {
           <ThemedText style={styles.pinResendLink}>Renvoyer</ThemedText>
         </ThemedText>
 
-        <View style={styles.stepNavRow}>
-          <Pressable onPress={() => setRegStep(2)} style={styles.backBtn}>
+        <View style={styles.onbStepNav}>
+          <Pressable onPress={() => setRegStep(2)} style={styles.onbBackBtn}>
             <Ionicons name="arrow-back" size={18} color={Colors.light.text} />
           </Pressable>
           <Pressable
             onPress={() => setRegStep(4)}
             disabled={!canGoNext(3)}
-            style={[styles.primaryButton, styles.flex1, !canGoNext(3) && styles.disabledBtn]}
+            style={[styles.onbNextBtn, styles.flex1, !canGoNext(3) && styles.disabledBtn]}
           >
-            <ThemedText style={styles.primaryButtonText}>Vérifier</ThemedText>
-            <Ionicons name="arrow-forward" size={16} color="white" />
+            <ThemedText style={styles.onbNextBtnText}>Vérifier</ThemedText>
+            <Ionicons name="arrow-forward" size={18} color="white" />
           </Pressable>
         </View>
       </>
@@ -624,18 +501,6 @@ export default function LoginScreen() {
   function Step4Pseudo() {
     return (
       <>
-        <View style={styles.infoBox}>
-          <View style={styles.infoIconCircle}>
-            <Ionicons name="id-card-outline" size={18} color="white" />
-          </View>
-          <View style={styles.infoTextBlock}>
-            <ThemedText style={styles.infoTitle}>Choisissez votre pseudo</ThemedText>
-            <ThemedText style={styles.infoSubtitle}>
-              Celui-ci sera votre identifiant unique sur la plateforme.
-            </ThemedText>
-          </View>
-        </View>
-
         <View style={styles.pseudoSection}>
           <ThemedText style={styles.pseudoLabel}>
             <Ionicons name="at" size={11} color={Colors.light.tint} /> Pseudo
@@ -710,21 +575,21 @@ export default function LoginScreen() {
           )}
         </View>
 
-        <View style={styles.stepNavRow}>
-          <Pressable onPress={() => setRegStep(3)} style={styles.backBtn}>
+        <View style={styles.onbStepNav}>
+          <Pressable onPress={() => setRegStep(3)} style={styles.onbBackBtn}>
             <Ionicons name="arrow-back" size={18} color={Colors.light.text} />
           </Pressable>
           <Pressable
             onPress={handleRegister}
             disabled={!regForm.pseudo || regLoading}
-            style={[styles.registerFinalBtn, (!regForm.pseudo || regLoading) && styles.disabledBtn]}
+            style={[styles.onbFinalBtn, (!regForm.pseudo || regLoading) && styles.disabledBtn]}
           >
             {regLoading ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
               <>
                 <Ionicons name="rocket" size={16} color="white" />
-                <ThemedText style={styles.primaryButtonText}>
+                <ThemedText style={styles.onbNextBtnText}>
                   Créer mon compte
                 </ThemedText>
               </>
@@ -742,87 +607,159 @@ export default function LoginScreen() {
         style={styles.flex1}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}
-          style={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <BlobBackground />
+        {tab === 'register' ? (
+          <View style={styles.flex1}>
+            <MotifBackground />
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}
+              style={styles.onbScroll}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Pressable onPress={() => setTab('login')} style={styles.onbTopBack}>
+                <Ionicons name="chevron-back" size={18} color={Colors.light.textSecondary} />
+                <ThemedText style={styles.onbTopBackText}>
+                  Déjà un compte ? <ThemedText style={styles.onbTopBackBold}>Connectez-vous</ThemedText>
+                </ThemedText>
+              </Pressable>
 
-          <View style={styles.mainContent}>
-            {/* Logo */}
-            <View style={styles.logoContainer}>
-              <Image
-                source={LOGO}
-                style={styles.logoImage}
-                resizeMode="contain"
-              />
-            </View>
+              <View style={styles.onbFullContent}>
+                <Image
+                  source={STEP_IMAGES[regStep - 1]}
+                  style={styles.onbFullImage}
+                  resizeMode="contain"
+                />
 
-            {/* Tab Pills */}
-            <TabPill />
+                <View style={styles.onbTextBlock}>
+                  <ThemedText style={styles.onbTitle}>
+                    {STEP_DATA[regStep - 1].title}
+                  </ThemedText>
+                  <ThemedText style={styles.onbSubtitle}>
+                    {STEP_DATA[regStep - 1].subtitle}
+                  </ThemedText>
+                </View>
 
-            {/* Form Card */}
-            <View style={styles.formCard}>
-              {tab === 'login' ? loginContent : registerContent}
-            </View>
+                <StepDots current={regStep} total={4} />
 
-            {/* Bottom spacing */}
-            <View style={styles.bottomSpacer} />
+                {regError ? (
+                  <View style={styles.errorBox}>
+                    <ThemedText style={styles.errorText}>{regError}</ThemedText>
+                  </View>
+                ) : null}
+
+                <View style={styles.onbFieldsContainer}>
+                  {regStep === 1 && <Step1Fields />}
+                  {regStep === 2 && <Step2Confirm />}
+                  {regStep === 3 && <Step3Pin />}
+                  {regStep === 4 && <Step4Pseudo />}
+                </View>
+              </View>
+            </ScrollView>
           </View>
-        </ScrollView>
+        ) : (
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 24 }}
+            style={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <BlobBackground />
+            <MotifBackground />
+
+            <View style={styles.loginFullPage}>
+              <View style={styles.loginBrandSection}>
+                <Image
+                  source={LOGO}
+                  style={styles.loginLogo}
+                  resizeMode="contain"
+                />
+                <ThemedText style={styles.loginBrandTitle}>
+                  Bon retour 👋
+                </ThemedText>
+                <ThemedText style={styles.loginBrandSubtitle}>
+                  Connectez-vous pour continuer
+                </ThemedText>
+              </View>
+
+              <View style={styles.loginFormSection}>
+                {loginError ? (
+                  <View style={styles.errorBox}>
+                    <ThemedText style={styles.errorText}>
+                      {loginError}
+                    </ThemedText>
+                  </View>
+                ) : null}
+
+                <FieldInput
+                  icon="mail-outline"
+                  value={loginForm.email}
+                  onChangeText={(v) => setLoginForm((f) => ({ ...f, email: v }))}
+                  placeholder="votre@email.com"
+                  keyboardType="email-address"
+                />
+
+                <FieldInput
+                  icon="lock-closed-outline"
+                  value={loginForm.password}
+                  onChangeText={(v) => setLoginForm((f) => ({ ...f, password: v }))}
+                  placeholder="Mot de passe"
+                  secureTextEntry={!pwVisible}
+                  rightButton={
+                    <Pressable onPress={() => setPwVisible(!pwVisible)} style={styles.pwToggle}>
+                      <Ionicons name={pwVisible ? 'eye-off-outline' : 'eye-outline'} size={18} color={Colors.light.textSecondary} />
+                    </Pressable>
+                  }
+                />
+
+                <Link href="/(auth)/forgot-password" asChild>
+                  <Pressable style={styles.loginForgotLink}>
+                    <ThemedText style={styles.loginForgotText}>
+                      Mot de passe oublié ?
+                    </ThemedText>
+                  </Pressable>
+                </Link>
+
+                <Pressable
+                  onPress={handleLogin}
+                  disabled={loginLoading}
+                  style={[styles.loginButton, loginLoading && styles.disabledBtn]}
+                >
+                  {loginLoading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <ThemedText style={styles.loginButtonText}>
+                      Se connecter
+                    </ThemedText>
+                  )}
+                </Pressable>
+
+                <View style={styles.loginDivider}>
+                  <View style={styles.loginDividerLine} />
+                  <ThemedText style={styles.loginDividerText}>ou</ThemedText>
+                  <View style={styles.loginDividerLine} />
+                </View>
+
+                <SocialLoginButtons loading={loginLoading} />
+
+                <Pressable onPress={() => setTab('register')} style={styles.loginSignupLink}>
+                  <ThemedText style={styles.loginSignupText}>
+                    Pas encore de compte ?{' '}
+                    <ThemedText style={styles.loginSignupBold}>Créer un compte</ThemedText>
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </ScrollView>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-}
-
-function AnimatedTab({
-  active,
-  onPress,
-  label,
-  icon,
-}: {
-  active: boolean;
-  onPress: () => void;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.tabItem, active && styles.tabItemActive]}
-    >
-      <Ionicons
-        name={icon}
-        size={14}
-        color={active ? 'white' : Colors.light.textSecondary}
-      />
-      <ThemedText
-        style={[styles.tabItemText, active && styles.tabItemTextActive]}
-      >
-        {label}
-      </ThemedText>
-    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F2EBD9' },
   flex1: { flex: 1 },
-  scrollContent: { paddingHorizontal: 24 },
-  mainContent: { position: 'relative', zIndex: 10, paddingTop: 48 },
-  logoContainer: { alignItems: 'center', marginBottom: 32 },
-  logoImage: { height: 56, width: undefined },
-  formCard: {
-    marginTop: 20,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 24,
-    padding: 20,
-  },
-  bottomSpacer: { height: 32 },
+  scrollContent: { paddingHorizontal: 0 },
 
   // FieldInput
   fieldRelative: {},
@@ -887,93 +824,115 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
 
-  // StepDots
-  stepDotsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  stepDotItem: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  stepDotCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 9999,
-    alignItems: 'center',
+  // Onboarding dots
+  onbDotsRow: {
+    flexDirection: 'row',
     justifyContent: 'center',
-    zIndex: 10,
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 16,
   },
-  stepDotActive: { backgroundColor: '#1E3A2F', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  stepDotDone: { backgroundColor: Colors.light.tint },
-  stepDotInactive: { backgroundColor: Colors.light.surface, borderWidth: 2, borderColor: '#E0D5C4' },
-  stepDotText: { fontSize: 11, fontWeight: '700' },
-  stepDotTextActive: { color: Colors.light.surface },
-  stepDotTextInactive: { color: '#9CA3AF' },
-  stepDotLine: { flex: 1, height: 2, marginHorizontal: 0 },
-  stepDotLineDone: { backgroundColor: Colors.light.tint },
-  stepDotLineInactive: { backgroundColor: '#E0D5C4' },
+  onbDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#C4BAB0',
+  },
+  onbDotActive: {
+    width: 20,
+    backgroundColor: Colors.light.tint,
+  },
 
   // PasswordStrength
   pwStrengthRow: { flexDirection: 'row', gap: 4, marginTop: 6, paddingHorizontal: 2 },
   pwStrengthBar: { height: 4, flex: 1, borderRadius: 9999 },
 
-  // Login content
-  loginContent: { gap: 14 },
-  loginTitleBlock: { marginBottom: 4 },
-  loginTitle: { fontFamily: 'BricolageGrotesque_700Bold', fontSize: 23, fontWeight: '800', color: Colors.light.text, letterSpacing: -0.5, marginBottom: 2 },
-  loginSubtitle: { fontSize: 13, color: Colors.light.textSecondary, fontWeight: '500', fontStyle: 'italic' },
-
-  // Register content
-  registerContent: { gap: 16 },
-  registerTitleBlock: { marginBottom: 4 },
-  registerTitle: { fontFamily: 'BricolageGrotesque_700Bold', fontSize: 23, fontWeight: '800', color: Colors.light.text, letterSpacing: -0.5, marginBottom: 2 },
-  registerSubtitle: { fontSize: 13, color: Colors.light.textSecondary, fontWeight: '500', fontStyle: 'italic' },
-
   // Error box
   errorBox: { padding: 12, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 14 },
   errorText: { color: '#DC2626', fontSize: 12, fontWeight: '600', textAlign: 'center' },
 
-  // Primary button
-  primaryButton: {
-    width: '100%',
-    height: 52,
-    backgroundColor: Colors.light.tint,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  primaryButtonText: { color: Colors.light.surface, fontSize: 16, fontWeight: '700', fontFamily: 'BricolageGrotesque_700Bold' },
   disabledBtn: { opacity: 0.6 },
-  mt1: { marginTop: 4 },
-
-  // Forgot password link
-  forgotPwLink: { marginTop: -4 },
-  forgotPwText: { textAlign: 'right', fontSize: 12.5, color: Colors.light.tint, fontWeight: '600' },
-
-  // Divider
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
-  dividerText: { fontSize: 11.5, color: Colors.light.textSecondary, fontWeight: '500' },
 
   // Password toggle
   pwToggle: { padding: 4 },
 
-  // Google button
-  googleBtn: {
+  // Login full page
+  loginFullPage: {
+    position: 'relative',
+    zIndex: 10,
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingTop: 60,
+    paddingHorizontal: 24,
+  },
+  loginBrandSection: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  loginLogo: {
+    height: 64,
+    width: undefined,
+    marginBottom: 24,
+  },
+  loginBrandTitle: {
+    fontFamily: 'BricolageGrotesque_700Bold',
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.light.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  loginBrandSubtitle: {
+    fontSize: 15,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  loginFormSection: {
+    gap: 14,
+  },
+  loginForgotLink: {
+    alignSelf: 'flex-end',
+  },
+  loginForgotText: {
+    fontSize: 13,
+    color: Colors.light.tint,
+    fontWeight: '600',
+  },
+  loginButton: {
     width: '100%',
-    height: 46,
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 14,
+    height: 54,
+    backgroundColor: Colors.light.tint,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  googleBtnText: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  loginButtonText: {
+    color: Colors.light.surface,
+    fontSize: 17,
+    fontWeight: '700',
+    fontFamily: 'BricolageGrotesque_700Bold',
+  },
+  loginDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  loginDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(0,0,0,0.08)',
+  },
+  loginDividerText: {
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+    fontWeight: '500',
+  },
 
   // Social button
   socialBtn: {
@@ -990,65 +949,105 @@ const styles = StyleSheet.create({
   },
   socialBtnText: { fontSize: 13, fontWeight: '600', color: '#374151' },
 
-  // Tab pill
-  tabPillContainer: {
-    position: 'relative',
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.8)',
-    borderRadius: 16,
-    padding: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    overflow: 'hidden',
+  // Motif background
+  motifContainer: { ...StyleSheet.absoluteFill, overflow: 'hidden' },
+
+  // Onboarding full page
+  onbScroll: {
+    paddingHorizontal: 24,
   },
-  tabItem: {
+  onbTopBack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: 20,
+    paddingBottom: 12,
+  },
+  onbTopBackText: {
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+  },
+  onbTopBackBold: {
+    fontWeight: '700',
+    color: Colors.light.tint,
+  },
+  onbFullContent: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingTop: 12,
+  },
+  onbFullImage: {
+    width: '100%',
+    height: 200,
+    marginBottom: 20,
+    borderRadius: 16,
+  },
+
+  // Login signup link
+  loginSignupLink: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  loginSignupText: {
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+  },
+  loginSignupBold: {
+    fontWeight: '700',
+    color: Colors.light.tint,
+  },
+
+  // Onboarding text block
+  onbTextBlock: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  onbTitle: {
+    fontFamily: 'BricolageGrotesque_700Bold',
+    fontSize: 20,
+    fontWeight: '800',
+    color: Colors.light.text,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  onbSubtitle: {
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  onbFieldsContainer: {
+    width: '100%',
+    gap: 12,
+  },
+  onbNextBtn: {
+    width: '100%',
+    height: 50,
+    backgroundColor: Colors.light.tint,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 8,
+    shadowColor: Colors.light.tint,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  tabItemActive: { backgroundColor: Colors.light.tint, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  tabItemText: { fontSize: 14, fontWeight: '600', color: Colors.light.textSecondary },
-  tabItemTextActive: { color: Colors.light.surface },
-
-  // Info box
-  infoBox: {
+  onbNextBtnText: {
+    color: Colors.light.surface,
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'BricolageGrotesque_700Bold',
+  },
+  onbStepNav: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16,
-    padding: 16,
-    backgroundColor: 'rgba(254,240,220,0.5)',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(245,166,75,0.2)',
+    gap: 10,
+    marginTop: 4,
   },
-  infoIconCircle: {
-    width: 40,
-    height: 40,
-    backgroundColor: Colors.light.tint,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    marginTop: 2,
-  },
-  infoTextBlock: { flex: 1 },
-  infoTitle: { fontWeight: '600', color: Colors.light.text, fontSize: 14, marginBottom: 2 },
-  infoSubtitle: { fontSize: 12.5, color: Colors.light.textSecondary, lineHeight: 20 },
-
-  // Step nav
-  stepNavRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  backBtn: {
+  onbBackBtn: {
     paddingHorizontal: 16,
-    height: 52,
+    height: 50,
     backgroundColor: 'rgba(255,255,255,0.65)',
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.9)',
@@ -1063,15 +1062,6 @@ const styles = StyleSheet.create({
 
   // Pin
   pinHeader: { alignItems: 'center', gap: 8, paddingVertical: 8 },
-  pinIconCircle: {
-    width: 56,
-    height: 56,
-    backgroundColor: '#1E3A2F',
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
   pinHeaderText: { fontSize: 13, color: Colors.light.textSecondary, textAlign: 'center', lineHeight: 20 },
   pinPhone: { fontWeight: '600', color: Colors.light.text },
   pinRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginVertical: 8 },
@@ -1143,10 +1133,10 @@ const styles = StyleSheet.create({
   pwMismatchText: { fontSize: 12, fontWeight: '500', marginTop: 6, marginLeft: 4, color: '#EF4444' },
   pwMatchText: { fontSize: 12, fontWeight: '500', marginTop: 6, marginLeft: 4, color: '#16a34a' },
 
-  // Register final button
-  registerFinalBtn: {
+  // Onboarding final button
+  onbFinalBtn: {
     flex: 1,
-    height: 52,
+    height: 50,
     backgroundColor: '#1E3A2F',
     borderRadius: 14,
     alignItems: 'center',

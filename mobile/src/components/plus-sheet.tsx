@@ -51,15 +51,7 @@ const ACTIONS = [
     bg: '#F0FDF4',
     route: '/(tabs)/trouver',
   },
-  {
-    key: 'search',
-    title: 'Rechercher un document',
-    subtitle: 'Trouvez un document via la plateforme',
-    icon: 'search-outline' as const,
-    color: '#0EA5E9',
-    bg: '#E0F2FE',
-    route: '/(tabs)/rechercher',
-  },
+
   {
     key: 'my-declarations',
     title: 'Mes déclarations',
@@ -90,7 +82,7 @@ export function PlusSheet({ visible, onClose }: PlusSheetProps) {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable
-          style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 24 }]}
+          style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 60 }]}
           onPress={(e) => e.stopPropagation()}
         >
           <View style={[styles.handle, { backgroundColor: colors.border }]} />

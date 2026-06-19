@@ -14,7 +14,7 @@ const TABS = [
   { name: 'rechercher', label: 'Docmaster', icon: 'search', iconOutline: 'search-outline' },
 ] as const;
 
-const HIDDEN_ROUTES = ['declarer', 'trouver', 'recuperer'];
+const HIDDEN_ROUTES = ['declarer', 'trouver', 'recuperer', 'rendre'];
 
 type TabButtonProps = {
   tab: typeof TABS[number];
@@ -155,6 +155,7 @@ export default function AppTabs() {
       <Tabs.Screen name="declarer" options={{ href: null }} />
       <Tabs.Screen name="trouver" options={{ href: null }} />
       <Tabs.Screen name="recuperer" options={{ href: null }} />
+      <Tabs.Screen name="rendre" options={{ href: null }} />
       <Tabs.Screen name="rechercher" />
       <Tabs.Screen name="parrainage" options={{ href: null }} />
       <Tabs.Screen name="gains" options={{ href: null }} />
@@ -168,8 +169,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    height: 68,
     paddingTop: 8,
+    paddingBottom: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   tab: {

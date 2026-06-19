@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme'; // Ajuste selon tes constantes
+import { useRouter } from 'expo-router';
 
 type DeclarationStatus = 'SEARCHING' | 'MATCHED' | 'RETURNED' | 'AVAILABLE' | 'CANCELLED' | 'CLAIMED';
 
@@ -13,6 +13,9 @@ interface DeclarationCardProps {
   ownerName?: string;
   date?: string;
   onPress?: () => void;
+  onRecuperer?: () => void;
+  onRendre?: () => void;
+  declarationId?: string;
   hasPotentialMatches?: boolean;
 }
 
@@ -31,7 +34,11 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
   ownerName,
   hasPotentialMatches,
   onPress,
+  onRecuperer,
+  onRendre,
+  declarationId,
 }) => {
+  const router = useRouter();
   const isMatch = status === 'MATCHED' || status === 'RETURNED';
   const colorKey = isMatch ? 'green' : (type === 'LOST' ? (hasPotentialMatches ? 'orange' : 'red') : 'blue');
   const palette = PALETTES[colorKey as keyof typeof PALETTES] || PALETTES.red;
@@ -121,6 +128,36 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
             })}
           </View>
         </View>
+
+        {/* Match action button */}
+        {status === 'MATCHED' && type === 'LOST' && (
+          <TouchableOpacity
+            style={styles.matchActionBtn}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              if (onRecuperer) onRecuperer();
+              else if (declarationId) router.push(`/recuperer?id=${declarationId}`);
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="handshake-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.matchActionText}>Récupérer</Text>
+          </TouchableOpacity>
+        )}
+        {status === 'MATCHED' && type === 'FOUND' && (
+          <TouchableOpacity
+            style={styles.matchActionBtn}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              if (onRendre) onRendre();
+              else if (declarationId) router.push(`/rendre?id=${declarationId}`);
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="return-down-back-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.matchActionText}>Rendre</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -243,5 +280,20 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontSize: 9,
     textAlign: 'center',
+  },
+  matchActionBtn: {
+    backgroundColor: '#16A34A',
+    borderRadius: 12,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  matchActionText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
   },
 });

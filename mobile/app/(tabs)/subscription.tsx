@@ -10,6 +10,7 @@ import { Spacing, Colors } from '@/constants/theme';
 import { Button } from '@/components/common/Button';
 import { PaymentModal } from '@/components/modals/PaymentModal';
 import { ThemedText } from '@/components/themed-text';
+import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
 
 const PRIMARY = '#F5A64B';
 const GREEN_DARK = '#1E3A2F';
@@ -33,6 +34,9 @@ export default function SubscriptionScreen() {
   const [processing, setProcessing] = useState(false);
   const [payError, setPayError] = useState('');
   const [pollingStatus, setPollingStatus] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ visible: boolean; type: FeedbackType; title: string; message?: string }>({
+    visible: false, type: 'success', title: '',
+  });
 
   const loadData = useCallback(async () => {
     setLoadingPlans(true);
@@ -100,7 +104,7 @@ export default function SubscriptionScreen() {
           clearInterval(interval);
           setPollingStatus(null);
           setModalOpen(false);
-          Alert.alert('Succès', 'Votre abonnement a été activé !');
+          setFeedback({ visible: true, type: 'success', title: 'Abonnement activé', message: 'Votre abonnement a été activé avec succès. Profitez de toutes les fonctionnalités premium !' });
           loadData();
         }
       } catch (e) {
@@ -140,7 +144,7 @@ export default function SubscriptionScreen() {
     : plans;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['left', 'right']}>
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
@@ -303,28 +307,28 @@ export default function SubscriptionScreen() {
              variant="outline" 
              style={styles.cancelBtn}
              textStyle={{ color: '#EF4444' }}
-             onPress={() => {
-               Alert.alert(
-                 'Annuler l' + "'" + 'abonnement',
-                 'Êtes-vous sûr de vouloir annuler votre abonnement actuel ? Vos avantages resteront actifs jusqu' + "'" + 'à la fin de la période.',
-                 [
-                   { text: 'Non', style: 'cancel' },
-                   { 
-                     text: 'Oui, annuler', 
-                     style: 'destructive',
-                     onPress: async () => {
-                       try {
-                         await subscriptionsService.cancel();
-                         Alert.alert('Succès', 'Votre abonnement a été annulé.');
-                         loadData();
-                       } catch (e) {
-                         Alert.alert('Erreur', 'Impossible d' + "'" + 'annuler l' + "'" + 'abonnement.');
-                       }
-                     }
-                   }
-                 ]
-               );
-             }}
+              onPress={() => {
+                Alert.alert(
+                  'Annuler l' + "'" + 'abonnement',
+                  'Êtes-vous sûr de vouloir annuler votre abonnement actuel ? Vos avantages resteront actifs jusqu' + "'" + 'à la fin de la période.',
+                  [
+                    { text: 'Non', style: 'cancel' },
+                    { 
+                      text: 'Oui, annuler', 
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          await subscriptionsService.cancel();
+                          setFeedback({ visible: true, type: 'success', title: 'Abonnement annulé', message: 'Votre abonnement a été annulé. Les avantages restent actifs jusqu\'à la fin de la période.' });
+                          loadData();
+                        } catch (e) {
+                          setFeedback({ visible: true, type: 'error', title: 'Erreur', message: "Impossible d'annuler l'abonnement. Réessayez." });
+                        }
+                      }
+                    }
+                  ]
+                );
+              }}
            />
         </View>
 
@@ -358,8 +362,16 @@ export default function SubscriptionScreen() {
               />
            </View>
         </View>
-      )}
-    </View>
+       )}
+    <ActionFeedbackModal
+      visible={feedback.visible}
+      type={feedback.type}
+      title={feedback.title}
+      message={feedback.message}
+      onDismiss={() => setFeedback((f) => ({ ...f, visible: false }))}
+      onPrimaryAction={() => setFeedback((f) => ({ ...f, visible: false }))}
+    />
+    </SafeAreaView>
   );
 }
 

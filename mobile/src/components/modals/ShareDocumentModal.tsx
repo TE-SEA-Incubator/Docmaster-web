@@ -100,7 +100,7 @@ export function ShareDocumentModal({ visible, onClose, documentId, documentName 
           borderTopRightRadius: 24,
           paddingTop: 8,
           paddingHorizontal: 20,
-          paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+          paddingBottom: Platform.OS === 'ios' ? 60 : 44,
           maxHeight: '85%',
         }}>
           <View style={{ width: 40, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 16 }} />

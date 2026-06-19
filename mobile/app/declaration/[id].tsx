@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert, Image, NativeScrollEvent, NativeSyntheticEvent, Dimensions, ToastAndroid, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import { declarationsService } from '@/core/api/declarationsService';
@@ -193,7 +194,8 @@ export default function DeclarationDetailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['left', 'right']}>
+      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
@@ -583,5 +585,6 @@ export default function DeclarationDetailScreen() {
         </View>
       </ScrollView>
     </View>
+    </SafeAreaView>
   );
 }
