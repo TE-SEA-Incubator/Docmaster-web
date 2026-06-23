@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { StyleSheet, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -17,7 +17,7 @@ export type ShimmerProps = {
 };
 
 export function Shimmer({ width = '100%', height = 20, borderRadius = Spacing.two, style }: ShimmerProps) {
-  const theme = useTheme();
+  const colors = useTheme();
   const opacity = useSharedValue(0.3);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function Shimmer({ width = '100%', height = 20, borderRadius = Spacing.tw
           width: width as any,
           height,
           borderRadius,
-          backgroundColor: theme.backgroundSelected,
+          backgroundColor: colors.skeleton,
         },
         animatedStyle,
         style,

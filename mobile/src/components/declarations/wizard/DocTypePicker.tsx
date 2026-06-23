@@ -3,7 +3,7 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import * as Haptics from 'expo-haptics';
-import { BORDER, TEXT_MAIN } from './DOC_TYPE_META';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { DocTypeCatalog } from '@/types';
 
 const ICON_MAP: Record<string, string> = {
@@ -36,6 +36,7 @@ type DocTypePickerProps = {
 };
 
 export const DocTypePicker: React.FC<DocTypePickerProps> = ({ types, selectedCode, onSelect }) => {
+  const colors = useThemeColors();
   const handleSelect = (code: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelect(code);
@@ -43,12 +44,12 @@ export const DocTypePicker: React.FC<DocTypePickerProps> = ({ types, selectedCod
 
   return (
     <View>
-      <ThemedText style={styles.sectionTitle}>Quel document avez-vous perdu ?</ThemedText>
+      <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Quel document avez-vous perdu ?</ThemedText>
       <View style={styles.grid}>
         {types.map((item) => {
           const isSelected = selectedCode === item.code;
-          const color = item.color || '#F5A64B';
-          const bg = item.bg || '#FEF3C7';
+          const color = item.color || colors.primary;
+          const bg = item.bg || colors.warningBg;
           const icon = normalizeIcon(item.icone || 'document-text-outline');
 
           return (
@@ -56,6 +57,7 @@ export const DocTypePicker: React.FC<DocTypePickerProps> = ({ types, selectedCod
               key={item.id}
               style={({ pressed }) => [
                 styles.card,
+                { backgroundColor: colors.backgroundElement, borderColor: colors.border },
                 isSelected && { backgroundColor: color, borderColor: color },
                 pressed && styles.cardPressed,
               ]}
@@ -66,18 +68,18 @@ export const DocTypePicker: React.FC<DocTypePickerProps> = ({ types, selectedCod
                 <Ionicons
                   name={icon as any}
                   size={22}
-                  color={isSelected ? '#fff' : color}
+                  color={isSelected ? colors.onPrimary : color}
                 />
               </View>
               <ThemedText
-                style={[styles.label, isSelected && styles.labelSelected]}
+                style={[styles.label, { color: colors.text }, isSelected && { color: colors.onPrimary, fontWeight: '700' }]}
                 numberOfLines={2}
               >
                 {item.nom}
               </ThemedText>
               {isSelected && (
                 <View style={styles.checkBadge}>
-                  <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                  <Ionicons name="checkmark-circle" size={16} color={colors.onPrimary} />
                 </View>
               )}
             </Pressable>
@@ -92,7 +94,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1A1A1A',
     marginBottom: 16,
     letterSpacing: -0.2,
   },
@@ -105,9 +106,7 @@ const styles = StyleSheet.create({
     width: '47%',
     padding: 14,
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: BORDER,
     alignItems: 'flex-start',
     minHeight: 100,
     position: 'relative',
@@ -133,12 +132,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: TEXT_MAIN,
     letterSpacing: -0.1,
-  },
-  labelSelected: {
-    color: '#fff',
-    fontWeight: '700',
   },
   checkBadge: {
     position: 'absolute',

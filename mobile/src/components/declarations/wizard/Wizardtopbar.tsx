@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { PRIMARY, TEXT_MAIN, TEXT_MUTED, BORDER, CREAM } from './DOC_TYPE_META';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type WizardTopBarProps = {
   title: string;
@@ -24,6 +24,7 @@ export function WizardTopBar({
   showClose = true,
 }: WizardTopBarProps) {
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
 
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -36,23 +37,23 @@ export function WizardTopBar({
   };
 
   return (
-    <View style={[styles.wrapper, { paddingTop: insets.top + 4 }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={CREAM} />
+    <View style={[styles.wrapper, { paddingTop: insets.top + 4, backgroundColor: colors.surface2, borderBottomColor: colors.border }]}>
+      <StatusBar barStyle={Platform.OS === 'ios' ? 'dark-content' : 'default'} backgroundColor={colors.surface2} />
       <View style={styles.row}>
         <TouchableOpacity style={styles.iconBtn} onPress={handleBack} activeOpacity={0.7} disabled={!onBack}>
           {onBack ? (
-            <Ionicons name="chevron-back" size={22} color={TEXT_MAIN} />
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
           ) : (
             <View style={{ width: 36 }} />
           )}
         </TouchableOpacity>
 
         <View style={styles.center}>
-          <ThemedText style={styles.title} numberOfLines={1}>
+          <ThemedText style={[styles.title, { color: colors.text }]} numberOfLines={1}>
             {title}
           </ThemedText>
           {subtitle ? (
-            <ThemedText style={styles.subtitle} numberOfLines={1}>
+            <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
               {subtitle}
             </ThemedText>
           ) : null}
@@ -60,8 +61,8 @@ export function WizardTopBar({
 
         {showClose ? (
           <TouchableOpacity style={styles.iconBtn} onPress={handleClose} activeOpacity={0.7}>
-            <View style={styles.closeBtn}>
-              <Ionicons name="close" size={16} color={TEXT_MUTED} />
+            <View style={[styles.closeBtn, { backgroundColor: colors.border }]}>
+              <Ionicons name="close" size={16} color={colors.textSecondary} />
             </View>
           </TouchableOpacity>
         ) : (
@@ -74,9 +75,7 @@ export function WizardTopBar({
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: CREAM,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER,
     paddingHorizontal: 12,
   },
   row: {
@@ -96,7 +95,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#EAE3D8',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -108,12 +106,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: TEXT_MAIN,
     letterSpacing: 0.1,
   },
   subtitle: {
     fontSize: 11,
-    color: TEXT_MUTED,
     marginTop: 1,
     fontWeight: '500',
   },

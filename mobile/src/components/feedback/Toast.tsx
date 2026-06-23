@@ -6,7 +6,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { ThemedText } from '@/components/themed-text';
-import { useTheme } from '@/hooks/use-theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { Spacing } from '@/constants/theme';
 
 export type ToastVariant = 'success' | 'error' | 'info';
@@ -20,7 +20,7 @@ export type ToastProps = {
 };
 
 export function Toast({ message, variant = 'info', visible, onHide, duration = 3000 }: ToastProps) {
-  const theme = useTheme();
+  const colors = useThemeColors();
   const translateY = useSharedValue(-100);
 
   useEffect(() => {
@@ -41,16 +41,16 @@ export function Toast({ message, variant = 'info', visible, onHide, duration = 3
   if (!visible) return null;
 
   const variantColor = {
-    success: '#34C759',
-    error: '#FF3B30',
-    info: theme.textSecondary,
+    success: colors.success,
+    error: colors.danger,
+    info: colors.textSecondary,
   };
 
   return (
     <Animated.View
       style={[
         styles.toast,
-        { backgroundColor: theme.backgroundElement, borderLeftColor: variantColor[variant] },
+        { backgroundColor: colors.backgroundElement, borderLeftColor: variantColor[variant] },
         animatedStyle,
       ]}
     >

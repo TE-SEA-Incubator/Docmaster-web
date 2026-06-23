@@ -2,19 +2,20 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Pressable, View, StyleSheet } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { useGoogleAuth } from '@/core/api/googleAuthService';
-import { Colors } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const register = useAuthStore((state) => state.register);
+  const colors = useThemeColors();
+  const styles = getStyles(colors);
 
   const { promptAsync, loading: googleLoading } = useGoogleAuth();
   const [form, setForm] = useState({ nom: '', prenom: '', email: '', telephone: '', mot_de_passe: '' });
@@ -113,24 +114,24 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.light.background },
+const getStyles = (colors: ReturnType<typeof useThemeColors>) => StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: colors.background },
   flex1: { flex: 1 },
   scrollContent: { paddingHorizontal: 24 },
   container: { gap: 24, backgroundColor: 'transparent' },
   headerBlock: { alignItems: 'center', gap: 8 },
-  titleText: { fontFamily: 'BricolageGrotesque_700Bold', fontSize: 30, textAlign: 'center', color: Colors.light.tint },
-  subtitleText: { color: Colors.light.textSecondary, textAlign: 'center', fontSize: 15 },
+  titleText: { fontFamily: 'BricolageGrotesque_700Bold', fontSize: 30, textAlign: 'center', color: colors.tint },
+  subtitleText: { color: colors.textSecondary, textAlign: 'center', fontSize: 15 },
   formBlock: { gap: 16 },
-  errorBox: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 16, padding: 14 },
-  errorText: { color: '#EF4444', fontSize: 13, textAlign: 'center', fontWeight: '600' },
+  errorBox: { backgroundColor: colors.dangerBg, borderWidth: 1, borderColor: colors.danger, borderRadius: 16, padding: 14 },
+  errorText: { color: colors.danger, fontSize: 13, textAlign: 'center', fontWeight: '600' },
   nameRow: { flexDirection: 'row', gap: 8 },
   nameField: { flex: 1 },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.light.border },
-  dividerText: { color: Colors.light.textSecondary, fontSize: 13 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { color: colors.textSecondary, fontSize: 13 },
   loginLinkRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 8 },
-  loginLinkText: { fontSize: 14, color: Colors.light.textSecondary },
+  loginLinkText: { fontSize: 14, color: colors.textSecondary },
   loginLinkPressable: {},
-  loginLinkBtn: { fontSize: 14, fontWeight: '700', color: Colors.light.tint },
+  loginLinkBtn: { fontSize: 14, fontWeight: '700', color: colors.tint },
 });

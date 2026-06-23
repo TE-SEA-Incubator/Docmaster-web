@@ -7,11 +7,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { authService } from '@/core/api/authService';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const colors = useThemeColors();
+  const styles = getStyles(colors);
+  
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,19 +39,18 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={styles.mainContainer}>
-      {/* PARTIE SUPÉRIEURE VERTE */}
-      <View style={[styles.greenHeader, { paddingTop: insets.top + 20 }]}>
+      {/* PARTIE SUPÉRIEURE */}
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <View style={styles.topRow}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={24} color={colors.onPrimary} />
           </Pressable>
           <Text style={styles.headerTitle}>{t('forgotPassword:title')}</Text>
           <View style={{ width: 24 }} /> {/* Spacer pour centrer le titre */}
         </View>
 
         <View style={styles.logoBlock}>
-          {/* Remplacer cette icône par l'Image de votre logo DocMaster si nécessaire */}
-          <Ionicons name="document-text" size={48} color="#FFFFFF" />
+          <Ionicons name="document-text" size={48} color={colors.onPrimary} />
           <Text style={styles.logoText}>{t('forgotPassword:logoText')}</Text>
           <Text style={styles.descriptionText}>
             {t('forgotPassword:description')}
@@ -55,8 +58,8 @@ export default function ForgotPasswordScreen() {
         </View>
       </View>
 
-      {/* CARTE BLANCHE INFÉRIEURE */}
-      <View style={styles.whiteCard}>
+      {/* CARTE INFÉRIEURE */}
+      <View style={styles.card}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex1}>
           <ScrollView 
             contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}
@@ -93,7 +96,7 @@ export default function ForgotPasswordScreen() {
             ) : (
               <View style={styles.successBlock}>
                 <View style={styles.successIconCircle}>
-                  <Ionicons name="checkmark-circle" size={64} color="#1A8744" />
+                  <Ionicons name="checkmark-circle" size={64} color={colors.success} />
                 </View>
                 <Text style={styles.successTitle}>{t('forgotPassword:emailSent')}</Text>
                 <Text style={styles.successSubtitle}>
@@ -114,15 +117,15 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#1A8744', // Le vert de ton design
+    backgroundColor: colors.greenDark,
   },
   flex1: {
     flex: 1,
   },
-  greenHeader: {
+  header: {
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
@@ -137,9 +140,8 @@ const styles = StyleSheet.create({
     marginLeft: -4,
   },
   headerTitle: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
     fontSize: 18,
-    fontFamily: 'BricolageGrotesque_700Bold', // Ajuster avec votre typo
     fontWeight: '600',
   },
   logoBlock: {
@@ -147,29 +149,24 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logoText: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
     fontSize: 32,
-    fontFamily: 'BricolageGrotesque_700Bold',
+    fontWeight: '700',
     marginBottom: 16,
   },
   descriptionText: {
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: colors.glassTintStrong,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 16,
   },
-  whiteCard: {
+  card: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.backgroundElement,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10, // Pour Android
   },
   scrollContent: {
     flexGrow: 1,
@@ -183,15 +180,15 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   errorBox: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.dangerBg,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: colors.danger,
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
   },
   errorText: {
-    color: '#EF4444',
+    color: colors.danger,
     fontSize: 13,
     textAlign: 'center',
     fontWeight: '500',
@@ -206,25 +203,21 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: '#E8F5EE',
+    backgroundColor: colors.successBg,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
   successTitle: {
     fontSize: 24,
-    fontFamily: 'BricolageGrotesque_700Bold',
-    color: '#111827',
+    fontWeight: '700',
+    color: colors.text,
   },
   successSubtitle: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     fontSize: 15,
     lineHeight: 22,
     paddingHorizontal: 20,
-  },
-  successEmail: {
-    fontWeight: '600',
-    color: '#111827',
   },
 });

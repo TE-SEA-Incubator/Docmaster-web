@@ -233,10 +233,10 @@ export const payRecovery = async (req: Request, res: Response) => {
 
         startNokashPaymentPolling({
           externalRef: nokashRes.data.id,
-          userId,
-          docId,
-          paymentMethod: paymentMethod || 'MOBILE_MONEY',
-          amount: finalAmount,
+          onSuccess: async (transaction) => {
+            const metadata = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : transaction.metadata;
+            await activateRecovery(transaction.user_id, metadata.docId, transaction.id);
+          }
         });
 
         res.status(200).json({
@@ -256,7 +256,7 @@ export const payRecovery = async (req: Request, res: Response) => {
 /**
  * Helper to activate recovery after successful payment
  */
-async function activateRecovery(userId: string, docId: string, transactionId: string) {
+export async function activateRecovery(userId: string, docId: string, transactionId: string) {
     try {
         // 1. Fetch data
         const declRes = await query('SELECT * FROM declarations WHERE id = $1', [docId]);
@@ -318,14 +318,6 @@ async function activateRecovery(userId: string, docId: string, transactionId: st
     }
 }
 
-function stopNokashPolling(externalRef: string) {
-    const timer = nokashPollTimers.get(externalRef);
-    if (timer) {
-      clearInterval(timer);
-      nokashPollTimers.delete(externalRef);
-    }
-}
-
 function normalizeNokashStatus(payload: any) {
   const status = (payload?.status || payload?.data?.status || payload?.result?.status || '').toString().toUpperCase();
   return {
@@ -335,14 +327,11 @@ function normalizeNokashStatus(payload: any) {
   };
 }
 
-function startNokashPaymentPolling(params: {
+export function startNokashPaymentPolling(params: {
   externalRef: string;
-  userId: string;
-  docId: string;
-  paymentMethod: string;
-  amount: number;
+  onSuccess: (transaction: any) => Promise<void>;
 }) {
-  const { externalRef, userId, docId } = params;
+  const { externalRef, onSuccess } = params;
 
   stopNokashPolling(externalRef);
 
@@ -357,7 +346,7 @@ function startNokashPaymentPolling(params: {
       }
 
       const transactionRes = await query(
-        'SELECT id, status FROM transactions WHERE external_ref = $1 LIMIT 1',
+        'SELECT id, status, user_id, metadata FROM transactions WHERE external_ref = $1 LIMIT 1',
         [externalRef]
       );
 
@@ -383,7 +372,7 @@ function startNokashPaymentPolling(params: {
 
       if (normalized.success) {
         await query('UPDATE transactions SET status = $1 WHERE id = $2', ['SUCCESS', transaction.id]);
-        await activateRecovery(userId, docId, transaction.id);
+        await onSuccess(transaction);
         stopNokashPolling(externalRef);
         return;
       }
@@ -399,4 +388,12 @@ function startNokashPaymentPolling(params: {
   }, NOKASH_POLL_INTERVAL_MS);
 
   nokashPollTimers.set(externalRef, timer);
+}
+
+export function stopNokashPolling(externalRef: string) {
+    const timer = nokashPollTimers.get(externalRef);
+    if (timer) {
+      clearInterval(timer);
+      nokashPollTimers.delete(externalRef);
+    }
 }

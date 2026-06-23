@@ -2,6 +2,7 @@ import { subscriptionRepository } from '../repositories/subscription.repository.
 import { query } from '../database/db.ts';
 import { notificationService } from './notification.service.ts';
 import { nokashService } from './nokash.service.ts';
+import { startNokashPaymentPolling } from '../controllers/payment.controller.ts';
 import { v4 as uuidv4 } from 'uuid';
 
 class SubscriptionService {
@@ -107,6 +108,14 @@ class SubscriptionService {
           JSON.stringify({ planId, months, orderId })
         ]
       );
+
+      startNokashPaymentPolling({
+        externalRef: nokashRes.data.id,
+        onSuccess: async (transaction) => {
+          const metadata = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : transaction.metadata;
+          await this.activateSubscription(transaction.user_id, metadata.planId, metadata.months);
+        }
+      });
 
       return { 
         status: 'PENDING_PAYMENT', 

@@ -5,7 +5,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/hooks/use-theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const SCREEN = Dimensions.get('window');
 
@@ -25,12 +25,6 @@ export interface ActionFeedbackModalProps {
   onDismiss?: () => void;
 }
 
-const ICON_CONFIG: Record<FeedbackType, { name: keyof typeof Ionicons.glyphMap; bg: string; color: string; ring: string }> = {
-  success: { name: 'checkmark', bg: '#16A34A', color: '#FFFFFF', ring: '#BBF7D0' },
-  error: { name: 'close', bg: '#EF4444', color: '#FFFFFF', ring: '#FECACA' },
-  warning: { name: 'alert', bg: '#F59E0B', color: '#FFFFFF', ring: '#FDE68A' },
-};
-
 export function ActionFeedbackModal({
   visible,
   type,
@@ -45,7 +39,15 @@ export function ActionFeedbackModal({
   onDismiss,
 }: ActionFeedbackModalProps) {
   const insets = useSafeAreaInsets();
-  const colors = useTheme();
+  const colors = useThemeColors();
+  const styles = getStyles(colors, type);
+  
+  const ICON_CONFIG: Record<FeedbackType, { name: keyof typeof Ionicons.glyphMap; bg: string; color: string; ring: string }> = {
+    success: { name: 'checkmark', bg: colors.success, color: colors.onPrimary, ring: colors.successBg },
+    error: { name: 'close', bg: colors.danger, color: colors.onPrimary, ring: colors.dangerBg },
+    warning: { name: 'alert', bg: colors.warning, color: colors.onPrimary, ring: colors.warningBg },
+  };
+
   const scaleAnim = useRef(new Animated.Value(0.6)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const iconScale = useRef(new Animated.Value(0)).current;
@@ -137,7 +139,7 @@ export function ActionFeedbackModal({
               }}
               style={({ pressed }) => [
                 styles.primaryBtn,
-                { backgroundColor: type === 'error' ? '#EF4444' : type === 'warning' ? '#F59E0B' : '#1E3A2F', opacity: pressed ? 0.8 : 1 },
+                { opacity: pressed ? 0.8 : 1 },
               ]}
             >
               <Text style={styles.primaryBtnText}>{primaryAction || 'Continuer'}</Text>
@@ -149,7 +151,7 @@ export function ActionFeedbackModal({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useThemeColors>, type: FeedbackType) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
@@ -235,11 +237,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
+    backgroundColor: type === 'error' ? colors.danger : type === 'warning' ? colors.warning : colors.greenDark,
   },
   primaryBtnText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   secondaryBtn: {
     borderRadius: 16,

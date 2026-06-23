@@ -1,4 +1,4 @@
-import pool from '../database/db.js';
+import { pool } from '../database/db.ts';
 
 export interface PushToken {
   id?: string;

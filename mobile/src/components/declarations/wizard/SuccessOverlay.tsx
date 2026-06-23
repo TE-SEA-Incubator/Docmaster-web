@@ -6,7 +6,7 @@ import { Button } from '@/components/common/Button';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PRIMARY, GREEN, GREEN_BG, TEXT_MAIN, TEXT_MUTED, BORDER } from './DOC_TYPE_META';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type SuccessOverlayProps = {
   visible: boolean;
@@ -22,6 +22,7 @@ export const SuccessOverlay: React.FC<SuccessOverlayProps> = ({
   onClose,
 }) => {
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
   const scale = useRef(new Animated.Value(0.7)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const checkScale = useRef(new Animated.Value(0)).current;
@@ -62,29 +63,29 @@ export const SuccessOverlay: React.FC<SuccessOverlayProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="none">
-      <View style={styles.backdrop}>
-        <Animated.View style={[styles.card, { opacity, transform: [{ scale }], paddingBottom: insets.bottom + 60 }]}>
+      <View style={[styles.backdrop, { backgroundColor: colors.overlayStrong }]}>
+        <Animated.View style={[styles.card, { opacity, transform: [{ scale }], paddingBottom: insets.bottom + 60, backgroundColor: colors.surface2 }]}>
           {/* Check icon */}
-          <Animated.View style={[styles.iconCircle, { transform: [{ scale: checkScale }] }]}>
-            <Ionicons name="checkmark" size={40} color="#fff" />
+          <Animated.View style={[styles.iconCircle, { transform: [{ scale: checkScale }], backgroundColor: colors.success, shadowColor: colors.success }]}>
+            <Ionicons name="checkmark" size={40} color={colors.onPrimary} />
           </Animated.View>
 
-          <ThemedText style={styles.title}>Déclaration envoyée !</ThemedText>
-          <ThemedText style={styles.subtitle}>
+          <ThemedText style={[styles.title, { color: colors.text }]}>Déclaration envoyée !</ThemedText>
+          <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>
             {docLabel ? `Votre ${docLabel} a été déclaré perdu.` : 'Votre document a été déclaré perdu.'}
             {'\n'}Conservez votre référence.
           </ThemedText>
 
           {/* Reference box */}
-          <View style={styles.refBox}>
-            <ThemedText style={styles.refLabel}>Numéro de référence</ThemedText>
-            <ThemedText style={styles.refValue}>{reference}</ThemedText>
+          <View style={[styles.refBox, { backgroundColor: colors.successBg, borderColor: colors.success }]}>
+            <ThemedText style={[styles.refLabel, { color: colors.success }]}>Numéro de référence</ThemedText>
+            <ThemedText style={[styles.refValue, { color: colors.success }]}>{reference}</ThemedText>
           </View>
 
           {/* Info note */}
           <View style={styles.infoRow}>
-            <Ionicons name="information-circle-outline" size={15} color={TEXT_MUTED} />
-            <ThemedText style={styles.infoText}>
+            <Ionicons name="information-circle-outline" size={15} color={colors.textSecondary} />
+            <ThemedText style={[styles.infoText, { color: colors.textSecondary }]}>
               Gardez ce numéro pour suivre votre déclaration sur la plateforme.
             </ThemedText>
           </View>
@@ -97,13 +98,13 @@ export const SuccessOverlay: React.FC<SuccessOverlayProps> = ({
               style={styles.primaryBtn}
             />
             <View style={styles.secondaryRow}>
-              <TouchableOpacity style={styles.secondaryBtn} onPress={handleShare} activeOpacity={0.8}>
-                <Ionicons name="share-outline" size={16} color={PRIMARY} />
-                <ThemedText style={styles.secondaryBtnText}>Partager</ThemedText>
+              <TouchableOpacity style={[styles.secondaryBtn, { borderColor: colors.border, backgroundColor: colors.backgroundElement }]} onPress={handleShare} activeOpacity={0.8}>
+                <Ionicons name="share-outline" size={16} color={colors.primary} />
+                <ThemedText style={[styles.secondaryBtnText, { color: colors.primary }]}>Partager</ThemedText>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.secondaryBtn} onPress={handleNewDeclaration} activeOpacity={0.8}>
-                <Ionicons name="add-circle-outline" size={16} color={PRIMARY} />
-                <ThemedText style={styles.secondaryBtnText}>Nouvelle</ThemedText>
+              <TouchableOpacity style={[styles.secondaryBtn, { borderColor: colors.border, backgroundColor: colors.backgroundElement }]} onPress={handleNewDeclaration} activeOpacity={0.8}>
+                <Ionicons name="add-circle-outline" size={16} color={colors.primary} />
+                <ThemedText style={[styles.secondaryBtnText, { color: colors.primary }]}>Nouvelle</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -116,11 +117,9 @@ export const SuccessOverlay: React.FC<SuccessOverlayProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'flex-end',
   },
   card: {
-    backgroundColor: '#FAF7F2',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingTop: 32,
@@ -132,11 +131,9 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: GREEN,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
-    shadowColor: GREEN,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
@@ -145,29 +142,24 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: TEXT_MAIN,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 13,
-    color: TEXT_MUTED,
     textAlign: 'center',
     lineHeight: 20,
   },
   refBox: {
     width: '100%',
-    backgroundColor: GREEN_BG,
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#A7F3D0',
     marginVertical: 4,
   },
   refLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#059669',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 4,
@@ -175,7 +167,6 @@ const styles = StyleSheet.create({
   refValue: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#065F46',
     letterSpacing: 1.5,
   },
   infoRow: {
@@ -187,7 +178,6 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 11,
-    color: TEXT_MUTED,
     lineHeight: 16,
   },
   actions: {
@@ -211,12 +201,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: BORDER,
-    backgroundColor: '#fff',
   },
   secondaryBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: PRIMARY,
   },
 });

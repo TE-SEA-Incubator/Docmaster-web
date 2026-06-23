@@ -7,6 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export type ModalProps = {
   visible: boolean;
@@ -15,6 +16,8 @@ export type ModalProps = {
 };
 
 export function Modal({ visible, onClose, children }: ModalProps) {
+  const colors = useThemeColors();
+  const styles = getStyles(colors);
   const opacity = useSharedValue(0);
 
   useEffect(() => {
@@ -31,7 +34,7 @@ export function Modal({ visible, onClose, children }: ModalProps) {
         <Animated.View style={[styles.overlay, overlayStyle]} />
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.contentWrapper}>
-          <ThemedView style={styles.content}>
+          <ThemedView type="surface" style={styles.content}>
             {children}
           </ThemedView>
         </View>
@@ -40,7 +43,7 @@ export function Modal({ visible, onClose, children }: ModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
@@ -48,7 +51,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.overlay,
   },
   contentWrapper: {
     width: '85%',

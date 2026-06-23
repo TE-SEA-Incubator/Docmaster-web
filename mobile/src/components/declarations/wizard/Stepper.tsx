@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Ionicons } from '@expo/vector-icons';
-import { PRIMARY, TEXT_MUTED, TEXT_MAIN, BORDER, GREEN } from './DOC_TYPE_META';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type StepperProps = {
   steps: string[];
@@ -12,6 +12,7 @@ type StepperProps = {
 function StepDot({ index, total, isDone, isActive, isReached, label }: {
   index: number; total: number; isDone: boolean; isActive: boolean; isReached: boolean; label: string;
 }) {
+  const colors = useThemeColors();
   const scale = useRef(new Animated.Value(isActive ? 1 : 0.85)).current;
   const glow = useRef(new Animated.Value(isActive ? 1 : 0)).current;
 
@@ -27,25 +28,34 @@ function StepDot({ index, total, isDone, isActive, isReached, label }: {
 
   return (
     <View style={styles.stepWrap}>
-      <Animated.View style={[styles.glowRing, { opacity: glow, transform: [{ scale }] }]} />
+      <Animated.View style={[styles.glowRing, { opacity: glow, transform: [{ scale }], backgroundColor: colors.primary }]} />
       <Animated.View style={[
         styles.circle,
-        isDone && styles.circleDone,
-        isActive && styles.circleActive,
-        !isReached && styles.circleInactive,
+        isDone && { backgroundColor: colors.success },
+        isActive && { backgroundColor: colors.primary, shadowColor: colors.primary },
+        !isReached && { backgroundColor: colors.backgroundElement, borderColor: colors.border },
         { transform: [{ scale }] },
       ]}>
         {isDone ? (
-          <Ionicons name="checkmark" size={15} color="#fff" />
+          <Ionicons name="checkmark" size={15} color={colors.onPrimary} />
         ) : (
-          <ThemedText style={[styles.circleText, isReached ? styles.circleTextReached : styles.circleTextInactive]}>
+          <ThemedText style={[
+            styles.circleText,
+            isReached ? { color: colors.onPrimary } : { color: colors.textSecondary },
+          ]}>
             {index + 1}
           </ThemedText>
         )}
       </Animated.View>
       <ThemedText
         numberOfLines={1}
-        style={[styles.label, isActive && styles.labelActive, isDone && styles.labelDone, !isReached && styles.labelInactive]}
+        style={[
+          styles.label,
+          { color: colors.textSecondary },
+          isActive && { color: colors.text, fontSize: 11 },
+          isDone && { color: colors.success },
+          !isReached && { color: colors.border },
+        ]}
       >
         {label}
       </ThemedText>
@@ -54,13 +64,14 @@ function StepDot({ index, total, isDone, isActive, isReached, label }: {
 }
 
 export function Stepper({ steps, current }: StepperProps) {
+  const colors = useThemeColors();
   const progress = steps.length > 1 ? (current / (steps.length - 1)) * 100 : 0;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.surface2 }]}>
       <View style={styles.trackContainer}>
-        <View style={styles.track} />
-        <View style={[styles.trackFill, { width: `${progress}%` }]} />
+        <View style={[styles.track, { backgroundColor: colors.border }]} />
+        <View style={[styles.trackFill, { width: `${progress}%`, backgroundColor: colors.primary }]} />
       </View>
       <View style={styles.row}>
         {steps.map((label, i) => (
@@ -84,7 +95,6 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 14,
     paddingHorizontal: 8,
-    backgroundColor: '#FAF7F2',
   },
   trackContainer: {
     position: 'absolute',
@@ -95,7 +105,6 @@ const styles = StyleSheet.create({
   },
   track: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: BORDER,
     borderRadius: 2,
   },
   trackFill: {
@@ -103,7 +112,6 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: PRIMARY,
     borderRadius: 2,
   },
   row: {
@@ -122,7 +130,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: PRIMARY,
     opacity: 0.18,
   },
   circle: {
@@ -133,50 +140,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 6,
     zIndex: 1,
-  },
-  circleDone: {
-    backgroundColor: GREEN,
-  },
-  circleActive: {
-    backgroundColor: PRIMARY,
-    shadowColor: PRIMARY,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.45,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  circleInactive: {
-    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: BORDER,
   },
   circleText: {
     fontSize: 12,
     fontWeight: '800',
   },
-  circleTextReached: {
-    color: '#FFFFFF',
-  },
-  circleTextInactive: {
-    color: TEXT_MUTED,
-  },
   label: {
     fontSize: 10.5,
     textAlign: 'center',
-    color: TEXT_MUTED,
     fontWeight: '600',
     letterSpacing: 0.2,
-  },
-  labelActive: {
-    color: TEXT_MAIN,
-    fontWeight: '800',
-    fontSize: 11,
-  },
-  labelDone: {
-    color: GREEN,
-    fontWeight: '700',
-  },
-  labelInactive: {
-    color: '#C4BAB0',
   },
 });

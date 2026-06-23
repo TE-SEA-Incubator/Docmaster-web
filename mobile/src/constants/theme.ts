@@ -34,6 +34,11 @@ export const Colors = {
     purple: '#7C3AED',
     purpleBg: '#F5F3FF',
     greenDark: '#1E3A2F',
+    overlay: 'rgba(0,0,0,0.4)',
+    overlayLight: 'rgba(0,0,0,0.3)',
+    overlayStrong: 'rgba(0,0,0,0.6)',
+    glassTint: 'rgba(255,255,255,0.65)',
+    glassTintStrong: 'rgba(255,255,255,0.9)',
   },
   dark: {
     text: '#F4EFE6',
@@ -64,6 +69,11 @@ export const Colors = {
     purple: '#A78BFA',
     purpleBg: '#1F1736',
     greenDark: '#0F2A1A',
+    overlay: 'rgba(0,0,0,0.6)',
+    overlayLight: 'rgba(0,0,0,0.5)',
+    overlayStrong: 'rgba(0,0,0,0.75)',
+    glassTint: 'rgba(255,255,255,0.08)',
+    glassTintStrong: 'rgba(255,255,255,0.15)',
   },
 } as const;
 

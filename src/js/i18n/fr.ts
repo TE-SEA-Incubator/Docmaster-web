@@ -320,6 +320,8 @@ export const fr = {
   dashboard_label_doc: "Doc",
   dashboard_status_published: "Publié",
   dashboard_status_active_search: "Recherche active",
+  dashboard_status_matched: "Correspondance",
+  dashboard_label_carte_grise: "Carte Grise",
 
   // ── Abonnement ──
   abonnement_title: "Abonnement",

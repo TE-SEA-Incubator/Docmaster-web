@@ -9,6 +9,7 @@ import Animated, {
   withRepeat,
   withSequence,
 } from 'react-native-reanimated';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const { width } = Dimensions.get('window');
 const LOGO_SIZE = width * 0.4;
@@ -18,6 +19,8 @@ type AppSplashProps = {
 };
 
 export function AppSplash({ onFinish }: AppSplashProps) {
+  const colors = useThemeColors();
+  const styles = getStyles(colors);
   const logoScale = useSharedValue(0.3);
   const logoOpacity = useSharedValue(0);
 
@@ -71,10 +74,10 @@ export function AppSplash({ onFinish }: AppSplashProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4EFE6',
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -91,6 +94,6 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#F5A64B',
+    backgroundColor: colors.primary,
   },
 });

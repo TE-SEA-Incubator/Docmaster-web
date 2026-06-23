@@ -5,7 +5,7 @@ import { Input } from '@/components/common/Input';
 import { ThemedText } from '@/components/themed-text';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { PRIMARY, BORDER, TEXT_MUTED } from './DOC_TYPE_META';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const PLACES = [
   { key: 'market', icon: 'storefront-outline' },
@@ -28,6 +28,7 @@ type PlaceChipInputProps = {
 
 export const PlaceChipInput: React.FC<PlaceChipInputProps> = ({ label, placeholder, value, onChange, icon }) => {
   const { t } = useTranslation();
+  const colors = useThemeColors();
 
   const handleChip = (label: string) => {
     Haptics.selectionAsync();
@@ -43,23 +44,33 @@ export const PlaceChipInput: React.FC<PlaceChipInputProps> = ({ label, placehold
         placeholder={placeholder}
         icon={icon || 'location-outline'}
       />
-      <ThemedText style={styles.chipLabel}>{t('common:quickSuggestions')}</ThemedText>
+      <ThemedText style={[styles.chipLabel, { color: colors.textSecondary }]}>{t('common:quickSuggestions')}</ThemedText>
       <View style={styles.chipsContainer}>
         {PLACES.map((place) => {
           const isSelected = value === t(`declarer:place_${place.key}`);
           return (
             <TouchableOpacity
               key={place.key}
-              style={[styles.chip, isSelected && styles.chipSelected]}
+              style={[
+                styles.chip,
+                { backgroundColor: colors.surface2, borderColor: colors.border },
+                isSelected && { backgroundColor: colors.primary, borderColor: colors.primary },
+              ]}
               onPress={() => handleChip(t(`declarer:place_${place.key}`))}
               activeOpacity={0.75}
             >
               <Ionicons
                 name={place.icon as any}
                 size={13}
-                color={isSelected ? '#fff' : TEXT_MUTED}
+                color={isSelected ? colors.onPrimary : colors.textSecondary}
               />
-              <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+              <ThemedText
+                style={[
+                  styles.chipText,
+                  { color: colors.textSecondary },
+                  isSelected && { color: colors.onPrimary },
+                ]}
+              >
                 {t(`declarer:place_${place.key}`)}
               </ThemedText>
             </TouchableOpacity>
@@ -75,7 +86,6 @@ const styles = StyleSheet.create({
   chipLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: TEXT_MUTED,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -88,23 +98,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#F3EFE8',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: BORDER,
-  },
-  chipSelected: {
-    backgroundColor: PRIMARY,
-    borderColor: PRIMARY,
   },
   chipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4B5563',
-  },
-  chipTextSelected: {
-    color: '#fff',
   },
 });

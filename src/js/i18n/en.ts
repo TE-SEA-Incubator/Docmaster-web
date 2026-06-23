@@ -320,6 +320,8 @@ export const en = {
   dashboard_label_doc: "Doc",
   dashboard_status_published: "Published",
   dashboard_status_active_search: "Active search",
+  dashboard_status_matched: "Matched",
+  dashboard_label_carte_grise: "Vehicle Reg.",
 
   // ── Abonnement ──
   abonnement_title: "Subscription",

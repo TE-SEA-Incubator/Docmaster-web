@@ -3,7 +3,7 @@ import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ThemedText } from '@/components/themed-text';
 import { Ionicons } from '@expo/vector-icons';
-import { PRIMARY, BORDER, TEXT_MAIN } from './DOC_TYPE_META';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type DatePickerInputProps = {
   value: Date;
@@ -32,6 +32,7 @@ function formatTime(d: Date) {
 
 export const DatePickerInput: React.FC<DatePickerInputProps> = ({ value, onChange, label, mode = 'date' }) => {
   const [show, setShow] = useState(false);
+  const colors = useThemeColors();
   const today = new Date();
   const maxDate = mode === 'date' ? today : undefined;
 
@@ -47,12 +48,16 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({ value, onChang
 
   return (
     <View style={styles.container}>
-      <ThemedText style={styles.label}>{label}</ThemedText>
-      <TouchableOpacity style={styles.input} onPress={() => setShow(true)} activeOpacity={0.7}>
-        <Ionicons name={icon} size={20} color={PRIMARY} />
-        <ThemedText style={styles.dateText}>{display}</ThemedText>
+      <ThemedText style={[styles.label, { color: colors.text }]}>{label}</ThemedText>
+      <TouchableOpacity
+        style={[styles.input, { borderColor: colors.border, backgroundColor: colors.backgroundElement }]}
+        onPress={() => setShow(true)}
+        activeOpacity={0.7}
+      >
+        <Ionicons name={icon} size={20} color={colors.primary} />
+        <ThemedText style={[styles.dateText, { color: colors.text }]}>{display}</ThemedText>
         <View style={styles.spacer} />
-        <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
       </TouchableOpacity>
       {show && (
         <DateTimePicker
@@ -70,21 +75,18 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({ value, onChang
 
 const styles = StyleSheet.create({
   container: { gap: 8 },
-  label: { fontSize: 13, fontWeight: '600', color: TEXT_MAIN },
+  label: { fontSize: 13, fontWeight: '600' },
   input: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
     borderWidth: 1,
-    borderColor: BORDER,
     borderRadius: 12,
     gap: 10,
-    backgroundColor: '#FFFFFF',
   },
   dateText: {
     fontSize: 14,
     fontWeight: '600',
-    color: TEXT_MAIN,
   },
   spacer: {
     flex: 1,

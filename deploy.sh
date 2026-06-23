@@ -27,6 +27,7 @@ show_usage() {
     echo ""
     echo "Modes disponibles:"
     echo "  full     - Déploiement complet (compression, transfert, compilation des 2 blocs)"
+    echo "  front    - Déploiement uniquement du frontend"
     echo "  backup   - Juste la sauvegarde et extraction (sans compilation/build)"
     echo "  prod     - Bascule le frontend Vite (dev) vers server.js (production avec dist/)"
     echo "  -m|--migrate - Option (exécuter les migrations DB sur le serveur distant)"
@@ -39,7 +40,7 @@ if [ "$DEPLOY_MODE" = "help" ] || [ "$DEPLOY_MODE" = "-h" ] || [ "$DEPLOY_MODE" 
     exit 0
 fi
 
-if [ "$DEPLOY_MODE" != "full" ] && [ "$DEPLOY_MODE" != "backup" ] && [ "$DEPLOY_MODE" != "prod" ]; then
+if [ "$DEPLOY_MODE" != "full" ] && [ "$DEPLOY_MODE" != "front" ] && [ "$DEPLOY_MODE" != "backup" ] && [ "$DEPLOY_MODE" != "prod" ]; then
     echo "❌ Mode invalide: $DEPLOY_MODE"
     show_usage
     exit 1
@@ -59,33 +60,45 @@ check_local_tools() {
 }
 
 compress_assets() {
-    log_info "Compression du Frontend React (en excluant le dossier /server et les builds locaux)..."
-    cd "$SCRIPT_DIR"
-    rm -f "../$ARCHIVE_FRONT"
-    7z a "../$ARCHIVE_FRONT" ./* -xr!'server' -xr!'node_modules' -xr!'.git' -xr!'dist' -xr!'build' -xr!'Docmaster_Backend' -xr!'Docmaster_Backend_V2' -xr!'*.7z' -xr!'mobile' >/dev/null
-
-    log_info "Compression du Backend (Dossier /server)..."
-    # Copy production env file to server folder before compressing
-    if [ -f "./server/.env.production" ]; then
-        cp "./server/.env.production" "./server/.env"
-        log_success "Fichier .env.production copié vers ./server/.env"
-    else
-        log_warning "Fichier ./server/.env.production introuvable, aucune copie effectuée."
-    fi
-    rm -f "../$ARCHIVE_BACK"
-    if [ -d "./server" ]; then
-        7z a "../$ARCHIVE_BACK" ./server/* -xr!'node_modules' -xr!'.git' -xr!'dist' >/dev/null
-    else
-        log_error "Le dossier ./server (Backend) n'existe pas à l'emplacement attendu."
-        exit 1
+    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "front" ] || [ "$DEPLOY_MODE" = "backup" ]; then
+        log_info "Compression du Frontend React (en excluant le dossier /server et les builds locaux)..."
+        cd "$SCRIPT_DIR"
+        rm -f "../$ARCHIVE_FRONT"
+        7z a "../$ARCHIVE_FRONT" ./* -xr!'server' -xr!'node_modules' -xr!'.git' -xr!'dist' -xr!'build' -xr!'Docmaster_Backend' -xr!'Docmaster_Backend_V2' -xr!'*.7z' -xr!'mobile' >/dev/null
+        log_success "Frontend (React) compressé avec succès !"
     fi
 
-    log_success "Frontend (React) et Backend compressés avec succès !"
+    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "backup" ]; then
+        log_info "Compression du Backend (Dossier /server)..."
+        # Copy production env file to server folder before compressing
+        if [ -f "./server/.env.production" ]; then
+            cp "./server/.env.production" "./server/.env"
+            log_success "Fichier .env.production copié vers ./server/.env"
+        else
+            log_warning "Fichier ./server/.env.production introuvable, aucune copie effectuée."
+        fi
+        rm -f "../$ARCHIVE_BACK"
+        if [ -d "./server" ]; then
+            7z a "../$ARCHIVE_BACK" ./server/* -xr!'node_modules' -xr!'.git' -xr!'dist' >/dev/null
+        else
+            log_error "Le dossier ./server (Backend) n'existe pas à l'emplacement attendu."
+            exit 1
+        fi
+        log_success "Backend compressé avec succès !"
+    fi
 }
 
 transfer_assets() {
-    log_info "Transfert des deux archives vers le dossier temporaire du VPS..."
-    scp -P "$REMOTE_PORT" "../$ARCHIVE_FRONT" "../$ARCHIVE_BACK" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH/"
+    log_info "Transfert des archives vers le dossier temporaire du VPS..."
+    FILES_TO_TRANSFER=""
+    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "front" ] || [ "$DEPLOY_MODE" = "backup" ]; then
+        FILES_TO_TRANSFER="../$ARCHIVE_FRONT"
+    fi
+    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "backup" ]; then
+        FILES_TO_TRANSFER="$FILES_TO_TRANSFER ../$ARCHIVE_BACK"
+    fi
+    
+    scp -P "$REMOTE_PORT" $FILES_TO_TRANSFER "$REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH/"
     if [ $? -ne 0 ]; then
         log_error "Échec du transfert SSH / SCP."
         exit 1
@@ -122,28 +135,32 @@ execute_remote_deployment() {
     fi
 
     # 2. Gestion sélective du build et des dépendances selon le mode choisi
-    if [ "$DEPLOY_MODE" = "full" ]; then
-        echo "Mode complet activé : Installation et Compilation..."
+    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "front" ]; then
+        echo "Mode $DEPLOY_MODE activé : Installation et Compilation..."
         
-        # Traitement Frontend V2 (React)
-        echo "→ Configuration Dépendances et Compilation (Build) du Frontend React..."
-        cd "$FRONTEND_DIR"
-        npm install --quiet
-        npm run build
-        
-        # Traitement Backend V2
-        echo "→ Configuration Dépendances et Build Backend..."
-        cd "$BACKEND_DIR"
-        npm install --quiet
-        npm run build
-        
-        # Exécution optionnelle des migrations de base de données
-        if [ "$MIGRATE" = true ]; then
-            echo "→ Exécution des migrations de base de données (Knex/Prisma)..."
-            npm run db:migrate || echo "⚠️ Attention : Échec de l'exécution du script de migration (db:migrate)."
+        if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "front" ]; then
+            # Traitement Frontend V2 (React)
+            echo "→ Configuration Dépendances et Compilation (Build) du Frontend React..."
+            cd "$FRONTEND_DIR"
+            npm install --quiet
+            npm run build
         fi
         
-        echo "✓ Frontend et Backend configurés et compilés avec succès."
+        if [ "$DEPLOY_MODE" = "full" ]; then
+            # Traitement Backend V2
+            echo "→ Configuration Dépendances et Build Backend..."
+            cd "$BACKEND_DIR"
+            npm install --quiet
+            npm run build
+            
+            # Exécution optionnelle des migrations de base de données
+            if [ "$MIGRATE" = true ]; then
+                echo "→ Exécution des migrations de base de données (Knex/Prisma)..."
+                npm run db:migrate || echo "⚠️ Attention : Échec de l'exécution du script de migration (db:migrate)."
+            fi
+        fi
+        
+        echo "✓ Composants configurés et compilés avec succès."
     fi
 REMOTE_SCRIPT
 }
@@ -177,13 +194,11 @@ post_deployment() {
         cd /var/www/vhosts/docmaster.net/app/Docmaster
         pm2 restart docmaster-web-v2 --update-env || pm2 start server.js --name "docmaster-web-v2"
         
-        # 3. Relancement du Backend API V2
-        echo "Relancement du Backend API (DOCMASTER-API_V2)..."
-        
-        
-        
-        # Lancement propre de l'index compilé (on redémarre s'il existe, sinon on le crée)
-        pm2 restart DOCMASTER-API_V2 --update-env || pm2 start dist/index.js --name "DOCMASTER-API_V2" --update-env
+        # 3. Relancement du Backend API V2 (seulement si full ou backup)
+        if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "backup" ]; then
+            echo "Relancement du Backend API (DOCMASTER-API_V2)..."
+            pm2 restart DOCMASTER-API_V2 --update-env || pm2 start dist/index.js --name "DOCMASTER-API_V2" --update-env
+        fi
         
         # Sauvegarde de la liste PM2
         pm2 save
@@ -191,6 +206,7 @@ post_deployment() {
 REMOTE_SCRIPT
     fi
 }
+
 
 switch_to_production() {
     log_info "Bascule du frontend Vite (dev) vers server.js (production avec dist/)..."

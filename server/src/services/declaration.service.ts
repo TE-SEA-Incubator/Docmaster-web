@@ -13,6 +13,7 @@ import { subscriptionService } from "./subscription.service.ts";
 import { SettingRepository } from "../repositories/setting.repository.ts";
 import { v4 as uuidv4 } from "uuid";
 import { nokashService } from "./nokash.service.ts";
+import { startNokashPaymentPolling, activateRecovery } from "../controllers/payment.controller.ts";
 import { encodeMediaFields } from "../utils/media.utils.ts";
 
 
@@ -510,6 +511,14 @@ export class DeclarationService {
       type: "recovery_fee",
       external_ref: nokashRes.data.id,
       metadata: { docId: declarationId },
+    });
+
+    startNokashPaymentPolling({
+      externalRef: nokashRes.data.id,
+      onSuccess: async (transaction) => {
+        const metadata = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : transaction.metadata;
+        await activateRecovery(transaction.user_id, metadata.docId, transaction.id);
+      }
     });
 
     return {

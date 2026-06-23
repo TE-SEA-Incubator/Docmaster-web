@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 import { useAuthStore } from '@/core/store/useAuthStore';
-import { Colors } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const { width } = Dimensions.get('window');
 
@@ -34,7 +34,8 @@ export default function OnboardingScreen() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { t } = useTranslation();
   const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
-  const tintColor = Colors.light.tint;
+  const colors = useThemeColors();
+  const styles = getStyles(colors);
 
   const handleFinish = async () => {
     await completeOnboarding();
@@ -69,7 +70,7 @@ export default function OnboardingScreen() {
                 key={i} 
                 style={[
                   styles.indicator, 
-                  currentSlide === i && { backgroundColor: tintColor, width: 20 }
+                  currentSlide === i && { backgroundColor: colors.primary, width: 20 }
                 ]} 
               />
             ))}
@@ -81,7 +82,7 @@ export default function OnboardingScreen() {
       </Animated.View>
 
       <View style={styles.footer}>
-        <Pressable style={[styles.nextButton, { backgroundColor: tintColor }]} onPress={next}>
+        <Pressable style={styles.nextButton} onPress={next}>
           <Text style={styles.nextButtonText}>
             {currentSlide === SLIDES.length - 1 ? t('onboarding:start') : t('onboarding:continue')}
           </Text>
@@ -91,10 +92,10 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4EFE6', // Couleur de fond du thème
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -121,19 +122,19 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#C4BAB0',
+    backgroundColor: colors.tabInactive,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#1A1A1A',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 16,
     lineHeight: 34,
   },
   description: {
     fontSize: 15,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -145,9 +146,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
+    backgroundColor: colors.primary,
   },
   nextButtonText: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: 0.5,

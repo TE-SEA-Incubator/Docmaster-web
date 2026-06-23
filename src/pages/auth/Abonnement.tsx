@@ -108,9 +108,7 @@ export default function Abonnement() {
   };
 
   const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
-    // 1. Close modal immediately
-    closeSubscribeModal();
-    // 2. Set processing
+    // 1. Set processing
     setProcessing(true);
     setPayError("");
     try {
@@ -126,23 +124,31 @@ export default function Abonnement() {
         paymentMethod,
         phone,
       });
+      
+      // Stop global processing overlay
+      setProcessing(false);
+
       if (result.success) {
         if (paymentMethod === 'POINTS') {
-            setProcessing(false);
+            // Success for points: Close modal, show success modal
+            closeSubscribeModal();
             setPaySuccess(true);
             loadData();
         } else {
+            // Success for mobile money: DO NOT close modal. Set polling state instead.
+            // This allows the "polling status" modal (which appears based on pollingStatus)
+            // to show the pending state.
             setPollingStatus(t("abonnement_payment_pending"));
             startPolling();
         }
       } else {
+        // 3. Keep modal open to show error
         setPayError(result.message || t("abonnement_subscribe_error"));
-        setProcessing(false);
       }
     } catch (e: any) {
+      setProcessing(false);
       const msg = e.response?.data?.message || e.response?.data?.error || t("abonnement_subscribe_error");
       setPayError(msg);
-      setProcessing(false);
     }
   };
 
@@ -152,8 +158,8 @@ export default function Abonnement() {
         const res = await subscriptionsService.getUsage();
         if (res.success && res.data?.subscription_id) {
           clearInterval(interval);
-          alert(t("abonnement_success"));
-          closeSubscribeModal();
+          setPollingStatus(null);
+          setPaySuccess(true);
           loadData();
         }
         } catch (e: any) {

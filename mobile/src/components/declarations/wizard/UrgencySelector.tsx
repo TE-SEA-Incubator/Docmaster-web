@@ -3,35 +3,37 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import * as Haptics from 'expo-haptics';
-import { BORDER, TEXT_MUTED } from './DOC_TYPE_META';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type Urgency = 'Basse' | 'Modérée' | 'Haute';
 
-const URGENCY_LEVELS: {
+type UrgencyLevel = {
   label: Urgency;
-  color: string;
-  bg: string;
+  colorKey: 'success' | 'warning' | 'danger';
+  bgKey: 'successBg' | 'warningBg' | 'dangerBg';
   icon: string;
   description: string;
-}[] = [
+};
+
+const URGENCY_LEVELS: UrgencyLevel[] = [
   {
     label: 'Basse',
-    color: '#16A34A',
-    bg: '#ECFDF5',
+    colorKey: 'success',
+    bgKey: 'successBg',
     icon: 'time-outline',
     description: 'Pas pressé',
   },
   {
     label: 'Modérée',
-    color: '#D97706',
-    bg: '#FFFBEB',
+    colorKey: 'warning',
+    bgKey: 'warningBg',
     icon: 'alert-circle-outline',
     description: 'Sous quelques jours',
   },
   {
     label: 'Haute',
-    color: '#DC2626',
-    bg: '#FEF2F2',
+    colorKey: 'danger',
+    bgKey: 'dangerBg',
     icon: 'flash-outline',
     description: 'Très urgent',
   },
@@ -43,6 +45,8 @@ type UrgencySelectorProps = {
 };
 
 export const UrgencySelector: React.FC<UrgencySelectorProps> = ({ selected, onSelect }) => {
+  const colors = useThemeColors();
+
   const handleSelect = (label: Urgency) => {
     if (label === 'Haute') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -54,18 +58,21 @@ export const UrgencySelector: React.FC<UrgencySelectorProps> = ({ selected, onSe
 
   return (
     <View>
-      <ThemedText style={styles.sectionTitle}>Niveau d'urgence</ThemedText>
+      <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Niveau d'urgence</ThemedText>
       <View style={styles.container}>
         {URGENCY_LEVELS.map((level) => {
           const isSelected = selected === level.label;
+          const levelColor = colors[level.colorKey];
+          const levelBg = colors[level.bgKey];
           return (
             <TouchableOpacity
               key={level.label}
               style={[
                 styles.button,
+                { borderColor: colors.border, backgroundColor: colors.backgroundElement },
                 isSelected && {
-                  backgroundColor: level.bg,
-                  borderColor: level.color,
+                  backgroundColor: levelBg,
+                  borderColor: levelColor,
                   borderWidth: 2,
                 },
               ]}
@@ -75,12 +82,13 @@ export const UrgencySelector: React.FC<UrgencySelectorProps> = ({ selected, onSe
               <Ionicons
                 name={level.icon as any}
                 size={18}
-                color={isSelected ? level.color : TEXT_MUTED}
+                color={isSelected ? levelColor : colors.textSecondary}
               />
               <ThemedText
                 style={[
                   styles.label,
-                  isSelected && { color: level.color, fontWeight: '700' },
+                  { color: colors.textSecondary },
+                  isSelected && { color: levelColor, fontWeight: '700' },
                 ]}
               >
                 {level.label}
@@ -88,7 +96,8 @@ export const UrgencySelector: React.FC<UrgencySelectorProps> = ({ selected, onSe
               <ThemedText
                 style={[
                   styles.desc,
-                  isSelected && { color: level.color, opacity: 0.8 },
+                  { color: colors.textSecondary },
+                  isSelected && { color: levelColor, opacity: 0.8 },
                 ]}
               >
                 {level.description}
@@ -105,7 +114,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1A1A1A',
     marginBottom: 10,
     letterSpacing: -0.1,
   },
@@ -115,20 +123,16 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: BORDER,
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#fff',
   },
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4B5563',
     marginTop: 2,
   },
   desc: {
     fontSize: 9.5,
-    color: TEXT_MUTED,
     textAlign: 'center',
     fontWeight: '500',
   },

@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { PRIMARY, BORDER, TEXT_MAIN } from './DOC_TYPE_META';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type DeclarationTypePickerProps = {
   selected: 'self' | 'other' | null;
@@ -11,6 +11,7 @@ type DeclarationTypePickerProps = {
 };
 
 export const DeclarationTypePicker: React.FC<DeclarationTypePickerProps> = ({ selected, onSelect }) => {
+  const colors = useThemeColors();
   const handleSelect = (type: 'self' | 'other') => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onSelect(type);
@@ -19,43 +20,43 @@ export const DeclarationTypePicker: React.FC<DeclarationTypePickerProps> = ({ se
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.card, selected === 'self' && styles.cardSelected]}
+        style={[styles.card, { borderColor: colors.border, backgroundColor: colors.backgroundElement }, selected === 'self' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
         onPress={() => handleSelect('self')}
         activeOpacity={0.8}
       >
-        <View style={[styles.iconRing, selected === 'self' && styles.iconRingSelected]}>
-          <Ionicons name="person-outline" size={28} color={selected === 'self' ? '#fff' : PRIMARY} />
+        <View style={[styles.iconRing, { backgroundColor: colors.warningBg }, selected === 'self' && styles.iconRingSelected]}>
+          <Ionicons name="person-outline" size={28} color={selected === 'self' ? colors.onPrimary : colors.primary} />
         </View>
-        <ThemedText style={[styles.title, selected === 'self' && styles.titleSelected]}>
+        <ThemedText style={[styles.title, { color: colors.text }, selected === 'self' && { color: colors.onPrimary }]}>
           Pour moi-même
         </ThemedText>
-        <ThemedText style={[styles.desc, selected === 'self' && styles.descSelected]}>
+        <ThemedText style={[styles.desc, { color: colors.textSecondary }, selected === 'self' && { color: colors.glassTintStrong }]}>
           Je déclare la perte de mon propre document
         </ThemedText>
         {selected === 'self' && (
           <View style={styles.checkBadge}>
-            <Ionicons name="checkmark-circle" size={20} color="#fff" />
+            <Ionicons name="checkmark-circle" size={20} color={colors.onPrimary} />
           </View>
         )}
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.card, selected === 'other' && styles.cardSelectedOther]}
+        style={[styles.card, { borderColor: colors.border, backgroundColor: colors.backgroundElement }, selected === 'other' && { backgroundColor: colors.purple, borderColor: colors.purple }]}
         onPress={() => handleSelect('other')}
         activeOpacity={0.8}
       >
-        <View style={[styles.iconRing, selected === 'other' && styles.iconRingSelectedOther]}>
-          <Ionicons name="people-outline" size={28} color={selected === 'other' ? '#fff' : '#8B5CF6'} />
+        <View style={[styles.iconRing, { backgroundColor: colors.warningBg }, selected === 'other' && styles.iconRingSelected]}>
+          <Ionicons name="people-outline" size={28} color={selected === 'other' ? colors.onPrimary : colors.purple} />
         </View>
-        <ThemedText style={[styles.title, selected === 'other' && styles.titleSelected]}>
+        <ThemedText style={[styles.title, { color: colors.text }, selected === 'other' && { color: colors.onPrimary }]}>
           Pour un proche
         </ThemedText>
-        <ThemedText style={[styles.desc, selected === 'other' && styles.descSelected]}>
+        <ThemedText style={[styles.desc, { color: colors.textSecondary }, selected === 'other' && { color: colors.glassTintStrong }]}>
           Je déclare la perte d&apos;un document pour un tiers
         </ThemedText>
         {selected === 'other' && (
-          <View style={[styles.checkBadge, { backgroundColor: '#8B5CF6' }]}>
-            <Ionicons name="checkmark-circle" size={20} color="#fff" />
+          <View style={[styles.checkBadge, { backgroundColor: colors.purple }]}>
+            <Ionicons name="checkmark-circle" size={20} color={colors.onPrimary} />
           </View>
         )}
       </TouchableOpacity>
@@ -71,23 +72,12 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: BORDER,
     gap: 10,
-    backgroundColor: '#FFFFFF',
-  },
-  cardSelected: {
-    backgroundColor: PRIMARY,
-    borderColor: PRIMARY,
-  },
-  cardSelectedOther: {
-    backgroundColor: '#8B5CF6',
-    borderColor: '#8B5CF6',
   },
   iconRing: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#FEF0DC',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
@@ -95,25 +85,14 @@ const styles = StyleSheet.create({
   iconRingSelected: {
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  iconRingSelectedOther: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
   title: {
     fontSize: 15,
     fontWeight: '700',
-    color: TEXT_MAIN,
-  },
-  titleSelected: {
-    color: '#fff',
   },
   desc: {
     fontSize: 11,
-    color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 15,
-  },
-  descSelected: {
-    color: 'rgba(255,255,255,0.8)',
   },
   checkBadge: {
     position: 'absolute',
