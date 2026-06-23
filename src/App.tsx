@@ -4,6 +4,7 @@ import Layout from "./layout/Layout";
 import AdminLayout from "./layout/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import LazyPage from "./components/LazyPage";
 
 const Home = lazy(() => import("./pages/public/Home"));
 const Login = lazy(() => import("./pages/auth/Login"));
@@ -40,6 +41,7 @@ const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 const AdminDocumentTypes = lazy(() => import("./pages/admin/AdminDocumentTypes"));
 const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
 const AdminMatchingMonitor = lazy(() => import("./pages/admin/AdminMatchingMonitor"));
+const AdminBroadcast = lazy(() => import("./pages/admin/AdminBroadcast"));
 
 export default function App() {
   return (
@@ -53,46 +55,47 @@ export default function App() {
     }>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/rechercher" element={<ProtectedRoute><RechercherAuth /></ProtectedRoute>} />
-          <Route path="/recherche-publique" element={<RechercherPublic />} />
-          <Route path="/declarer" element={<ProtectedRoute><Declarer /></ProtectedRoute>} />
-          <Route path="/recuperer" element={<ProtectedRoute><Recuperer /></ProtectedRoute>} />
-          <Route path="/trouver" element={<Trouver />} />
-          <Route path="/rendre" element={<ProtectedRoute><Rendre /></ProtectedRoute>} />
-          <Route path="/remise" element={<ValidationRemise />} />
-          <Route path="/conditions" element={<Conditions />} />
-          <Route path="/confidentialite" element={<Confidentialite />} />
-          <Route path="/partage" element={<SharedDocument />} />
+          <Route path="/" element={<LazyPage Component={Home} />} />
+          <Route path="/login" element={<LazyPage Component={Login} />} />
+          <Route path="/forgot-password" element={<LazyPage Component={ForgotPassword} />} />
+          <Route path="/reset-password" element={<LazyPage Component={ResetPassword} />} />
+          <Route path="/rechercher" element={<ProtectedRoute><LazyPage Component={RechercherAuth} /></ProtectedRoute>} />
+          <Route path="/recherche-publique" element={<LazyPage Component={RechercherPublic} />} />
+          <Route path="/declarer" element={<ProtectedRoute><LazyPage Component={Declarer} /></ProtectedRoute>} />
+          <Route path="/recuperer" element={<ProtectedRoute><LazyPage Component={Recuperer} /></ProtectedRoute>} />
+          <Route path="/trouver" element={<LazyPage Component={Trouver} />} />
+          <Route path="/rendre" element={<ProtectedRoute><LazyPage Component={Rendre} /></ProtectedRoute>} />
+          <Route path="/remise" element={<LazyPage Component={ValidationRemise} />} />
+          <Route path="/conditions" element={<LazyPage Component={Conditions} />} />
+          <Route path="/confidentialite" element={<LazyPage Component={Confidentialite} />} />
+          <Route path="/partage" element={<LazyPage Component={SharedDocument} />} />
 
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/mes-documents" element={<ProtectedRoute><MesDocuments /></ProtectedRoute>} />
-          <Route path="/mes-appareils" element={<ProtectedRoute><MesAppareils /></ProtectedRoute>} />
-          <Route path="/mes-declarations" element={<ProtectedRoute><MesDeclarations /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><LazyPage Component={Dashboard} /></ProtectedRoute>} />
+          <Route path="/mes-documents" element={<ProtectedRoute><LazyPage Component={MesDocuments} /></ProtectedRoute>} />
+          <Route path="/mes-appareils" element={<ProtectedRoute><LazyPage Component={MesAppareils} /></ProtectedRoute>} />
+          <Route path="/mes-declarations" element={<ProtectedRoute><LazyPage Component={MesDeclarations} /></ProtectedRoute>} />
 
-          <Route path="/abonnement" element={<ProtectedRoute><Abonnement /></ProtectedRoute>} />
-          <Route path="/parrainage" element={<ProtectedRoute><Parrainage /></ProtectedRoute>} />
-          <Route path="/mes-gains" element={<ProtectedRoute><MesGains /></ProtectedRoute>} />
-          <Route path="/infos-profil" element={<ProtectedRoute><InfosProfil /></ProtectedRoute>} />
+          <Route path="/abonnement" element={<ProtectedRoute><LazyPage Component={Abonnement} /></ProtectedRoute>} />
+          <Route path="/parrainage" element={<ProtectedRoute><LazyPage Component={Parrainage} /></ProtectedRoute>} />
+          <Route path="/mes-gains" element={<ProtectedRoute><LazyPage Component={MesGains} /></ProtectedRoute>} />
+          <Route path="/infos-profil" element={<ProtectedRoute><LazyPage Component={InfosProfil} /></ProtectedRoute>} />
         </Route>
 
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/login" element={<LazyPage Component={AdminLogin} />} />
         <Route element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
-          <Route path="/admin/transactions" element={<AdminTransactions />} />
-          <Route path="/admin/referrals" element={<AdminReferrals />} />
-          <Route path="/admin/sms" element={<AdminSms />} />
-          <Route path="/admin/settings" element={<AdminSettings />} />
-          <Route path="/admin/declarations" element={<AdminDeclarations />} />
-          <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
-          <Route path="/admin/document-types" element={<AdminDocumentTypes />} />
-          <Route path="/admin/activity-log" element={<AdminActivityLog />} />
-          <Route path="/admin/matching" element={<AdminMatchingMonitor />} />
+          <Route path="/admin" element={<LazyPage Component={AdminDashboard} />} />
+          <Route path="/admin/users" element={<LazyPage Component={AdminUsers} />} />
+          <Route path="/admin/subscriptions" element={<LazyPage Component={AdminSubscriptions} />} />
+          <Route path="/admin/transactions" element={<LazyPage Component={AdminTransactions} />} />
+          <Route path="/admin/referrals" element={<LazyPage Component={AdminReferrals} />} />
+          <Route path="/admin/sms" element={<LazyPage Component={AdminSms} />} />
+          <Route path="/admin/settings" element={<LazyPage Component={AdminSettings} />} />
+          <Route path="/admin/declarations" element={<LazyPage Component={AdminDeclarations} />} />
+          <Route path="/admin/withdrawals" element={<LazyPage Component={AdminWithdrawals} />} />
+          <Route path="/admin/document-types" element={<LazyPage Component={AdminDocumentTypes} />} />
+          <Route path="/admin/activity-log" element={<LazyPage Component={AdminActivityLog} />} />
+          <Route path="/admin/matching" element={<LazyPage Component={AdminMatchingMonitor} />} />
+          <Route path="/admin/broadcast" element={<LazyPage Component={AdminBroadcast} />} />
         </Route>
       </Routes>
     </Suspense>

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { NotificationController } from '../controllers/notification.controller.ts';
-import { authMiddleware } from '../middleware/auth.middleware.ts';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.middleware.ts';
 
 const router = Router();
 const notificationController = new NotificationController();
@@ -114,5 +114,68 @@ router.patch('/:id/read', notificationController.markAsRead);
  *         description: Erreur serveur
  */
 router.patch('/read-all', notificationController.markAllRead);
+
+/**
+ * @swagger
+ * /notifications/register-push-token:
+ *   post:
+ *     summary: Enregistrer un token push FCM
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token]
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: FCM push token
+ *               platform:
+ *                 type: string
+ *                 enum: [android, ios, web]
+ *                 default: android
+ *     responses:
+ *       200:
+ *         description: Token enregistré
+ *       401:
+ *         description: Non authentifié
+ */
+router.post('/register-push-token', notificationController.registerPushToken);
+
+/**
+ * @swagger
+ * /notifications/broadcast:
+ *   post:
+ *     summary: Envoyer une notification push à tous les utilisateurs (Admin)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title, message]
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: "Nouveauté DocMaster !"
+ *               message:
+ *                 type: string
+ *                 example: "Découvrez notre nouvelle fonctionnalité de scan..."
+ *     responses:
+ *       200:
+ *         description: Broadcast envoyé
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès interdit (admin requis)
+ */
+router.post('/broadcast', adminMiddleware, notificationController.sendBroadcast);
 
 export default router;

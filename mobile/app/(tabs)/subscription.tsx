@@ -12,12 +12,14 @@ import { PaymentModal, type PaymentMethod } from '@/components/modals/PaymentMod
 import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const PRIMARY = '#F5A64B';
 const GREEN_DARK = '#1E3A2F';
 const { width } = Dimensions.get('window');
 
 export default function SubscriptionScreen() {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
@@ -162,10 +164,10 @@ export default function SubscriptionScreen() {
     : plans;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundElement }} edges={['left', 'right']}>
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+        <Pressable onPress={() => router.replace('/(tabs)')} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
         </Pressable>
         <Text style={styles.headerTitle}>{t('subscription:title')}</Text>

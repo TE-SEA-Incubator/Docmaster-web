@@ -16,4 +16,9 @@ export const notificationsService = {
     const res = await apiClient.patch<ApiResponse>("notifications/read-all");
     return res.data;
   },
+
+  async sendBroadcast(title: string, message: string) {
+    const res = await apiClient.post<ApiResponse>("notifications/broadcast", { title, message });
+    return res.data;
+  },
 };

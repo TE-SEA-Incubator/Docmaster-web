@@ -10,6 +10,7 @@ import { declarationsService } from '@/core/api/declarationsService';
 import { BottomTabInset } from '@/constants/theme';
 import { GainsSkeleton } from '@/components/Skeletons';
 import { Declaration } from '@/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const PRIMARY = '#F5A64B';
 const GREEN_DARK = '#1E3A2F';
@@ -43,18 +44,19 @@ function getEarningMeta(type: string, t: (key: string) => string) {
 }
 
 function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t }: any) {
+  const colors = useThemeColors();
   if (!declarations || declarations.length === 0) return null;
 
   return (
-    <View style={{ backgroundColor: '#FFFFFF', borderRadius: 18, borderWidth: 1, borderColor: '#F0EAE0', overflow: 'hidden', marginTop: 20, marginHorizontal: 20 }}>
-      <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#F0EAE0' }}>
+    <View style={{ backgroundColor: colors.backgroundElement, borderRadius: 18, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', marginTop: 20, marginHorizontal: 20 }}>
+      <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#FFF7ED', alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="cash-outline" size={16} color="#EA580C" />
           </View>
           <View>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:potentialGains')}</Text>
-            <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{t('gains:potentialGainsSub')}</Text>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{t('gains:potentialGains')}</Text>
+            <Text style={{ fontSize: 11, color: colors.textSecondary }}>{t('gains:potentialGainsSub')}</Text>
           </View>
         </View>
       </View>
@@ -65,15 +67,15 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
               <Ionicons name="cash-outline" size={18} color="#EA580C" />
             </View>
             <View>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A1A1A' }}>{fmtAmount(totalXaf)} <Text style={{ fontSize: 11, color: '#6B7280' }}>{t('common:fcf')}</Text></Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }}>{fmtAmount(totalXaf)} <Text style={{ fontSize: 11, color: colors.textSecondary }}>{t('common:fcf')}</Text></Text>
             </View>
           </View>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#FEF0DC', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="star-outline" size={18} color={PRIMARY} />
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: colors.warningBg, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="star-outline" size={18} color={colors.primary} />
             </View>
             <View>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A1A1A' }}>{fmtAmount(totalPts)} <Text style={{ fontSize: 11, color: '#6B7280' }}>{t('gains:pts')}</Text></Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }}>{fmtAmount(totalPts)} <Text style={{ fontSize: 11, color: colors.textSecondary }}>{t('gains:pts')}</Text></Text>
             </View>
           </View>
         </View>
@@ -84,17 +86,17 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
         const xafGain = Math.round((prix * pct) / 100);
         const ptsGain = decl.docTypeInfo?.points_recompense ?? 0;
         return (
-          <View key={decl.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: 1, borderBottomColor: '#F0EAE0' }}>
+          <View key={decl.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
             <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#FFF7ED', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="document-text-outline" size={18} color="#EA580C" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#1A1A1A' }}>{decl.docTypeInfo?.nom || 'Document'}</Text>
-              <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{decl.identifiant_doc_dm}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>{decl.docTypeInfo?.nom || 'Document'}</Text>
+              <Text style={{ fontSize: 11, color: colors.textSecondary }}>{decl.identifiant_doc_dm}</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ fontSize: 13, fontWeight: '800', color: '#EA580C' }}>+{fmtAmount(xafGain)} {t('common:fcf')}</Text>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: PRIMARY }}>+{ptsGain} {t('gains:pts')}</Text>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>+{ptsGain} {t('gains:pts')}</Text>
             </View>
           </View>
         );
@@ -104,6 +106,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
 }
 
 export default function GainsScreen() {
+  const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
@@ -173,11 +176,11 @@ export default function GainsScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
-      <View style={{ paddingTop: insets.top, backgroundColor: GREEN_DARK }}>
+      <View style={{ paddingTop: insets.top, backgroundColor: colors.greenDark }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
-          <Pressable onPress={() => router.back()} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 12 })}>
+          <Pressable onPress={() => router.replace('/(tabs)')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 12 })}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </Pressable>
           <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>{t('gains:title')}</Text>
@@ -185,13 +188,13 @@ export default function GainsScreen() {
       </View>
 
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 40 }}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Wallet Card ── */}
         <View style={{
-          backgroundColor: GREEN_DARK, padding: 24, paddingTop: 20,
+          backgroundColor: colors.greenDark, padding: 24, paddingTop: 20,
           borderBottomLeftRadius: 28, borderBottomRightRadius: 28, overflow: 'hidden',
         }}>
           <View style={{ position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(245,166,75,0.08)', bottom: -20, left: 20 }} />
@@ -205,7 +208,7 @@ export default function GainsScreen() {
               </Text>
             </View>
             <View style={{ width: 44, height: 44, borderRadius: 13, backgroundColor: 'rgba(245,166,75,0.15)', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="wallet-outline" size={22} color={PRIMARY} />
+              <Ionicons name="wallet-outline" size={22} color={colors.primary} />
             </View>
           </View>
 
@@ -217,8 +220,8 @@ export default function GainsScreen() {
                 {fmtAmount(balance)} / {fmtAmount(minWithdrawal)} {t('common:fcf')}
               </Text>
             </View>
-            <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 3, overflow: 'hidden' }}>
-              <View style={{ height: '100%', borderRadius: 3, width: `${progressPct}%`, backgroundColor: PRIMARY }} />
+              <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 3, overflow: 'hidden' }}>
+              <View style={{ height: '100%', borderRadius: 3, width: `${progressPct}%`, backgroundColor: colors.primary }} />
             </View>
             <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
               {t('gains:minWithdraw', { amount: fmtAmount(minWithdrawal) })} {t('common:fcf')}
@@ -232,11 +235,11 @@ export default function GainsScreen() {
               style={({ pressed }) => ({
                 flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
                 paddingVertical: 13, borderRadius: 13,
-                backgroundColor: PRIMARY, opacity: pressed ? 0.85 : 1,
+                backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1,
               })}
             >
-              <Ionicons name="card-outline" size={16} color={GREEN_DARK} />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: GREEN_DARK }}>{t('gains:withdraw')}</Text>
+              <Ionicons name="card-outline" size={16} color={colors.greenDark} />
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.greenDark }}>{t('gains:withdraw')}</Text>
             </Pressable>
             
             <Pressable
@@ -244,7 +247,7 @@ export default function GainsScreen() {
               style={({ pressed }) => ({
                 flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
                 paddingVertical: 13, borderRadius: 13,
-                backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB',
+                backgroundColor: colors.backgroundElement, borderWidth: 1, borderColor: colors.border,
                 opacity: pressed ? 0.85 : 1,
               })}
             >
@@ -266,13 +269,13 @@ export default function GainsScreen() {
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="card-outline" size={16} color={GREEN_MID} />
+                <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="card-outline" size={16} color={colors.greenDark} />
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:paymentMethods')}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{t('gains:paymentMethods')}</Text>
               </View>
               <Pressable onPress={() => Alert.alert(t('common:info'), 'Gestion des paiements bientôt disponible.')}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: PRIMARY }}>{t('gains:manage')}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>{t('gains:manage')}</Text>
               </Pressable>
             </View>
           </View>
@@ -280,9 +283,9 @@ export default function GainsScreen() {
           {/* ── Stats Grid ── */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
             {[
-              { icon: 'checkmark-circle-outline' as const, bg: '#F0FDF4', color: '#16A34A', value: String(statsCards.total_found ?? 0), label: t('gains:docsFound') },
-              { icon: 'hand-left-outline' as const, bg: '#FFF3E0', color: PRIMARY, value: String(statsCards.total_returned ?? 0), label: t('gains:docsReturned') },
-              { icon: 'cash-outline' as const, bg: '#FFFBEB', color: '#D97706', value: `${fmtAmount(totalFinderPayouts)}`, label: t('gains:xafEarned') },
+              { icon: 'checkmark-circle-outline' as const, bg: colors.successBg, color: colors.success, value: String(statsCards.total_found ?? 0), label: t('gains:docsFound') },
+              { icon: 'hand-left-outline' as const, bg: '#FFF3E0', color: colors.primary, value: String(statsCards.total_returned ?? 0), label: t('gains:docsReturned') },
+              { icon: 'cash-outline' as const, bg: colors.warningBg, color: '#D97706', value: `${fmtAmount(totalFinderPayouts)}`, label: t('gains:xafEarned') },
               { icon: 'log-out-outline' as const, bg: '#EFF6FF', color: '#3B82F6', value: `${fmtAmount(totalWithdrawn)}`, label: t('gains:xafWithdrawn') },
             ].map((card) => (
               <View key={card.label} style={{
@@ -292,8 +295,8 @@ export default function GainsScreen() {
                 <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: card.bg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
                   <Ionicons name={card.icon} size={17} color={card.color} />
                 </View>
-                <Text style={{ fontSize: 22, fontWeight: '800', color: '#1A1A1A', marginBottom: 2 }}>{card.value}</Text>
-                <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{card.label}</Text>
+                <Text style={{ fontSize: 22, fontWeight: '800', color: colors.text, marginBottom: 2 }}>{card.value}</Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary }}>{card.label}</Text>
               </View>
             ))}
           </View>
@@ -302,31 +305,31 @@ export default function GainsScreen() {
           <View style={{ backgroundColor: '#FAFAFA', borderRadius: 18, borderWidth: 1, borderColor: '#F0F0F0', padding: 16, marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: `${PRIMARY}15`, alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="star" size={16} color={PRIMARY} />
+                <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: `${colors.primary}15`, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="star" size={16} color={colors.primary} />
                 </View>
                 <View>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:loyaltyPoints')}</Text>
-                  <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{t('gains:loyaltySubtitle')}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{t('gains:loyaltyPoints')}</Text>
+                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>{t('gains:loyaltySubtitle')}</Text>
                 </View>
               </View>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: PRIMARY }}>{fmtAmount(totalPoints)} {t('gains:pts')}</Text>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: colors.primary }}>{fmtAmount(totalPoints)} {t('gains:pts')}</Text>
             </View>
 
             {/* Points breakdown */}
             {[
-              { label: t('gains:breakdownDeclarations'), detail: `(+${pointsBreakdown.declarations.pts_per_unit || 5} ${t('gains:pts')} × ${pointsBreakdown.declarations.count})`, pts: pointsBreakdown.declarations.points, color: PRIMARY, max: 5 },
-              { label: t('gains:breakdownReturned'), detail: `(${pointsBreakdown.returns.count} ${t('gains:docsReturned')})`, pts: pointsBreakdown.returns.points, color: GREEN_MID, max: 5 },
+              { label: t('gains:breakdownDeclarations'), detail: `(+${pointsBreakdown.declarations.pts_per_unit || 5} ${t('gains:pts')} × ${pointsBreakdown.declarations.count})`, pts: pointsBreakdown.declarations.points, color: colors.primary, max: 5 },
+              { label: t('gains:breakdownReturned'), detail: `(${pointsBreakdown.returns.count} ${t('gains:docsReturned')})`, pts: pointsBreakdown.returns.points, color: colors.greenDark, max: 5 },
               { label: t('gains:breakdownReferrals'), detail: `(${pointsBreakdown.referrals.count} personnes)`, pts: pointsBreakdown.referrals.points, color: '#D97706', max: 5 },
             ].map((item) => {
               const pct = Math.min((item.pts / item.max) * 100, 100);
               return (
                 <View key={item.label} style={{ marginBottom: 12 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-                      {item.label} <Text style={{ color: '#1A1A1A', fontWeight: '600' }}>{item.detail}</Text>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                      {item.label} <Text style={{ color: colors.text, fontWeight: '600' }}>{item.detail}</Text>
                     </Text>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#1A1A1A' }}>{item.pts} {t('gains:pts')}</Text>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>{item.pts} {t('gains:pts')}</Text>
                   </View>
                   <View style={{ height: 5, backgroundColor: '#F0F0F0', borderRadius: 3, overflow: 'hidden' }}>
                     <View style={{ height: '100%', backgroundColor: item.color, borderRadius: 3, width: `${pct}%` }} />
@@ -338,21 +341,21 @@ export default function GainsScreen() {
             {/* Level badge */}
             <View style={{
               flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-              backgroundColor: `${PRIMARY}08`, borderRadius: 12, padding: 12,
-              borderWidth: 1, borderColor: `${PRIMARY}20`,
+              backgroundColor: `${colors.primary}08`, borderRadius: 12, padding: 12,
+              borderWidth: 1, borderColor: `${colors.primary}20`,
             }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Ionicons name="trophy" size={16} color={PRIMARY} />
+                <Ionicons name="trophy" size={16} color={colors.primary} />
                 <View>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{levelLabel}</Text>
-                  <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{levelLabel}</Text>
+                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>
                     {pointsToNext > 0 ? `${pointsToNext} ${t('gains:goldNext')}` : t('gains:goldReached')}
                   </Text>
                 </View>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{t('gains:nextLevel')}</Text>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: PRIMARY }}>{fmtAmount(nextLevelPoints)} {t('gains:pts')}</Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary }}>{t('gains:nextLevel')}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>{fmtAmount(nextLevelPoints)} {t('gains:pts')}</Text>
               </View>
             </View>
           </View>
@@ -361,20 +364,20 @@ export default function GainsScreen() {
           <View style={{ backgroundColor: '#FAFAFA', borderRadius: 18, borderWidth: 1, borderColor: '#F0F0F0', overflow: 'hidden', marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="time-outline" size={16} color={GREEN_MID} />
+                <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="time-outline" size={16} color={colors.greenDark} />
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:recentTransactions')}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{t('gains:recentTransactions')}</Text>
               </View>
               <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: PRIMARY }}>{t('gains:seeAll')}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>{t('gains:seeAll')}</Text>
               </Pressable>
             </View>
 
             {transactions.length === 0 ? (
               <View style={{ padding: 32, alignItems: 'center', gap: 8 }}>
                 <Ionicons name="receipt-outline" size={32} color="#D1D5DB" />
-                <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t('gains:noTransactions')}</Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>{t('gains:noTransactions')}</Text>
               </View>
             ) : (
               transactions.slice(0, 5).map((tx, idx) => {
@@ -394,20 +397,20 @@ export default function GainsScreen() {
                       <Ionicons name={meta.icon} size={17} color={meta.color} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#1A1A1A' }} numberOfLines={1}>{meta.label}</Text>
-                      <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{meta.sub} · {fmtDate(tx.created_at)}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }} numberOfLines={1}>{meta.label}</Text>
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>{meta.sub} · {fmtDate(tx.created_at)}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-end', gap: 3 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '800', color: isPositive ? GREEN_MID : '#9CA3AF' }}>
+                      <Text style={{ fontSize: 14, fontWeight: '800', color: isPositive ? colors.greenDark : colors.textSecondary }}>
                         {isPositive ? '+' : '-'}{fmtAmount(Math.abs(tx.amount))} {t('common:fcf')}
                       </Text>
                       <View style={{
-                        backgroundColor: tx.status === 'SUCCESS' ? '#F0FDF4' : tx.status === 'PENDING' ? '#FFF7ED' : '#F3F4F6',
+                        backgroundColor: tx.status === 'SUCCESS' ? colors.successBg : tx.status === 'PENDING' ? '#FFF7ED' : colors.border,
                         borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2,
                       }}>
                         <Text style={{
                           fontSize: 9, fontWeight: '700',
-                          color: tx.status === 'SUCCESS' ? '#16A34A' : tx.status === 'PENDING' ? '#EA580C' : '#6B7280',
+                          color: tx.status === 'SUCCESS' ? colors.success : tx.status === 'PENDING' ? '#EA580C' : colors.textSecondary,
                         }}>
                           {tx.status === 'SUCCESS' ? t('gains:statusSuccess') : tx.status === 'PENDING' ? t('gains:statusPending') : tx.status}
                         </Text>
@@ -424,12 +427,12 @@ export default function GainsScreen() {
             <View style={{ backgroundColor: '#FAFAFA', borderRadius: 18, borderWidth: 1, borderColor: '#F0F0F0', overflow: 'hidden', marginBottom: 20 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: `${PRIMARY}15`, alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="wallet-outline" size={16} color={PRIMARY} />
+                  <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: `${colors.primary}15`, alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="wallet-outline" size={16} color={colors.primary} />
                   </View>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:earningsHistory')}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{t('gains:earningsHistory')}</Text>
                 </View>
-                <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{earnings.length} {t('gains:entries')}</Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary }}>{earnings.length} {t('gains:entries')}</Text>
               </View>
 
               {earnings.slice(0, 5).map((entry, idx) => {
@@ -449,12 +452,12 @@ export default function GainsScreen() {
                       <Ionicons name={meta.icon} size={17} color={meta.color} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#1A1A1A' }} numberOfLines={1}>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }} numberOfLines={1}>
                         {entry.description || meta.label}
                       </Text>
-                      <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{fmtDate(entry.created_at)}</Text>
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>{fmtDate(entry.created_at)}</Text>
                     </View>
-                    <Text style={{ fontSize: 14, fontWeight: '800', color: isPoints ? PRIMARY : GREEN_MID }}>
+                    <Text style={{ fontSize: 14, fontWeight: '800', color: isPoints ? colors.primary : colors.greenDark }}>
                       +{fmtAmount(entry.amount)} {isPoints ? t('gains:pts') : t('common:fcf')}
                     </Text>
                   </View>
@@ -466,15 +469,15 @@ export default function GainsScreen() {
           {/* ── Méthodes de retrait ── */}
           <View style={{ marginBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="phone-portrait-outline" size={16} color={GREEN_MID} />
+              <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: colors.successBg, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="phone-portrait-outline" size={16} color={colors.greenDark} />
               </View>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:withdrawMethods')}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{t('gains:withdrawMethods')}</Text>
             </View>
 
             <View style={{ gap: 10 }}>
               {[
-                { icon: 'phone-portrait-outline', name: t('gains:mtn'), color: '#D97706', bg: '#FFFBEB', connected: true },
+                { icon: 'phone-portrait-outline', name: t('gains:mtn'), color: '#D97706', bg: colors.warningBg, connected: true },
                 { icon: 'phone-portrait-outline', name: t('gains:orange'), color: '#EA580C', bg: '#FFF7ED', connected: false },
                 { icon: 'business-outline', name: t('gains:bankTransfer'), color: '#3B82F6', bg: '#EFF6FF', connected: false },
               ].map((method) => (
@@ -482,8 +485,8 @@ export default function GainsScreen() {
                   key={method.name}
                   style={({ pressed }) => ({
                     flexDirection: 'row', alignItems: 'center', gap: 12,
-                    backgroundColor: '#FFFFFF', borderRadius: 14,
-                    borderWidth: 2, borderColor: method.connected ? PRIMARY : '#F0F0F0',
+                    backgroundColor: colors.backgroundElement, borderRadius: 14,
+                    borderWidth: 2, borderColor: method.connected ? colors.primary : '#F0F0F0',
                     padding: 14, opacity: pressed ? 0.85 : 1,
                   })}
                 >
@@ -491,21 +494,21 @@ export default function GainsScreen() {
                     <Ionicons name={method.icon as any} size={18} color={method.color} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#1A1A1A' }}>{method.name}</Text>
-                    <Text style={{ fontSize: 11, color: method.connected ? '#16A34A' : '#9CA3AF', fontWeight: method.connected ? '600' : '400' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>{method.name}</Text>
+                    <Text style={{ fontSize: 11, color: method.connected ? colors.success : colors.textSecondary, fontWeight: method.connected ? '600' : '400' }}>
                       {method.connected ? t('gains:connected') : t('gains:add')}
                     </Text>
                   </View>
                   <Ionicons
                     name={method.connected ? 'checkmark-circle' : 'add-circle-outline'}
                     size={20}
-                    color={method.connected ? PRIMARY : '#D1D5DB'}
+                    color={method.connected ? colors.primary : '#D1D5DB'}
                   />
                 </Pressable>
               ))}
             </View>
 
-            <Text style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 12 }}>
+            <Text style={{ fontSize: 11, color: colors.textSecondary, textAlign: 'center', marginTop: 12 }}>
               {t('gains:minPrefix')}{fmtAmount(minWithdrawal)} {t('common:fcf')}{t('gains:delay')}
             </Text>
           </View>

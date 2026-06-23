@@ -6,11 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { BottomTabInset } from '@/constants/theme';
-
-const PRIMARY = '#F5A64B';
-const GREEN_DARK = '#1E3A2F';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function CardScreen() {
+  const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [showManualEntry, setShowManualEntry] = useState(false);
@@ -23,14 +22,14 @@ export default function CardScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundElement }}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 32, paddingHorizontal: 20, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
       >
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>{t('card:title')}</Text>
-          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t('card:subtitle')}</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 4 }}>{t('card:title')}</Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary }}>{t('card:subtitle')}</Text>
         </View>
 
         {/* Scanner area */}
@@ -40,7 +39,7 @@ export default function CardScreen() {
         }}>
           <View style={{
             width: 160, height: 160, borderRadius: 20,
-            borderWidth: 3, borderColor: PRIMARY, borderStyle: 'dashed',
+            borderWidth: 3, borderColor: colors.primary, borderStyle: 'dashed',
             alignItems: 'center', justifyContent: 'center',
           }}>
             <View style={{
@@ -48,7 +47,7 @@ export default function CardScreen() {
               backgroundColor: 'rgba(245,166,75,0.15)',
               alignItems: 'center', justifyContent: 'center',
             }}>
-              <Ionicons name="scan-outline" size={48} color={PRIMARY} />
+              <Ionicons name="scan-outline" size={48} color={colors.primary} />
             </View>
           </View>
           <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>
@@ -62,7 +61,7 @@ export default function CardScreen() {
         {/* Feature cards */}
         <View style={{ gap: 12, marginBottom: 24 }}>
           {[
-            { icon: 'shield-checkmark-outline', title: t('card:verify'), desc: t('card:verifyDesc'), color: '#16A34A', bg: '#F0FDF4' },
+            { icon: 'shield-checkmark-outline', title: t('card:verify'), desc: t('card:verifyDesc'), color: colors.success, bg: colors.successBg },
             { icon: 'document-text-outline', title: t('card:register'), desc: t('card:registerDesc'), color: '#3B82F6', bg: '#EFF6FF' },
             { icon: 'search-outline', title: t('card:quickSearch'), desc: t('card:quickSearchDesc'), color: '#8B5CF6', bg: '#F5F3FF' },
           ].map((feature, idx) => (
@@ -70,8 +69,8 @@ export default function CardScreen() {
               key={idx}
               style={{
                 flexDirection: 'row', alignItems: 'center', gap: 14,
-                backgroundColor: '#FAFAFA', borderRadius: 16,
-                borderWidth: 1, borderColor: '#F0F0F0', padding: 16,
+                backgroundColor: colors.surface2, borderRadius: 16,
+                borderWidth: 1, borderColor: colors.border, padding: 16,
               }}
             >
               <View style={{
@@ -81,8 +80,8 @@ export default function CardScreen() {
                 <Ionicons name={feature.icon as any} size={22} color={feature.color} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{feature.title}</Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{feature.desc}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{feature.title}</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{feature.desc}</Text>
               </View>
             </View>
           ))}
@@ -94,26 +93,26 @@ export default function CardScreen() {
           style={({ pressed }) => ({
             flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
             paddingVertical: 14, borderRadius: 14,
-            backgroundColor: pressed ? '#FFF3E0' : '#FFFFFF',
-            borderWidth: 1.5, borderStyle: 'dashed', borderColor: PRIMARY,
+            backgroundColor: pressed ? '#FFF3E0' : colors.backgroundElement,
+            borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.primary,
           })}
         >
-          <Ionicons name="keypad-outline" size={18} color={PRIMARY} />
-          <Text style={{ fontSize: 14, fontWeight: '600', color: PRIMARY }}>{t('card:manualEntry')}</Text>
+          <Ionicons name="keypad-outline" size={18} color={colors.primary} />
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>{t('card:manualEntry')}</Text>
         </Pressable>
       </ScrollView>
 
       {/* Manual entry modal */}
       <Modal visible={showManualEntry} transparent animationType="fade" onRequestClose={() => setShowManualEntry(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 20 }} onPress={() => setShowManualEntry(false)}>
-          <Pressable style={{ backgroundColor: '#FFFFFF', borderRadius: 24, width: '100%', maxWidth: 400, padding: 24 }} onPress={e => e.stopPropagation()}>
+          <Pressable style={{ backgroundColor: colors.backgroundElement, borderRadius: 24, width: '100%', maxWidth: 400, padding: 24 }} onPress={e => e.stopPropagation()}>
             <View style={{ width: 60, height: 60, borderRadius: 16, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-              <Ionicons name="keypad" size={30} color={PRIMARY} />
+              <Ionicons name="keypad" size={30} color={colors.primary} />
             </View>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', textAlign: 'center', marginBottom: 8 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center', marginBottom: 8 }}>
               {t('card:verifyCode')}
             </Text>
-            <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', marginBottom: 20 }}>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginBottom: 20 }}>
               {t('card:verifyCodeDesc')}
             </Text>
 
@@ -128,22 +127,22 @@ export default function CardScreen() {
             {verifyResult && (
               <View style={{
                 marginTop: 14, padding: 14, borderRadius: 14,
-                backgroundColor: verifyResult === 'safe' ? '#F0FDF4' : verifyResult === 'stolen' ? '#FEF2F2' : '#F9FAFB',
-                borderWidth: 1, borderColor: verifyResult === 'safe' ? '#BBF7D0' : verifyResult === 'stolen' ? '#FECACA' : '#E5E7EB',
+                backgroundColor: verifyResult === 'safe' ? colors.successBg : verifyResult === 'stolen' ? colors.dangerBg : '#F9FAFB',
+                borderWidth: 1, borderColor: verifyResult === 'safe' ? '#BBF7D0' : verifyResult === 'stolen' ? '#FECACA' : colors.border,
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <View style={{
                     width: 36, height: 36, borderRadius: 18,
-                    backgroundColor: verifyResult === 'safe' ? '#16A34A' : verifyResult === 'stolen' ? '#EF4444' : '#6B7280',
+                    backgroundColor: verifyResult === 'safe' ? colors.success : verifyResult === 'stolen' ? colors.danger : colors.textSecondary,
                     alignItems: 'center', justifyContent: 'center',
                   }}>
                     <Ionicons name={verifyResult === 'safe' ? 'checkmark' : verifyResult === 'stolen' ? 'warning' : 'help'} size={18} color="#FFFFFF" />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: verifyResult === 'safe' ? '#166534' : verifyResult === 'stolen' ? '#991B1B' : '#1F2937' }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: verifyResult === 'safe' ? '#166534' : verifyResult === 'stolen' ? '#991B1B' : colors.text }}>
                       {verifyResult === 'safe' ? t('card:resultAuthentic') : verifyResult === 'stolen' ? t('card:resultWarning') : t('card:resultUnknown')}
                     </Text>
-                    <Text style={{ fontSize: 12, color: verifyResult === 'safe' ? '#15803D' : verifyResult === 'stolen' ? '#B91C1C' : '#6B7280' }}>
+                    <Text style={{ fontSize: 12, color: verifyResult === 'safe' ? '#15803D' : verifyResult === 'stolen' ? '#B91C1C' : colors.textSecondary }}>
                       {verifyResult === 'safe' ? t('card:resultAuthenticDesc') : verifyResult === 'stolen' ? t('card:resultWarningDesc') : t('card:resultUnknownDesc')}
                     </Text>
                   </View>

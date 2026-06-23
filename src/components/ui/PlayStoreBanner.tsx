@@ -24,7 +24,7 @@ const PlayStoreBanner = () => {
         <p className="text-sm font-medium">Téléchargez l'application DocMaster gratuitement</p>
       </div>
       <div className="flex items-center gap-2">
-        <a href="#" className="bg-white text-black px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
+        <a href="https://play.google.com/store/apps/details?id=com.tesea.docmaster" target="_blank" rel="noopener noreferrer" className="bg-white text-black px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1">
           <img src="/src/assets/images/Playstore.png" alt="Google Play" className="w-4 h-4" />
           Google Play
         </a>

@@ -670,6 +670,7 @@ export default function MesDocuments() {
       {showViewModal && selectedDoc && (
         <DocumentDetailModal
           doc={selectedDoc}
+          catLabels={catLabelsT}
           onClose={() => setShowViewModal(false)}
           onDelete={handleDelete}
         />

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useColorScheme, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,7 +8,10 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/core/api/queryClient';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { useLanguageStore } from '@/core/store/useLanguageStore';
+import { useThemeStore } from '@/core/store/useThemeStore';
 import { getAccessToken } from '@/core/utils/secureStorage';
+import type * as Notifications from 'expo-notifications';
+import { registerForPushNotifications, addNotificationResponseReceivedListener } from '@/core/api/pushNotificationsService';
 import { Colors } from '@/constants/theme';
 import { AppSplash } from '@/components/AppSplash';
 
@@ -39,18 +42,37 @@ export default function RootLayout() {
   const restoreLanguage = useLanguageStore(state => state.restoreLanguage);
   const segments = useSegments();
   const router = useRouter();
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-  const statusBarStyle = isDark ? 'light' : 'dark';
-  const statusBarBg = isDark ? Colors.dark.background : Colors.light.background;
+  const themeMode = useThemeStore(state => state.mode);
+  const systemScheme = useColorScheme();
+  const resolved: 'light' | 'dark' = themeMode === 'system'
+    ? (systemScheme === 'dark' ? 'dark' : 'light')
+    : themeMode;
+  const statusBarStyle = resolved === 'dark' ? 'light' : 'dark';
+  const statusBarBg = Colors[resolved].background;
+
+  const notificationResponseListener = useRef<Notifications.EventSubscription | null>(null);
 
   useEffect(() => {
     async function prepare() {
       await restoreLanguage();
       await initAuth();
+
+      const { isAuthenticated } = useAuthStore.getState();
+      if (isAuthenticated) {
+        registerForPushNotifications();
+      }
+
       setAppReady(true);
     }
     prepare();
+
+    notificationResponseListener.current = addNotificationResponseReceivedListener((response) => {
+      router.push('/notifications');
+    });
+
+    return () => {
+      notificationResponseListener.current?.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -84,6 +106,7 @@ export default function RootLayout() {
       }
     } else if (isAuthenticated && (inAuthGroup || inOnboarding || inLangSelect)) {
       router.replace('/(tabs)');
+      registerForPushNotifications();
     }
   }, [isAuthenticated, isLoading, hasCompletedOnboarding, hasSelectedLanguage, segments, appReady, showSplash]);
 

@@ -1,1 +1,0 @@
-ALTER TABLE declarations ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';

@@ -1,29 +1,34 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/common/Input';
 import { ThemedText } from '@/components/themed-text';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { PRIMARY, BORDER, TEXT_MUTED } from './DOC_TYPE_META';
 
 const PLACES = [
-  { label: 'Marché', icon: 'storefront-outline' },
-  { label: 'Taxi', icon: 'car-outline' },
-  { label: 'Transport', icon: 'bus-outline' },
-  { label: 'Restaurant', icon: 'restaurant-outline' },
-  { label: 'École', icon: 'school-outline' },
-  { label: 'Aéroport', icon: 'airplane-outline' },
-  { label: 'Gare', icon: 'train-outline' },
-  { label: 'Hôpital', icon: 'medical-outline' },
-  { label: 'Banque', icon: 'business-outline' },
+  { key: 'market', icon: 'storefront-outline' },
+  { key: 'transport', icon: 'bus-outline' },
+  { key: 'restaurant', icon: 'restaurant-outline' },
+  { key: 'administration', icon: 'business-outline' },
+  { key: 'hospital', icon: 'medical-outline' },
+  { key: 'airport', icon: 'airplane-outline' },
+  { key: 'school', icon: 'school-outline' },
+  { key: 'street', icon: 'map-outline' },
 ];
 
 type PlaceChipInputProps = {
+  label: string;
+  placeholder: string;
   value: string;
   onChange: (value: string) => void;
+  icon?: keyof typeof Ionicons.glyphMap;
 };
 
-export const PlaceChipInput: React.FC<PlaceChipInputProps> = ({ value, onChange }) => {
+export const PlaceChipInput: React.FC<PlaceChipInputProps> = ({ label, placeholder, value, onChange, icon }) => {
+  const { t } = useTranslation();
+
   const handleChip = (label: string) => {
     Haptics.selectionAsync();
     onChange(label);
@@ -31,23 +36,22 @@ export const PlaceChipInput: React.FC<PlaceChipInputProps> = ({ value, onChange 
 
   return (
     <View style={styles.container}>
-      <ThemedText style={styles.sectionTitle}>Où avez-vous perdu le document ?</ThemedText>
       <Input
+        label={label}
         value={value}
         onChangeText={onChange}
-        placeholder="Ville ou lieu..."
-        containerStyle={styles.input}
-        icon="location-outline"
+        placeholder={placeholder}
+        icon={icon || 'location-outline'}
       />
-      <ThemedText style={styles.chipLabel}>Lieux fréquents</ThemedText>
+      <ThemedText style={styles.chipLabel}>{t('common:quickSuggestions')}</ThemedText>
       <View style={styles.chipsContainer}>
         {PLACES.map((place) => {
-          const isSelected = value === place.label;
+          const isSelected = value === t(`declarer:place_${place.key}`);
           return (
             <TouchableOpacity
-              key={place.label}
+              key={place.key}
               style={[styles.chip, isSelected && styles.chipSelected]}
-              onPress={() => handleChip(place.label)}
+              onPress={() => handleChip(t(`declarer:place_${place.key}`))}
               activeOpacity={0.75}
             >
               <Ionicons
@@ -56,7 +60,7 @@ export const PlaceChipInput: React.FC<PlaceChipInputProps> = ({ value, onChange 
                 color={isSelected ? '#fff' : TEXT_MUTED}
               />
               <ThemedText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                {place.label}
+                {t(`declarer:place_${place.key}`)}
               </ThemedText>
             </TouchableOpacity>
           );
@@ -68,18 +72,6 @@ export const PlaceChipInput: React.FC<PlaceChipInputProps> = ({ value, onChange 
 
 const styles = StyleSheet.create({
   container: { gap: 10 },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    letterSpacing: -0.2,
-    marginBottom: 4,
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: BORDER,
-    borderRadius: 12,
-  },
   chipLabel: {
     fontSize: 11,
     fontWeight: '600',

@@ -13,9 +13,6 @@ import { DeclarationCard } from '@/components/declarations/DeclarationCard';
 import { useDashboardData } from '@/core/hooks/useDashboardData';
 import { HomeSkeleton } from '@/components/HomeSkeleton';
 
-const PRIMARY = '#F5A64B';
-const GREEN_DARK = '#1E3A2F';
-
 function timeAgo(dateString?: string, t?: (key: string, options?: any) => string) {
   if (!dateString) return '—';
   const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);

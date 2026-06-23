@@ -75,6 +75,16 @@ export function AuthProvider({ children }) {
         const u = res.data;
         saveSession(u, token);
         setUser({ ...u, initial: getInitials(u.nom, u.prenom) });
+        import("../services/webPushService").then((m) => {
+          m.registerPushToken();
+          m.onForegroundMessage((payload) => {
+            const title = payload.notification?.title || "DocMaster";
+            const body = payload.notification?.body || "";
+            if (Notification.permission === "granted") {
+              new Notification(title, { body, icon: "/src/assets/images/docmaster-icon.png" });
+            }
+          });
+        }).catch(() => {});
       })
       .catch(() => {
         deleteToken();
@@ -93,6 +103,7 @@ export function AuthProvider({ children }) {
       if (res.data.token) {
         saveSession(res.data.user, res.data.token);
         setUser({ ...res.data.user, initial: getInitials(res.data.user.nom, res.data.user.prenom) });
+        import("../services/webPushService").then((m) => m.registerPushToken()).catch(() => {});
         return { success: true };
       }
       return { success: false, message: "Token manquant" };
@@ -119,6 +130,7 @@ export function AuthProvider({ children }) {
       if (res.data.token) {
         saveSession(res.data.user, res.data.token);
         setUser({ ...res.data.user, initial: getInitials(res.data.user.nom, res.data.user.prenom) });
+        import("../services/webPushService").then((m) => m.registerPushToken()).catch(() => {});
         return { success: true };
       }
       return { success: false, message: "Erreur lors de la connexion Google" };
@@ -146,6 +158,7 @@ export function AuthProvider({ children }) {
       if (res.data.token) {
         saveSession(res.data.user, res.data.token);
         setUser({ ...res.data.user, initial: getInitials(res.data.user.nom, res.data.user.prenom) });
+        import("../services/webPushService").then((m) => m.registerPushToken()).catch(() => {});
       }
       return { success: true, data: res.data };
     } catch (err) {
@@ -162,6 +175,7 @@ export function AuthProvider({ children }) {
     } catch {
       // ignore
     }
+    import("../services/webPushService").then((m) => m.unregisterPushToken()).catch(() => {});
     deleteToken();
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem("docmaster_admin_login");

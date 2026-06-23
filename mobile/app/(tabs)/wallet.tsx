@@ -10,9 +10,7 @@ import { BottomTabInset } from '@/constants/theme';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
-
-const PRIMARY = '#F5A64B';
-const GREEN_DARK = '#1E3A2F';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 function fmtAmount(n: number) {
   return n.toLocaleString('fr-FR');
@@ -48,12 +46,13 @@ function getTxMeta(type: string | undefined, t: (key: string) => string) {
 
 function WithdrawalStatusBadge({ status }: { status: string }) {
   const { t } = useTranslation();
+  const colors = useThemeColors();
   const config: Record<string, { label: string; bg: string; color: string }> = {
     PENDING: { label: t('wallet:wdPending'), bg: '#FFF7ED', color: '#EA580C' },
-    COMPLETED: { label: t('wallet:wdCompleted'), bg: '#F0FDF4', color: '#16A34A' },
-    REJECTED: { label: t('wallet:wdRejected'), bg: '#FEF2F2', color: '#EF4444' },
+    COMPLETED: { label: t('wallet:wdCompleted'), bg: colors.successBg, color: colors.success },
+    REJECTED: { label: t('wallet:wdRejected'), bg: colors.dangerBg, color: colors.danger },
   };
-  const c = config[status] || { label: status, bg: '#F3F4F6', color: '#6B7280' };
+  const c = config[status] || { label: status, bg: colors.border, color: colors.textSecondary };
   return (
     <View style={{ backgroundColor: c.bg, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 }}>
       <Text style={{ fontSize: 9, fontWeight: '700', color: c.color }}>{c.label}</Text>
@@ -62,6 +61,7 @@ function WithdrawalStatusBadge({ status }: { status: string }) {
 }
 
 export default function WalletScreen() {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user, fetchProfile } = useAuthStore();
@@ -156,28 +156,28 @@ export default function WalletScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundElement }}>
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 32, paddingHorizontal: 20, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
       >
         <View style={{ marginBottom: 20 }}>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>{t('wallet:title')}</Text>
-          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t('wallet:subtitle')}</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 4 }}>{t('wallet:title')}</Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary }}>{t('wallet:subtitle')}</Text>
         </View>
 
         {/* Balance card */}
         <View style={{
-          backgroundColor: GREEN_DARK, borderRadius: 24, padding: 24, marginBottom: 24,
+          backgroundColor: colors.greenDark, borderRadius: 24, padding: 24, marginBottom: 24,
           overflow: 'hidden',
         }}>
           <View style={{ position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(245,166,75,0.1)', top: -40, right: -40 }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(245,166,75,0.2)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start', marginBottom: 16 }}>
-            <Ionicons name="wallet" size={11} color={PRIMARY} />
-            <Text style={{ fontSize: 10, fontWeight: '800', color: PRIMARY, letterSpacing: 0.5 }}>{t('wallet:balance')}</Text>
+            <Ionicons name="wallet" size={11} color={colors.primary} />
+            <Text style={{ fontSize: 10, fontWeight: '800', color: colors.primary, letterSpacing: 0.5 }}>{t('wallet:balance')}</Text>
           </View>
-          <Text style={{ fontSize: 36, fontWeight: '800', color: '#FFFFFF', marginBottom: 4 }}>
+          <Text style={{ fontSize: 36, fontWeight: '800', color: colors.backgroundElement, marginBottom: 4 }}>
             {fmtAmount(balance)} <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)' }}>{t('common:fcf')}</Text>
           </Text>
           <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
@@ -194,8 +194,8 @@ export default function WalletScreen() {
               <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{t('wallet:income')}</Text>
             </View>
             <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: 12, alignItems: 'center' }}>
-              <Ionicons name="arrow-up-circle-outline" size={18} color="#EF4444" />
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#EF4444', marginTop: 4 }}>
+              <Ionicons name="arrow-up-circle-outline" size={18} color={colors.danger} />
+              <Text style={{ fontSize: 16, fontWeight: '700', color: colors.danger, marginTop: 4 }}>
                 -{fmtAmount(debits)}
               </Text>
               <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{t('wallet:expenses')}</Text>
@@ -206,9 +206,9 @@ export default function WalletScreen() {
         {/* Quick actions */}
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
           {[
-            { icon: 'add-circle-outline', label: t('wallet:recharge'), color: '#16A34A', bg: '#F0FDF4', onPress: () => Alert.alert(t('wallet:rechargeSoon'), t('wallet:rechargeSoonDesc')) },
+            { icon: 'add-circle-outline', label: t('wallet:recharge'), color: colors.success, bg: colors.successBg, onPress: () => Alert.alert(t('wallet:rechargeSoon'), t('wallet:rechargeSoonDesc')) },
             { icon: 'log-out-outline', label: t('wallet:withdraw'), color: '#3B82F6', bg: '#EFF6FF', onPress: openWithdraw },
-            { icon: 'receipt-outline', label: t('wallet:history'), color: PRIMARY, bg: '#FFF3E0', onPress: openHistory },
+            { icon: 'receipt-outline', label: t('wallet:history'), color: colors.primary, bg: '#FFF3E0', onPress: openHistory },
           ].map((action, idx) => (
             <Pressable
               key={idx}
@@ -216,7 +216,7 @@ export default function WalletScreen() {
               style={({ pressed }) => ({
                 flex: 1, alignItems: 'center', gap: 6, paddingVertical: 14,
                 backgroundColor: action.bg, borderRadius: 14,
-                borderWidth: 1, borderColor: '#F0F0F0',
+                borderWidth: 1, borderColor: colors.border,
                 opacity: pressed ? 0.85 : 1,
               })}
             >
@@ -229,30 +229,30 @@ export default function WalletScreen() {
         {/* Transactions */}
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 }}>
-            <Ionicons name="time-outline" size={16} color="#1A1A1A" />
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1A1A1A' }}>{t('wallet:recentTransactions')}</Text>
+            <Ionicons name="time-outline" size={16} color={colors.text} />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{t('wallet:recentTransactions')}</Text>
           </View>
 
           {loading ? (
             <View style={{ padding: 32, alignItems: 'center' }}>
-              <ActivityIndicator size="small" color={PRIMARY} />
+              <ActivityIndicator size="small" color={colors.primary} />
             </View>
           ) : transactions.length === 0 ? (
             <View style={{
-              backgroundColor: '#FAFAFA', borderRadius: 16,
-              borderWidth: 1, borderColor: '#F0F0F0', borderStyle: 'dashed',
+              backgroundColor: colors.background, borderRadius: 16,
+              borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed',
               padding: 32, alignItems: 'center', gap: 8,
             }}>
               <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="wallet-outline" size={22} color={PRIMARY} />
+                <Ionicons name="wallet-outline" size={22} color={colors.primary} />
               </View>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#1A1A1A' }}>{t('wallet:noTransactions')}</Text>
-              <Text style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center' }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>{t('wallet:noTransactions')}</Text>
+              <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center' }}>
                 {t('wallet:noTransactionsDesc')}
               </Text>
             </View>
           ) : (
-            <View style={{ backgroundColor: '#FAFAFA', borderRadius: 16, borderWidth: 1, borderColor: '#F0F0F0', overflow: 'hidden' }}>
+            <View style={{ backgroundColor: colors.background, borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
               {transactions.slice(0, 10).map((tx, idx) => {
                 const meta = getTxMeta(tx.type, t);
                 const isPositive = Number(tx.amount) > 0 && tx.type !== 'recovery_fee';
@@ -263,7 +263,7 @@ export default function WalletScreen() {
                       flexDirection: 'row', alignItems: 'center', gap: 12,
                       paddingHorizontal: 16, paddingVertical: 14,
                       borderBottomWidth: idx < Math.min(transactions.length, 10) - 1 ? 1 : 0,
-                      borderBottomColor: '#F0F0F0',
+                      borderBottomColor: colors.border,
                     }}
                   >
                     <View style={{
@@ -273,27 +273,27 @@ export default function WalletScreen() {
                       <Ionicons name={meta.icon} size={18} color={meta.color} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#1A1A1A' }} numberOfLines={1}>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }} numberOfLines={1}>
                         {meta.label}
                       </Text>
-                      <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
                         {formatDate(tx.created_at)} · {formatTime(tx.created_at)}
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end', gap: 3 }}>
                       <Text style={{
                         fontSize: 14, fontWeight: '700',
-                        color: isPositive ? '#16A34A' : '#EF4444',
+                        color: isPositive ? colors.success : colors.danger,
                       }}>
                         {isPositive ? '+' : '-'}{fmtAmount(Math.abs(Number(tx.amount)))} {t('common:fcf')}
                       </Text>
                       <View style={{
-                        backgroundColor: tx.status === 'SUCCESS' ? '#F0FDF4' : tx.status === 'PENDING' ? '#FFF7ED' : '#F3F4F6',
+                        backgroundColor: tx.status === 'SUCCESS' ? colors.successBg : tx.status === 'PENDING' ? '#FFF7ED' : colors.border,
                         borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2,
                       }}>
                         <Text style={{
                           fontSize: 9, fontWeight: '700',
-                          color: tx.status === 'SUCCESS' ? '#16A34A' : tx.status === 'PENDING' ? '#EA580C' : '#6B7280',
+                          color: tx.status === 'SUCCESS' ? colors.success : tx.status === 'PENDING' ? '#EA580C' : colors.textSecondary,
                         }}>
                           {tx.status === 'SUCCESS' ? t('wallet:statusSuccess') : tx.status === 'PENDING' ? t('wallet:statusPending') : tx.status || '—'}
                         </Text>
@@ -310,17 +310,17 @@ export default function WalletScreen() {
       {/* Withdrawal Modal */}
       <Modal visible={showWithdraw} transparent animationType="fade" onRequestClose={() => setShowWithdraw(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }} onPress={() => setShowWithdraw(false)}>
-          <Pressable style={{ backgroundColor: '#FFFFFF', borderRadius: 24, width: '100%', maxWidth: 420, padding: 28 }} onPress={e => e.stopPropagation()}>
+          <Pressable style={{ backgroundColor: colors.backgroundElement, borderRadius: 24, width: '100%', maxWidth: 420, padding: 28 }} onPress={e => e.stopPropagation()}>
             <View style={{ width: 60, height: 60, borderRadius: 20, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
               <Ionicons name="log-out-outline" size={28} color="#3B82F6" />
             </View>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A', textAlign: 'center', marginBottom: 4 }}>{t('wallet:withdrawTitle')}</Text>
-            <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', marginBottom: 20 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center', marginBottom: 4 }}>{t('wallet:withdrawTitle')}</Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginBottom: 20 }}>
               {t('wallet:availableBalance')}{fmtAmount(balance)} {t('common:fcf')}
             </Text>
 
             <View style={{ marginBottom: 16 }}>
-              <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>{t('wallet:paymentMethod')}</Text>
+              <Text style={{ fontSize: 11.5, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>{t('wallet:paymentMethod')}</Text>
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 {([{ key: 'MTN', icon: 'phone-portrait-outline', label: t('wallet:mtn') },
                    { key: 'ORANGE', icon: 'phone-portrait-outline', label: t('wallet:orange') }] as const).map((m) => (
@@ -330,11 +330,11 @@ export default function WalletScreen() {
                     style={{
                       flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', gap: 6,
                       borderWidth: 1.5, borderColor: withdrawMethod === m.key ? '#F5A64B' : '#E0D5C4',
-                      backgroundColor: withdrawMethod === m.key ? '#FEF0DC' : '#FFFFFF',
+                      backgroundColor: withdrawMethod === m.key ? '#FEF0DC' : colors.backgroundElement,
                     }}
                   >
-                    <Ionicons name={m.icon} size={20} color={withdrawMethod === m.key ? '#D98A30' : '#9CA3AF'} />
-                    <Text style={{ fontSize: 10, fontWeight: '600', color: withdrawMethod === m.key ? '#D98A30' : '#6B7280', textAlign: 'center' }}>{m.label}</Text>
+                    <Ionicons name={m.icon} size={20} color={withdrawMethod === m.key ? '#D98A30' : colors.textSecondary} />
+                    <Text style={{ fontSize: 10, fontWeight: '600', color: withdrawMethod === m.key ? '#D98A30' : colors.textSecondary, textAlign: 'center' }}>{m.label}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -374,46 +374,46 @@ export default function WalletScreen() {
       {/* Withdrawal History Modal */}
       <Modal visible={showHistory} transparent animationType="slide" onRequestClose={() => setShowHistory(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} onPress={() => setShowHistory(false)}>
-          <Pressable style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%', paddingBottom: insets.bottom + 8 }} onPress={e => e.stopPropagation()}>
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginTop: 12, marginBottom: 8 }} />
+          <Pressable style={{ backgroundColor: colors.backgroundElement, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%', paddingBottom: insets.bottom + 8 }} onPress={e => e.stopPropagation()}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 8 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 }}>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>{t('wallet:withdrawHistory')}</Text>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>{t('wallet:withdrawHistory')}</Text>
               <Pressable onPress={() => setShowHistory(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="close" size={18} color="#6B7280" />
+                <Ionicons name="close" size={18} color={colors.textSecondary} />
               </Pressable>
             </View>
             <ScrollView style={{ paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
               {withdrawalsLoading ? (
                 <View style={{ padding: 32, alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color={PRIMARY} />
+                  <ActivityIndicator size="small" color={colors.primary} />
                 </View>
               ) : withdrawals.length === 0 ? (
                 <View style={{ padding: 32, alignItems: 'center', gap: 8 }}>
                   <Ionicons name="receipt-outline" size={32} color="#D1D5DB" />
-                  <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t('wallet:noWithdrawals')}</Text>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>{t('wallet:noWithdrawals')}</Text>
                 </View>
               ) : (
                 <View style={{ gap: 10, paddingBottom: 32 }}>
                   {withdrawals.map((w) => (
                     <View key={w.id} style={{
-                      backgroundColor: '#FAFAFA', borderRadius: 14, padding: 14,
-                      borderWidth: 1, borderColor: '#F0F0F0',
+                      backgroundColor: colors.background, borderRadius: 14, padding: 14,
+                      borderWidth: 1, borderColor: colors.border,
                     }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <Text style={{ fontSize: 16, fontWeight: '800', color: '#1A1A1A' }}>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text }}>
                           {fmtAmount(w.amount)} {t('common:fcf')}
                         </Text>
                         <WithdrawalStatusBadge status={w.status} />
                       </View>
                       <View style={{ flexDirection: 'row', gap: 16 }}>
-                        <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
+                        <Text style={{ fontSize: 11, color: colors.textSecondary }}>
                           {w.payment_method === 'MTN' ? t('wallet:mtn') : w.payment_method === 'ORANGE' ? t('wallet:orange') : w.payment_method}
                         </Text>
-                        <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
+                        <Text style={{ fontSize: 11, color: colors.textSecondary }}>
                           {w.payment_details}
                         </Text>
                       </View>
-                      <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 4 }}>
                         {formatDate(w.created_at)}
                       </Text>
                     </View>

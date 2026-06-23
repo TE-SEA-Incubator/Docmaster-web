@@ -9,13 +9,13 @@ import { useAuthStore } from '@/core/store/useAuthStore';
 import { authService } from '@/core/api/authService';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
-
-const PRIMARY = '#F5A64B';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function ManageProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
+  const colors = useThemeColors();
   const { user, fetchProfile } = useAuthStore();
 
   const [form, setForm] = useState({ nom: '', prenom: '', telephone: '', ville: '', pays: '' });
@@ -90,21 +90,21 @@ export default function ManageProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundElement }}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 40 }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
           <Pressable onPress={() => router.back()} style={{ marginRight: 12 }}>
-            <Ionicons name="arrow-back" size={24} color="#1F2937" />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </Pressable>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937' }}>{t('manageProfile:title')}</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>{t('manageProfile:title')}</Text>
         </View>
 
         {message.text ? (
-          <View style={{ marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: message.type === 'success' ? '#F0FDF4' : '#FEF2F2' }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: message.type === 'success' ? '#15803D' : '#EF4444', textAlign: 'center' }}>{message.text}</Text>
+          <View style={{ marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: message.type === 'success' ? colors.successBg : colors.dangerBg }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: message.type === 'success' ? colors.success : colors.danger, textAlign: 'center' }}>{message.text}</Text>
           </View>
         ) : null}
 
@@ -129,23 +129,23 @@ export default function ManageProfileScreen() {
           <Button title={loading ? t('manageProfile:saving') : t('manageProfile:save')} onPress={handleUpdate} loading={loading} />
         </View>
 
-        <View style={{ marginHorizontal: 16, marginTop: 28, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
+        <View style={{ marginHorizontal: 16, marginTop: 28, backgroundColor: colors.backgroundElement, borderRadius: 20, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
           <Pressable
             onPress={() => setIsPasswordOpen(!isPasswordOpen)}
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, paddingHorizontal: 18 }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Ionicons name="lock-closed-outline" size={20} color="#4B5563" />
-              <Text style={{ fontSize: 15, fontWeight: '500', color: '#1F2937' }}>{t('manageProfile:changePassword')}</Text>
+              <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
+              <Text style={{ fontSize: 15, fontWeight: '500', color: colors.text }}>{t('manageProfile:changePassword')}</Text>
             </View>
-            <Ionicons name={isPasswordOpen ? 'chevron-up' : 'chevron-forward'} size={18} color="#D1D5DB" />
+            <Ionicons name={isPasswordOpen ? 'chevron-up' : 'chevron-forward'} size={18} color={colors.border} />
           </Pressable>
 
           {isPasswordOpen && (
             <View style={{ padding: 18, paddingTop: 0, gap: 12 }}>
               {passwordMessage.text ? (
-                <View style={{ padding: 10, borderRadius: 10, backgroundColor: passwordMessage.type === 'success' ? '#F0FDF4' : '#FEF2F2' }}>
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: passwordMessage.type === 'success' ? '#15803D' : '#EF4444', textAlign: 'center' }}>{passwordMessage.text}</Text>
+                <View style={{ padding: 10, borderRadius: 10, backgroundColor: passwordMessage.type === 'success' ? colors.successBg : colors.dangerBg }}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: passwordMessage.type === 'success' ? colors.success : colors.danger, textAlign: 'center' }}>{passwordMessage.text}</Text>
                 </View>
               ) : null}
               <Input label={t('manageProfile:currentPassword')} secureTextEntry value={passwordForm.currentPassword} onChangeText={(v: string) => setPasswordForm(p => ({ ...p, currentPassword: v }))} error={passwordErrors.currentPassword} />

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.env
+.env.production
+docmaster-ad853-firebase-adminsdk-fbsvc-04896cd379.json
+uploads/

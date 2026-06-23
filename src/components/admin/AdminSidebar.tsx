@@ -24,6 +24,7 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
     { to: "/admin/matching", icon: "fa-solid fa-shuffle", label: "Matching" },
     { to: "/admin/withdrawals", icon: "fa-solid fa-money-bill-transfer", label: t("admin_withdrawals") },
     { to: "/admin/sms", icon: "fa-solid fa-comment-sms", label: "SMS" },
+    { to: "/admin/broadcast", icon: "fa-solid fa-bullhorn", label: "Broadcast" },
     { to: "/admin/activity-log", icon: "fa-solid fa-clock-rotate-left", label: "Journal" },
     { to: "/admin/settings", icon: "fa-solid fa-gear", label: t("admin_settings") },
   ];

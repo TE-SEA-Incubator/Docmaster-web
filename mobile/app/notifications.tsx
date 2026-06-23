@@ -6,8 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { notificationsService } from '@/core/api/notificationsService';
 import type { Notification } from '@/types';
-
-const PRIMARY = '#F5A64B';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type NotifMeta = { icon: keyof typeof Ionicons.glyphMap; bg: string; iconColor: string };
 const typeMeta: Record<string, NotifMeta> = {
@@ -17,11 +16,12 @@ const typeMeta: Record<string, NotifMeta> = {
   DOC_ADDED:         { icon: 'shield-checkmark-outline', bg: '#F5F3FF', iconColor: '#7C3AED' },
   PAYMENT_RECEIVED:  { icon: 'wallet-outline',           bg: '#F0FDF4', iconColor: '#16A34A' },
 };
-const defaultMeta: NotifMeta = { icon: 'notifications-outline', bg: '#FFF3E0', iconColor: PRIMARY };
+const defaultMeta: NotifMeta = { icon: 'notifications-outline', bg: '#FFF3E0', iconColor: '#F5A64B' };
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const colors = useThemeColors();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -52,36 +52,36 @@ export default function NotificationsScreen() {
   const unread = notifications.filter((n) => !n.is_read && !n.lue).length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundElement }}>
       {/* ── Header ── */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 20, paddingVertical: 16,
-        borderBottomWidth: 1, borderBottomColor: '#F0F0F0',
+        borderBottomWidth: 1, borderBottomColor: colors.border,
       }}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => ({
             width: 38, height: 38, borderRadius: 19,
-            backgroundColor: pressed ? '#F5F5F5' : '#FAFAFA',
-            borderWidth: 1, borderColor: '#F0F0F0',
+            backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement,
+            borderWidth: 1, borderColor: colors.border,
             alignItems: 'center', justifyContent: 'center',
           })}>
-          <Ionicons name="close" size={20} color="#1A1A1A" />
+          <Ionicons name="close" size={20} color={colors.text} />
         </Pressable>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>{t('notifications:title')}</Text>
+          <Text style={{ fontSize: 17, fontWeight: '800', color: colors.text }}>{t('notifications:title')}</Text>
           {unread > 0 && (
-            <View style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700' }}>{unread}</Text>
+            <View style={{ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
+              <Text style={{ color: colors.onPrimary, fontSize: 11, fontWeight: '700' }}>{unread}</Text>
             </View>
           )}
         </View>
 
         {unread > 0 ? (
           <Pressable onPress={markAllRead} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: PRIMARY }}>{t('notifications:markAllRead')}</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>{t('notifications:markAllRead')}</Text>
           </Pressable>
         ) : <View style={{ width: 38 }} />}
       </View>
@@ -91,15 +91,15 @@ export default function NotificationsScreen() {
         showsVerticalScrollIndicator={false}>
         {loading ? (
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingTop: 60 }}>
-            <ActivityIndicator size="large" color={PRIMARY} />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : notifications.length === 0 ? (
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 12 }}>
-            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="notifications-off-outline" size={28} color={PRIMARY} />
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.warningBg, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="notifications-off-outline" size={28} color={colors.primary} />
             </View>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>{t('notifications:emptyTitle')}</Text>
-            <Text style={{ fontSize: 14, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>{t('notifications:emptyTitle')}</Text>
+            <Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 20 }}>
               {t('notifications:emptyDesc')}
             </Text>
           </View>
@@ -115,19 +115,19 @@ export default function NotificationsScreen() {
                   style={({ pressed }) => ({
                     flexDirection: 'row', alignItems: 'flex-start', gap: 12,
                     padding: 14, borderRadius: 14,
-                    backgroundColor: pressed ? '#FAFAFA' : (isUnread ? '#FFFBF5' : '#FFFFFF'),
-                    borderWidth: 1, borderColor: isUnread ? '#FFE4B5' : '#F0F0F0',
+                    backgroundColor: pressed ? colors.backgroundSelected : (isUnread ? colors.warningBg : colors.backgroundElement),
+                    borderWidth: 1, borderColor: isUnread ? colors.warning + '40' : colors.border,
                   })}>
                   {isUnread && (
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: PRIMARY, marginTop: 6 }} />
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary, marginTop: 6 }} />
                   )}
                   <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: meta.bg, alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name={meta.icon} size={20} color={meta.iconColor} />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{notif.titre}</Text>
-                    <Text style={{ fontSize: 12, color: '#6B7280', lineHeight: 18 }}>{notif.message}</Text>
-                    <Text style={{ fontSize: 11, color: '#C4C4C4', marginTop: 3 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>{notif.titre}</Text>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 18 }}>{notif.message}</Text>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary + '66', marginTop: 3 }}>
                       {new Date(notif.created_at).toLocaleDateString('fr-FR')}
                     </Text>
                   </View>

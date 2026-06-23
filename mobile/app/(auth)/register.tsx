@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { useAuthStore } from '@/core/store/useAuthStore';
+import { useGoogleAuth } from '@/core/api/googleAuthService';
 import { Colors } from '@/constants/theme';
 
 export default function RegisterScreen() {
@@ -15,6 +16,7 @@ export default function RegisterScreen() {
   const router = useRouter();
   const register = useAuthStore((state) => state.register);
 
+  const { promptAsync, loading: googleLoading } = useGoogleAuth();
   const [form, setForm] = useState({ nom: '', prenom: '', email: '', telephone: '', mot_de_passe: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [errorApi, setErrorApi] = useState('');
@@ -93,7 +95,7 @@ export default function RegisterScreen() {
                 <ThemedView style={styles.dividerLine} />
               </ThemedView>
 
-              <Button title="S'inscrire avec Google" variant="outline" icon="logo-google" onPress={() => {}} />
+              <Button title="S'inscrire avec Google" variant="outline" icon="logo-google" loading={googleLoading} onPress={() => promptAsync()} />
             </ThemedView>
 
             <ThemedView style={styles.loginLinkRow}>

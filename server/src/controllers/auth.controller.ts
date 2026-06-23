@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UserService } from '../services/auth.service.ts';
 import { generateToken } from '../config/jwt.ts';
 import { activityLogService } from '../services/activity-log.service.ts';
+import admin from '../config/firebase-admin.ts';
 
 export class AuthController {
   private userService = new UserService();
@@ -408,17 +409,30 @@ export class AuthController {
    */
   async googleOAuth(req: Request, res: Response): Promise<void> {
     try {
-      const { token, email, displayName } = req.body;
+      const { token } = req.body;
 
-      // Validate required fields
-      if (!token || !email) {
-        res.status(400).json({ error: 'Token and email required' });
+      if (!token) {
+        res.status(400).json({ error: 'Token is required' });
         return;
       }
 
-      // Note: In production, verify Firebase token on backend using firebase-admin SDK
-      // For now, we'll trust the token from the frontend (secured by HTTPS)
-      // TODO: Install firebase-admin and verify token: admin.auth().verifyIdToken(token)
+      // Verify Firebase ID token
+      let decoded;
+      try {
+        decoded = await admin.auth().verifyIdToken(token);
+      } catch {
+        res.status(401).json({ error: 'Invalid or expired Firebase token' });
+        return;
+      }
+
+      const email = decoded.email;
+      if (!email) {
+        res.status(400).json({ error: 'Email not provided in Google token' });
+        return;
+      }
+
+      const displayName = decoded.name || '';
+      const photoUrl = decoded.picture || null;
 
       try {
         // Try to find existing user
@@ -427,7 +441,7 @@ export class AuthController {
         if (!user) {
           // Create new user from Google OAuth
           // Extract name parts from displayName
-          const nameParts = (displayName || '').split(' ');
+          const nameParts = displayName.split(' ');
           const prenom = nameParts[0] || 'User';
           const nom = nameParts.slice(1).join(' ') || 'Google';
 

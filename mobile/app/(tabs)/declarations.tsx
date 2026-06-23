@@ -4,9 +4,7 @@ import {
   Text,
   ScrollView,
   Pressable,
-  ActivityIndicator,
   RefreshControl,
-  StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,16 +15,7 @@ import type { Declaration } from '@/types';
 import { BottomTabInset } from '@/constants/theme';
 import { DeclarationsSkeleton } from '@/components/Skeletons';
 import { useTranslation } from 'react-i18next';
-
-// ── Design tokens (from DOC_TYPE_META) ──────────────────────────────────────
-const PRIMARY    = '#F5A64B';          // orange principal
-const GREEN_DARK = '#1E3A2F';          // vert profond DocMaster
-const GREEN      = '#16A34A';
-const CREAM      = '#FAF7F2';
-const BORDER     = '#EAE3D8';
-const TEXT_MAIN  = '#1A1A1A';
-const TEXT_MUTED = '#6B7280';
-const TEXT_SUBTLE = '#9CA3AF';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 // ── Filters ─────────────────────────────────────────────────────────────────
 const FILTERS = [
@@ -40,6 +29,7 @@ type FilterKey = (typeof FILTERS)[number]['key'];
 
 // ────────────────────────────────────────────────────────────────────────────
 export default function DeclarationsScreen() {
+  const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
@@ -77,66 +67,123 @@ export default function DeclarationsScreen() {
   }
 
   return (
-    <View style={styles.root}>
-      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['left', 'right']}>
       <ScrollView
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: 8, paddingBottom: insets.bottom + BottomTabInset + 32 },
-        ]}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 8,
+          paddingBottom: insets.bottom + BottomTabInset + 32,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* ── HEADER ─────────────────────────────────────────────────────── */}
-        <View style={styles.header}>
+        <View style={{ marginBottom: 16, gap: 10 }}>
           {/* Row 1 : back + title */}
-          <View style={styles.headerTop}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
             <Pressable
-              onPress={() => router.back()}
-              style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.5 }]}
+              onPress={() => router.replace('/(tabs)')}
+              style={({ pressed }) => ({
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: colors.backgroundElement,
+                borderWidth: 1,
+                borderColor: colors.border,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.5 : 1,
+              })}
             >
-              <Ionicons name="arrow-back" size={20} color={TEXT_MAIN} />
+              <Ionicons name="arrow-back" size={20} color={colors.text} />
             </Pressable>
-            <Text style={styles.headerTitle}>{t('declarations:title')}</Text>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: colors.text, letterSpacing: -0.4 }}>
+              {t('declarations:title')}
+            </Text>
           </View>
 
           {/* Row 2 : count badge */}
-          <Text style={styles.headerCount}>
+          <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500', letterSpacing: 0.2, paddingLeft: 2 }}>
             {filtered.length} {t(filtered.length !== 1 ? 'declarations:results' : 'declarations:result')}
           </Text>
 
           {/* Row 3 : CTA buttons — full-width, well-separated */}
-          <View style={styles.ctaRow}>
+          <View style={{ gap: 8, marginTop: 4 }}>
             {/* Primary action: Déclarer une perte */}
             <Pressable
               onPress={() => router.push('/declarer')}
-              style={({ pressed }) => [styles.ctaBtn, styles.ctaBtnLost, pressed && styles.ctaPressed]}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+                padding: 14,
+                borderRadius: 16,
+                borderWidth: 1.5,
+                backgroundColor: colors.warningBg,
+                borderColor: colors.tint,
+                opacity: pressed ? 0.82 : 1,
+                transform: [{ scale: pressed ? 0.985 : 1 }],
+              })}
             >
-              <View style={styles.ctaBtnIcon}>
-                <Ionicons name="alert-circle-outline" size={16} color={PRIMARY} />
+              <View style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                backgroundColor: colors.warningBg,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Ionicons name="alert-circle-outline" size={16} color={colors.primary} />
               </View>
-              <View style={styles.ctaBtnText}>
-                <Text style={styles.ctaBtnLabel}>{t('declarations:declareLost')}</Text>
-                <Text style={styles.ctaBtnSub}>{t('declarations:declareLostSub')}</Text>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, letterSpacing: -0.1 }}>
+                  {t('declarations:declareLost')}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '500' }}>
+                  {t('declarations:declareLostSub')}
+                </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={PRIMARY} />
+              <Ionicons name="chevron-forward" size={16} color={colors.primary} />
             </Pressable>
 
-            {/* Secondary action: Signaler un trouvé — GREEN_DARK breaks the orange monotony */}
+            {/* Secondary action: Signaler un trouvé — greenDark breaks the orange monotony */}
             <Pressable
               onPress={() => router.push('/trouver')}
-              style={({ pressed }) => [styles.ctaBtn, styles.ctaBtnFound, pressed && styles.ctaPressed]}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+                padding: 14,
+                borderRadius: 16,
+                borderWidth: 1.5,
+                backgroundColor: colors.successBg,
+                borderColor: colors.success,
+                opacity: pressed ? 0.82 : 1,
+                transform: [{ scale: pressed ? 0.985 : 1 }],
+              })}
             >
-              <View style={[styles.ctaBtnIcon, styles.ctaBtnIconFound]}>
-                <Ionicons name="search-outline" size={16} color={GREEN_DARK} />
+              <View style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                backgroundColor: colors.successBg,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Ionicons name="search-outline" size={16} color={colors.greenDark} />
               </View>
-              <View style={styles.ctaBtnText}>
-                <Text style={[styles.ctaBtnLabel, styles.ctaBtnLabelFound]}>{t('declarations:declareFound')}</Text>
-                <Text style={[styles.ctaBtnSub, styles.ctaBtnSubFound]}>{t('declarations:declareFoundSub')}</Text>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.greenDark, letterSpacing: -0.1 }}>
+                  {t('declarations:declareFound')}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.success, fontWeight: '500' }}>
+                  {t('declarations:declareFoundSub')}
+                </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={GREEN_DARK} />
+              <Ionicons name="chevron-forward" size={16} color={colors.greenDark} />
             </Pressable>
           </View>
         </View>
@@ -145,8 +192,13 @@ export default function DeclarationsScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersRow}
-          style={styles.filtersScroll}
+          contentContainerStyle={{
+            flexDirection: 'row',
+            gap: 8,
+            paddingVertical: 2,
+            paddingRight: 4,
+          }}
+          style={{ marginBottom: 12 }}
         >
           {FILTERS.map((f) => {
             const active = activeFilter === f.key;
@@ -154,18 +206,29 @@ export default function DeclarationsScreen() {
               <Pressable
                 key={f.key}
                 onPress={() => setActiveFilter(f.key)}
-                style={({ pressed }) => [
-                  styles.filterChip,
-                  active && styles.filterChipActive,
-                  pressed && { opacity: 0.8 },
-                ]}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 5,
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  backgroundColor: active ? colors.primary : colors.backgroundElement,
+                  borderWidth: 1,
+                  borderColor: active ? colors.primary : colors.border,
+                  opacity: pressed ? 0.8 : 1,
+                })}
               >
                 <Ionicons
                   name={f.icon as any}
                   size={13}
-                  color={active ? '#fff' : TEXT_MUTED}
+                  color={active ? colors.onPrimary : colors.textSecondary}
                 />
-                <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                <Text style={{
+                  fontSize: 12,
+                  fontWeight: '700',
+                  color: active ? colors.onPrimary : colors.textSecondary,
+                }}>
                   {t('declarations:' + f.key)}
                 </Text>
               </Pressable>
@@ -177,7 +240,7 @@ export default function DeclarationsScreen() {
         {filtered.length === 0 ? (
           <EmptyState activeFilter={activeFilter} t={t} />
         ) : (
-          <View style={styles.list}>
+          <View style={{ gap: 12 }}>
             {filtered.map((dec) => (
               <DeclarationCard
                 key={dec.id}
@@ -202,209 +265,57 @@ export default function DeclarationsScreen() {
 
 // ── Empty state ──────────────────────────────────────────────────────────────
 function EmptyState({ activeFilter, t }: { activeFilter: FilterKey; t: (key: string) => string }) {
+  const colors = useThemeColors();
   return (
-    <View style={styles.emptyBox}>
-      <View style={styles.emptyIcon}>
-        <Ionicons name="megaphone-outline" size={28} color={PRIMARY} />
+    <View style={{
+      backgroundColor: colors.backgroundElement,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderStyle: 'dashed',
+      padding: 36,
+      alignItems: 'center',
+      gap: 10,
+      marginTop: 8,
+    }}>
+      <View style={{
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: colors.warningBg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 4,
+      }}>
+        <Ionicons name="megaphone-outline" size={28} color={colors.primary} />
       </View>
-      <Text style={styles.emptyTitle}>{t('declarations:noDeclarations')}</Text>
-      <Text style={styles.emptySubtitle}>
+      <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, letterSpacing: -0.2 }}>
+        {t('declarations:noDeclarations')}
+      </Text>
+      <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', lineHeight: 19 }}>
         {activeFilter === 'all'
           ? t('declarations:noDeclarationsDesc')
           : t('declarations:noFilterResults')}
       </Text>
       <Pressable
         onPress={() => router.push('/declarer')}
-        style={({ pressed }) => [styles.emptyBtn, pressed && { opacity: 0.85 }]}
+        style={({ pressed }) => ({
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          marginTop: 8,
+          paddingHorizontal: 20,
+          paddingVertical: 12,
+          borderRadius: 12,
+          backgroundColor: colors.primary,
+          opacity: pressed ? 0.85 : 1,
+        })}
       >
-        <Ionicons name="add" size={16} color="#fff" />
-        <Text style={styles.emptyBtnText}>{t('declarations:newDeclaration')}</Text>
+        <Ionicons name="add" size={16} color={colors.onPrimary} />
+        <Text style={{ fontSize: 13, fontWeight: '700', color: colors.onPrimary }}>
+          {t('declarations:newDeclaration')}
+        </Text>
       </Pressable>
     </View>
   );
 }
-
-// ── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: CREAM },
-  safeArea: { flex: 1 },
-  loadingContainer: { flex: 1, backgroundColor: CREAM, alignItems: 'center', justifyContent: 'center' },
-  scrollContent: { paddingHorizontal: 16 },
-
-  // Header
-  header: {
-    marginBottom: 16,
-    gap: 10,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 2,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: TEXT_MAIN,
-    letterSpacing: -0.4,
-  },
-  headerCount: {
-    fontSize: 12,
-    color: TEXT_SUBTLE,
-    fontWeight: '500',
-    letterSpacing: 0.2,
-    paddingLeft: 2,
-  },
-
-  // CTA buttons
-  ctaRow: {
-    gap: 8,
-    marginTop: 4,
-  },
-  ctaBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1.5,
-  },
-  ctaBtnLost: {
-    backgroundColor: '#FFF8EE',
-    borderColor: '#FDDCAC',
-  },
-  ctaBtnFound: {
-    backgroundColor: '#F0F5F2',
-    borderColor: '#B8D4C4',
-  },
-  ctaPressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.985 }],
-  },
-  ctaBtnIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#FEF3C7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaBtnIconFound: {
-    backgroundColor: '#D4EAE0',
-  },
-  ctaBtnText: {
-    flex: 1,
-    gap: 2,
-  },
-  ctaBtnLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: TEXT_MAIN,
-    letterSpacing: -0.1,
-  },
-  ctaBtnLabelFound: {
-    color: GREEN_DARK,
-  },
-  ctaBtnSub: {
-    fontSize: 11,
-    color: TEXT_MUTED,
-    fontWeight: '500',
-  },
-  ctaBtnSubFound: {
-    color: '#5A8A70',
-  },
-
-  // Filters
-  filtersScroll: { marginBottom: 12 },
-  filtersRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 2,
-    paddingRight: 4,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  filterChipActive: {
-    backgroundColor: PRIMARY,
-    borderColor: PRIMARY,
-  },
-  filterChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: TEXT_MUTED,
-  },
-  filterChipTextActive: {
-    color: '#FFFFFF',
-  },
-
-  // List
-  list: { gap: 12 },
-
-  // Empty
-  emptyBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderStyle: 'dashed',
-    padding: 36,
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 8,
-  },
-  emptyIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FFF3E0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: TEXT_MAIN,
-    letterSpacing: -0.2,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: TEXT_SUBTLE,
-    textAlign: 'center',
-    lineHeight: 19,
-  },
-  emptyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: PRIMARY,
-  },
-  emptyBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-});

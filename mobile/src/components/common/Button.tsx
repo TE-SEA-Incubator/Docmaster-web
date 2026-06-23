@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, ActivityIndicator, type PressableProps, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../themed-text';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 
@@ -15,7 +16,7 @@ export type ButtonProps = Omit<PressableProps, 'style'> & {
   textStyle?: React.ComponentProps<typeof ThemedText>['style'];
 };
 
-const buttonStyles = StyleSheet.create({
+const getButtonStyles = (colors: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   base: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -26,21 +27,21 @@ const buttonStyles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   primary: {
-    backgroundColor: '#F5A64B',
+    backgroundColor: colors.primary,
   },
   secondary: {
-    backgroundColor: '#16A34A',
+    backgroundColor: colors.success,
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#EAE3D8',
+    borderColor: colors.border,
   },
   ghost: {
     backgroundColor: 'transparent',
   },
   danger: {
-    backgroundColor: '#EF4444',
+    backgroundColor: colors.danger,
   },
   disabled: {
     opacity: 0.5,
@@ -58,17 +59,19 @@ function ButtonInner({
   textStyle,
   ...rest
 }: ButtonProps) {
+  const colors = useThemeColors();
   const isDisabled = disabled || loading;
   const isOutlined = variant === 'outline' || variant === 'ghost';
+  const buttonStyles = useMemo(() => getButtonStyles(colors), [colors]);
 
   const palette = useMemo(() => {
-    if (isDisabled) return { text: '#9CA3AF', tint: '#9CA3AF' };
+    if (isDisabled) return { text: colors.textSecondary, tint: colors.textSecondary };
     if (isOutlined) {
-      if (variant === 'ghost') return { text: '#F5A64B', tint: '#F5A64B' };
-      return { text: '#1A1A1A', tint: '#1A1A1A' };
+      if (variant === 'ghost') return { text: colors.primary, tint: colors.primary };
+      return { text: colors.text, tint: colors.text };
     }
-    return { text: '#FFFFFF', tint: '#FFFFFF' };
-  }, [isDisabled, isOutlined, variant]);
+    return { text: colors.onPrimary, tint: colors.onPrimary };
+  }, [isDisabled, isOutlined, variant, colors]);
 
   const variantStyle = buttonStyles[variant] || buttonStyles.primary;
 

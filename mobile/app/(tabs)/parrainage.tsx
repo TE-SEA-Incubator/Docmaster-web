@@ -99,7 +99,7 @@ export default function ParrainageScreen() {
     <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <View style={{ paddingTop: insets.top, backgroundColor: GREEN_DARK }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
-          <Pressable onPress={() => router.back()} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 12 })}>
+          <Pressable onPress={() => router.replace('/(tabs)')} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 12 })}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </Pressable>
           <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>{t('parrainage:title')}</Text>

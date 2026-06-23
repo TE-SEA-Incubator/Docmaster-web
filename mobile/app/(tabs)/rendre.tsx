@@ -114,7 +114,7 @@ export default function RendreScreen() {
       <SafeAreaView className="flex-1 bg-[#F4EFE6] items-center justify-center p-6 gap-4">
         <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
         <ThemedText className="text-lg font-bold text-textMain">{t('rendre:declarationNotFound')}</ThemedText>
-        <Pressable onPress={() => router.back()} className="px-6 py-3 bg-primary rounded-2xl">
+        <Pressable onPress={() => router.replace('/(tabs)')} className="px-6 py-3 bg-primary rounded-2xl">
           <ThemedText className="text-white font-bold">{t('common:back')}</ThemedText>
         </Pressable>
       </SafeAreaView>
@@ -134,7 +134,7 @@ export default function RendreScreen() {
       >
         {/* Header */}
         <View className="flex-row items-center justify-between mb-6">
-          <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full bg-white items-center justify-center border border-borderMain">
+          <Pressable onPress={() => router.replace('/(tabs)')} className="w-10 h-10 rounded-full bg-white items-center justify-center border border-borderMain">
             <Ionicons name="chevron-back" size={20} color="#1A1A1A" />
           </Pressable>
           <ThemedText className="text-base font-bold text-textMain">{t('rendre:title')}</ThemedText>

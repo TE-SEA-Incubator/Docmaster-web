@@ -8,7 +8,8 @@
     "scheme": "docmaster",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.tesea.docmaster"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,13 +19,20 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.docmaster"
+      "package": "com.tesea.docmaster",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-notifications",
       "expo-router",
       [
         "expo-splash-screen",
@@ -76,7 +84,14 @@
       "router": {},
       "eas": {
         "projectId": "d62d23a5-c7ac-4b7e-849a-b8fb8f194d67"
-      }
+      },
+      "firebaseApiKey": "AIzaSyDIGJ6nLy-LwW8RrsukLIHjPVnESugtPCc",
+      "firebaseAuthDomain": "docmaster-ad853.firebaseapp.com",
+      "firebaseProjectId": "docmaster-ad853",
+      "firebaseStorageBucket": "docmaster-ad853.firebasestorage.app",
+      "firebaseMessagingSenderId": "805201822235",
+      "firebaseAppId": "1:805201822235:android:a6bcf433f4573e0b376ebe",
+      "googleClientId": "805201822235-1lm5tfjtm1hic1vp7u7uslfibe11pc12.apps.googleusercontent.com"
     }
   }
 }

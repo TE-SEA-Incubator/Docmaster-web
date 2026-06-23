@@ -59,7 +59,7 @@ export default function TrouverScreen() {
   };
 
   const goBack = () => {
-    if (step === 0) router.back();
+    if (step === 0) router.replace('/(tabs)');
     else setStep(s => s - 1);
   };
 

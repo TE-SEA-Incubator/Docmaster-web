@@ -1,0 +1,70 @@
+{
+  "project_info": {
+    "project_number": "805201822235",
+    "project_id": "docmaster-ad853",
+    "storage_bucket": "docmaster-ad853.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:805201822235:android:a6bcf433f4573e0b376ebe",
+        "android_client_info": {
+          "package_name": "com.tesea.docmaster"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "805201822235-eqso6s7mejktade2f6n3gndptjtd215b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tesea.docmaster",
+            "certificate_hash": "7d864bd7f9c4f3295f64459b911749a9823a71dc"
+          }
+        },
+        {
+          "client_id": "805201822235-k67hmqjfkptjb5ochd0ejsmi224o455p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tesea.docmaster",
+            "certificate_hash": "48658a4d7af2571a51aafea659efbbd55c99b547"
+          }
+        },
+        {
+          "client_id": "805201822235-kh85ci4g0je4uu0bv1ccnfuon1hnltkq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tesea.docmaster",
+            "certificate_hash": "3fbc7d239a050e69ee2a5ddf5bbcf2aae85bfa17"
+          }
+        },
+        {
+          "client_id": "805201822235-1lm5tfjtm1hic1vp7u7uslfibe11pc12.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIGJ6nLy-LwW8RrsukLIHjPVnESugtPCc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "805201822235-1lm5tfjtm1hic1vp7u7uslfibe11pc12.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "805201822235-0nar62h0j8op4glmto5asabrm2rihcvd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.docmaster"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

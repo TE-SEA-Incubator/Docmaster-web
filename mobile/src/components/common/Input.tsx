@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, TextInput, Pressable, StyleSheet, type TextInputProps, type NativeSyntheticEvent, type TextInputFocusEventData, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '../themed-text';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export type InputProps = TextInputProps & {
   label?: string;
@@ -10,35 +11,35 @@ export type InputProps = TextInputProps & {
   containerStyle?: ViewStyle;
 };
 
-const inputStyles = StyleSheet.create({
+const getInputStyles = (colors: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     gap: 6,
   },
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#1A1A1A',
+    color: colors.text,
     marginLeft: 4,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.backgroundElement,
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 54,
   },
   inputWrapperDefault: {
-    borderColor: '#EAE3D8',
+    borderColor: colors.border,
   },
   inputWrapperFocused: {
-    borderColor: '#F5A64B',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.tint,
+    backgroundColor: colors.backgroundElement,
   },
   inputWrapperError: {
-    borderColor: '#EF4444',
-    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerBg,
   },
   iconContainer: {
     marginRight: 8,
@@ -46,7 +47,7 @@ const inputStyles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: 15,
-    color: '#1A1A1A',
+    color: colors.text,
     height: '100%',
     lineHeight: 20,
   },
@@ -54,7 +55,7 @@ const inputStyles = StyleSheet.create({
     padding: 4,
   },
   errorText: {
-    color: '#EF4444',
+    color: colors.danger,
     fontSize: 12,
     marginLeft: 8,
   },
@@ -71,8 +72,11 @@ function InputInner({
   onBlur,
   ...rest
 }: InputProps) {
+  const colors = useThemeColors();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+
+  const inputStyles = useMemo(() => getInputStyles(colors), [colors]);
 
   const togglePasswordVisibility = useCallback(() => {
     setIsPasswordVisible(prev => !prev);
@@ -96,7 +100,7 @@ function InputInner({
     return inputStyles.inputWrapperDefault;
   }, [error, isFocused]);
 
-  const iconColor = error ? '#EF4444' : isFocused ? '#F5A64B' : '#6B7280';
+  const iconColor = error ? colors.danger : isFocused ? colors.tint : colors.textSecondary;
 
   return (
     <View style={[inputStyles.container, containerStyle]}>
@@ -116,7 +120,7 @@ function InputInner({
           secureTextEntry={isSecure}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.textSecondary}
           {...rest}
         />
         {secureTextEntry && (
@@ -124,7 +128,7 @@ function InputInner({
             <Ionicons
               name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
               size={20}
-              color="#6B7280"
+              color={colors.textSecondary}
             />
           </Pressable>
         )}

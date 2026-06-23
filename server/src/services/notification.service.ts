@@ -1,12 +1,17 @@
 import { NotificationRepository, Notification } from '../repositories/notification.repository.ts';
+import { PushTokenRepository } from '../repositories/push-token.repository.ts';
 import { subscriptionService } from './subscription.service.ts';
 import { SocketService } from './socket.service.ts';
 import { MailService } from './mail.service.ts';
 import { SmsService } from './sms.service.ts';
 import { UserRepository } from '../repositories/auth.repository.ts';
+import admin from '../config/firebase-admin.ts';
+
+const FCM_BATCH_SIZE = 500;
 
 export class NotificationService {
   private notificationRepository: NotificationRepository;
+  private pushTokenRepository: PushTokenRepository;
   private socketService: SocketService;
   private mailService: MailService;
   private smsService: SmsService;
@@ -14,6 +19,7 @@ export class NotificationService {
 
   constructor() {
     this.notificationRepository = new NotificationRepository();
+    this.pushTokenRepository = new PushTokenRepository();
     this.socketService = SocketService.getInstance();
     this.mailService = new MailService();
     this.smsService = new SmsService();
@@ -103,7 +109,19 @@ export class NotificationService {
     }
 
     if (channels.push) {
-      console.log(`[PUSH-PROVIDER] Sending Push to user ${user_id}: ${title}`);
+      try {
+        const tokens = await this.pushTokenRepository.findByUserId(user_id);
+        const fcmTokens = tokens.map(t => t.token).filter(Boolean);
+        if (fcmTokens.length > 0) {
+          const fcmMessage = {
+            notification: { title, body: message },
+            tokens: fcmTokens,
+          };
+          await admin.messaging().sendEachForMulticast(fcmMessage);
+        }
+      } catch (err) {
+        console.error('Error sending push notification:', err);
+      }
     }
   }
 
@@ -255,6 +273,49 @@ export class NotificationService {
     } catch (error) {
       console.error('Error notifying admins:', error);
     }
+  }
+
+  /**
+   * Send a broadcast push notification to all users with registered tokens
+   */
+  async sendBroadcast(title: string, message: string, adminId: string) {
+    const allTokens = await this.pushTokenRepository.findAllTokens();
+    if (allTokens.length === 0) {
+      return { sentCount: 0, totalTokens: 0 };
+    }
+
+    const fcmTokens = allTokens.map(t => t.token).filter(Boolean);
+    let sentCount = 0;
+
+    // FCM limit is 500 tokens per sendEachForMulticast
+    for (let i = 0; i < fcmTokens.length; i += FCM_BATCH_SIZE) {
+      const batch = fcmTokens.slice(i, i + FCM_BATCH_SIZE);
+      try {
+        const response = await admin.messaging().sendEachForMulticast({
+          notification: { title, body: message },
+          tokens: batch,
+        });
+        sentCount += response.successCount;
+      } catch (err) {
+        console.error(`[Broadcast] FCM batch error at index ${i}:`, err);
+      }
+    }
+
+    // Create in-app notification for each user
+    const userIds = [...new Set(allTokens.map(t => t.user_id))];
+    const notifPromises = userIds.map(userId =>
+      this.createNotification({
+        user_id: userId,
+        type: 'BROADCAST',
+        title,
+        message,
+        metadata: { broadcast: true, sentBy: adminId },
+      }).catch(() => {})
+    );
+    await Promise.all(notifPromises);
+
+    console.log(`[Broadcast] Sent to ${sentCount}/${fcmTokens.length} devices, ${userIds.length} users notified`);
+    return { sentCount, totalTokens: fcmTokens.length, usersNotified: userIds.length };
   }
 
 }

@@ -81,7 +81,7 @@ export function PlusSheet({ visible, onClose }: PlusSheetProps) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
+      <Pressable style={[styles.overlay]} onPress={onClose}>
         <Pressable
           style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 60 }]}
           onPress={(e) => e.stopPropagation()}
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)', // Un poil plus sombre pour mieux détacher le sheet
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   sheet: {
     borderTopLeftRadius: 24,

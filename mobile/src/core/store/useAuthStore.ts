@@ -113,7 +113,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setUser: (user, token) => {
+  setUser: async (user, token) => {
+    await setTokens(token, token);
+    await saveSession(user as unknown as Record<string, unknown>);
     set({ user, token, isAuthenticated: true, isLoading: false });
   },
 

@@ -8,9 +8,8 @@ import { declarationsService } from '@/core/api/declarationsService';
 import { documentsService } from '@/core/api/documentsService';
 import { BottomTabInset } from '@/constants/theme';
 import { useAuthStore } from '@/core/store/useAuthStore';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import type { Declaration, Document } from '@/types';
-
-const PRIMARY = '#F5A64B';
 
 function getDocIcon(type?: string): keyof typeof Ionicons.glyphMap {
   const t = (type || '').toLowerCase();
@@ -48,6 +47,7 @@ export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { user } = useAuthStore();
+  const colors = useThemeColors();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,8 +78,8 @@ export default function SearchScreen() {
               status: isLost ? t('search:lost') : t('search:found'),
               date: d.created_at,
               icon: getDocIcon(docName),
-              color: isLost ? '#EF4444' : '#16A34A',
-              bgColor: isLost ? '#FEF2F2' : '#F0FDF4',
+              color: isLost ? colors.danger : colors.success,
+              bgColor: isLost ? colors.dangerBg : colors.successBg,
               isLost,
             });
           });
@@ -105,8 +105,8 @@ export default function SearchScreen() {
                 status: d.is_lost ? t('search:lost') : t('search:active'),
                 date: d.created_at || '',
                 icon: getDocIcon(d.type_doc),
-                color: d.is_lost ? '#EF4444' : '#16A34A',
-                bgColor: d.is_lost ? '#FEF2F2' : '#F0FDF4',
+                color: d.is_lost ? colors.danger : colors.success,
+                bgColor: d.is_lost ? colors.dangerBg : colors.successBg,
                 isLost: d.is_lost,
               });
             });
@@ -126,28 +126,28 @@ export default function SearchScreen() {
   }, [mode]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundElement }}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 32, paddingHorizontal: 20, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ marginBottom: 20 }}>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>{t('search:title')}</Text>
-          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t('search:subtitle')}</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 4 }}>{t('search:title')}</Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary }}>{t('search:subtitle')}</Text>
         </View>
 
         <View style={{
           flexDirection: 'row', alignItems: 'center', gap: 10,
-          backgroundColor: '#FAFAFA', borderRadius: 16,
-          borderWidth: 1, borderColor: '#F0F0F0',
+          backgroundColor: colors.inputBg, borderRadius: 16,
+          borderWidth: 1, borderColor: colors.border,
           paddingHorizontal: 16, height: 52, marginBottom: 12,
         }}>
-          <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+          <Ionicons name="search-outline" size={20} color={colors.textSecondary} />
           <TextInput
-            style={{ flex: 1, fontSize: 15, color: '#1A1A1A' }}
+            style={{ flex: 1, fontSize: 15, color: colors.text }}
             placeholder={t('search:placeholder')}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textSecondary}
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={handleSearch}
@@ -155,7 +155,7 @@ export default function SearchScreen() {
           />
           {query.length > 0 && (
             <Pressable onPress={() => { setQuery(''); setResults([]); setSearched(false); }}>
-              <Ionicons name="close-circle" size={20} color="#D1D5DB" />
+              <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
             </Pressable>
           )}
         </View>
@@ -169,12 +169,12 @@ export default function SearchScreen() {
                 onPress={() => setMode(m)}
                 style={{
                   paddingVertical: 6, paddingHorizontal: 14, borderRadius: 999,
-                  backgroundColor: mode === m ? PRIMARY : '#F5F5F5',
+                  backgroundColor: mode === m ? colors.primary : colors.inputBg,
                 }}
               >
                 <Text style={{
                   fontSize: 12, fontWeight: '700',
-                  color: mode === m ? '#FFFFFF' : '#6B7280',
+                  color: mode === m ? colors.onPrimary : colors.textSecondary,
                 }}>
                   {m === 'tous' ? t('search:all') : m === 'declarations' ? t('search:declarations') : t('search:documents')}
                 </Text>
@@ -185,21 +185,21 @@ export default function SearchScreen() {
 
         {loading ? (
           <View style={{ paddingVertical: 60, alignItems: 'center' }}>
-            <ActivityIndicator size="large" color={PRIMARY} />
-            <Text style={{ marginTop: 12, color: '#9CA3AF', fontSize: 13 }}>{t('search:searching')}</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={{ marginTop: 12, color: colors.textSecondary, fontSize: 13 }}>{t('search:searching')}</Text>
           </View>
         ) : !searched ? (
           <View style={{ paddingVertical: 60, alignItems: 'center', gap: 12 }}>
             <View style={{
               width: 72, height: 72, borderRadius: 36,
-              backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: `${colors.primary}18`, alignItems: 'center', justifyContent: 'center',
             }}>
-              <Ionicons name="search-outline" size={34} color={PRIMARY} />
+              <Ionicons name="search-outline" size={34} color={colors.primary} />
             </View>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>
               {t('search:emptyTitle')}
             </Text>
-            <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 20, maxWidth: 280 }}>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', lineHeight: 20, maxWidth: 280 }}>
               {t('search:emptyDesc')}
             </Text>
           </View>
@@ -207,18 +207,18 @@ export default function SearchScreen() {
           <View style={{ paddingVertical: 60, alignItems: 'center', gap: 12 }}>
             <View style={{
               width: 64, height: 64, borderRadius: 32,
-              backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: colors.inputBg, alignItems: 'center', justifyContent: 'center',
             }}>
-              <Ionicons name="search-outline" size={28} color="#D1D5DB" />
+              <Ionicons name="search-outline" size={28} color={colors.textSecondary} />
             </View>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1A1A1A' }}>{t('search:noResultsTitle')}</Text>
-            <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{t('search:noResultsTitle')}</Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center' }}>
               {t('search:noResultsDesc').replace('{{query}}', query)}
             </Text>
           </View>
         ) : (
           <View style={{ gap: 10 }}>
-            <Text style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 4 }}>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 4 }}>
               {results.length} {results.length > 1 ? t('search:results') : t('search:result')}
             </Text>
             {results.map((item) => (
@@ -227,8 +227,8 @@ export default function SearchScreen() {
                 onPress={() => router.push(item.type === 'declaration' ? `/declaration/${item.id}` : `/document/${item.id}`)}
                 style={({ pressed }) => ({
                   flexDirection: 'row', alignItems: 'center', gap: 14,
-                  backgroundColor: pressed ? '#F9F9F9' : '#FFFFFF',
-                  borderRadius: 16, borderWidth: 1, borderColor: '#F0F0F0',
+                  backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement,
+                  borderRadius: 16, borderWidth: 1, borderColor: colors.border,
                   padding: 14,
                 })}
               >
@@ -241,7 +241,7 @@ export default function SearchScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }} numberOfLines={1}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }} numberOfLines={1}>
                       {item.title}
                     </Text>
                     <View style={{
@@ -253,11 +253,11 @@ export default function SearchScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3 }} numberOfLines={1}>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 3 }} numberOfLines={1}>
                     {item.subtitle} · {timeAgo(item.date)}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
               </Pressable>
             ))}
           </View>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/common/Input';
 import { ThemedText } from '@/components/themed-text';
 import { DatePickerInput } from './DatePickerInput';
@@ -13,11 +14,13 @@ type DocDynamicFieldsProps = {
 };
 
 export const DocDynamicFields: React.FC<DocDynamicFieldsProps> = ({ fields, values, onChange }) => {
+  const { t } = useTranslation();
+
   if (!fields || fields.length === 0) {
     return (
       <View style={styles.emptyBox}>
         <ThemedText style={styles.emptyText}>
-          Aucun champ supplémentaire requis pour ce type de document.
+          {t('declarer:loadingFields')}
         </ThemedText>
       </View>
     );
@@ -27,7 +30,9 @@ export const DocDynamicFields: React.FC<DocDynamicFieldsProps> = ({ fields, valu
     <View style={styles.container}>
       {fields.map((field) => {
         const isOptional = !!field.optional;
-        const labelText = isOptional ? `${field.label} (Optionnel)` : `${field.label} *`;
+        const fieldLabel = t(`declarer:${field.label}`);
+        const fieldPlaceholder = field.placeholder ? t(`declarer:${field.placeholder}`) : '';
+        const labelText = isOptional ? `${fieldLabel} (${t('common:optional')})` : `${fieldLabel} *`;
         const isDate = field.type === 'date';
 
         return (
@@ -43,7 +48,7 @@ export const DocDynamicFields: React.FC<DocDynamicFieldsProps> = ({ fields, valu
               <Input
                 value={values[field.key] || ''}
                 onChangeText={(val) => onChange(field.key, val)}
-                placeholder={field.placeholder || ''}
+                placeholder={fieldPlaceholder}
                 multiline={field.multiline || field.type === 'textarea'}
                 keyboardType={field.keyboardType}
                 icon={(field.icon || 'create-outline') as any}

@@ -106,8 +106,18 @@ export default function RechercherScreen() {
 
   const resolveName = useCallback((docType?: string, info?: { nom?: string } | null) => {
     if (info?.nom) return info.nom;
-    if (docType && docTypeMap[docType]) return docTypeMap[docType];
-    return docType || t('rechercher:found');
+    if (!docType) return t('rechercher:found');
+    if (docTypeMap[docType]) return docTypeMap[docType];
+    const upper = docType.toUpperCase();
+    if (docTypeMap[upper]) return docTypeMap[upper];
+    const lower = docType.toLowerCase();
+    if (docTypeMap[lower]) return docTypeMap[lower];
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(docType)) {
+      for (const [id, name] of Object.entries(docTypeMap)) {
+        if (id.toLowerCase() === lower) return name;
+      }
+    }
+    return docType.replace(/_/g, ' ').replace(/-/g, ' ');
   }, [docTypeMap, t]);
 
   useEffect(() => {

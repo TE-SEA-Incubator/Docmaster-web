@@ -59,6 +59,11 @@ export const authService = {
     return res.data;
   },
 
+  async googleLogin(token: string) {
+    const res = await apiClient.post<ApiResponse<{ token: string; user: UserProfile }>>('auth/google-oauth', { token });
+    return res.data;
+  },
+
   async changePassword(currentPassword: string, newPassword: string) {
     const res = await apiClient.put<ApiResponse>('auth/password', {
       current_password: currentPassword,

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Animated, Dimensions, TouchableOpacity } from 'react-native';
+import { View, ScrollView, KeyboardAvoidingView, Platform, Animated, Dimensions, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
@@ -22,8 +22,8 @@ import { Button } from '@/components/common/Button';
 import { ThemedText } from '@/components/themed-text';
 import { Input } from '@/components/common/Input';
 import { Ionicons } from '@expo/vector-icons';
-import { PRIMARY, TEXT_MUTED, BORDER, CREAM, TEXT_MAIN, GREEN } from '@/components/declarations/wizard/DOC_TYPE_META';
 import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type Urgency = 'Basse' | 'Modérée' | 'Haute';
 
@@ -43,17 +43,18 @@ function addMonths(date: Date, months: number): Date {
 }
 
 export default function DeclarerScreen() {
+  const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const STEPS = [t('declarer:step0Short'), t('declarer:step1Short'), t('declarer:step2Short'), t('declarer:step3Short'), t('declarer:step4Short'), t('declarer:step5Short')];
+  const STEPS = [t('declarer:whoShort'), t('declarer:docShort'), t('declarer:detailsShort'), t('declarer:locationShort'), t('declarer:contactShort'), t('declarer:verifyShort')];
   const STEP_HEADINGS = [
-    { title: t('declarer:step0Title'), desc: t('declarer:step0Desc') },
-    { title: t('declarer:step1Title'), desc: t('declarer:step1Desc') },
-    { title: t('declarer:step2Title'), desc: t('declarer:step2Desc') },
-    { title: t('declarer:step3Title'), desc: t('declarer:step3Desc') },
-    { title: t('declarer:step4Title'), desc: t('declarer:step4Desc') },
-    { title: t('declarer:step5Title'), desc: t('declarer:step5Desc') },
+    { title: t('declarer:whoTitle'), desc: t('declarer:whoDesc') },
+    { title: t('declarer:docTitle'), desc: t('declarer:docDesc') },
+    { title: t('declarer:detailsTitle'), desc: t('declarer:detailsDesc') },
+    { title: t('declarer:locationTitle'), desc: t('declarer:locationDesc') },
+    { title: t('declarer:contactTitle'), desc: t('declarer:contactDesc') },
+    { title: t('declarer:verifyTitle'), desc: t('declarer:verifyDesc') },
   ];
   const [step, setStep] = useState(0);
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -143,7 +144,7 @@ export default function DeclarerScreen() {
 
   const handleBack = () => {
     if (step === 0) {
-      router.back();
+      router.replace('/(tabs)');
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -199,10 +200,10 @@ export default function DeclarerScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setSuccessRef(result.data?.identifiant_doc_dm || "SUCCES");
       } else {
-        setFeedback({ visible: true, type: 'error', title: t('common:error'), message: result.message || t('declarer:genericErrorMessage') });
+        setFeedback({ visible: true, type: 'error', title: t('common:error'), message: result.message || t('declarer:submitError') });
       }
     } catch (error) {
-      setFeedback({ visible: true, type: 'error', title: t('common:networkError'), message: t('declarer:networkErrorMessage') });
+      setFeedback({ visible: true, type: 'error', title: t('common:networkError'), message: t('declarer:submitNetworkError') });
     } finally {
       setSubmitting(false);
     }
@@ -216,10 +217,10 @@ export default function DeclarerScreen() {
     const heading = STEP_HEADINGS[step];
 
     return (
-      <View style={styles.stepContent}>
-        <View style={styles.headingBlock}>
-          <ThemedText style={styles.stepTitle}>{heading.title}</ThemedText>
-          <ThemedText style={styles.stepDesc}>{heading.desc}</ThemedText>
+      <View style={{ gap: 20 }}>
+        <View style={{ gap: 4 }}>
+          <ThemedText style={{ fontSize: 20, fontWeight: '800', color: colors.text, letterSpacing: -0.4 }}>{heading.title}</ThemedText>
+          <ThemedText style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18 }}>{heading.desc}</ThemedText>
         </View>
 
         {step === 0 && <DeclarationTypePicker selected={declType} onSelect={setDeclType} />}
@@ -235,54 +236,70 @@ export default function DeclarerScreen() {
                 on l'exige (cf. web Declarer.tsx:810-848). */}
             {selectedTypeMeta.hasExpiration && !hasDateDelivranceField && (
               <DatePickerInput
-                label={t('declarer:dateDelivrance')}
+                label={t('declarer:deliveryDate')}
                 value={dateDelivrance || new Date()}
                 onChange={setDateDelivrance}
               />
             )}
             {selectedTypeMeta.hasExpiration && (
-              <View style={styles.expirationBox}>
-                <ThemedText style={styles.expirationLabel}>{t('declarer:expirationDate')}</ThemedText>
-                <View style={styles.expirationInput}>
-                  <Ionicons name="calendar-outline" size={18} color="#9CA3AF" />
-                  <ThemedText style={styles.expirationText}>
+              <View style={{ gap: 6 }}>
+                <ThemedText style={{ fontSize: 13, fontWeight: '600', color: colors.text, marginLeft: 4 }}>{t('declarer:expirationDate')}</ThemedText>
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 14,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 12,
+                  gap: 10,
+                  backgroundColor: colors.backgroundSelected,
+                  opacity: 0.7,
+                }}>
+                  <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
+                  <ThemedText style={{ fontSize: 14, fontWeight: '600', color: colors.textSecondary }}>
                     {dateDelivrance
                       ? addMonths(dateDelivrance, selectedTypeMeta.delai_expiration_mois).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
-                      : t('declarer:fillDelivranceDate')}
+                      : t('declarer:deliveryPlaceholder')}
                   </ThemedText>
                 </View>
               </View>
             )}
           </View>
         ) : (
-          <View style={styles.gap}>
-            <ThemedText style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>
+          <View style={{ gap: 24 }}>
+            <ThemedText style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center' }}>
               {t('declarer:loadingFields')}
             </ThemedText>
           </View>
         ))}
         {step === 3 && (
-          <View style={styles.gap}>
-            <DatePickerInput label={t('declarer:dateLost')} value={datePerte} onChange={setDatePerte} />
+          <View style={{ gap: 24 }}>
+            <DatePickerInput label={t('declarer:lossDate')} value={datePerte} onChange={setDatePerte} />
             <DatePickerInput
               mode="time"
-              label={t('declarer:timeLost')}
+              label={t('declarer:lossTime')}
               value={lossTime || new Date()}
               onChange={setLossTime}
             />
-            <PlaceChipInput value={place} onChange={setPlace} />
             <Input
-              label={t('declarer:district')}
-              value={quartier}
-              onChangeText={setQuartier}
-              placeholder={t('declarer:districtPlaceholder')}
+              label={t('declarer:city')}
+              value={place}
+              onChangeText={setPlace}
+              placeholder={t('declarer:cityPlaceholder')}
               icon="location-outline"
             />
             <Input
-              label={t('declarer:exactPlace')}
+              label={t('declarer:neighborhood')}
+              value={quartier}
+              onChangeText={setQuartier}
+              placeholder={t('declarer:neighborhoodPlaceholder')}
+              icon="location-outline"
+            />
+            <PlaceChipInput
+              label={t('declarer:exactLocation')}
+              placeholder={t('declarer:exactLocationPlaceholder')}
               value={lieuPrecis}
-              onChangeText={setLieuPrecis}
-              placeholder={t('declarer:exactPlacePlaceholder')}
+              onChange={setLieuPrecis}
               icon="map-outline"
             />
             <Input
@@ -298,7 +315,7 @@ export default function DeclarerScreen() {
           </View>
         )}
         {step === 4 && (
-          <View style={styles.gap}>
+          <View style={{ gap: 24 }}>
             <ContactBlock phone={phone} email={email} setPhone={setPhone} setEmail={setEmail} />
             <UrgencySelector selected={urgency} onSelect={setUrgency} />
           </View>
@@ -321,33 +338,44 @@ export default function DeclarerScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingBottom: insets.bottom }}>
       <WizardTopBar
         title={t('declarer:title')}
         onBack={handleBack}
-        onClose={() => router.back()}
+        onClose={() => router.replace('/(tabs)')}
       />
       <Stepper steps={STEPS} current={step} />
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 20 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {renderStepContent()}
         </ScrollView>
       </KeyboardAvoidingView>
-      <View style={styles.bottomBar}>
-        <View style={styles.bottomBarInner}>
+      <View style={{
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        backgroundColor: colors.surface,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 8,
+      }}>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
           {step > 0 ? (
-            <Button title={t('common:back')} variant="outline" onPress={handleBack} style={styles.backBtn} />
+            <Button title={t('common:back')} variant="outline" onPress={handleBack} style={{ flex: 1 }} />
           ) : (
-            <View style={styles.backBtn} />
+            <View style={{ flex: 1 }} />
           )}
           <Button
-            title={step === 5 ? (submitting ? t('declarer:sending') : t('declarer:submit')) : t('common:continue')}
+            title={step === 5 ? (submitting ? t('common:submitting') : t('common:submit')) : t('common:continue')}
             onPress={handleNext}
             disabled={!canProceed() || submitting}
             loading={submitting}
             icon={step === 5 ? 'checkmark-circle-outline' : 'arrow-forward-outline'}
             iconPosition={step === 5 ? 'left' : 'right'}
-            style={styles.nextBtn}
+            style={{ flex: 2 }}
           />
         </View>
       </View>
@@ -377,198 +405,108 @@ function RecapSection({
   urgency: Urgency | null;
   onEditStep: (s: number) => void;
 }) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const formatDate = (d: Date) =>
     d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
 
   const FIELDS: { label: string; value: string; step: number; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { label: t('declarer:recapDeclarationFor'), value: declType === 'self' ? t('declarer:myself') : t('declarer:someoneElse'), step: 0, icon: declType === 'self' ? 'person-outline' : 'people-outline' },
-    { label: t('declarer:documentType'), value: selectedTypeMeta?.nom || '—', step: 1, icon: selectedTypeMeta?.icone || 'document-text-outline' },
+    { label: t('declarer:declarationFor'), value: declType === 'self' ? t('declarer:forMe') : t('declarer:forOther'), step: 0, icon: declType === 'self' ? 'person-outline' : 'people-outline' },
+    { label: t('declarer:docType'), value: selectedTypeMeta?.nom || '—', step: 1, icon: selectedTypeMeta?.icone || 'document-text-outline' },
   ];
 
   // Add dynamic fields
   if (selectedTypeMeta?.fields) {
     (selectedTypeMeta.fields as any[]).forEach((f: any) => {
       if (dynamicValues[f.key]) {
-        FIELDS.push({ label: f.label, value: dynamicValues[f.key], step: 2, icon: f.icon || 'create-outline' });
+        FIELDS.push({ label: t(`declarer:${f.label}`), value: dynamicValues[f.key], step: 2, icon: f.icon || 'create-outline' });
       }
     });
   }
 
   FIELDS.push(
-    { label: t('declarer:dateLost'), value: formatDate(datePerte), step: 3, icon: 'calendar-outline' },
-    { label: t('declarer:recapPlace'), value: place || '—', step: 3, icon: 'location-outline' },
-    { label: t('declarer:recapPhone'), value: phone || '—', step: 4, icon: 'call-outline' },
-    { label: t('declarer:recapEmail'), value: email || t('common:notProvided'), step: 4, icon: 'mail-outline' },
-    { label: t('declarer:recapUrgency'), value: urgency || t('declarer:urgencyNotSpecified'), step: 4, icon: 'flash-outline' },
+    { label: t('declarer:lossDateLabel'), value: formatDate(datePerte), step: 3, icon: 'calendar-outline' },
+    { label: t('declarer:locationLabel'), value: place || '—', step: 3, icon: 'location-outline' },
+    { label: t('common:phone'), value: phone || '—', step: 4, icon: 'call-outline' },
+    { label: t('common:email'), value: email || t('common:notProvided'), step: 4, icon: 'mail-outline' },
+    { label: t('declarer:urgency'), value: urgency || t('declarer:notSpecified'), step: 4, icon: 'flash-outline' },
   );
 
   return (
-    <View style={recapStyles.container}>
-      <View style={recapStyles.card}>
+    <View style={{ gap: 16 }}>
+      <View style={{
+        backgroundColor: colors.surface,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+        overflow: 'hidden',
+      }}>
         {FIELDS.map((field, idx) => (
           <View key={idx}>
-            {idx > 0 && <View style={recapStyles.divider} />}
-            <View style={recapStyles.row}>
-              <View style={recapStyles.iconWrap}>
-                <Ionicons name={field.icon} size={14} color={PRIMARY} />
+            {idx > 0 && <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 16 }} />}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: 14,
+              paddingHorizontal: 16,
+              gap: 12,
+            }}>
+              <View style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                backgroundColor: colors.backgroundSelected,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Ionicons name={field.icon} size={14} color={colors.primary} />
               </View>
-              <View style={recapStyles.textWrap}>
-                <ThemedText style={recapStyles.label}>{field.label}</ThemedText>
-                <ThemedText style={recapStyles.value} numberOfLines={2}>{field.value}</ThemedText>
+              <View style={{ flex: 1 }}>
+                <ThemedText style={{
+                  fontSize: 10,
+                  fontWeight: '700',
+                  color: colors.textSecondary,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  marginBottom: 2,
+                }}>{field.label}</ThemedText>
+                <ThemedText style={{ fontSize: 14, fontWeight: '600', color: colors.text }} numberOfLines={2}>{field.value}</ThemedText>
               </View>
-              <TouchableOpacity onPress={() => onEditStep(field.step)} style={recapStyles.editBtn} hitSlop={8}>
-                <Ionicons name="create-outline" size={14} color={TEXT_MUTED} />
+              <TouchableOpacity onPress={() => onEditStep(field.step)} style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: colors.backgroundSelected,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }} hitSlop={8}>
+                <Ionicons name="create-outline" size={14} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
           </View>
         ))}
       </View>
-      <View style={recapStyles.notice}>
-        <Ionicons name="shield-checkmark-outline" size={16} color={GREEN} />
-        <ThemedText style={recapStyles.noticeText}>
-          {t('declarer:recapNotice')}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        backgroundColor: colors.successBg,
+        borderRadius: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: colors.success,
+      }}>
+        <Ionicons name="shield-checkmark-outline" size={16} color={colors.success} />
+        <ThemedText style={{
+          flex: 1,
+          fontSize: 12,
+          color: colors.greenDark,
+          lineHeight: 17,
+          fontWeight: '500',
+        }}>
+            {t('declarer:authenticityNotice')}
         </ThemedText>
       </View>
     </View>
   );
 }
-
-const recapStyles = StyleSheet.create({
-  container: { gap: 16 },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: BORDER,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  iconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: '#FEF0DC',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textWrap: { flex: 1 },
-  label: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: TEXT_MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  value: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: TEXT_MAIN,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F0EAE0',
-    marginHorizontal: 16,
-  },
-  editBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#F5F0EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notice: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: '#F0FDF4',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-  },
-  noticeText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#166534',
-    lineHeight: 17,
-    fontWeight: '500',
-  },
-});
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: CREAM },
-  flex: { flex: 1 },
-  content: { padding: 16, gap: 20 },
-  stepContent: { gap: 20 },
-  headingBlock: {
-    gap: 4,
-  },
-  stepTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: TEXT_MAIN,
-    letterSpacing: -0.4,
-  },
-  stepDesc: {
-    fontSize: 13,
-    color: TEXT_MUTED,
-    lineHeight: 18,
-  },
-  gap: { gap: 24 },
-  expirationBox: {
-    gap: 6,
-  },
-  expirationLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: TEXT_MAIN,
-    marginLeft: 4,
-  },
-  expirationInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 12,
-    gap: 10,
-    backgroundColor: '#F9FAFB',
-    opacity: 0.7,
-  },
-  expirationText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: TEXT_MUTED,
-  },
-  bottomBar: {
-    borderTopWidth: 1,
-    borderTopColor: BORDER,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  bottomBarInner: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  backBtn: {
-    flex: 1,
-  },
-  nextBtn: {
-    flex: 2,
-  },
-});

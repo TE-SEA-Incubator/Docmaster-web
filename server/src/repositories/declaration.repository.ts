@@ -344,14 +344,20 @@ export class DeclarationRepository {
     const query = `
       WITH normalized_docs AS (
         SELECT 
-          *,
-          CASE 
-            WHEN LOWER(TRIM(doc_type)) IN ('passport', 'passeport') THEN 'Passeport'
-            WHEN LOWER(TRIM(doc_type)) IN ('cni', 'carte d''identité', 'attestation') THEN 'CNI'
-            ELSE INITCAP(TRIM(doc_type))
-          END as normalized_type
-        FROM declarations
-        WHERE declaration_type = 'FOUND'
+          d.*,
+          COALESCE(dt.nom, 
+            CASE 
+              WHEN LOWER(TRIM(d.doc_type)) IN ('passport', 'passeport') THEN 'Passeport'
+              WHEN LOWER(TRIM(d.doc_type)) IN ('cni', 'carte d''identité', 'attestation') THEN 'CNI'
+              ELSE INITCAP(REPLACE(REPLACE(TRIM(d.doc_type), '_', ' '), '-', ' '))
+            END
+          ) as normalized_type
+        FROM declarations d
+        LEFT JOIN document_types dt ON (
+          d.doc_type = dt.id::text
+          OR LOWER(d.doc_type) = LOWER(dt.code)
+        )
+        WHERE d.declaration_type = 'FOUND'
       ),
       current_period AS (
           SELECT normalized_type, COUNT(*) as count

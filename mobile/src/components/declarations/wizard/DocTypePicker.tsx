@@ -6,6 +6,29 @@ import * as Haptics from 'expo-haptics';
 import { BORDER, TEXT_MAIN } from './DOC_TYPE_META';
 import { DocTypeCatalog } from '@/types';
 
+const ICON_MAP: Record<string, string> = {
+  'id-card': 'id-card-outline',
+  'id-badge': 'id-card-outline',
+  passport: 'airplane-outline',
+  stamp: 'cube-outline',
+  'check-to-slot': 'checkbox-outline',
+  car: 'car-outline',
+  'credit-card': 'card-outline',
+  'graduation-cap': 'school-outline',
+  'house-chimney': 'home-outline',
+  'file-lines': 'document-text-outline',
+  ring: 'diamond-outline',
+  scroll: 'document-text-outline',
+  'circle-question': 'help-circle-outline',
+};
+
+function normalizeIcon(name: string): string {
+  if (!name) return 'document-text-outline';
+  const mapped = ICON_MAP[name];
+  if (mapped) return mapped;
+  return name;
+}
+
 type DocTypePickerProps = {
   types: DocTypeCatalog[];
   selectedCode: string | null;
@@ -26,7 +49,7 @@ export const DocTypePicker: React.FC<DocTypePickerProps> = ({ types, selectedCod
           const isSelected = selectedCode === item.code;
           const color = item.color || '#F5A64B';
           const bg = item.bg || '#FEF3C7';
-          const icon = item.icone || 'document-text-outline';
+          const icon = normalizeIcon(item.icone || 'document-text-outline');
 
           return (
             <Pressable

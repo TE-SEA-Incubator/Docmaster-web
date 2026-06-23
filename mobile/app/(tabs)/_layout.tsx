@@ -1,4 +1,3 @@
-import { useColorScheme } from 'react-native';
-import { BottomTabInset, Colors, MaxContentWidth } from '@/constants/theme';
+import AppTabs from '@/components/app-tabs';
 
-export { default } from '@/components/app-tabs';
+export default AppTabs;

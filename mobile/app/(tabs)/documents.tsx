@@ -17,6 +17,7 @@ import { BottomTabInset } from '@/constants/theme';
 import type { Document, DocTypeCatalog } from '@/types';
 import { DocumentsSkeleton } from '@/components/Skeletons';
 import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 function getIcon(type?: string) {
   const t = (type || '').toLowerCase();
@@ -50,8 +51,6 @@ function isDocumentExpired(doc: Document): boolean {
 }
 
 const SCREEN = Dimensions.get('window');
-const PRIMARY = '#F5A64B';
-const GREEN_DARK = '#1E3A2F';
 
 const EMPTY_FORM = {
   type_id: '',
@@ -67,6 +66,7 @@ const EMPTY_FORM = {
 };
 
 export default function DocumentsScreen() {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [docs, setDocs] = useState<Document[]>([]);
@@ -329,9 +329,9 @@ export default function DocumentsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#F5A64B" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 40 }}
         showsVerticalScrollIndicator={false}
       >
@@ -339,8 +339,8 @@ export default function DocumentsScreen() {
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <View style={{ flex: 1, marginRight: 16 }}>
-              <ThemedText style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>{t('documents:title')}</ThemedText>
-              <ThemedText style={{ fontSize: 13, color: '#9CA3AF' }}>{t('documents:subtitle')}</ThemedText>
+              <ThemedText style={{ fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 4 }}>{t('documents:title')}</ThemedText>
+              <ThemedText style={{ fontSize: 13, color: colors.textSecondary }}>{t('documents:subtitle')}</ThemedText>
             </View>
             <Pressable
               onPress={openAdd}
@@ -351,7 +351,7 @@ export default function DocumentsScreen() {
                 borderWidth: 1, borderColor: '#FFD49A',
               })}
             >
-              <Ionicons name="add" size={24} color="#F5A64B" />
+              <Ionicons name="add" size={24} color={colors.primary} />
             </Pressable>
           </View>
 
@@ -370,12 +370,12 @@ export default function DocumentsScreen() {
                 paddingVertical: 12,
                 borderRadius: 14,
                 borderWidth: 1,
-                borderColor: viewMode === 'active' ? PRIMARY : '#E5E7EB',
-                backgroundColor: viewMode === 'active' ? '#FFF3E0' : (pressed ? '#FAFAFA' : '#FFFFFF'),
+                borderColor: viewMode === 'active' ? colors.primary : colors.border,
+                backgroundColor: viewMode === 'active' ? '#FFF3E0' : (pressed ? '#FAFAFA' : colors.backgroundElement),
               })}
             >
-              <Ionicons name="document-text-outline" size={16} color={viewMode === 'active' ? PRIMARY : '#6B7280'} />
-              <Text style={{ fontSize: 13, fontWeight: '800', color: viewMode === 'active' ? '#92400E' : '#6B7280' }}>
+              <Ionicons name="document-text-outline" size={16} color={viewMode === 'active' ? colors.primary : colors.textSecondary} />
+              <Text style={{ fontSize: 13, fontWeight: '800', color: viewMode === 'active' ? '#92400E' : colors.textSecondary }}>
                 {t('documents:active')} ({activeCount})
               </Text>
             </Pressable>
@@ -394,12 +394,12 @@ export default function DocumentsScreen() {
                 paddingVertical: 12,
                 borderRadius: 14,
                 borderWidth: 1,
-                borderColor: viewMode === 'archived' ? PRIMARY : '#E5E7EB',
-                backgroundColor: viewMode === 'archived' ? '#FFF3E0' : (pressed ? '#FAFAFA' : '#FFFFFF'),
+                borderColor: viewMode === 'archived' ? colors.primary : colors.border,
+                backgroundColor: viewMode === 'archived' ? '#FFF3E0' : (pressed ? '#FAFAFA' : colors.backgroundElement),
               })}
             >
-              <Ionicons name="archive-outline" size={16} color={viewMode === 'archived' ? PRIMARY : '#6B7280'} />
-              <Text style={{ fontSize: 13, fontWeight: '800', color: viewMode === 'archived' ? '#92400E' : '#6B7280' }}>
+              <Ionicons name="archive-outline" size={16} color={viewMode === 'archived' ? colors.primary : colors.textSecondary} />
+              <Text style={{ fontSize: 13, fontWeight: '800', color: viewMode === 'archived' ? '#92400E' : colors.textSecondary }}>
                 {t('documents:archived')} ({archivedCount})
               </Text>
             </Pressable>
@@ -412,17 +412,17 @@ export default function DocumentsScreen() {
             paddingHorizontal: 14, paddingVertical: 12,
             marginBottom: 16, gap: 10,
           }}>
-            <Ionicons name="search-outline" size={18} color="#9CA3AF" />
+            <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
             <TextInput
               placeholder={t('documents:searchPlaceholder')}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              style={{ flex: 1, fontSize: 14, color: '#1A1A1A', padding: 0 }}
-              placeholderTextColor="#9CA3AF"
+              style={{ flex: 1, fontSize: 14, color: colors.text, padding: 0 }}
+              placeholderTextColor={colors.textSecondary}
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={16} color="#9CA3AF" />
+                <Ionicons name="close-circle" size={16} color={colors.textSecondary} />
               </Pressable>
             )}
           </View>
@@ -435,19 +435,19 @@ export default function DocumentsScreen() {
                 style={({ pressed }) => ({
                   flexDirection: 'row', alignItems: 'center', gap: 6,
                   paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-                  backgroundColor: !selectedType ? '#F5A64B' : (pressed ? '#F5F5F5' : '#FAFAFA'),
-                  borderWidth: 1, borderColor: !selectedType ? '#F5A64B' : '#E5E7EB',
+                  backgroundColor: !selectedType ? colors.primary : (pressed ? '#F5F5F5' : '#FAFAFA'),
+                  borderWidth: 1, borderColor: !selectedType ? colors.primary : colors.border,
                 })}
               >
-                <Ionicons name="layers-outline" size={14} color={!selectedType ? '#FFFFFF' : '#6B7280'} />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: !selectedType ? '#FFFFFF' : '#6B7280' }}>
+                <Ionicons name="layers-outline" size={14} color={!selectedType ? '#FFFFFF' : colors.textSecondary} />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: !selectedType ? '#FFFFFF' : colors.textSecondary }}>
                   {t('documents:all')}
                 </Text>
                 <View style={{
-                  backgroundColor: !selectedType ? 'rgba(255,255,255,0.3)' : '#F0F0F0',
+                  backgroundColor: !selectedType ? 'rgba(255,255,255,0.3)' : colors.border,
                   paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8,
                 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: !selectedType ? '#FFFFFF' : '#6B7280' }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: !selectedType ? '#FFFFFF' : colors.textSecondary }}>
                     {docs.length}
                   </Text>
                 </View>
@@ -463,23 +463,23 @@ export default function DocumentsScreen() {
                     style={({ pressed }) => ({
                       flexDirection: 'row', alignItems: 'center', gap: 6,
                       paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-                      backgroundColor: active ? '#F5A64B' : (pressed ? '#F5F5F5' : '#FAFAFA'),
-                      borderWidth: 1, borderColor: active ? '#F5A64B' : '#E5E7EB',
+                      backgroundColor: active ? colors.primary : (pressed ? '#F5F5F5' : '#FAFAFA'),
+                      borderWidth: 1, borderColor: active ? colors.primary : colors.border,
                     })}
                   >
                     <Ionicons
                       name={getIcon(type) as any}
                       size={14}
-                      color={active ? '#FFFFFF' : '#6B7280'}
+                      color={active ? '#FFFFFF' : colors.textSecondary}
                     />
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: active ? '#FFFFFF' : '#6B7280' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: active ? '#FFFFFF' : colors.textSecondary }}>
                       {type}
                     </Text>
                     <View style={{
-                      backgroundColor: active ? 'rgba(255,255,255,0.3)' : '#F0F0F0',
+                      backgroundColor: active ? 'rgba(255,255,255,0.3)' : colors.border,
                       paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8,
                     }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: active ? '#FFFFFF' : '#6B7280' }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: active ? '#FFFFFF' : colors.textSecondary }}>
                         {count}
                       </Text>
                     </View>
@@ -492,22 +492,22 @@ export default function DocumentsScreen() {
 
         {/* Document Cards */}
         {docs.length === 0 ? (
-          <View style={{ marginHorizontal: 20, backgroundColor: '#FAFAFA', borderRadius: 20, borderWidth: 1, borderColor: '#F0F0F0', padding: 40, alignItems: 'center', gap: 12 }}>
+          <View style={{ marginHorizontal: 20, backgroundColor: '#FAFAFA', borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 40, alignItems: 'center', gap: 12 }}>
             <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="document-text-outline" size={30} color="#F5A64B" />
+              <Ionicons name="document-text-outline" size={30} color={colors.primary} />
             </View>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>{t('documents:noDocuments')}</Text>
-            <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>{t('documents:noDocuments')}</Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', lineHeight: 18 }}>
               {t('documents:noDocumentsDesc')}
             </Text>
           </View>
         ) : filteredDocs.length === 0 ? (
-          <View style={{ marginHorizontal: 20, backgroundColor: '#FAFAFA', borderRadius: 20, borderWidth: 1, borderColor: '#F0F0F0', padding: 40, alignItems: 'center', gap: 12 }}>
-            <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="search-outline" size={30} color="#9CA3AF" />
+          <View style={{ marginHorizontal: 20, backgroundColor: '#FAFAFA', borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 40, alignItems: 'center', gap: 12 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="search-outline" size={30} color={colors.textSecondary} />
             </View>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>{viewMode === 'archived' ? t('documents:noArchivedDocs') : t('documents:noResults')}</Text>
-            <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>{viewMode === 'archived' ? t('documents:noArchivedDocs') : t('documents:noResults')}</Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', lineHeight: 18 }}>
               {viewMode === 'archived'
                 ? t('documents:archivedDesc')
                 : t('documents:noSearchResultsDesc')}
@@ -525,9 +525,9 @@ export default function DocumentsScreen() {
                   style={({ pressed }) => ({
                     borderRadius: 20,
                     overflow: 'hidden',
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor: colors.backgroundElement,
                     borderWidth: 1,
-                    borderColor: pressed ? '#F5A64B' : '#EAE3D8',
+                    borderColor: pressed ? colors.primary : colors.border,
                     shadowColor: '#1A1A1A',
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.06,
@@ -550,7 +550,7 @@ export default function DocumentsScreen() {
                           backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center',
                           borderWidth: 2, borderColor: '#FFE2B7',
                         }}>
-                          <Ionicons name={getIcon(doc.type_doc) as any} size={28} color="#F5A64B" />
+                          <Ionicons name={getIcon(doc.type_doc) as any} size={28} color={colors.primary} />
                         </View>
                         <Text style={{ fontSize: 12, fontWeight: '600', color: '#C4BAB0' }}>{t('documents:noPhoto')}</Text>
                       </View>
@@ -589,8 +589,8 @@ export default function DocumentsScreen() {
                     {/* Type badge top-left */}
                     <View style={{ position: 'absolute', top: 12, left: 12 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, backgroundColor: isArchived ? 'rgba(107,114,128,0.9)' : 'rgba(255,255,255,0.9)' }}>
-                        <Ionicons name={isArchived ? 'archive-outline' : (getIcon(doc.type_doc) as any)} size={12} color={isArchived ? '#FFFFFF' : '#F5A64B'} />
-                        <Text style={{ fontSize: 11, fontWeight: '800', color: isArchived ? '#FFFFFF' : '#1A1A1A' }}>
+                        <Ionicons name={isArchived ? 'archive-outline' : (getIcon(doc.type_doc) as any)} size={12} color={isArchived ? '#FFFFFF' : colors.primary} />
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: isArchived ? '#FFFFFF' : colors.text }}>
                           {isArchived ? t('documents:archived') : (doc.type_doc || t('documents:document'))}
                         </Text>
                       </View>
@@ -625,8 +625,8 @@ export default function DocumentsScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
                       {isArchived ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <Ionicons name="archive-outline" size={13} color="#6B7280" />
-                          <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280' }}>
+                          <Ionicons name="archive-outline" size={13} color={colors.textSecondary} />
+                          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
                             {t('documents:archived')}{doc.archived_at ? ` ${t('documents:on')} ${new Date(doc.archived_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}
                           </Text>
                         </View>
@@ -635,11 +635,11 @@ export default function DocumentsScreen() {
                           <Ionicons
                             name="time-outline"
                             size={13}
-                            color={new Date(doc.date_expiration).getTime() < Date.now() ? '#EF4444' : '#9CA3AF'}
+                            color={new Date(doc.date_expiration).getTime() < Date.now() ? colors.danger : colors.textSecondary}
                           />
                           <Text style={{
                             fontSize: 12, fontWeight: '600',
-                            color: new Date(doc.date_expiration).getTime() < Date.now() ? '#EF4444' : '#9CA3AF',
+                            color: new Date(doc.date_expiration).getTime() < Date.now() ? colors.danger : colors.textSecondary,
                           }}>
                             {new Date(doc.date_expiration).getTime() < Date.now()
                               ? t('documents:expired')
@@ -649,8 +649,8 @@ export default function DocumentsScreen() {
                         </View>
                       ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <Ionicons name="infinite-outline" size={13} color="#9CA3AF" />
-                          <Text style={{ fontSize: 12, fontWeight: '600', color: '#9CA3AF' }}>{t('documents:permanent')}</Text>
+                          <Ionicons name="infinite-outline" size={13} color={colors.textSecondary} />
+                          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>{t('documents:permanent')}</Text>
                         </View>
                       )}
                     </View>
@@ -666,20 +666,20 @@ export default function DocumentsScreen() {
       {/* 3-Step Creation Modal */}
       <Modal visible={showAddModal} transparent animationType="slide" onRequestClose={closeAdd}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} onPress={closeAdd}>
-          <Pressable style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '92%', marginBottom: insets.bottom + 8 }} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={{ backgroundColor: colors.backgroundElement, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '92%', marginBottom: insets.bottom + 8 }} onPress={(e) => e.stopPropagation()}>
             {/* Handle bar */}
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12, marginBottom: 4 }} />
             
             {/* Header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#F0EAE0' }}>
               <View>
-                <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>{t('documents:registerDocument')}</Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>{t('documents:registerDocument')}</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
                   {step === 1 ? t('documents:step1') : step === 2 ? t('documents:step2') : t('documents:step3')}
                 </Text>
               </View>
               <Pressable onPress={closeAdd} style={{ width: 34, height: 34, borderRadius: 9, borderWidth: 1.5, borderColor: '#E0D5C4', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="close" size={16} color="#6B7280" />
+                <Ionicons name="close" size={16} color={colors.textSecondary} />
               </Pressable>
             </View>
 
@@ -692,7 +692,7 @@ export default function DocumentsScreen() {
                     flex: 1,
                     height: 5,
                     borderRadius: 3,
-                    backgroundColor: s <= step ? PRIMARY : '#E5E7EB',
+                    backgroundColor: s <= step ? colors.primary : colors.border,
                   }}
                 />
               ))}
@@ -704,18 +704,18 @@ export default function DocumentsScreen() {
               {/* STEP 1: SELECT DOCUMENT TYPE */}
               {step === 1 && (
                 <View style={{ marginBottom: 30 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 12 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 12 }}>
                     {t('documents:chooseValidity')}
                   </Text>
 
                   <View style={{ gap: 10 }}>
-                    <Pressable onPress={() => handleValidityChange('EXPIRING')} style={{ padding: 16, borderRadius: 16, borderWidth: 2, borderColor: validityOption === 'EXPIRING' ? PRIMARY : '#EAE3D8', backgroundColor: validityOption === 'EXPIRING' ? '#FFF9F2' : '#FFFFFF' }}>
-                      <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A1A1A' }}>{t('documents:expirable')}</Text>
-                      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>{t('documents:expirableDesc')}</Text>
+                    <Pressable onPress={() => handleValidityChange('EXPIRING')} style={{ padding: 16, borderRadius: 16, borderWidth: 2, borderColor: validityOption === 'EXPIRING' ? colors.primary : colors.border, backgroundColor: validityOption === 'EXPIRING' ? colors.warningBg : colors.backgroundElement }}>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }}>{t('documents:expirable')}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>{t('documents:expirableDesc')}</Text>
                     </Pressable>
-                    <Pressable onPress={() => handleValidityChange('PERMANENT')} style={{ padding: 16, borderRadius: 16, borderWidth: 2, borderColor: validityOption === 'PERMANENT' ? PRIMARY : '#EAE3D8', backgroundColor: validityOption === 'PERMANENT' ? '#FFF9F2' : '#FFFFFF' }}>
-                      <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A1A1A' }}>{t('documents:permanent')}</Text>
-                      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>{t('documents:permanentDesc')}</Text>
+                    <Pressable onPress={() => handleValidityChange('PERMANENT')} style={{ padding: 16, borderRadius: 16, borderWidth: 2, borderColor: validityOption === 'PERMANENT' ? colors.primary : colors.border, backgroundColor: validityOption === 'PERMANENT' ? colors.warningBg : colors.backgroundElement }}>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }}>{t('documents:permanent')}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>{t('documents:permanentDesc')}</Text>
                     </Pressable>
                   </View>
 
@@ -734,30 +734,30 @@ export default function DocumentsScreen() {
               {/* STEP 2: DOCUMENT DETAILS & PHOTO UPLOAD */}
               {step === 2 && (
                 <View style={{ marginBottom: 30 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 12 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 12 }}>
                     {t('documents:typeAndInfo')}
                   </Text>
 
                   {loadingTypes ? (
                     <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-                      <ActivityIndicator size="large" color={PRIMARY} />
-                      <Text style={{ marginTop: 10, color: '#9CA3AF', fontSize: 13 }}>{t('documents:loadingTypes')}</Text>
+                      <ActivityIndicator size="large" color={colors.primary} />
+                      <Text style={{ marginTop: 10, color: colors.textSecondary, fontSize: 13 }}>{t('documents:loadingTypes')}</Text>
                     </View>
                   ) : (
                     <View style={{ marginBottom: 16 }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#6B7280', marginBottom: 8 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 8 }}>
                         {t('documents:documentType')} {validityOption === 'EXPIRING' ? `(${t('documents:expirable')})` : `(${t('documents:permanent')})`}
                       </Text>
 
-                      <Pressable onPress={() => setShowTypePicker(prev => !prev)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 14, borderWidth: 2, borderColor: '#EAE3D8', backgroundColor: '#FFFFFF' }}>
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: form.type_id ? '#1A1A1A' : '#9CA3AF' }}>
+                      <Pressable onPress={() => setShowTypePicker(prev => !prev)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 14, borderWidth: 2, borderColor: colors.border, backgroundColor: colors.backgroundElement }}>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: form.type_id ? colors.text : colors.textSecondary }}>
                           {form.type_id === 'AUTRES' ? t('documents:otherDocument') : (selectedDocType?.nom || t('documents:chooseType'))}
                         </Text>
-                        <Ionicons name={showTypePicker ? 'chevron-up' : 'chevron-down'} size={18} color="#6B7280" />
+                        <Ionicons name={showTypePicker ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecondary} />
                       </Pressable>
 
                       {showTypePicker && (
-                        <View style={{ marginTop: 10, borderRadius: 14, borderWidth: 1, borderColor: '#EAE3D8', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
+                        <View style={{ marginTop: 10, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.backgroundElement, overflow: 'hidden' }}>
                           <ScrollView style={{ maxHeight: 250 }} nestedScrollEnabled>
                             {availableDocTypes.map((dt) => {
                               const selected = form.type_id === dt.id;
@@ -771,9 +771,9 @@ export default function DocumentsScreen() {
                                     }
                                     setShowTypePicker(false);
                                   }}
-                                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderBottomWidth: 1, borderBottomColor: '#F5F5F5', backgroundColor: selected ? '#FFF9F2' : '#FFFFFF' }}
+                                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderBottomWidth: 1, borderBottomColor: '#F5F5F5', backgroundColor: selected ? colors.warningBg : colors.backgroundElement }}
                                 >
-                                  <Ionicons name={getIcon(dt.nom) as any} size={16} color={selected ? PRIMARY : '#6B7280'} />
+                                  <Ionicons name={getIcon(dt.nom) as any} size={16} color={selected ? colors.primary : colors.textSecondary} />
                                   <Text style={{ fontSize: 14, fontWeight: '700', color: selected ? '#92400E' : '#374151' }}>{dt.nom}</Text>
                                 </Pressable>
                               );
@@ -783,9 +783,9 @@ export default function DocumentsScreen() {
                                 updateForm('type_id', 'AUTRES');
                                 setShowTypePicker(false);
                               }}
-                              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, backgroundColor: form.type_id === 'AUTRES' ? '#FFF9F2' : '#FFFFFF' }}
+                              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, backgroundColor: form.type_id === 'AUTRES' ? colors.warningBg : colors.backgroundElement }}
                             >
-                              <Ionicons name="create-outline" size={16} color={form.type_id === 'AUTRES' ? PRIMARY : '#6B7280'} />
+                              <Ionicons name="create-outline" size={16} color={form.type_id === 'AUTRES' ? colors.primary : colors.textSecondary} />
                               <Text style={{ fontSize: 14, fontWeight: '700', color: form.type_id === 'AUTRES' ? '#92400E' : '#374151' }}>{t('documents:otherDocument')}</Text>
                             </Pressable>
                           </ScrollView>
@@ -863,14 +863,14 @@ export default function DocumentsScreen() {
                   )}
 
                   {/* Photo Section */}
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 20, marginBottom: 10 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 20, marginBottom: 10 }}>
                     {t('documents:documentPhotos')}
                   </Text>
 
                   <View style={{ flexDirection: 'row', gap: 12 }}>
                     {/* Recto Card */}
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#9CA3AF', marginBottom: 6 }}>{t('documents:photoRecto')}</Text>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, marginBottom: 6 }}>{t('documents:photoRecto')}</Text>
                       {form.photo_recto ? (
                         <View style={{ borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#F0EAE0' }}>
                           <Image source={{ uri: form.photo_recto }} style={{ width: '100%', height: 110, resizeMode: 'cover' }} />
@@ -893,16 +893,16 @@ export default function DocumentsScreen() {
                             alignItems: 'center', justifyContent: 'center', gap: 6
                           }}
                         >
-                          <Ionicons name="scan-outline" size={24} color="#9CA3AF" />
-                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF' }}>{t('documents:scanRecto')}</Text>
+                          <Ionicons name="scan-outline" size={24} color={colors.textSecondary} />
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary }}>{t('documents:scanRecto')}</Text>
                         </Pressable>
                       )}
-                      {formErrors.photo_recto ? <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '700', color: '#EF4444' }}>{formErrors.photo_recto}</Text> : null}
+                      {formErrors.photo_recto ? <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '700', color: colors.danger }}>{formErrors.photo_recto}</Text> : null}
                     </View>
 
                     {/* Verso Card */}
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#9CA3AF', marginBottom: 6 }}>{t('documents:photoVerso')}</Text>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary, marginBottom: 6 }}>{t('documents:photoVerso')}</Text>
                       {form.photo_verso ? (
                         <View style={{ borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#F0EAE0' }}>
                           <Image source={{ uri: form.photo_verso }} style={{ width: '100%', height: 110, resizeMode: 'cover' }} />
@@ -925,11 +925,11 @@ export default function DocumentsScreen() {
                             alignItems: 'center', justifyContent: 'center', gap: 6
                           }}
                         >
-                          <Ionicons name="scan-outline" size={24} color="#9CA3AF" />
-                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF' }}>{t('documents:scanVerso')}</Text>
+                          <Ionicons name="scan-outline" size={24} color={colors.textSecondary} />
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary }}>{t('documents:scanVerso')}</Text>
                         </Pressable>
                       )}
-                      {formErrors.photo_verso ? <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '700', color: '#EF4444' }}>{formErrors.photo_verso}</Text> : null}
+                      {formErrors.photo_verso ? <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '700', color: colors.danger }}>{formErrors.photo_verso}</Text> : null}
                     </View>
                   </View>
 
@@ -947,44 +947,44 @@ export default function DocumentsScreen() {
               {/* STEP 3: RECAP & CERTIFY */}
               {step === 3 && (
                 <View style={{ marginBottom: 30 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 12 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 12 }}>
                     {t('documents:recap')}
                   </Text>
                   
                   {/* Summary Box */}
-                  <View style={{ backgroundColor: '#FAF7F2', borderRadius: 16, padding: 16, borderStyle: 'solid', borderWidth: 1, borderColor: '#EAE3D8', gap: 10 }}>
+                  <View style={{ backgroundColor: '#FAF7F2', borderRadius: 16, padding: 16, borderStyle: 'solid', borderWidth: 1, borderColor: colors.border, gap: 10 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:validity')}</Text>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{validityOption === 'PERMANENT' ? t('documents:permanent') : t('documents:expirable')}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t('documents:validity')}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{validityOption === 'PERMANENT' ? t('documents:permanent') : t('documents:expirable')}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:type')}</Text>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{isCustomType ? (form.custom_type_name || t('documents:otherDocument')) : (selectedDocType?.nom || t('documents:document'))}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t('documents:type')}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{isCustomType ? (form.custom_type_name || t('documents:otherDocument')) : (selectedDocType?.nom || t('documents:document'))}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:number')}</Text>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{form.numero_doc}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t('documents:number')}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{form.numero_doc}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:fullNameLabel')}</Text>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{form.nom_sur_doc}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t('documents:fullNameLabel')}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{form.nom_sur_doc}</Text>
                     </View>
                     {form.nom_autorite ? (
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:authority')}</Text>
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{form.nom_autorite}</Text>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t('documents:authority')}</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{form.nom_autorite}</Text>
                       </View>
                     ) : null}
                     {validityOption === 'EXPIRING' && form.date_delivrance ? (
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:issuedOn')}</Text>
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{form.date_delivrance}</Text>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t('documents:issuedOn')}</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{form.date_delivrance}</Text>
                       </View>
                     ) : null}
                     {validityOption === 'EXPIRING' && form.date_expiration ? (
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:expiresOn')}</Text>
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{form.date_expiration}</Text>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t('documents:expiresOn')}</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{form.date_expiration}</Text>
                       </View>
                     ) : null}
                   </View>
@@ -994,13 +994,13 @@ export default function DocumentsScreen() {
                     {form.photo_recto ? (
                       <View style={{ flex: 1, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#F0EAE0' }}>
                         <Image source={{ uri: form.photo_recto }} style={{ width: '100%', height: 80, resizeMode: 'cover' }} />
-                        <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: '#FFF', paddingVertical: 2 }}>{t('documents:recto')}</Text>
+                        <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: colors.backgroundElement, paddingVertical: 2 }}>{t('documents:recto')}</Text>
                       </View>
                     ) : null}
                     {form.photo_verso ? (
                       <View style={{ flex: 1, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#F0EAE0' }}>
                         <Image source={{ uri: form.photo_verso }} style={{ width: '100%', height: 80, resizeMode: 'cover' }} />
-                        <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: '#FFF', paddingVertical: 2 }}>{t('documents:verso')}</Text>
+                        <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: colors.backgroundElement, paddingVertical: 2 }}>{t('documents:verso')}</Text>
                       </View>
                     ) : null}
                   </View>
@@ -1023,9 +1023,9 @@ export default function DocumentsScreen() {
                     <Ionicons
                       name={certify ? 'checkbox' : 'square-outline'}
                       size={20}
-                      color={certify ? '#10B981' : '#9CA3AF'}
+                      color={certify ? '#10B981' : colors.textSecondary}
                     />
-                    <Text style={{ flex: 1, fontSize: 12, fontWeight: '600', color: certify ? '#1E3A2F' : '#6B7280', lineHeight: 18 }}>
+                    <Text style={{ flex: 1, fontSize: 12, fontWeight: '600', color: certify ? colors.greenDark : colors.textSecondary, lineHeight: 18 }}>
                       {t('documents:certifyText')}
                     </Text>
                   </Pressable>

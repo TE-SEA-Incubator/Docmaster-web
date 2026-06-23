@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type DeclarationStatus = 'SEARCHING' | 'MATCHED' | 'RETURNED' | 'AVAILABLE' | 'CANCELLED' | 'CLAIMED';
 
@@ -20,13 +21,6 @@ interface DeclarationCardProps {
   hasPotentialMatches?: boolean;
 }
 
-const PALETTES = {
-  red: { border: '#EF4444', bg: '#FEF2F2', text: '#B91C1C', light: '#FEE2E2' },
-  orange: { border: '#F59E0B', bg: '#FFFBEB', text: '#B45309', light: '#FEF3C7' },
-  green: { border: '#10B981', bg: '#ECFDF5', text: '#047857', light: '#D1FAE5' },
-  blue: { border: '#3B82F6', bg: '#EFF6FF', text: '#1D4ED8', light: '#DBEAFE' },
-};
-
 export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
   type,
   docType,
@@ -39,11 +33,20 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
   onRendre,
   declarationId,
 }) => {
+  const colors = useThemeColors();
   const router = useRouter();
   const { t } = useTranslation();
   const isMatch = status === 'MATCHED' || status === 'RETURNED';
   const colorKey = isMatch ? 'green' : (type === 'LOST' ? (hasPotentialMatches ? 'orange' : 'red') : 'blue');
-  const palette = PALETTES[colorKey as keyof typeof PALETTES] || PALETTES.red;
+
+  // Build palettes dynamically from theme colors so dark mode swaps cleanly.
+  const PALETTES: Record<string, { border: string; bg: string; text: string; light: string }> = {
+    red: { border: colors.danger, bg: colors.dangerBg, text: colors.danger, light: colors.dangerBg },
+    orange: { border: colors.warning, bg: colors.warningBg, text: colors.warning, light: colors.warningBg },
+    green: { border: colors.success, bg: colors.successBg, text: colors.success, light: colors.successBg },
+    blue: { border: colors.info, bg: colors.infoBg, text: colors.info, light: colors.infoBg },
+  };
+  const palette = PALETTES[colorKey] || PALETTES.red;
 
   // Détermination de l'étape actuelle (1 à 4)
   let currentStep = 1;
@@ -64,72 +67,106 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
 
   return (
     <TouchableOpacity
-      style={[styles.container, { borderColor: palette.border, backgroundColor: '#FFFFFF' }]}
+      style={{
+        borderWidth: 2,
+        borderRadius: 18,
+        overflow: 'hidden',
+        marginBottom: 16,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        borderColor: palette.border,
+        backgroundColor: colors.backgroundElement,
+      }}
       onPress={onPress}
       activeOpacity={0.7}
     >
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: palette.bg, borderBottomColor: palette.light }]}>
-        <View style={styles.headerLeft}>
+      <View style={{
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottomWidth: 1,
+        backgroundColor: palette.bg,
+        borderBottomColor: palette.light,
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
           <Ionicons
             name={isMatch ? "checkmark-circle" : (type === 'LOST' ? "warning" : "hand-left")}
             size={16}
             color={palette.text}
           />
-          <Text style={[styles.headerTitle, { color: palette.text }]}>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: palette.text }}>
             {headerTitle}
           </Text>
         </View>
-        <View style={[styles.badge, { backgroundColor: palette.text }]}>
-          <Text style={styles.badgeText}>{statusLabel}</Text>
+        <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12, backgroundColor: palette.text }}>
+          <Text style={{ color: colors.onPrimary, fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase' }}>{statusLabel}</Text>
         </View>
       </View>
 
-      <View style={styles.content}>
+      <View style={{ padding: 16 }}>
         {/* Doc Info */}
-        <View style={styles.docInfo}>
-          <View style={[styles.iconContainer, { backgroundColor: palette.bg }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <View style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: palette.bg,
+          }}>
             <FontAwesome5 name={getIconName(docType)} size={20} color={palette.text} />
           </View>
-          <View style={styles.docText}>
-            <Text style={styles.docName}>{docType} — {ownerName || t('declarations:unknown')}</Text>
-            <Text style={styles.docRef}>{t('declarations:reference')}{reference}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 14, fontWeight: 'bold', color: colors.text }}>{docType} — {ownerName || t('declarations:unknown')}</Text>
+            <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>{t('declarations:reference')}{reference}</Text>
           </View>
         </View>
 
         {/* Step Indicator */}
-        <View style={styles.stepsWrapper}>
-          <View style={styles.stepLineContainer}>
-             <View style={[styles.stepLine, { backgroundColor: palette.light }]} />
-             <View style={[
-               styles.stepLineActive,
-               {
-                 backgroundColor: palette.border,
-                 width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`
-               }
-             ]} />
+        <View style={{ marginTop: 8 }}>
+          <View style={{ position: 'absolute', top: 10, left: 20, right: 20, height: 2 }}>
+             <View style={{ height: 2, width: '100%', backgroundColor: palette.light }} />
+             <View style={{
+               height: 2,
+               position: 'absolute',
+               left: 0,
+               backgroundColor: palette.border,
+               width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+             }} />
           </View>
 
-          <View style={styles.stepsContainer}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             {steps.map((step, i) => {
               const isActive = i <= currentStep - 1;
               const isCurrent = i === currentStep - 1;
               return (
-                <View key={i} style={styles.stepItem}>
-                  <View style={[
-                    styles.stepCircle,
-                    {
-                      backgroundColor: isActive ? palette.border : '#FFFFFF',
-                      borderColor: isActive ? palette.border : palette.light,
-                      borderWidth: isCurrent ? 2 : 1,
-                    }
-                  ]}>
-                    {isActive && <Ionicons name="checkmark" size={10} color="#FFFFFF" />}
+                <View key={i} style={{ alignItems: 'center', width: 60 }}>
+                  <View style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 6,
+                    zIndex: 1,
+                    backgroundColor: isActive ? palette.border : colors.backgroundElement,
+                    borderColor: isActive ? palette.border : palette.light,
+                    borderWidth: isCurrent ? 2 : 1,
+                  }}>
+                    {isActive && <Ionicons name="checkmark" size={10} color={colors.onPrimary} />}
                   </View>
-                  <Text style={[
-                    styles.stepLabel,
-                    { color: isActive ? palette.text : '#999', fontWeight: isCurrent ? 'bold' : 'normal' }
-                  ]}>
+                  <Text style={{
+                    fontSize: 9,
+                    textAlign: 'center',
+                    color: isActive ? palette.text : colors.textSecondary,
+                    fontWeight: isCurrent ? 'bold' : 'normal',
+                  }}>
                     {step}
                   </Text>
                 </View>
@@ -141,7 +178,16 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
         {/* Match action button */}
         {status === 'MATCHED' && type === 'LOST' && (
           <TouchableOpacity
-            style={styles.matchActionBtn}
+            style={{
+              backgroundColor: colors.success,
+              borderRadius: 12,
+              paddingVertical: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              marginTop: 16,
+            }}
             onPress={(e) => {
               e.stopPropagation?.();
               if (onRecuperer) onRecuperer();
@@ -149,13 +195,22 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
             }}
             activeOpacity={0.8}
           >
-            <Ionicons name="handshake-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.matchActionText}>{t('declarations:recover')}</Text>
+            <Ionicons name="people-outline" size={18} color={colors.onPrimary} />
+            <Text style={{ color: colors.onPrimary, fontSize: 14, fontWeight: '800' }}>{t('declarations:recover')}</Text>
           </TouchableOpacity>
         )}
         {status === 'MATCHED' && type === 'FOUND' && (
           <TouchableOpacity
-            style={styles.matchActionBtn}
+            style={{
+              backgroundColor: colors.success,
+              borderRadius: 12,
+              paddingVertical: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              marginTop: 16,
+            }}
             onPress={(e) => {
               e.stopPropagation?.();
               if (onRendre) onRendre();
@@ -163,8 +218,8 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
             }}
             activeOpacity={0.8}
           >
-            <Ionicons name="return-down-back-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.matchActionText}>{t('declarations:return')}</Text>
+            <Ionicons name="return-down-back-outline" size={18} color={colors.onPrimary} />
+            <Text style={{ color: colors.onPrimary, fontSize: 14, fontWeight: '800' }}>{t('declarations:return')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -179,130 +234,3 @@ const getIconName = (type: string) => {
   if (t.includes('permis')) return 'car';
   return 'file-alt';
 };
-
-const styles = StyleSheet.create({
-  container: {
-    borderWidth: 2,
-    borderRadius: 18,
-    overflow: 'hidden',
-    marginBottom: 16,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'between',
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-  },
-  badgeText: {
-    color: '#FFF',
-    fontSize: 9,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  content: {
-    padding: 16,
-  },
-  docInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 20,
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  docText: {
-    flex: 1,
-  },
-  docName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-  },
-  docRef: {
-    fontSize: 11,
-    color: '#666',
-    marginTop: 2,
-  },
-  stepsWrapper: {
-    marginTop: 8,
-  },
-  stepLineContainer: {
-    position: 'absolute',
-    top: 10,
-    left: 20,
-    right: 20,
-    height: 2,
-  },
-  stepLine: {
-    height: 2,
-    width: '100%',
-  },
-  stepLineActive: {
-    height: 2,
-    position: 'absolute',
-    left: 0,
-  },
-  stepsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  stepItem: {
-    alignItems: 'center',
-    width: 60,
-  },
-  stepCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-    zIndex: 1,
-  },
-  stepLabel: {
-    fontSize: 9,
-    textAlign: 'center',
-  },
-  matchActionBtn: {
-    backgroundColor: '#16A34A',
-    borderRadius: 12,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 16,
-  },
-  matchActionText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-});

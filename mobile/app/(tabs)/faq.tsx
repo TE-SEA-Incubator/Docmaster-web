@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { BottomTabInset } from '@/constants/theme';
-
-const PRIMARY = '#F5A64B';
-const GREEN_DARK = '#1E3A2F';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const FAQ_DATA = [
   {
@@ -47,93 +45,10 @@ const FAQ_DATA = [
   },
 ];
 
-export default function FAQScreen() {
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  const toggle = (idx: number) => setOpenIndex(openIndex === idx ? null : idx);
-
-  return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
-        </Pressable>
-        <Text style={styles.headerTitle}>FAQ / Aide</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 40, paddingHorizontal: 16 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Info card */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoIconWrap}>
-            <Ionicons name="bulb-outline" size={28} color={PRIMARY} />
-          </View>
-          <Text style={styles.infoTitle}>Comment pouvons-nous vous aider ?</Text>
-          <Text style={styles.infoDesc}>
-            Retrouvez ici les réponses aux questions les plus fréquentes.
-          </Text>
-        </View>
-
-        {/* FAQ List */}
-        <View style={styles.faqList}>
-          {FAQ_DATA.map((item, idx) => {
-            const isOpen = openIndex === idx;
-            return (
-              <Pressable
-                key={idx}
-                onPress={() => toggle(idx)}
-                style={[styles.faqItem, isOpen && styles.faqItemOpen]}
-              >
-                <View style={styles.faqHeader}>
-                  <Text style={styles.faqQuestion}>{item.q}</Text>
-                  <Ionicons
-                    name={isOpen ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color="#6B7280"
-                  />
-                </View>
-                {isOpen && (
-                  <View style={styles.faqAnswerWrap}>
-                    <Text style={styles.faqAnswer}>{item.r}</Text>
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Contact CTA */}
-        <View style={styles.contactCta}>
-          <View style={styles.contactIconWrap}>
-            <Ionicons name="mail-outline" size={24} color="#FFFFFF" />
-          </View>
-          <Text style={styles.contactTitle}>Vous n'avez pas trouvé votre réponse ?</Text>
-          <Text style={styles.contactDesc}>
-            Notre équipe support est là pour vous aider.
-          </Text>
-          <Pressable
-            style={styles.contactBtn}
-            onPress={() => router.push('/(tabs)/profile')}
-          >
-            <Ionicons name="chatbubble-ellipses-outline" size={18} color={GREEN_DARK} />
-            <Text style={styles.contactBtnText}>Nous contacter</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
+const makeStyles = (colors: ReturnType<typeof useThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -141,9 +56,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.backgroundElement,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: colors.border,
   },
   backBtn: {
     width: 40,
@@ -155,23 +70,23 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: colors.text,
   },
   infoCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.backgroundElement,
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
     marginTop: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
+    borderColor: colors.border,
   },
   infoIconWrap: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#FFFBEB',
+    backgroundColor: colors.warningBg,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -179,12 +94,12 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1A1A1A',
+    color: colors.text,
     marginBottom: 6,
   },
   infoDesc: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 19,
   },
@@ -193,14 +108,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   faqItem: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.backgroundElement,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#F0F0F0',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   faqItemOpen: {
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   faqHeader: {
     flexDirection: 'row',
@@ -213,7 +128,7 @@ const styles = StyleSheet.create({
   faqQuestion: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.text,
     flex: 1,
     lineHeight: 20,
   },
@@ -221,16 +136,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: colors.border,
     paddingTop: 12,
   },
   faqAnswer: {
     fontSize: 13.5,
-    color: '#6B7280',
+    color: colors.textSecondary,
     lineHeight: 21,
   },
   contactCta: {
-    backgroundColor: GREEN_DARK,
+    backgroundColor: colors.greenDark,
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
@@ -270,6 +185,87 @@ const styles = StyleSheet.create({
   contactBtnText: {
     fontSize: 14,
     fontWeight: '700',
-    color: GREEN_DARK,
+    color: colors.greenDark,
   },
 });
+
+export default function FAQScreen() {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const colors = useThemeColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggle = (idx: number) => setOpenIndex(openIndex === idx ? null : idx);
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.replace('/(tabs)')} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </Pressable>
+        <Text style={styles.headerTitle}>FAQ / Aide</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 40, paddingHorizontal: 16 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.infoCard}>
+          <View style={styles.infoIconWrap}>
+            <Ionicons name="bulb-outline" size={28} color={colors.primary} />
+          </View>
+          <Text style={styles.infoTitle}>Comment pouvons-nous vous aider ?</Text>
+          <Text style={styles.infoDesc}>
+            Retrouvez ici les réponses aux questions les plus fréquentes.
+          </Text>
+        </View>
+
+        <View style={styles.faqList}>
+          {FAQ_DATA.map((item, idx) => {
+            const isOpen = openIndex === idx;
+            return (
+              <Pressable
+                key={idx}
+                onPress={() => toggle(idx)}
+                style={[styles.faqItem, isOpen && styles.faqItemOpen]}
+              >
+                <View style={styles.faqHeader}>
+                  <Text style={styles.faqQuestion}>{item.q}</Text>
+                  <Ionicons
+                    name={isOpen ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </View>
+                {isOpen && (
+                  <View style={styles.faqAnswerWrap}>
+                    <Text style={styles.faqAnswer}>{item.r}</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.contactCta}>
+          <View style={styles.contactIconWrap}>
+            <Ionicons name="mail-outline" size={24} color="#FFFFFF" />
+          </View>
+          <Text style={styles.contactTitle}>Vous n'avez pas trouvé votre réponse ?</Text>
+          <Text style={styles.contactDesc}>
+            Notre équipe support est là pour vous aider.
+          </Text>
+          <Pressable
+            style={styles.contactBtn}
+            onPress={() => router.push('/(tabs)/profile')}
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={18} color={colors.greenDark} />
+            <Text style={styles.contactBtnText}>Nous contacter</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
