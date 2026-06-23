@@ -18,14 +18,14 @@ export function useGlobalStats() {
   return { stats, loading };
 }
 
-export function usePerformanceStats() {
+export function usePerformanceStats(period?: string) {
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async (p?: string) => {
     setLoading(true);
     try {
-      const res = await statsService.getPerformance();
+      const res = await statsService.getPerformance(p);
       setStats(res.data || null);
     } catch (e: any) {
       console.error("[usePerformanceStats] error:", e?.response?.data || e);
@@ -35,7 +35,7 @@ export function usePerformanceStats() {
     }
   }, []);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { fetch(period); }, [fetch, period]);
 
   return { stats, loading, fetch };
 }

@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, Modal, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { useEarnings } from '@/core/hooks/useEarnings';
 import { paymentsService, type Withdrawal } from '@/core/api/paymentsService';
@@ -35,21 +36,22 @@ function formatTime(s?: string) {
   }
 }
 
-function getTxMeta(type?: string) {
-  if (type === 'finder_payout' || type === 'finder_reward') return { icon: 'checkmark-circle-outline' as const, bg: '#F0FDF4', color: '#16A34A', label: 'Récompense trouvaille' };
-  if (type === 'recovery_fee') return { icon: 'arrow-up-outline' as const, bg: '#FFF7ED', color: '#EA580C', label: 'Frais récupération' };
-  if (type === 'withdrawal') return { icon: 'log-out-outline' as const, bg: '#EFF6FF', color: '#3B82F6', label: 'Retrait' };
-  if (type === 'referral_bonus') return { icon: 'people-outline' as const, bg: '#FFFBEB', color: '#D97706', label: 'Bonus parrainage' };
-  if (type === 'subscription') return { icon: 'rocket-outline' as const, bg: '#F5F3FF', color: '#8B5CF6', label: 'Abonnement' };
-  if (type === 'credit' || type === 'deposit') return { icon: 'add-circle-outline' as const, bg: '#F0FDF4', color: '#16A34A', label: 'Recharge' };
-  return { icon: 'receipt-outline' as const, bg: '#F3F4F6', color: '#6B7280', label: 'Transaction' };
+function getTxMeta(type: string | undefined, t: (key: string) => string) {
+  if (type === 'finder_payout' || type === 'finder_reward') return { icon: 'checkmark-circle-outline' as const, bg: '#F0FDF4', color: '#16A34A', label: t('wallet:txReward') };
+  if (type === 'recovery_fee') return { icon: 'arrow-up-outline' as const, bg: '#FFF7ED', color: '#EA580C', label: t('wallet:txRecovery') };
+  if (type === 'withdrawal') return { icon: 'log-out-outline' as const, bg: '#EFF6FF', color: '#3B82F6', label: t('wallet:txWithdrawal') };
+  if (type === 'referral_bonus') return { icon: 'people-outline' as const, bg: '#FFFBEB', color: '#D97706', label: t('wallet:txBonus') };
+  if (type === 'subscription') return { icon: 'rocket-outline' as const, bg: '#F5F3FF', color: '#8B5CF6', label: t('wallet:txSubscription') };
+  if (type === 'credit' || type === 'deposit') return { icon: 'add-circle-outline' as const, bg: '#F0FDF4', color: '#16A34A', label: t('wallet:txRecharge') };
+  return { icon: 'receipt-outline' as const, bg: '#F3F4F6', color: '#6B7280', label: t('wallet:txTransaction') };
 }
 
 function WithdrawalStatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   const config: Record<string, { label: string; bg: string; color: string }> = {
-    PENDING: { label: 'En attente', bg: '#FFF7ED', color: '#EA580C' },
-    COMPLETED: { label: 'Effectué', bg: '#F0FDF4', color: '#16A34A' },
-    REJECTED: { label: 'Rejeté', bg: '#FEF2F2', color: '#EF4444' },
+    PENDING: { label: t('wallet:wdPending'), bg: '#FFF7ED', color: '#EA580C' },
+    COMPLETED: { label: t('wallet:wdCompleted'), bg: '#F0FDF4', color: '#16A34A' },
+    REJECTED: { label: t('wallet:wdRejected'), bg: '#FEF2F2', color: '#EF4444' },
   };
   const c = config[status] || { label: status, bg: '#F3F4F6', color: '#6B7280' };
   return (
@@ -60,6 +62,7 @@ function WithdrawalStatusBadge({ status }: { status: string }) {
 }
 
 export default function WalletScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user, fetchProfile } = useAuthStore();
   const { transactions, loading, refresh } = useEarnings();
@@ -100,15 +103,15 @@ export default function WalletScreen() {
   const handleWithdraw = async () => {
     const amount = Number(withdrawAmount.replace(/[^0-9]/g, ''));
     if (amount < 100) {
-      Alert.alert('Montant invalide', 'Le montant minimum de retrait est de 100 FCFA.');
+      Alert.alert(t('wallet:invalidAmount'), t('wallet:minWithdraw'));
       return;
     }
     if (amount > balance) {
-      Alert.alert('Solde insuffisant', `Votre solde est de ${fmtAmount(balance)} FCFA.`);
+      Alert.alert(t('wallet:insufficientBalance'), t('wallet:insufficientBalanceDesc', { balance: fmtAmount(balance) }));
       return;
     }
     if (!withdrawPhone.trim() || withdrawPhone.length < 8) {
-      Alert.alert('Téléphone requis', 'Veuillez entrer un numéro de téléphone valide.');
+      Alert.alert(t('wallet:phoneRequired'), t('wallet:phoneRequiredDesc'));
       return;
     }
 
@@ -124,16 +127,16 @@ export default function WalletScreen() {
         setFeedback({
           visible: true,
           type: 'success',
-          title: 'Demande envoyée',
-          message: `Votre demande de retrait de ${fmtAmount(amount)} FCFA a été enregistrée. Elle sera traitée sous 24-48h.`,
+          title: t('wallet:requestSent'),
+          message: t('wallet:requestSentDesc', { amount: fmtAmount(amount) }),
         });
         await fetchProfile();
         refresh();
       } else {
-        Alert.alert('Erreur', res.message || 'Impossible de soumettre la demande.');
+        Alert.alert(t('common:error'), res.message || t('wallet:submitError'));
       }
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.message || 'Erreur réseau. Réessayez.');
+      Alert.alert(t('common:error'), err?.response?.data?.message || t('common:networkErrorDesc'));
     } finally {
       setWithdrawSubmitting(false);
     }
@@ -160,8 +163,8 @@ export default function WalletScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ marginBottom: 20 }}>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>Portefeuille</Text>
-          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>Gérez votre solde et transactions</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>{t('wallet:title')}</Text>
+          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t('wallet:subtitle')}</Text>
         </View>
 
         {/* Balance card */}
@@ -172,13 +175,13 @@ export default function WalletScreen() {
           <View style={{ position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(245,166,75,0.1)', top: -40, right: -40 }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(245,166,75,0.2)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start', marginBottom: 16 }}>
             <Ionicons name="wallet" size={11} color={PRIMARY} />
-            <Text style={{ fontSize: 10, fontWeight: '800', color: PRIMARY, letterSpacing: 0.5 }}>SOLDE DOCMASTER</Text>
+            <Text style={{ fontSize: 10, fontWeight: '800', color: PRIMARY, letterSpacing: 0.5 }}>{t('wallet:balance')}</Text>
           </View>
           <Text style={{ fontSize: 36, fontWeight: '800', color: '#FFFFFF', marginBottom: 4 }}>
-            {fmtAmount(balance)} <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)' }}>FCFA</Text>
+            {fmtAmount(balance)} <Text style={{ fontSize: 18, color: 'rgba(255,255,255,0.6)' }}>{t('common:fcf')}</Text>
           </Text>
           <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
-            {user?.currency || 'FCFA'}
+            {user?.currency || t('common:fcf')}
           </Text>
 
           {/* Stats */}
@@ -188,14 +191,14 @@ export default function WalletScreen() {
               <Text style={{ fontSize: 16, fontWeight: '700', color: '#10B981', marginTop: 4 }}>
                 +{fmtAmount(credits)}
               </Text>
-              <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>Entrées</Text>
+              <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{t('wallet:income')}</Text>
             </View>
             <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: 12, alignItems: 'center' }}>
               <Ionicons name="arrow-up-circle-outline" size={18} color="#EF4444" />
               <Text style={{ fontSize: 16, fontWeight: '700', color: '#EF4444', marginTop: 4 }}>
                 -{fmtAmount(debits)}
               </Text>
-              <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>Sorties</Text>
+              <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{t('wallet:expenses')}</Text>
             </View>
           </View>
         </View>
@@ -203,9 +206,9 @@ export default function WalletScreen() {
         {/* Quick actions */}
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
           {[
-            { icon: 'add-circle-outline', label: 'Recharger', color: '#16A34A', bg: '#F0FDF4', onPress: () => Alert.alert('Bientôt disponible', 'Le rechargement en ligne sera disponible prochainement.') },
-            { icon: 'log-out-outline', label: 'Retirer', color: '#3B82F6', bg: '#EFF6FF', onPress: openWithdraw },
-            { icon: 'receipt-outline', label: 'Historique', color: PRIMARY, bg: '#FFF3E0', onPress: openHistory },
+            { icon: 'add-circle-outline', label: t('wallet:recharge'), color: '#16A34A', bg: '#F0FDF4', onPress: () => Alert.alert(t('wallet:rechargeSoon'), t('wallet:rechargeSoonDesc')) },
+            { icon: 'log-out-outline', label: t('wallet:withdraw'), color: '#3B82F6', bg: '#EFF6FF', onPress: openWithdraw },
+            { icon: 'receipt-outline', label: t('wallet:history'), color: PRIMARY, bg: '#FFF3E0', onPress: openHistory },
           ].map((action, idx) => (
             <Pressable
               key={idx}
@@ -227,7 +230,7 @@ export default function WalletScreen() {
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 }}>
             <Ionicons name="time-outline" size={16} color="#1A1A1A" />
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1A1A1A' }}>Transactions récentes</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1A1A1A' }}>{t('wallet:recentTransactions')}</Text>
           </View>
 
           {loading ? (
@@ -243,15 +246,15 @@ export default function WalletScreen() {
               <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="wallet-outline" size={22} color={PRIMARY} />
               </View>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#1A1A1A' }}>Aucune transaction</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#1A1A1A' }}>{t('wallet:noTransactions')}</Text>
               <Text style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center' }}>
-                Vos transactions apparaîtront ici
+                {t('wallet:noTransactionsDesc')}
               </Text>
             </View>
           ) : (
             <View style={{ backgroundColor: '#FAFAFA', borderRadius: 16, borderWidth: 1, borderColor: '#F0F0F0', overflow: 'hidden' }}>
               {transactions.slice(0, 10).map((tx, idx) => {
-                const meta = getTxMeta(tx.type);
+                const meta = getTxMeta(tx.type, t);
                 const isPositive = Number(tx.amount) > 0 && tx.type !== 'recovery_fee';
                 return (
                   <View
@@ -282,7 +285,7 @@ export default function WalletScreen() {
                         fontSize: 14, fontWeight: '700',
                         color: isPositive ? '#16A34A' : '#EF4444',
                       }}>
-                        {isPositive ? '+' : '-'}{fmtAmount(Math.abs(Number(tx.amount)))} FCFA
+                        {isPositive ? '+' : '-'}{fmtAmount(Math.abs(Number(tx.amount)))} {t('common:fcf')}
                       </Text>
                       <View style={{
                         backgroundColor: tx.status === 'SUCCESS' ? '#F0FDF4' : tx.status === 'PENDING' ? '#FFF7ED' : '#F3F4F6',
@@ -292,7 +295,7 @@ export default function WalletScreen() {
                           fontSize: 9, fontWeight: '700',
                           color: tx.status === 'SUCCESS' ? '#16A34A' : tx.status === 'PENDING' ? '#EA580C' : '#6B7280',
                         }}>
-                          {tx.status === 'SUCCESS' ? 'Succès' : tx.status === 'PENDING' ? 'En cours' : tx.status || '—'}
+                          {tx.status === 'SUCCESS' ? t('wallet:statusSuccess') : tx.status === 'PENDING' ? t('wallet:statusPending') : tx.status || '—'}
                         </Text>
                       </View>
                     </View>
@@ -311,16 +314,16 @@ export default function WalletScreen() {
             <View style={{ width: 60, height: 60, borderRadius: 20, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
               <Ionicons name="log-out-outline" size={28} color="#3B82F6" />
             </View>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A', textAlign: 'center', marginBottom: 4 }}>Retrait de fonds</Text>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A', textAlign: 'center', marginBottom: 4 }}>{t('wallet:withdrawTitle')}</Text>
             <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', marginBottom: 20 }}>
-              Solde disponible : {fmtAmount(balance)} FCFA
+              {t('wallet:availableBalance')}{fmtAmount(balance)} {t('common:fcf')}
             </Text>
 
             <View style={{ marginBottom: 16 }}>
-              <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>Mode de paiement</Text>
+              <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>{t('wallet:paymentMethod')}</Text>
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                {([{ key: 'MTN', icon: 'phone-portrait-outline', label: 'MTN Mobile Money' },
-                   { key: 'ORANGE', icon: 'phone-portrait-outline', label: 'Orange Money' }] as const).map((m) => (
+                {([{ key: 'MTN', icon: 'phone-portrait-outline', label: t('wallet:mtn') },
+                   { key: 'ORANGE', icon: 'phone-portrait-outline', label: t('wallet:orange') }] as const).map((m) => (
                   <Pressable
                     key={m.key}
                     onPress={() => setWithdrawMethod(m.key)}
@@ -339,16 +342,16 @@ export default function WalletScreen() {
 
             <View style={{ gap: 12 }}>
               <Input
-                label="Montant (FCFA)"
-                placeholder="Ex: 5000"
+                label={t('wallet:amount')}
+                placeholder={t('wallet:amountPlaceholder')}
                 icon="cash-outline"
                 keyboardType="numeric"
                 value={withdrawAmount}
                 onChangeText={setWithdrawAmount}
               />
               <Input
-                label="Numéro de téléphone"
-                placeholder="Ex: 691234567"
+                label={t('wallet:phoneNumber')}
+                placeholder={t('wallet:phonePlaceholder')}
                 icon="call-outline"
                 keyboardType="phone-pad"
                 value={withdrawPhone}
@@ -358,10 +361,10 @@ export default function WalletScreen() {
 
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 24 }}>
               <View style={{ flex: 1 }}>
-                <Button title="Annuler" variant="outline" onPress={() => setShowWithdraw(false)} />
+                <Button title={t('common:cancel')} variant="outline" onPress={() => setShowWithdraw(false)} />
               </View>
               <View style={{ flex: 1.5 }}>
-                <Button title="Retirer" onPress={handleWithdraw} loading={withdrawSubmitting} icon="log-out-outline" />
+                <Button title={t('wallet:withdraw')} onPress={handleWithdraw} loading={withdrawSubmitting} icon="log-out-outline" />
               </View>
             </View>
           </Pressable>
@@ -374,7 +377,7 @@ export default function WalletScreen() {
           <Pressable style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%', paddingBottom: insets.bottom + 8 }} onPress={e => e.stopPropagation()}>
             <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB', alignSelf: 'center', marginTop: 12, marginBottom: 8 }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 }}>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>Historique des retraits</Text>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>{t('wallet:withdrawHistory')}</Text>
               <Pressable onPress={() => setShowHistory(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="close" size={18} color="#6B7280" />
               </Pressable>
@@ -387,7 +390,7 @@ export default function WalletScreen() {
               ) : withdrawals.length === 0 ? (
                 <View style={{ padding: 32, alignItems: 'center', gap: 8 }}>
                   <Ionicons name="receipt-outline" size={32} color="#D1D5DB" />
-                  <Text style={{ fontSize: 13, color: '#9CA3AF' }}>Aucun retrait pour le moment</Text>
+                  <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t('wallet:noWithdrawals')}</Text>
                 </View>
               ) : (
                 <View style={{ gap: 10, paddingBottom: 32 }}>
@@ -398,13 +401,13 @@ export default function WalletScreen() {
                     }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                         <Text style={{ fontSize: 16, fontWeight: '800', color: '#1A1A1A' }}>
-                          {fmtAmount(w.amount)} FCFA
+                          {fmtAmount(w.amount)} {t('common:fcf')}
                         </Text>
                         <WithdrawalStatusBadge status={w.status} />
                       </View>
                       <View style={{ flexDirection: 'row', gap: 16 }}>
                         <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
-                          {w.payment_method === 'MTN' ? 'MTN Mobile Money' : w.payment_method === 'ORANGE' ? 'Orange Money' : w.payment_method}
+                          {w.payment_method === 'MTN' ? t('wallet:mtn') : w.payment_method === 'ORANGE' ? t('wallet:orange') : w.payment_method}
                         </Text>
                         <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
                           {w.payment_details}

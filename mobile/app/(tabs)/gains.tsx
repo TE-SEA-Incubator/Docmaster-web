@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/core/store/useAuthStore';
+import { useTranslation } from 'react-i18next';
 import { useEarnings } from '@/core/hooks/useEarnings';
 import { declarationsService } from '@/core/api/declarationsService';
 import { BottomTabInset } from '@/constants/theme';
@@ -25,19 +26,19 @@ function fmtDate(v?: string) {
   } catch { return '—'; }
 }
 
-function getTxMeta(type: string) {
-  if (type === 'finder_payout') return { icon: 'checkmark-circle-outline' as const, bg: '#F0FDF4', color: '#16A34A', label: 'Commission trouvaille', sub: 'Récompense document trouvé' };
-  if (type === 'recovery_fee') return { icon: 'arrow-up-outline' as const, bg: '#FFF7ED', color: '#EA580C', label: 'Frais récupération', sub: 'Paiement effectué' };
-  if (type === 'withdrawal') return { icon: 'log-out-outline' as const, bg: '#EFF6FF', color: '#3B82F6', label: 'Retrait', sub: 'Mobile Money' };
+function getTxMeta(type: string, t: (key: string) => string) {
+  if (type === 'finder_payout') return { icon: 'checkmark-circle-outline' as const, bg: '#F0FDF4', color: '#16A34A', label: t('gains:txCommission'), sub: t('gains:txCommissionSub') };
+  if (type === 'recovery_fee') return { icon: 'arrow-up-outline' as const, bg: '#FFF7ED', color: '#EA580C', label: t('gains:txRecovery'), sub: t('gains:txRecoverySub') };
+  if (type === 'withdrawal') return { icon: 'log-out-outline' as const, bg: '#EFF6FF', color: '#3B82F6', label: t('gains:txWithdrawal'), sub: t('gains:txWithdrawalSub') };
   return { icon: 'receipt-outline' as const, bg: '#F3F4F6', color: '#6B7280', label: type, sub: '—' };
 }
 
-function getEarningMeta(type: string) {
-  if (type === 'declaration_points') return { icon: 'document-text-outline' as keyof typeof Ionicons.glyphMap, bg: '#FFF3E0', color: PRIMARY, label: 'Points déclaration' };
-  if (type === 'return_points') return { icon: 'hand-left-outline' as keyof typeof Ionicons.glyphMap, bg: '#F0FDF4', color: '#16A34A', label: 'Points remise' };
-  if (type === 'referral_points') return { icon: 'person-add-outline' as keyof typeof Ionicons.glyphMap, bg: '#FFFBEB', color: '#D97706', label: 'Points parrainage' };
-  if (type === 'referral_bonus') return { icon: 'gift-outline' as keyof typeof Ionicons.glyphMap, bg: '#F5F3FF', color: '#8B5CF6', label: 'Bonus parrainage' };
-  if (type === 'finder_payout') return { icon: 'cash-outline' as keyof typeof Ionicons.glyphMap, bg: '#F0FDF4', color: '#16A34A', label: 'Récompense remise' };
+function getEarningMeta(type: string, t: (key: string) => string) {
+  if (type === 'declaration_points') return { icon: 'document-text-outline' as keyof typeof Ionicons.glyphMap, bg: '#FFF3E0', color: PRIMARY, label: t('gains:earnDeclaration') };
+  if (type === 'return_points') return { icon: 'hand-left-outline' as keyof typeof Ionicons.glyphMap, bg: '#F0FDF4', color: '#16A34A', label: t('gains:earnReturn') };
+  if (type === 'referral_points') return { icon: 'person-add-outline' as keyof typeof Ionicons.glyphMap, bg: '#FFFBEB', color: '#D97706', label: t('gains:earnReferral') };
+  if (type === 'referral_bonus') return { icon: 'gift-outline' as keyof typeof Ionicons.glyphMap, bg: '#F5F3FF', color: '#8B5CF6', label: t('gains:earnBonus') };
+  if (type === 'finder_payout') return { icon: 'cash-outline' as keyof typeof Ionicons.glyphMap, bg: '#F0FDF4', color: '#16A34A', label: t('gains:earnReward') };
   return { icon: 'coins-outline' as keyof typeof Ionicons.glyphMap, bg: '#F3F4F6', color: '#6B7280', label: type };
 }
 
@@ -52,8 +53,8 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
             <Ionicons name="cash-outline" size={16} color="#EA580C" />
           </View>
           <View>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>Gains potentiels</Text>
-            <Text style={{ fontSize: 11, color: '#9CA3AF' }}>Estimés sur documents trouvés</Text>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:potentialGains')}</Text>
+            <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{t('gains:potentialGainsSub')}</Text>
           </View>
         </View>
       </View>
@@ -64,7 +65,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
               <Ionicons name="cash-outline" size={18} color="#EA580C" />
             </View>
             <View>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A1A1A' }}>{fmtAmount(totalXaf)} <Text style={{ fontSize: 11, color: '#6B7280' }}>XAF</Text></Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A1A1A' }}>{fmtAmount(totalXaf)} <Text style={{ fontSize: 11, color: '#6B7280' }}>{t('common:fcf')}</Text></Text>
             </View>
           </View>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -72,7 +73,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
               <Ionicons name="star-outline" size={18} color={PRIMARY} />
             </View>
             <View>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A1A1A' }}>{fmtAmount(totalPts)} <Text style={{ fontSize: 11, color: '#6B7280' }}>pts</Text></Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A1A1A' }}>{fmtAmount(totalPts)} <Text style={{ fontSize: 11, color: '#6B7280' }}>{t('gains:pts')}</Text></Text>
             </View>
           </View>
         </View>
@@ -92,8 +93,8 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
               <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{decl.identifiant_doc_dm}</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 13, fontWeight: '800', color: '#EA580C' }}>+{fmtAmount(xafGain)} XAF</Text>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: PRIMARY }}>+{ptsGain} pts</Text>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: '#EA580C' }}>+{fmtAmount(xafGain)} {t('common:fcf')}</Text>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: PRIMARY }}>+{ptsGain} {t('gains:pts')}</Text>
             </View>
           </View>
         );
@@ -105,6 +106,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
 export default function GainsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { transactions, earnings, stats, minWithdrawal, loading, refresh } = useEarnings();
   const [refreshing, setRefreshing] = useState(false);
@@ -156,12 +158,11 @@ export default function GainsScreen() {
 
   const nextLevelPoints = 500;
   const pointsToNext = Math.max(nextLevelPoints - totalPoints, 0);
-  const levelLabel = totalPoints >= 500 ? 'Gold' : 'Silver';
+  const levelLabel = totalPoints >= 500 ? t('gains:levelGold') : t('gains:levelSilver');
 
   const handleWithdraw = () => {
     if (balance < minWithdrawal) {
-      const { Alert } = require('react-native');
-      Alert.alert('Solde insuffisant', `Minimum retrait: ${fmtAmount(minWithdrawal)} XAF.\nSolde actuel: ${fmtAmount(balance)} XAF`);
+      Alert.alert(t('gains:insufficientBalance'), t('gains:minWithdrawMsg', { amount: fmtAmount(minWithdrawal), balance: fmtAmount(balance) }));
     } else {
       router.push('/(tabs)/subscription');
     }
@@ -179,7 +180,7 @@ export default function GainsScreen() {
           <Pressable onPress={() => router.back()} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, marginRight: 12 })}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </Pressable>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>Mes Gains</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>{t('gains:title')}</Text>
         </View>
       </View>
 
@@ -198,9 +199,9 @@ export default function GainsScreen() {
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <View>
-              <Text style={{ fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>Solde disponible</Text>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>{t('gains:availableBalance')}</Text>
               <Text style={{ fontSize: 34, fontWeight: '800', color: '#FFFFFF' }}>
-                {fmtAmount(balance)} <Text style={{ fontSize: 18, fontWeight: '700', color: 'rgba(255,255,255,0.6)' }}>XAF</Text>
+                {fmtAmount(balance)} <Text style={{ fontSize: 18, fontWeight: '700', color: 'rgba(255,255,255,0.6)' }}>{t('common:fcf')}</Text>
               </Text>
             </View>
             <View style={{ width: 44, height: 44, borderRadius: 13, backgroundColor: 'rgba(245,166,75,0.15)', alignItems: 'center', justifyContent: 'center' }}>
@@ -211,16 +212,16 @@ export default function GainsScreen() {
           {/* Progress bar */}
           <View style={{ marginBottom: 16 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Progression retrait</Text>
+              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{t('gains:withdrawProgress')}</Text>
               <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>
-                {fmtAmount(balance)} / {fmtAmount(minWithdrawal)} XAF
+                {fmtAmount(balance)} / {fmtAmount(minWithdrawal)} {t('common:fcf')}
               </Text>
             </View>
             <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 3, overflow: 'hidden' }}>
               <View style={{ height: '100%', borderRadius: 3, width: `${progressPct}%`, backgroundColor: PRIMARY }} />
             </View>
             <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
-              Minimum retrait: {fmtAmount(minWithdrawal)} XAF
+              {t('gains:minWithdraw', { amount: fmtAmount(minWithdrawal) })} {t('common:fcf')}
             </Text>
           </View>
 
@@ -235,11 +236,11 @@ export default function GainsScreen() {
               })}
             >
               <Ionicons name="card-outline" size={16} color={GREEN_DARK} />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: GREEN_DARK }}>Retirer</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: GREEN_DARK }}>{t('gains:withdraw')}</Text>
             </Pressable>
             
             <Pressable
-              onPress={() => Alert.alert('Info', 'Fonctionnalité de conversion bientôt disponible.')}
+              onPress={() => Alert.alert(t('common:info'), t('gains:convertSoon'))}
               style={({ pressed }) => ({
                 flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
                 paddingVertical: 13, borderRadius: 13,
@@ -248,7 +249,7 @@ export default function GainsScreen() {
               })}
             >
               <Ionicons name="refresh-outline" size={16} color="#374151" />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151' }}>Convertir</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151' }}>{t('gains:convert')}</Text>
             </Pressable>
           </View>
         </View>
@@ -259,7 +260,7 @@ export default function GainsScreen() {
             totalXaf={totalPotentialXaf}
             totalPts={totalPotentialPts}
             fmtAmount={fmtAmount}
-            t={(k: string) => k}
+            t={t}
           />
           {/* Methods management */}
           <View style={{ marginBottom: 20 }}>
@@ -268,10 +269,10 @@ export default function GainsScreen() {
                 <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="card-outline" size={16} color={GREEN_MID} />
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>Modes de paiement</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:paymentMethods')}</Text>
               </View>
-              <Pressable onPress={() => Alert.alert('Info', 'Gestion des paiements bientôt disponible.')}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: PRIMARY }}>Gérer</Text>
+              <Pressable onPress={() => Alert.alert(t('common:info'), 'Gestion des paiements bientôt disponible.')}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: PRIMARY }}>{t('gains:manage')}</Text>
               </Pressable>
             </View>
           </View>
@@ -279,10 +280,10 @@ export default function GainsScreen() {
           {/* ── Stats Grid ── */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
             {[
-              { icon: 'checkmark-circle-outline' as const, bg: '#F0FDF4', color: '#16A34A', value: String(statsCards.total_found ?? 0), label: 'Docs trouvés' },
-              { icon: 'hand-left-outline' as const, bg: '#FFF3E0', color: PRIMARY, value: String(statsCards.total_returned ?? 0), label: 'Docs remis' },
-              { icon: 'cash-outline' as const, bg: '#FFFBEB', color: '#D97706', value: `${fmtAmount(totalFinderPayouts)}`, label: 'XAF gagnés' },
-              { icon: 'log-out-outline' as const, bg: '#EFF6FF', color: '#3B82F6', value: `${fmtAmount(totalWithdrawn)}`, label: 'XAF retirés' },
+              { icon: 'checkmark-circle-outline' as const, bg: '#F0FDF4', color: '#16A34A', value: String(statsCards.total_found ?? 0), label: t('gains:docsFound') },
+              { icon: 'hand-left-outline' as const, bg: '#FFF3E0', color: PRIMARY, value: String(statsCards.total_returned ?? 0), label: t('gains:docsReturned') },
+              { icon: 'cash-outline' as const, bg: '#FFFBEB', color: '#D97706', value: `${fmtAmount(totalFinderPayouts)}`, label: t('gains:xafEarned') },
+              { icon: 'log-out-outline' as const, bg: '#EFF6FF', color: '#3B82F6', value: `${fmtAmount(totalWithdrawn)}`, label: t('gains:xafWithdrawn') },
             ].map((card) => (
               <View key={card.label} style={{
                 width: '48%', flexGrow: 1, backgroundColor: '#FAFAFA', borderRadius: 16,
@@ -305,18 +306,18 @@ export default function GainsScreen() {
                   <Ionicons name="star" size={16} color={PRIMARY} />
                 </View>
                 <View>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>Points DocMaster</Text>
-                  <Text style={{ fontSize: 11, color: '#9CA3AF' }}>Programme de fidélité</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:loyaltyPoints')}</Text>
+                  <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{t('gains:loyaltySubtitle')}</Text>
                 </View>
               </View>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: PRIMARY }}>{fmtAmount(totalPoints)} pts</Text>
+              <Text style={{ fontSize: 20, fontWeight: '800', color: PRIMARY }}>{fmtAmount(totalPoints)} {t('gains:pts')}</Text>
             </View>
 
             {/* Points breakdown */}
             {[
-              { label: 'Documents déclarés', detail: `(+${pointsBreakdown.declarations.pts_per_unit || 5} pts × ${pointsBreakdown.declarations.count})`, pts: pointsBreakdown.declarations.points, color: PRIMARY, max: 5 },
-              { label: 'Documents remis', detail: `(${pointsBreakdown.returns.count} docs)`, pts: pointsBreakdown.returns.points, color: GREEN_MID, max: 5 },
-              { label: 'Parrainages', detail: `(${pointsBreakdown.referrals.count} personnes)`, pts: pointsBreakdown.referrals.points, color: '#D97706', max: 5 },
+              { label: t('gains:breakdownDeclarations'), detail: `(+${pointsBreakdown.declarations.pts_per_unit || 5} ${t('gains:pts')} × ${pointsBreakdown.declarations.count})`, pts: pointsBreakdown.declarations.points, color: PRIMARY, max: 5 },
+              { label: t('gains:breakdownReturned'), detail: `(${pointsBreakdown.returns.count} ${t('gains:docsReturned')})`, pts: pointsBreakdown.returns.points, color: GREEN_MID, max: 5 },
+              { label: t('gains:breakdownReferrals'), detail: `(${pointsBreakdown.referrals.count} personnes)`, pts: pointsBreakdown.referrals.points, color: '#D97706', max: 5 },
             ].map((item) => {
               const pct = Math.min((item.pts / item.max) * 100, 100);
               return (
@@ -325,7 +326,7 @@ export default function GainsScreen() {
                     <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
                       {item.label} <Text style={{ color: '#1A1A1A', fontWeight: '600' }}>{item.detail}</Text>
                     </Text>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#1A1A1A' }}>{item.pts} pts</Text>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#1A1A1A' }}>{item.pts} {t('gains:pts')}</Text>
                   </View>
                   <View style={{ height: 5, backgroundColor: '#F0F0F0', borderRadius: 3, overflow: 'hidden' }}>
                     <View style={{ height: '100%', backgroundColor: item.color, borderRadius: 3, width: `${pct}%` }} />
@@ -345,13 +346,13 @@ export default function GainsScreen() {
                 <View>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{levelLabel}</Text>
                   <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
-                    {pointsToNext > 0 ? `${pointsToNext} pts pour Gold` : 'Niveau Gold atteint !'}
+                    {pointsToNext > 0 ? `${pointsToNext} ${t('gains:goldNext')}` : t('gains:goldReached')}
                   </Text>
                 </View>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: 11, color: '#9CA3AF' }}>Prochain palier</Text>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: PRIMARY }}>{fmtAmount(nextLevelPoints)} pts</Text>
+                <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{t('gains:nextLevel')}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: PRIMARY }}>{fmtAmount(nextLevelPoints)} {t('gains:pts')}</Text>
               </View>
             </View>
           </View>
@@ -363,21 +364,21 @@ export default function GainsScreen() {
                 <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="time-outline" size={16} color={GREEN_MID} />
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>Transactions récentes</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:recentTransactions')}</Text>
               </View>
               <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: PRIMARY }}>Tout voir</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: PRIMARY }}>{t('gains:seeAll')}</Text>
               </Pressable>
             </View>
 
             {transactions.length === 0 ? (
               <View style={{ padding: 32, alignItems: 'center', gap: 8 }}>
                 <Ionicons name="receipt-outline" size={32} color="#D1D5DB" />
-                <Text style={{ fontSize: 13, color: '#9CA3AF' }}>Aucune transaction</Text>
+                <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t('gains:noTransactions')}</Text>
               </View>
             ) : (
               transactions.slice(0, 5).map((tx, idx) => {
-                const meta = getTxMeta(tx.type || '');
+                const meta = getTxMeta(tx.type || '', t);
                 const isPositive = tx.amount > 0 && tx.type !== 'recovery_fee';
                 return (
                   <View
@@ -398,7 +399,7 @@ export default function GainsScreen() {
                     </View>
                     <View style={{ alignItems: 'flex-end', gap: 3 }}>
                       <Text style={{ fontSize: 14, fontWeight: '800', color: isPositive ? GREEN_MID : '#9CA3AF' }}>
-                        {isPositive ? '+' : '-'}{fmtAmount(Math.abs(tx.amount))} XAF
+                        {isPositive ? '+' : '-'}{fmtAmount(Math.abs(tx.amount))} {t('common:fcf')}
                       </Text>
                       <View style={{
                         backgroundColor: tx.status === 'SUCCESS' ? '#F0FDF4' : tx.status === 'PENDING' ? '#FFF7ED' : '#F3F4F6',
@@ -408,7 +409,7 @@ export default function GainsScreen() {
                           fontSize: 9, fontWeight: '700',
                           color: tx.status === 'SUCCESS' ? '#16A34A' : tx.status === 'PENDING' ? '#EA580C' : '#6B7280',
                         }}>
-                          {tx.status === 'SUCCESS' ? 'Succès' : tx.status === 'PENDING' ? 'En cours' : tx.status}
+                          {tx.status === 'SUCCESS' ? t('gains:statusSuccess') : tx.status === 'PENDING' ? t('gains:statusPending') : tx.status}
                         </Text>
                       </View>
                     </View>
@@ -426,13 +427,13 @@ export default function GainsScreen() {
                   <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: `${PRIMARY}15`, alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="wallet-outline" size={16} color={PRIMARY} />
                   </View>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>Historique des gains</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:earningsHistory')}</Text>
                 </View>
-                <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{earnings.length} entrées</Text>
+                <Text style={{ fontSize: 11, color: '#9CA3AF' }}>{earnings.length} {t('gains:entries')}</Text>
               </View>
 
               {earnings.slice(0, 5).map((entry, idx) => {
-                const meta = getEarningMeta(entry.type);
+                const meta = getEarningMeta(entry.type, t);
                 const isPoints = entry.currency === 'POINTS';
                 return (
                   <View
@@ -454,7 +455,7 @@ export default function GainsScreen() {
                       <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{fmtDate(entry.created_at)}</Text>
                     </View>
                     <Text style={{ fontSize: 14, fontWeight: '800', color: isPoints ? PRIMARY : GREEN_MID }}>
-                      +{fmtAmount(entry.amount)} {isPoints ? 'pts' : 'XAF'}
+                      +{fmtAmount(entry.amount)} {isPoints ? t('gains:pts') : t('common:fcf')}
                     </Text>
                   </View>
                 );
@@ -468,14 +469,14 @@ export default function GainsScreen() {
               <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="phone-portrait-outline" size={16} color={GREEN_MID} />
               </View>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>Méthodes de retrait</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1A1A1A' }}>{t('gains:withdrawMethods')}</Text>
             </View>
 
             <View style={{ gap: 10 }}>
               {[
-                { icon: 'phone-portrait-outline', name: 'MTN Mobile Money', color: '#D97706', bg: '#FFFBEB', connected: true },
-                { icon: 'phone-portrait-outline', name: 'Orange Money', color: '#EA580C', bg: '#FFF7ED', connected: false },
-                { icon: 'business-outline', name: 'Virement bancaire', color: '#3B82F6', bg: '#EFF6FF', connected: false },
+                { icon: 'phone-portrait-outline', name: t('gains:mtn'), color: '#D97706', bg: '#FFFBEB', connected: true },
+                { icon: 'phone-portrait-outline', name: t('gains:orange'), color: '#EA580C', bg: '#FFF7ED', connected: false },
+                { icon: 'business-outline', name: t('gains:bankTransfer'), color: '#3B82F6', bg: '#EFF6FF', connected: false },
               ].map((method) => (
                 <Pressable
                   key={method.name}
@@ -492,7 +493,7 @@ export default function GainsScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#1A1A1A' }}>{method.name}</Text>
                     <Text style={{ fontSize: 11, color: method.connected ? '#16A34A' : '#9CA3AF', fontWeight: method.connected ? '600' : '400' }}>
-                      {method.connected ? '✓ Connecté' : 'Ajouter'}
+                      {method.connected ? t('gains:connected') : t('gains:add')}
                     </Text>
                   </View>
                   <Ionicons
@@ -505,7 +506,7 @@ export default function GainsScreen() {
             </View>
 
             <Text style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 12 }}>
-              Minimum {fmtAmount(minWithdrawal)} XAF · Délai 24-48h
+              {t('gains:minPrefix')}{fmtAmount(minWithdrawal)} {t('common:fcf')}{t('gains:delay')}
             </Text>
           </View>
         </View>

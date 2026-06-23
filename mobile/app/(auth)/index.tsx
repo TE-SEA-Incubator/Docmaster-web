@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Defs, G } from 'react-native-svg';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { useGoogleAuth } from '@/core/api/googleAuthService';
 import { Colors } from '@/constants/theme';
@@ -17,13 +18,6 @@ const STEP_IMAGES = [
   require('../../assets/onbording/document-vectoriel-vectoriel-conception-coloree.png'),
   require('../../assets/onbording/59337.jpg'),
   require('../../assets/onbording/Wavy_Bus-06_Single-06.jpg'),
-];
-
-const STEP_DATA = [
-  { title: 'Vos informations', subtitle: 'Créez votre compte DocMaster' },
-  { title: 'Sécurisation', subtitle: 'Confirmez votre mot de passe' },
-  { title: 'Vérification', subtitle: 'Entrez le code à 6 chiffres reçu' },
-  { title: 'Finalisation', subtitle: 'Choisissez votre pseudo unique' },
 ];
 
 function FieldInput({
@@ -224,20 +218,18 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 
-function SocialLoginButtons({ loading }: { loading: boolean }) {
-  // Fonctionnalité bloquée temporairement
-  return (
-    <Pressable style={[styles.socialBtn, { opacity: 0.5 }]} disabled={true}>
-      <Ionicons name="logo-google" size={16} color="#db4437" />
-      <ThemedText style={styles.socialBtnText}>Connexion bloquée</ThemedText>
-    </Pressable>
-  );
-}
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ ref?: string }>();
+  const { t } = useTranslation();
+  const STEP_DATA = [
+    { title: t('auth:step1Title'), subtitle: t('auth:step1Subtitle') },
+    { title: t('auth:step2Title'), subtitle: t('auth:step2Subtitle') },
+    { title: t('auth:step3Title'), subtitle: t('auth:step3Subtitle') },
+    { title: t('auth:step4Title'), subtitle: t('auth:step4Subtitle') },
+  ];
   const { login: doLogin, register: doRegister, isAuthenticated } = useAuthStore();
 
   const [tab, setTab] = useState<'login' | 'register'>('login');
@@ -298,7 +290,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!loginForm.email || !loginForm.password) {
-      setLoginError('Veuillez remplir tous les champs');
+      setLoginError(t('auth:fieldsRequired'));
       return;
     }
     setLoginError('');
@@ -306,7 +298,7 @@ export default function LoginScreen() {
     try {
       await doLogin(loginForm.email, loginForm.password);
     } catch (err: any) {
-      setLoginError(err?.response?.data?.message || err?.message || 'Identifiants invalides');
+      setLoginError(err?.response?.data?.message || err?.message || t('auth:loginError'));
     } finally {
       setLoginLoading(false);
     }
@@ -325,7 +317,7 @@ export default function LoginScreen() {
         telephone: regForm.telephone,
       });
     } catch (err: any) {
-      setRegError(err?.response?.data?.message || err?.message || "Erreur lors de l'inscription");
+      setRegError(err?.response?.data?.message || err?.message || t('auth:registerError'));
     } finally {
       setRegLoading(false);
     }
@@ -343,16 +335,16 @@ export default function LoginScreen() {
       <>
         <View style={styles.nameRow}>
           <View style={styles.nameField}>
-            <FieldInput icon="person-outline" value={regForm.nom} onChangeText={(v) => setRegForm((f) => ({ ...f, nom: v }))} placeholder="Nom" />
+            <FieldInput icon="person-outline" value={regForm.nom} onChangeText={(v) => setRegForm((f) => ({ ...f, nom: v }))} placeholder={t('auth:lastName')} />
           </View>
           <View style={styles.nameField}>
-            <FieldInput icon="person-outline" value={regForm.prenom} onChangeText={(v) => setRegForm((f) => ({ ...f, prenom: v }))} placeholder="Prénom" />
+            <FieldInput icon="person-outline" value={regForm.prenom} onChangeText={(v) => setRegForm((f) => ({ ...f, prenom: v }))} placeholder={t('auth:firstName')} />
           </View>
         </View>
 
-        <FieldInput icon="call-outline" value={regForm.telephone} onChangeText={(v) => setRegForm((f) => ({ ...f, telephone: v }))} placeholder="Téléphone" keyboardType="phone-pad" />
+        <FieldInput icon="call-outline" value={regForm.telephone} onChangeText={(v) => setRegForm((f) => ({ ...f, telephone: v }))} placeholder={t('auth:phone')} keyboardType="phone-pad" />
 
-        <FieldInput icon="mail-outline" value={regForm.email} onChangeText={(v) => setRegForm((f) => ({ ...f, email: v }))} placeholder="votre@email.com" keyboardType="email-address" />
+        <FieldInput icon="mail-outline" value={regForm.email} onChangeText={(v) => setRegForm((f) => ({ ...f, email: v }))} placeholder={t('auth:emailPlaceholder')} keyboardType="email-address" />
 
         <View>
           <FieldInput
@@ -363,7 +355,7 @@ export default function LoginScreen() {
               const s = calcPwStrength(v);
               setPwStrength(s);
             }}
-            placeholder="Mot de passe"
+            placeholder={t('auth:password')}
             secureTextEntry={!pwVisible}
             rightButton={
               <Pressable onPress={() => setPwVisible(!pwVisible)} style={styles.pwToggle}>
@@ -379,7 +371,7 @@ export default function LoginScreen() {
           disabled={!canGoNext(1)}
           style={[styles.onbNextBtn, !canGoNext(1) && styles.disabledBtn]}
         >
-          <ThemedText style={styles.onbNextBtnText}>Continuer</ThemedText>
+          <ThemedText style={styles.onbNextBtnText}>{t('common:continue')}</ThemedText>
           <Ionicons name="arrow-forward" size={18} color="white" />
         </Pressable>
       </>
@@ -389,7 +381,7 @@ export default function LoginScreen() {
   function Step2Confirm() {
     return (
       <>
-        <FieldInput icon="lock-closed-outline" value={regForm.password} placeholder="Mot de passe" secureTextEntry />
+        <FieldInput icon="lock-closed-outline" value={regForm.password} placeholder={t('auth:password')} secureTextEntry />
 
         <View>
           <FieldInput
@@ -399,7 +391,7 @@ export default function LoginScreen() {
               setRegForm((f) => ({ ...f, passwordConfirm: v }));
               setPwMatch(v === regForm.password && v.length > 0);
             }}
-            placeholder="Confirmer le mot de passe"
+            placeholder={t('auth:confirmPassword')}
             secureTextEntry={!pwVisible}
             rightButton={
               <Pressable onPress={() => setPwVisible(!pwVisible)} style={styles.pwToggle}>
@@ -409,12 +401,12 @@ export default function LoginScreen() {
           />
           {regForm.passwordConfirm && pwMatch === false && (
             <ThemedText style={styles.pwMismatchText}>
-              <Ionicons name="close-circle" size={12} color="#EF4444" /> Les mots de passe ne correspondent pas.
+              <Ionicons name="close-circle" size={12} color="#EF4444" /> {t('auth:passwordMismatch')}
             </ThemedText>
           )}
           {pwMatch === true && (
             <ThemedText style={styles.pwMatchText}>
-              <Ionicons name="checkmark-circle" size={12} color="#16a34a" /> Parfait !
+              <Ionicons name="checkmark-circle" size={12} color="#16a34a" /> {t('auth:passwordMatch')}
             </ThemedText>
           )}
         </View>
@@ -428,7 +420,7 @@ export default function LoginScreen() {
             disabled={!canGoNext(2)}
             style={[styles.onbNextBtn, styles.flex1, !canGoNext(2) && styles.disabledBtn]}
           >
-            <ThemedText style={styles.onbNextBtnText}>Valider</ThemedText>
+            <ThemedText style={styles.onbNextBtnText}>{t('common:validate')}</ThemedText>
             <Ionicons name="arrow-forward" size={18} color="white" />
           </Pressable>
         </View>
@@ -441,7 +433,7 @@ export default function LoginScreen() {
       <>
         <View style={styles.pinHeader}>
           <ThemedText style={styles.pinHeaderText}>
-            Un code PIN à 6 chiffres a été envoyé à{'\n'}
+            {t('auth:pinSentTo')}{'\n'}
             <ThemedText style={styles.pinPhone}>{regForm.telephone}</ThemedText>
           </ThemedText>
         </View>
@@ -477,8 +469,8 @@ export default function LoginScreen() {
         </View>
 
         <ThemedText style={styles.pinResendText}>
-          Vous n'avez pas reçu le code ?{' '}
-          <ThemedText style={styles.pinResendLink}>Renvoyer</ThemedText>
+          {t('auth:pinNotReceived')}{' '}
+          <ThemedText style={styles.pinResendLink}>{t('auth:resend')}</ThemedText>
         </ThemedText>
 
         <View style={styles.onbStepNav}>
@@ -490,7 +482,7 @@ export default function LoginScreen() {
             disabled={!canGoNext(3)}
             style={[styles.onbNextBtn, styles.flex1, !canGoNext(3) && styles.disabledBtn]}
           >
-            <ThemedText style={styles.onbNextBtnText}>Vérifier</ThemedText>
+            <ThemedText style={styles.onbNextBtnText}>{t('auth:verify')}</ThemedText>
             <Ionicons name="arrow-forward" size={18} color="white" />
           </Pressable>
         </View>
@@ -503,7 +495,7 @@ export default function LoginScreen() {
       <>
         <View style={styles.pseudoSection}>
           <ThemedText style={styles.pseudoLabel}>
-            <Ionicons name="at" size={11} color={Colors.light.tint} /> Pseudo
+            <Ionicons name="at" size={11} color={Colors.light.tint} /> {t('auth:pseudo')}
           </ThemedText>
           <View style={styles.pseudoInputWrapper}>
             <View style={styles.pseudoAtSign}>
@@ -513,20 +505,19 @@ export default function LoginScreen() {
               style={styles.pseudoInput}
               value={regForm.pseudo}
               onChangeText={(v) => setRegForm((f) => ({ ...f, pseudo: v }))}
-              placeholder="jean_dupont42"
+              placeholder={t('auth:pseudoPlaceholder')}
               placeholderTextColor="#c4bab0"
               autoCapitalize="none"
             />
           </View>
           <ThemedText style={styles.pseudoHint}>
-            Votre pseudo doit être unique et contenir au moins 3 caractères.
+            {t('auth:pseudoHint')}
           </ThemedText>
         </View>
 
         {pseudoSuggestions.length > 0 && (
           <View>
-            <ThemedText style={styles.suggestionsTitle}>
-              Suggestions
+              <ThemedText style={styles.suggestionsTitle}>{t('auth:suggestions')}
             </ThemedText>
             <View style={styles.suggestionsRow}>
               {pseudoSuggestions.map((s) => (
@@ -551,7 +542,7 @@ export default function LoginScreen() {
           >
             <Ionicons name="people" size={14} color={Colors.light.tint} />
             <ThemedText style={styles.referralToggleText}>
-              Vous avez un code de parrainage ?
+              {t('auth:referralPrompt')}
             </ThemedText>
             <Ionicons
               name={showReferral ? 'chevron-up' : 'chevron-down'}
@@ -565,11 +556,11 @@ export default function LoginScreen() {
                 icon="link-outline"
                 value={regForm.referral}
                 onChangeText={(v) => setRegForm((f) => ({ ...f, referral: v }))}
-                placeholder="Code de parrainage"
+                placeholder={t('auth:referralPlaceholder')}
               />
               <ThemedText style={styles.referralBonusText}>
-                Vous recevrez un bonus de bienvenue de{' '}
-                <ThemedText style={styles.referralBonusHighlight}>5%</ThemedText> sur votre premier abonnement.
+                {t('auth:referralBonus')}{' '}
+                <ThemedText style={styles.referralBonusHighlight}>5%</ThemedText>{t('auth:referralBonusEnd')}
               </ThemedText>
             </View>
           )}
@@ -589,14 +580,22 @@ export default function LoginScreen() {
             ) : (
               <>
                 <Ionicons name="rocket" size={16} color="white" />
-                <ThemedText style={styles.onbNextBtnText}>
-                  Créer mon compte
+                  <ThemedText style={styles.onbNextBtnText}>{t('auth:createMyAccount')}
                 </ThemedText>
               </>
             )}
           </Pressable>
         </View>
       </>
+    );
+  }
+
+  function SocialLoginButtons({ loading }: { loading: boolean }) {
+    return (
+      <Pressable style={[styles.socialBtn, { opacity: 0.5 }]} disabled={true}>
+        <Ionicons name="logo-google" size={16} color="#db4437" />
+        <ThemedText style={styles.socialBtnText}>{t('auth:loginBlocked')}</ThemedText>
+      </Pressable>
     );
   }
 
@@ -619,7 +618,7 @@ export default function LoginScreen() {
               <Pressable onPress={() => setTab('login')} style={styles.onbTopBack}>
                 <Ionicons name="chevron-back" size={18} color={Colors.light.textSecondary} />
                 <ThemedText style={styles.onbTopBackText}>
-                  Déjà un compte ? <ThemedText style={styles.onbTopBackBold}>Connectez-vous</ThemedText>
+                  {t('auth:haveAccount')} <ThemedText style={styles.onbTopBackBold}>{t('auth:login')}</ThemedText>
                 </ThemedText>
               </Pressable>
 
@@ -674,10 +673,10 @@ export default function LoginScreen() {
                   resizeMode="contain"
                 />
                 <ThemedText style={styles.loginBrandTitle}>
-                  Bon retour 👋
+                  {t('auth:welcomeBack')}
                 </ThemedText>
                 <ThemedText style={styles.loginBrandSubtitle}>
-                  Connectez-vous pour continuer
+                  {t('auth:loginToContinue')}
                 </ThemedText>
               </View>
 
@@ -694,7 +693,7 @@ export default function LoginScreen() {
                   icon="mail-outline"
                   value={loginForm.email}
                   onChangeText={(v) => setLoginForm((f) => ({ ...f, email: v }))}
-                  placeholder="votre@email.com"
+                  placeholder={t('auth:emailPlaceholder')}
                   keyboardType="email-address"
                 />
 
@@ -702,7 +701,7 @@ export default function LoginScreen() {
                   icon="lock-closed-outline"
                   value={loginForm.password}
                   onChangeText={(v) => setLoginForm((f) => ({ ...f, password: v }))}
-                  placeholder="Mot de passe"
+                  placeholder={t('auth:password')}
                   secureTextEntry={!pwVisible}
                   rightButton={
                     <Pressable onPress={() => setPwVisible(!pwVisible)} style={styles.pwToggle}>
@@ -714,7 +713,7 @@ export default function LoginScreen() {
                 <Link href="/(auth)/forgot-password" asChild>
                   <Pressable style={styles.loginForgotLink}>
                     <ThemedText style={styles.loginForgotText}>
-                      Mot de passe oublié ?
+                      {t('auth:forgotPassword')}
                     </ThemedText>
                   </Pressable>
                 </Link>
@@ -728,14 +727,14 @@ export default function LoginScreen() {
                     <ActivityIndicator size="small" color="white" />
                   ) : (
                     <ThemedText style={styles.loginButtonText}>
-                      Se connecter
+                      {t('auth:loginButton')}
                     </ThemedText>
                   )}
                 </Pressable>
 
                 <View style={styles.loginDivider}>
                   <View style={styles.loginDividerLine} />
-                  <ThemedText style={styles.loginDividerText}>ou</ThemedText>
+                  <ThemedText style={styles.loginDividerText}>{t('auth:or')}</ThemedText>
                   <View style={styles.loginDividerLine} />
                 </View>
 
@@ -743,8 +742,8 @@ export default function LoginScreen() {
 
                 <Pressable onPress={() => setTab('register')} style={styles.loginSignupLink}>
                   <ThemedText style={styles.loginSignupText}>
-                    Pas encore de compte ?{' '}
-                    <ThemedText style={styles.loginSignupBold}>Créer un compte</ThemedText>
+                    {t('auth:noAccount')}{' '}
+                    <ThemedText style={styles.loginSignupBold}>{t('auth:createAccount')}</ThemedText>
                   </ThemedText>
                 </Pressable>
               </View>

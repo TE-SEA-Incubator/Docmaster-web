@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { 
-  registerMyDocument, 
+import {
+  registerMyDocument,
   getMyDocuments,
   deleteDocument,
-  reportDocumentLost
+  reportDocumentLost,
+  archiveDocument,
 } from '../controllers/document.controller.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
 import { upload } from '../utils/upload.utils.ts';
@@ -206,5 +207,30 @@ router.delete('/:id', authMiddleware, deleteDocument);
  *               $ref: '#/components/schemas/Error500'
  */
 router.patch('/:id/lost', authMiddleware, reportDocumentLost);
+
+/**
+ * @swagger
+ * /documents/{id}/archive:
+ *   patch:
+ *     summary: Archiver immédiatement un document expiré
+ *     description: |
+ *       Marque un document comme archivé (is_archived=true) si sa date_expiration
+ *       est dépassée et que validity_option='EXPIRING'. Utilisé par l'app mobile
+ *       pour éviter d'attendre le cron quotidien de 2h du matin.
+ *     tags: [Documents]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Document archivé (ou déjà archivé)
+ *       401: { description: Non authentifié }
+ *       404: { description: Document introuvable }
+ */
+router.patch('/:id/archive', authMiddleware, archiveDocument);
 
 export default router;

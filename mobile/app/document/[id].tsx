@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert, Platform, 
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { documentsService } from '@/core/api/documentsService';
@@ -43,6 +44,7 @@ function timeAgo(dateString?: string) {
 
 export default function DocumentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [doc, setDoc] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,28 +85,28 @@ export default function DocumentDetailScreen() {
   const handleDelete = async () => {
     if (!id) return;
     Alert.alert(
-      'Supprimer le document',
-      'Êtes-vous sûr de vouloir supprimer ce document ? Cette action est irréversible.',
+      t('documentDetail:deleteConfirmTitle'),
+      t('documentDetail:deleteConfirmMessage'),
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('common:cancel'), style: 'cancel' },
         {
-          text: 'Supprimer',
+          text: t('common:delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               const res = await documentsService.delete(id);
               if (res.success) {
                 if (Platform.OS === 'android') {
-                  ToastAndroid.show('Document supprimé', ToastAndroid.SHORT);
+                  ToastAndroid.show(t('documentDetail:deleteSuccessToast'), ToastAndroid.SHORT);
                 } else {
-                  Alert.alert('Succès', 'Document supprimé avec succès.');
+                  Alert.alert(t('common:success'), t('documentDetail:deleteSuccess'));
                 }
                 router.back();
               } else {
-                Alert.alert('Erreur', res.message || 'Impossible de supprimer le document.');
+                Alert.alert(t('common:error'), res.message || t('documentDetail:deleteError'));
               }
             } catch (err: any) {
-              Alert.alert('Erreur', err?.response?.data?.message || 'Erreur lors de la suppression.');
+              Alert.alert(t('common:error'), err?.response?.data?.message || t('documentDetail:deleteException'));
             }
           },
         },
@@ -217,39 +219,39 @@ export default function DocumentDetailScreen() {
         </head>
         <body>
           <div class="header">
-            <h1 class="title">${doc.nom_sur_doc || doc.type_doc || 'Document'}</h1>
-            <p class="subtitle">Sauvegardé sur Docmaster</p>
+            <h1 class="title">${doc.nom_sur_doc || doc.type_doc || t('documentDetail:title')}</h1>
+            <p class="subtitle">${t('documentDetail:savedOnDocmaster')}</p>
           </div>
 
           <div class="section">
-            <div class="section-title">Informations du document</div>
+            <div class="section-title">${t('documentDetail:info')}</div>
             <div class="info-row">
-              <span class="info-label">Type</span>
+              <span class="info-label">${t('documentDetail:type')}</span>
               <span class="info-value">${doc.type_doc || '—'}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Numéro</span>
+              <span class="info-label">${t('documentDetail:number')}</span>
               <span class="info-value">${doc.numero_doc || '—'}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Nom complet</span>
+              <span class="info-label">${t('documentDetail:fullName')}</span>
               <span class="info-value">${doc.nom_sur_doc || '—'}</span>
             </div>
             ${doc.date_delivrance ? `
             <div class="info-row">
-              <span class="info-label">Date de délivrance</span>
+              <span class="info-label">${t('documentDetail:deliveryDate')}</span>
               <span class="info-value">${formatDate(doc.date_delivrance)}</span>
             </div>
             ` : ''}
             ${doc.date_expiration ? `
             <div class="info-row">
-              <span class="info-label">Date d'expiration</span>
+              <span class="info-label">${t('documentDetail:expirationDate')}</span>
               <span class="info-value">${formatDate(doc.date_expiration)}</span>
             </div>
             ` : ''}
             ${doc.nom_autorite ? `
             <div class="info-row">
-              <span class="info-label">Autorité</span>
+              <span class="info-label">${t('documentDetail:authority')}</span>
               <span class="info-value">${doc.nom_autorite}</span>
             </div>
             ` : ''}
@@ -257,25 +259,25 @@ export default function DocumentDetailScreen() {
 
           ${doc.notes ? `
           <div class="section">
-            <div class="section-title">Notes</div>
+            <div class="section-title">${t('documentDetail:notes')}</div>
             <p style="font-size: 13px; line-height: 18px; color: #4B5563; margin: 0;">${doc.notes}</p>
           </div>
           ` : ''}
 
           ${(doc.photo_recto || doc.photo_verso) ? `
           <div class="images-container">
-            <div class="section-title" style="page-break-after: avoid;">Photos des pièces justificatives</div>
+            <div class="section-title" style="page-break-after: avoid;">${t('documentDetail:photosTitle')}</div>
 
             ${doc.photo_recto ? `
             <div class="image-card">
-              <div class="image-title">Recto / Face Avant</div>
+              <div class="image-title">${t('documentDetail:recto')}</div>
               <img class="document-img" src="${doc.photo_recto}" />
             </div>
             ` : ''}
 
             ${doc.photo_verso ? `
             <div class="image-card">
-              <div class="image-title">Verso / Face Arrière</div>
+              <div class="image-title">${t('documentDetail:verso')}</div>
               <img class="document-img" src="${doc.photo_verso}" />
             </div>
             ` : ''}
@@ -283,8 +285,8 @@ export default function DocumentDetailScreen() {
           ` : ''}
 
           <div class="footer">
-            Docmaster - Document sauvegardé de manière sécurisée.<br/>
-            Généré le ${new Date().toLocaleDateString('fr-FR')}
+            ${t('documentDetail:pdfFooter')}<br/>
+            ${t('documentDetail:generatedOn')} ${new Date().toLocaleDateString('fr-FR')}
           </div>
         </body>
       </html>
@@ -298,7 +300,7 @@ export default function DocumentDetailScreen() {
           printWindow.document.close();
           printWindow.print();
         } else {
-          Alert.alert('Erreur', "Impossible d'ouvrir la fenêtre d'impression. Veuillez vérifier vos bloqueurs de pop-up.");
+          Alert.alert(t('common:error'), t('documentDetail:printError'));
         }
         return;
       }
@@ -310,15 +312,15 @@ export default function DocumentDetailScreen() {
       if (sharingAvailable) {
         await Sharing.shareAsync(fileUri, {
           mimeType: 'application/pdf',
-          dialogTitle: `Télécharger ${doc.nom_sur_doc || 'Document'}`,
+          dialogTitle: `${t('documentDetail:download')} ${doc.nom_sur_doc || t('documentDetail:title')}`,
           UTI: 'com.adobe.pdf',
         });
       } else {
-        Alert.alert('Impression terminée', `Le fichier PDF a été généré avec succès : ${fileUri}`);
+        Alert.alert(t('documentDetail:printComplete'), `${t('documentDetail:pdfGenerated')} ${fileUri}`);
       }
     } catch (err: any) {
       console.error(err);
-      Alert.alert('Erreur', 'Impossible de générer le fichier PDF.');
+      Alert.alert(t('common:error'), t('documentDetail:pdfError'));
     }
   };
 
@@ -345,15 +347,15 @@ export default function DocumentDetailScreen() {
           >
             <Ionicons name="arrow-back" size={18} color="#1A1A1A" />
           </Pressable>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: '#1A1A1A' }}>Document</Text>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: '#1A1A1A' }}>{t('documentDetail:title')}</Text>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 12 }}>
           <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="alert-circle-outline" size={30} color="#EF4444" />
           </View>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>Document introuvable</Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>{t('documentDetail:notFound')}</Text>
           <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>
-            Ce document n'existe pas ou a été supprimé.
+            {t('documentDetail:notFoundMessage')}
           </Text>
         </View>
       </SafeAreaView>
@@ -478,7 +480,7 @@ export default function DocumentDetailScreen() {
             }}>
               <Ionicons name={getDocIcon(doc.type_doc)} size={36} color={PRIMARY} />
             </View>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: '#9CA3AF', marginTop: 12 }}>Aucune photo</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#9CA3AF', marginTop: 12 }}>{t('documentDetail:noPhoto')}</Text>
 
             {/* Back button for no-photo case */}
             <View style={{
@@ -505,11 +507,11 @@ export default function DocumentDetailScreen() {
           {/* Title & Type */}
           <View style={{ marginBottom: 16 }}>
             <Text style={{ fontSize: 22, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>
-              {doc.nom_sur_doc || doc.type_doc || 'Document'}
+{doc.nom_sur_doc || doc.type_doc || t('documentDetail:title')}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={{ fontSize: 14, color: '#9CA3AF' }}>
-                {doc.type_doc || 'Type inconnu'}
+                {doc.type_doc || t('documentDetail:unknownType')}
               </Text>
               {doc.numero_doc && (
                 <Text style={{ fontSize: 13, color: '#6B7280', fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace' }}>
@@ -525,19 +527,19 @@ export default function DocumentDetailScreen() {
               {doc.is_lost && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' }}>
                   <Ionicons name="alert-circle" size={12} color="#EF4444" />
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#EF4444' }}>Perdu</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#EF4444' }}>{t('documentDetail:lost')}</Text>
                 </View>
               )}
               {doc.is_verified && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0' }}>
                   <Ionicons name="checkmark-circle" size={12} color="#16A34A" />
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#16A34A' }}>Certifié</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#16A34A' }}>{t('documentDetail:certified')}</Text>
                 </View>
               )}
               {!doc.is_lost && !doc.is_verified && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0' }}>
                   <Ionicons name="shield-checkmark" size={12} color="#16A34A" />
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#16A34A' }}>Actif</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#16A34A' }}>{t('documentDetail:active')}</Text>
                 </View>
               )}
             </View>
@@ -577,12 +579,12 @@ export default function DocumentDetailScreen() {
             borderWidth: 1, borderColor: '#F0F0F0', marginBottom: 16,
           }}>
             {[
-              { icon: 'pricetags-outline', label: 'Numéro', value: doc.numero_doc },
-              { icon: 'person-outline', label: 'Nom sur document', value: doc.nom_sur_doc },
-              { icon: 'calendar-outline', label: 'Délivré le', value: formatDate(doc.date_delivrance) },
-              { icon: 'calendar-outline', label: 'Expire le', value: formatDate(doc.date_expiration) },
-              { icon: 'business-outline', label: 'Autorité', value: doc.nom_autorite },
-              { icon: 'document-text-outline', label: 'Notes', value: doc.notes },
+              { icon: 'pricetags-outline', label: t('documentDetail:number'), value: doc.numero_doc },
+              { icon: 'person-outline', label: t('documentDetail:name'), value: doc.nom_sur_doc },
+              { icon: 'calendar-outline', label: t('documentDetail:deliveredOn'), value: formatDate(doc.date_delivrance) },
+              { icon: 'calendar-outline', label: t('documentDetail:expiresOn'), value: formatDate(doc.date_expiration) },
+              { icon: 'business-outline', label: t('documentDetail:authority'), value: doc.nom_autorite },
+              { icon: 'document-text-outline', label: t('documentDetail:notes'), value: doc.notes },
             ].filter((r) => r.value && r.value !== '—').map((row, idx, arr) => (
               <View
                 key={idx}
@@ -612,7 +614,7 @@ export default function DocumentDetailScreen() {
 
           {/* Meta */}
           <Text style={{ fontSize: 11, color: '#C4C4C4', marginBottom: 20 }}>
-            Enregistré {timeAgo(doc.created_at)}
+            {t('documentDetail:saved')} {timeAgo(doc.created_at)}
           </Text>
 
           {/* Action Buttons */}
@@ -627,7 +629,7 @@ export default function DocumentDetailScreen() {
               })}
             >
               <Ionicons name="trash-outline" size={18} color="#EF4444" />
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Supprimer</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>{t('common:delete')}</Text>
             </Pressable>
             <Pressable
               onPress={handleDownloadPDF}
@@ -639,7 +641,7 @@ export default function DocumentDetailScreen() {
               })}
             >
               <Ionicons name="download-outline" size={18} color={PRIMARY} />
-              <Text style={{ fontSize: 14, fontWeight: '700', color: PRIMARY }}>Télécharger en PDF</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: PRIMARY }}>{t('documentDetail:downloadPDF')}</Text>
             </Pressable>
             <Pressable
               onPress={() => router.back()}
@@ -650,7 +652,7 @@ export default function DocumentDetailScreen() {
                 borderWidth: 1, borderColor: '#F0F0F0',
               })}
             >
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#6B7280' }}>Retour</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#6B7280' }}>{t('common:back')}</Text>
             </Pressable>
           </View>
         </View>

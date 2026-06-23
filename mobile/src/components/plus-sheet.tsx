@@ -4,64 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/theme';
-
-const ACTIONS = [
-  {
-    key: 'add-device',
-    title: 'Créer un appareil',
-    subtitle: 'Enregistrez un nouvel appareil',
-    icon: 'phone-portrait-outline' as const,
-    color: '#3B82F6',
-    bg: '#EFF6FF',
-    route: '/(tabs)/devices?openAdd=true',
-  },
-  {
-    key: 'verify-device',
-    title: 'Vérifier un appareil',
-    subtitle: 'Vérifiez si un appareil est volé ou perdu',
-    icon: 'shield-checkmark-outline' as const,
-    color: '#F59E0B',
-    bg: '#FFFBEB',
-    route: '/(tabs)/devices?openVerify=true',
-  },
-  {
-    key: 'add-document',
-    title: 'Créer un document',
-    subtitle: 'Enregistrez un nouveau document',
-    icon: 'document-text-outline' as const,
-    color: '#8B5CF6',
-    bg: '#F5F3FF',
-    route: '/(tabs)/documents?openAdd=true',
-  },
-  {
-    key: 'lost',
-    title: 'Déclarer une perte',
-    subtitle: 'Signalez un document perdu',
-    icon: 'alert-circle-outline' as const,
-    color: '#EF4444',
-    bg: '#FEF2F2',
-    route: '/(tabs)/declarer',
-  },
-  {
-    key: 'found',
-    title: 'Document retrouvé',
-    subtitle: 'Enregistrez un document trouvé',
-    icon: 'checkmark-circle-outline' as const,
-    color: '#16A34A',
-    bg: '#F0FDF4',
-    route: '/(tabs)/trouver',
-  },
-
-  {
-    key: 'my-declarations',
-    title: 'Mes déclarations',
-    subtitle: 'Consultez vos signalements',
-    icon: 'megaphone-outline' as const,
-    color: '#F5A64B',
-    bg: '#FFF9F2',
-    route: '/(tabs)/declarations',
-  },
-];
+import { useTranslation } from 'react-i18next';
 
 interface PlusSheetProps {
   visible: boolean;
@@ -72,6 +15,64 @@ export function PlusSheet({ visible, onClose }: PlusSheetProps) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation('plusSheet');
+
+  const ACTIONS = [
+    {
+      key: 'add-device',
+      title: t('addDevice'),
+      subtitle: t('addDeviceSub'),
+      icon: 'phone-portrait-outline' as const,
+      color: '#3B82F6',
+      bg: '#EFF6FF',
+      route: '/(tabs)/devices?openAdd=true',
+    },
+    {
+      key: 'verify-device',
+      title: t('verifyDevice'),
+      subtitle: t('verifyDeviceSub'),
+      icon: 'shield-checkmark-outline' as const,
+      color: '#F59E0B',
+      bg: '#FFFBEB',
+      route: '/(tabs)/devices?openVerify=true',
+    },
+    {
+      key: 'add-document',
+      title: t('addDocument'),
+      subtitle: t('addDocumentSub'),
+      icon: 'document-text-outline' as const,
+      color: '#8B5CF6',
+      bg: '#F5F3FF',
+      route: '/(tabs)/documents?openAdd=true',
+    },
+    {
+      key: 'lost',
+      title: t('declareLost'),
+      subtitle: t('declareLostSub'),
+      icon: 'alert-circle-outline' as const,
+      color: '#EF4444',
+      bg: '#FEF2F2',
+      route: '/(tabs)/declarer',
+    },
+    {
+      key: 'found',
+      title: t('documentFound'),
+      subtitle: t('documentFoundSub'),
+      icon: 'checkmark-circle-outline' as const,
+      color: '#16A34A',
+      bg: '#F0FDF4',
+      route: '/(tabs)/trouver',
+    },
+    {
+      key: 'my-declarations',
+      title: t('myDeclarations'),
+      subtitle: t('myDeclarationsSub'),
+      icon: 'megaphone-outline' as const,
+      color: '#F5A64B',
+      bg: '#FFF9F2',
+      route: '/(tabs)/declarations',
+    },
+  ];
 
   const handlePress = (route: string) => {
     onClose();
@@ -91,7 +92,7 @@ export function PlusSheet({ visible, onClose }: PlusSheetProps) {
             <View style={[styles.headerIcon, { backgroundColor: scheme === 'dark' ? '#3A2E20' : '#FEF0DC' }]}>
               <Ionicons name="add-circle" size={28} color="#F5A64B" />
             </View>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Actions rapides</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{t('title')}</Text>
           </View>
 
           <View style={styles.actions}>

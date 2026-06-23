@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { Pressable, ScrollView, View, RefreshControl, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/core/store/useAuthStore';
@@ -15,13 +16,14 @@ import { HomeSkeleton } from '@/components/HomeSkeleton';
 const PRIMARY = '#F5A64B';
 const GREEN_DARK = '#1E3A2F';
 
-function timeAgo(dateString?: string) {
+function timeAgo(dateString?: string, t?: (key: string, options?: any) => string) {
   if (!dateString) return '—';
   const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-  if (diff < 60) return 'À l\'instant';
-  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)}min`;
-  if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return `Il y a ${Math.floor(diff / 86400)}j`;
+  if (!t) return '—';
+  if (diff < 60) return t('home:timeAgo:justNow');
+  if (diff < 3600) return t('home:timeAgo:minutesAgo', { n: Math.floor(diff / 60) });
+  if (diff < 86400) return t('home:timeAgo:hoursAgo', { n: Math.floor(diff / 3600) });
+  if (diff < 604800) return t('home:timeAgo:daysAgo', { n: Math.floor(diff / 86400) });
   return new Date(dateString).toLocaleDateString('fr-FR');
 }
 
@@ -46,6 +48,7 @@ type QuickActionsProps = {
 };
 
 const QuickActions = React.memo(function QuickActions({ onDeclareLost, onDeclareFound, colors }: QuickActionsProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.quickActionsRow}>
       <Pressable onPress={onDeclareLost} style={({ pressed }) => [
@@ -59,8 +62,8 @@ const QuickActions = React.memo(function QuickActions({ onDeclareLost, onDeclare
         <View style={[styles.quickActionIconLost, { backgroundColor: colors.danger + '20' }]}>
           <Ionicons name="alert-circle-outline" size={20} color={colors.danger} />
         </View>
-        <Text style={[styles.quickActionTitleLost, { color: colors.danger }]}>Déclarer perdu</Text>
-        <Text style={[styles.quickActionSubLost, { color: colors.danger }]}>Signaler un document</Text>
+        <Text style={[styles.quickActionTitleLost, { color: colors.danger }]}>{t('home:declareLost')}</Text>
+        <Text style={[styles.quickActionSubLost, { color: colors.danger }]}>{t('home:declareLostSub')}</Text>
       </Pressable>
       <Pressable onPress={onDeclareFound} style={({ pressed }) => [
         styles.quickActionCard,
@@ -73,8 +76,8 @@ const QuickActions = React.memo(function QuickActions({ onDeclareLost, onDeclare
         <View style={[styles.quickActionIconFound, { backgroundColor: colors.success + '20' }]}>
           <Ionicons name="hand-left-outline" size={20} color={colors.success} />
         </View>
-        <Text style={[styles.quickActionTitleFound, { color: colors.success }]}>Déclarer trouvé</Text>
-        <Text style={[styles.quickActionSubFound, { color: colors.success }]}>Signaler un document</Text>
+        <Text style={[styles.quickActionTitleFound, { color: colors.success }]}>{t('home:declareFound')}</Text>
+        <Text style={[styles.quickActionSubFound, { color: colors.success }]}>{t('home:declareFoundSub')}</Text>
       </Pressable>
     </View>
   );
@@ -87,6 +90,7 @@ type StatsRowProps = {
 };
 
 const StatsRow = React.memo(function StatsRow({ docCount, activeDeclCount, colors }: StatsRowProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.statsRow}>
       <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -96,7 +100,7 @@ const StatsRow = React.memo(function StatsRow({ docCount, activeDeclCount, color
             <Ionicons name="document-text-outline" size={16} color={colors.warning} />
           </View>
         </View>
-        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Documents enregistrés</Text>
+        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('home:registeredDocs')}</Text>
       </View>
       <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.statHeader}>
@@ -105,7 +109,7 @@ const StatsRow = React.memo(function StatsRow({ docCount, activeDeclCount, color
             <Ionicons name="megaphone-outline" size={16} color={colors.warning} />
           </View>
         </View>
-        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Déclarations actives</Text>
+        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('home:activeDeclarations')}</Text>
       </View>
     </View>
   );
@@ -117,6 +121,7 @@ type GainsCardProps = {
 };
 
 const GainsCard = React.memo(function GainsCard({ balance, colors }: GainsCardProps) {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={() => router.push('/(tabs)/gains')}
@@ -134,8 +139,8 @@ const GainsCard = React.memo(function GainsCard({ balance, colors }: GainsCardPr
           <Ionicons name="wallet" size={22} color={colors.warning} />
         </View>
         <View>
-          <Text style={[styles.gainsTitle, { color: colors.text }]}>Mes Gains</Text>
-          <Text style={[styles.gainsAmount, { color: colors.warning }]}>{balance.toLocaleString()} XAF disponibles</Text>
+          <Text style={[styles.gainsTitle, { color: colors.text }]}>{t('gains:title')}</Text>
+          <Text style={[styles.gainsAmount, { color: colors.warning }]}>{t('gains:availableBalance', { amount: balance.toLocaleString() })} {t('gains:xaf')}</Text>
         </View>
       </View>
       <Ionicons name="chevron-forward" size={20} color={colors.warning} />
@@ -149,6 +154,7 @@ type DocCardProps = {
 };
 
 const DocCard = React.memo(function DocCard({ doc, colors }: DocCardProps) {
+  const { t } = useTranslation();
   return (
     <Pressable style={({ pressed }) => [
       styles.docCard,
@@ -162,18 +168,18 @@ const DocCard = React.memo(function DocCard({ doc, colors }: DocCardProps) {
         <Ionicons name={getDocIcon(doc.type_doc)} size={32} color={colors.textSecondary} />
         {doc.is_lost && (
           <View style={[styles.docBadgeLost, { backgroundColor: colors.dangerBg }]}>
-            <Text style={[styles.docBadgeLostText, { color: colors.danger }]}>Perdu</Text>
+            <Text style={[styles.docBadgeLostText, { color: colors.danger }]}>{t('declarations:lostStatus')}</Text>
           </View>
         )}
         {doc.is_verified && (
           <View style={[styles.docBadgeVerified, { backgroundColor: colors.successBg }]}>
-            <Text style={[styles.docBadgeVerifiedText, { color: colors.success }]}>Certifié</Text>
+            <Text style={[styles.docBadgeVerifiedText, { color: colors.success }]}>{t('documents:certify')}</Text>
           </View>
         )}
       </View>
       <View style={styles.docCardBottom}>
         <Text style={[styles.docCardName, { color: colors.text }]} numberOfLines={1}>
-          {doc.nom_sur_doc || doc.type_doc || 'Document'}
+          {doc.nom_sur_doc || doc.type_doc || t('declarations:document')}
         </Text>
         <Text style={[styles.docCardType, { color: colors.textSecondary }]} numberOfLines={1}>{doc.type_doc}</Text>
       </View>
@@ -189,6 +195,7 @@ type ActivityItemProps = {
 };
 
 const ActivityItem = React.memo(function ActivityItem({ declaration: dec, index: _index, total: _total, colors }: ActivityItemProps) {
+  const { t } = useTranslation();
   const isLost = dec.type === 'lost' || dec.is_lost;
   return (
     <Pressable style={({ pressed }) => [
@@ -203,13 +210,13 @@ const ActivityItem = React.memo(function ActivityItem({ declaration: dec, index:
       </View>
       <View style={styles.activityText}>
         <Text style={[styles.activityTitle, { color: colors.text }]} numberOfLines={1}>
-          {dec.docTypeInfo?.nom || dec.doc_type || 'Document'} {isLost ? 'perdu' : 'trouvé'}
+          {dec.docTypeInfo?.nom || dec.doc_type || t('declarations:document')} {isLost ? t('declarations:lost') : t('declarations:found')}
         </Text>
         <Text style={[styles.activityLocation, { color: colors.textSecondary }]}>
-          {dec.lieu_perte || 'Lieu non spécifié'}
+          {dec.lieu_perte || t('common:notSpecified')}
         </Text>
       </View>
-      <Text style={[styles.activityTime, { color: colors.textSecondary }]}>{timeAgo(dec.created_at)}</Text>
+      <Text style={[styles.activityTime, { color: colors.textSecondary }]}>{timeAgo(dec.created_at, t)}</Text>
     </Pressable>
   );
 });
@@ -217,32 +224,36 @@ const ActivityItem = React.memo(function ActivityItem({ declaration: dec, index:
 type PlanCardProps = {
   planName: string;
   docLimit: number;
+  objectLimit: number;
   docCount: number;
+  objectCount: number;
   colors: ReturnType<typeof useThemeColors>;
 };
 
-const PlanCard = React.memo(function PlanCard({ planName, docLimit, docCount, colors }: PlanCardProps) {
-  const usagePercent = Math.min((docCount / docLimit) * 100, 100);
+const PlanCard = React.memo(function PlanCard({ planName, docLimit, objectLimit, docCount, objectCount, colors }: PlanCardProps) {
+  const { t } = useTranslation();
+  const usagePercent = Math.min(((docCount + objectCount) / (docLimit + objectLimit)) * 100, 100);
   return (
     <View style={[styles.planCard, { backgroundColor: colors.greenDark }]}>
       <View style={[styles.planBlob, { backgroundColor: colors.primary + '20' }]} />
       <View style={styles.planHeader}>
         <View style={[styles.planBadge, { backgroundColor: colors.primary + '30' }]}>
           <Ionicons name="star" size={10} color={colors.primary} />
-          <Text style={[styles.planBadgeText, { color: colors.primary }]}>PLAN ACTUEL</Text>
+          <Text style={[styles.planBadgeText, { color: colors.primary }]}>{t('subscription:currentPlan')}</Text>
         </View>
         <Text style={[styles.planName, { color: colors.onPrimary }]}>{planName}</Text>
-        <Text style={[styles.planLimit, { color: '#FFFFFF' + '80' }]}>{docLimit} documents max</Text>
+        <Text style={[styles.planLimit, { color: '#FFFFFF' + '80' }]}>{t('home:planLimit', { count: docLimit + objectLimit })}</Text>
       </View>
       <View style={styles.planUsage}>
         <View style={styles.planUsageHeader}>
-          <Text style={[styles.planUsageLabel, { color: '#FFFFFF' + '80' }]}>Utilisation</Text>
-          <Text style={[styles.planUsageValue, { color: colors.primary }]}>{docCount} / {docLimit}</Text>
+          <Text style={[styles.planUsageLabel, { color: '#FFFFFF' + '80' }]}>{t('home:usage')}</Text>
+          <Text style={[styles.planUsageValue, { color: colors.primary }]}>{docCount + objectCount} / {docLimit + objectLimit}</Text>
         </View>
         <View style={[styles.planBar, { backgroundColor: '#FFFFFF' + '20' }]}>
           <View style={[styles.planBarFill, { backgroundColor: colors.primary, width: `${usagePercent}%` }]} />
         </View>
       </View>
+
       <Pressable
         onPress={() => router.push('/(tabs)/subscription')}
         style={({ pressed }) => [
@@ -252,7 +263,7 @@ const PlanCard = React.memo(function PlanCard({ planName, docLimit, docCount, co
         ]}
       >
         <Ionicons name="rocket-outline" size={14} color={colors.greenDark} />
-        <Text style={[styles.planUpgradeText, { color: colors.greenDark }]}>Améliorer mon plan</Text>
+        <Text style={[styles.planUpgradeText, { color: colors.greenDark }]}>{t('subscription:choosePlan')}</Text>
       </Pressable>
     </View>
   );
@@ -264,6 +275,7 @@ type ReferralCardProps = {
 };
 
 const ReferralCard = React.memo(function ReferralCard({ code, colors }: ReferralCardProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = React.useState(false);
   const refCode = code || 'DOC-MASTER';
 
@@ -293,7 +305,7 @@ const ReferralCard = React.memo(function ReferralCard({ code, colors }: Referral
           <Ionicons name="gift-outline" size={20} color={colors.purple} />
         </View>
         <View>
-          <Text style={[styles.referralTitle, { color: colors.text }]}>Mon code d&apos;invitation</Text>
+          <Text style={[styles.referralTitle, { color: colors.text }]}>{t('parrainage:inviteCode')}</Text>
           <Text style={[styles.referralCode, { color: colors.purple }]}>{refCode}</Text>
         </View>
       </View>
@@ -309,6 +321,7 @@ const ReferralCard = React.memo(function ReferralCard({ code, colors }: Referral
 });
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const clearance = useBottomTabClearance();
   const colors = useThemeColors();
@@ -331,10 +344,11 @@ export default function HomeScreen() {
     declarations.filter((d) => !['recovered', 'resolved', 'cancelled'].includes(d.status)),
   [declarations]);
 
-  const planName = user?.subscription?.plan_name || 'Standard';
-  const docLimit = user?.subscription?.doc_limit || 5;
+  const planName = user?.subscription?.plan_name || t('subscription:free');
+  const docLimit = user?.subscription?.doc_limit || 5; 
+  const objectLimit = 10; 
   const walletBalance = user?.wallet_balance || 0;
-  const userName = user?.prenom || 'Utilisateur';
+  const userName = user?.prenom || t('common:unknown');
   const initials = getInitials(user?.prenom && user?.nom ? `${user.prenom} ${user.nom}` : undefined);
   const displayDeclarations = declarations.slice(0, 5);
 
@@ -424,13 +438,13 @@ export default function HomeScreen() {
             <View style={styles.section}>
               <View style={styles.sectionTitleRow}>
                 <Ionicons name="radio-outline" size={16} color={colors.text} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Suivi en cours</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('declarations:active')}</Text>
               </View>
               {activeDecls.slice(0, 3).map((dec) => (
                 <DeclarationCard
                   key={dec.id}
                   type={dec.declaration_type === 'LOST' || dec.is_lost ? 'LOST' : 'FOUND'}
-                  docType={dec.docTypeInfo?.nom || dec.doc_type || 'Document'}
+                  docType={dec.docTypeInfo?.nom || dec.doc_type || t('declarations:document')}
                   status={dec.status as any}
                   reference={dec.identifiant_doc_dm || dec.reference || '---'}
                   ownerName={dec.owner_name}
@@ -439,8 +453,8 @@ export default function HomeScreen() {
                   onPress={() => {
                     router.push(`/declaration/${dec.id}`);
                   }}
-                  onRecuperer={() => router.push(`/recuperer?id=${dec.id}`)}
-                  onRendre={() => router.push(`/rendre?id=${dec.id}`)}
+                  onRecuperer={() => router.push({ pathname: '/(tabs)/recuperer', params: { id: dec.id } })}
+                  onRendre={() => router.push({ pathname: '/(tabs)/rendre', params: { id: dec.id } })}
                 />
               ))}
             </View>
@@ -450,11 +464,11 @@ export default function HomeScreen() {
             <View style={styles.sectionTitleRow}>
               <View style={styles.sectionTitleLeft}>
                 <Ionicons name="folder-outline" size={16} color={colors.text} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Mes documents</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home:recentDocs')}</Text>
               </View>
               {docs.length > 0 && (
                 <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })} onPress={() => router.push('/(tabs)/documents')}>
-                  <Text style={[styles.seeAllText, { color: colors.primary }]}>Voir tout</Text>
+                  <Text style={[styles.seeAllText, { color: colors.primary }]}>{t('home:seeAll')}</Text>
                 </Pressable>
               )}
             </View>
@@ -464,9 +478,9 @@ export default function HomeScreen() {
                 <View style={[styles.emptyIcon, { backgroundColor: colors.warningBg }]}>
                   <Ionicons name="document-outline" size={26} color={colors.primary} />
                 </View>
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun document</Text>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('home:noDocs')}</Text>
                 <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                  Enregistrez vos documents pour les sécuriser
+                  {t('home:addDoc')}
                 </Text>
               </View>
             ) : (
@@ -482,11 +496,11 @@ export default function HomeScreen() {
             <View style={styles.sectionTitleRow}>
               <View style={styles.sectionTitleLeft}>
                 <Ionicons name="time-outline" size={16} color={colors.text} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Activités récentes</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home:recentDeclarations')}</Text>
               </View>
               {displayDeclarations.length > 0 && (
                 <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })} onPress={() => router.push('/(tabs)/declarations')}>
-                  <Text style={[styles.seeAllText, { color: colors.primary }]}>Voir tout</Text>
+                  <Text style={[styles.seeAllText, { color: colors.primary }]}>{t('home:seeAll')}</Text>
                 </Pressable>
               )}
             </View>
@@ -496,9 +510,9 @@ export default function HomeScreen() {
                 <View style={[styles.emptyIcon, { backgroundColor: colors.warningBg }]}>
                   <Ionicons name="search-outline" size={22} color={colors.primary} />
                 </View>
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucune déclaration</Text>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('home:noDeclarations')}</Text>
                 <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                  Commencez par déclarer un document perdu ou trouvé
+                  {t('home:declare')}
                 </Text>
               </View>
             ) : (
@@ -519,7 +533,9 @@ export default function HomeScreen() {
           <PlanCard
             planName={planName}
             docLimit={docLimit}
+            objectLimit={objectLimit}
             docCount={docs.length}
+            objectCount={0}
             colors={colors}
           />
         </View>

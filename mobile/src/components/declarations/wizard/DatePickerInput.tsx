@@ -9,6 +9,11 @@ type DatePickerInputProps = {
   value: Date;
   onChange: (date: Date) => void;
   label: string;
+  /**
+   * 'date' (défaut) : sélecteur de date avec maximumDate = aujourd'hui.
+   * 'time' : sélecteur d'heure (utilisé pour "Heure de la perte").
+   */
+  mode?: 'date' | 'time';
 };
 
 const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
@@ -17,10 +22,18 @@ function formatDate(d: Date) {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-export const DatePickerInput: React.FC<DatePickerInputProps> = ({ value, onChange, label }) => {
+function pad(n: number) {
+  return n < 10 ? `0${n}` : String(n);
+}
+
+function formatTime(d: Date) {
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export const DatePickerInput: React.FC<DatePickerInputProps> = ({ value, onChange, label, mode = 'date' }) => {
   const [show, setShow] = useState(false);
   const today = new Date();
-  const maxDate = today;
+  const maxDate = mode === 'date' ? today : undefined;
 
   const handleValueChange = (_event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') setShow(false);
@@ -29,21 +42,24 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({ value, onChang
 
   const handleDismiss = () => setShow(false);
 
+  const display = mode === 'time' ? formatTime(value) : formatDate(value);
+  const icon = mode === 'time' ? 'time-outline' : 'calendar-outline';
+
   return (
     <View style={styles.container}>
       <ThemedText style={styles.label}>{label}</ThemedText>
       <TouchableOpacity style={styles.input} onPress={() => setShow(true)} activeOpacity={0.7}>
-        <Ionicons name="calendar-outline" size={20} color={PRIMARY} />
-        <ThemedText style={styles.dateText}>{formatDate(value)}</ThemedText>
+        <Ionicons name={icon} size={20} color={PRIMARY} />
+        <ThemedText style={styles.dateText}>{display}</ThemedText>
         <View style={styles.spacer} />
         <Ionicons name="chevron-down" size={16} color="#9CA3AF" />
       </TouchableOpacity>
       {show && (
         <DateTimePicker
           value={value}
-          mode="date"
+          mode={mode}
           display="default"
-          maximumDate={maxDate}
+          maximumDate={maxDate as any}
           onValueChange={handleValueChange}
           onDismiss={handleDismiss}
         />

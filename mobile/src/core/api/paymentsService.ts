@@ -25,6 +25,15 @@ export const paymentsService = {
     return res.data;
   },
 
+  /**
+   * Récupère le taux de conversion XAF → points (1 XAF = N points).
+   * Utilisé par le modal de paiement pour afficher le coût en points.
+   */
+  async getPointsRate(): Promise<number> {
+    const res = await apiClient.get<ApiResponse<{ rate: number }>>('points/rate');
+    return res.data?.data?.rate ?? 10;
+  },
+
   async requestWithdrawal(data: WithdrawalRequest) {
     const res = await apiClient.post<ApiResponse<Withdrawal>>('withdrawals/request', data);
     return res.data;

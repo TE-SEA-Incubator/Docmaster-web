@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
@@ -33,6 +34,7 @@ function formatDate(s?: string): string {
 }
 
 export default function RecupererScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
@@ -49,10 +51,10 @@ export default function RecupererScreen() {
         setDeclaration(res.data);
         setCurrentStep(getStepFromStatus(res.data.status as DeclarationStatus));
       } else {
-        Alert.alert('Erreur', 'Impossible de charger les détails de la déclaration');
+        Alert.alert(t('common:error'), t('recuperer:loadError'));
       }
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.message || 'Erreur de chargement');
+      Alert.alert(t('common:error'), err?.response?.data?.message || t('recuperer:loadingError'));
     } finally {
       setLoading(false);
     }
@@ -65,13 +67,13 @@ export default function RecupererScreen() {
     try {
       const res = await declarationsService.initiateRecovery({ declaration_id: id! });
       if (res.success) {
-        Alert.alert('Succès', 'Paiement initié. Veuillez confirmer le paiement pour récupérer votre document.');
+        Alert.alert(t('common:success'), t('recuperer:paymentInitiated'));
         setCurrentStep(2);
       } else {
-        Alert.alert('Erreur', res.message || 'Impossible d\'initier le paiement');
+        Alert.alert(t('common:error'), res.message || t('recuperer:paymentInitError'));
       }
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.message || 'Erreur lors du paiement');
+      Alert.alert(t('common:error'), err?.response?.data?.message || t('recuperer:paymentError'));
     } finally {
       setPaying(false);
     }
@@ -89,9 +91,9 @@ export default function RecupererScreen() {
     return (
       <SafeAreaView className="flex-1 bg-[#F4EFE6] items-center justify-center p-6 gap-4">
         <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
-        <ThemedText className="text-lg font-bold text-textMain">Déclaration introuvable</ThemedText>
+        <ThemedText className="text-lg font-bold text-textMain">{t('recuperer:declarationNotFound')}</ThemedText>
         <Pressable onPress={() => router.back()} className="px-6 py-3 bg-primary rounded-2xl">
-          <ThemedText className="text-white font-bold">Retour</ThemedText>
+          <ThemedText className="text-white font-bold">{t('common:back')}</ThemedText>
         </Pressable>
       </SafeAreaView>
     );
@@ -113,7 +115,7 @@ export default function RecupererScreen() {
           <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full bg-white items-center justify-center border border-borderMain">
             <Ionicons name="chevron-back" size={20} color="#1A1A1A" />
           </Pressable>
-          <ThemedText className="text-base font-bold text-textMain">Récupérer mon document</ThemedText>
+          <ThemedText className="text-base font-bold text-textMain">{t('recuperer:title')}</ThemedText>
           <View className="w-10" />
         </View>
 
@@ -129,13 +131,13 @@ export default function RecupererScreen() {
             </View>
             <View className="flex-1">
               <ThemedText className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-0.5">
-                Statut de la récupération
+                {t('recuperer:statusLabel')}
               </ThemedText>
               <ThemedText className="text-base font-bold text-white" numberOfLines={2}>
-                {currentStep >= 3 ? 'Document récupéré avec succès' :
-                 currentStep >= 2 ? 'Paiement en cours de traitement' :
-                 currentStep >= 1 ? 'Correspondance trouvée — Payer pour récupérer' :
-                 'En attente de correspondance'}
+                {currentStep >= 3 ? t('recuperer:successMessage') :
+                 currentStep >= 2 ? t('recuperer:paymentProcessing') :
+                 currentStep >= 1 ? t('recuperer:matchFound') :
+                 t('recuperer:waitingMatch')}
               </ThemedText>
             </View>
             <ThemedText className="text-3xl font-black text-white/20">{progressPercent}%</ThemedText>
@@ -149,19 +151,19 @@ export default function RecupererScreen() {
         <ThemedView className="bg-white rounded-[32px] border border-borderMain p-6 shadow-sm mb-6">
           <View className="flex-row justify-between items-center mb-6">
             <ThemedText className="text-base font-bold text-textMain">
-              Suivi #{id?.slice(0, 8).toUpperCase()}
+              {t('recuperer:tracking')} #{id?.slice(0, 8).toUpperCase()}
             </ThemedText>
             <View className="flex-row items-center gap-1.5 px-3 py-1 bg-green-50 rounded-full border border-green-100">
               <View className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-              <ThemedText className="text-[10px] font-bold text-green-700 uppercase">ACTIF</ThemedText>
+              <ThemedText className="text-[10px] font-bold text-green-700 uppercase">{t('recuperer:active')}</ThemedText>
             </View>
           </View>
 
           {[
-            { label: 'Document déclaré perdu', done: currentStep >= 0, active: currentStep === 0, date: formatDate(declaration.created_at), icon: 'document-text' },
-            { label: 'Correspondance trouvée', done: currentStep >= 1, active: currentStep === 1, date: declaration.matched_at ? formatDate(declaration.matched_at) : '—', icon: 'people' },
-            { label: 'Paiement & Récupération', done: currentStep >= 2, active: currentStep === 2, date: currentStep >= 2 ? 'Effectué' : 'À faire', icon: 'card' },
-            { label: 'Document récupéré', done: currentStep >= 3, active: currentStep === 3, date: currentStep >= 3 ? formatDate(declaration.returned_at) : 'À venir', icon: 'checkmark-circle' },
+            { label: t('recuperer:stepDeclared'), done: currentStep >= 0, active: currentStep === 0, date: formatDate(declaration.created_at), icon: 'document-text' },
+            { label: t('recuperer:stepMatched'), done: currentStep >= 1, active: currentStep === 1, date: declaration.matched_at ? formatDate(declaration.matched_at) : '—', icon: 'people' },
+            { label: t('recuperer:stepPayment'), done: currentStep >= 2, active: currentStep === 2, date: currentStep >= 2 ? t('recuperer:done') : t('recuperer:toDo'), icon: 'card' },
+            { label: t('recuperer:stepRecovered'), done: currentStep >= 3, active: currentStep === 3, date: currentStep >= 3 ? formatDate(declaration.returned_at) : t('recuperer:toCome'), icon: 'checkmark-circle' },
           ].map((step, idx) => (
             <View key={idx} className="flex-row gap-3 mb-6 relative">
               {idx < 3 && (
@@ -196,9 +198,9 @@ export default function RecupererScreen() {
             <View className="w-20 h-20 rounded-full bg-[#FAF7F2] border border-borderMain items-center justify-center mb-5">
               <Ionicons name="wallet-outline" size={32} color={PRIMARY} />
             </View>
-            <ThemedText className="text-lg font-bold text-textMain mb-2">Payer & Récupérer</ThemedText>
+            <ThemedText className="text-lg font-bold text-textMain mb-2">{t('recuperer:payAndRecover')}</ThemedText>
             <ThemedText className="text-[12px] text-textMuted leading-relaxed mb-8 text-center px-4">
-              Un correspondant a trouvé votre document. Payez les frais de récupération pour obtenir le code de retrait et les coordonnées du trouveur.
+              {t('recuperer:payDescription')}
             </ThemedText>
             <Pressable
               onPress={handlePayAndRecover}
@@ -211,7 +213,7 @@ export default function RecupererScreen() {
               ) : (
                 <>
                   <Ionicons name="lock-open-outline" size={20} color="white" />
-                  <ThemedText className="text-white font-bold text-sm">Payer & Récupérer</ThemedText>
+                  <ThemedText className="text-white font-bold text-sm">{t('recuperer:payAndRecover')}</ThemedText>
                 </>
               )}
             </Pressable>
@@ -227,9 +229,9 @@ export default function RecupererScreen() {
                 <Ionicons name="shield-checkmark" size={14} color="#16A34A" />
               </View>
             </View>
-            <ThemedText className="text-lg font-bold text-textMain mb-2">Votre code de récupération</ThemedText>
+            <ThemedText className="text-lg font-bold text-textMain mb-2">{t('recuperer:yourRecoveryCode')}</ThemedText>
             <ThemedText className="text-[12px] text-textMuted leading-relaxed mb-6 text-center px-4">
-              Fournissez ce code au trouveur pour récupérer votre document.
+              {t('recuperer:codeInstructions')}
             </ThemedText>
             <View className="bg-[#FAF7F2] border border-borderMain rounded-2xl px-8 py-4 mb-6">
               <ThemedText className="text-3xl font-black text-center tracking-[8px] text-textMain">
@@ -246,7 +248,7 @@ export default function RecupererScreen() {
                     {finder.nom} {finder.prenom}
                   </ThemedText>
                   <ThemedText className="text-[10px] text-green-700/80">
-                    {finder.telephone || 'Contact disponible'}
+                    {finder.telephone || t('recuperer:contactAvailable')}
                   </ThemedText>
                 </View>
               </View>
@@ -260,9 +262,9 @@ export default function RecupererScreen() {
             <View className="w-20 h-20 rounded-full bg-green-50 items-center justify-center mb-5">
               <Ionicons name="checkmark-circle" size={40} color="#16A34A" />
             </View>
-            <ThemedText className="text-lg font-bold text-green-700 mb-2">Document récupéré avec succès !</ThemedText>
+            <ThemedText className="text-lg font-bold text-green-700 mb-2">{t('recuperer:successMessageBis')}</ThemedText>
             <ThemedText className="text-[12px] text-textMuted text-center mb-6">
-              Votre document vous a été remis. Merci d'avoir utilisé DocMaster.
+              {t('recuperer:successDescription')}
             </ThemedText>
           </ThemedView>
         )}
@@ -270,7 +272,7 @@ export default function RecupererScreen() {
         {/* Document Summary */}
         <ThemedView className="bg-white rounded-[32px] border border-borderMain p-6 shadow-sm mb-6">
           <ThemedText className="text-[11px] font-bold text-textMuted uppercase tracking-widest mb-4">
-            Résumé du document
+            {t('recuperer:documentSummary')}
           </ThemedText>
           <View className="flex-row items-center gap-4 p-4 bg-[#FAF7F2] rounded-2xl border border-borderMain/50">
             <View className="w-12 h-12 rounded-xl bg-white items-center justify-center border border-borderMain shadow-sm">
@@ -278,10 +280,10 @@ export default function RecupererScreen() {
             </View>
             <View className="flex-1">
               <ThemedText className="text-[13px] font-bold text-textMain">
-                {declaration.doc_type || 'Document'} {declaration.document_number ? `N°${declaration.document_number}` : ''}
+                {declaration.doc_type || t('recuperer:document')} {declaration.document_number ? `N°${declaration.document_number}` : ''}
               </ThemedText>
               <ThemedText className="text-[10px] text-textMuted italic mt-0.5">
-                <Ionicons name="location" size={9} /> {declaration.ville || declaration.lieu_perte || 'Non spécifié'}
+                <Ionicons name="location" size={9} /> {declaration.ville || declaration.lieu_perte || t('common:notSpecified')}
               </ThemedText>
             </View>
           </View>

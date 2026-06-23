@@ -15,12 +15,12 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { declarationsService } from '@/core/api/declarationsService';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBottomTabClearance } from '@/hooks/useBottomTabClearance';
 import { useGlobalStats, usePerformanceStats } from '@/core/hooks/useStats';
-import { statsService } from '@/core/api/statsService';
 import { documentTypesService } from '@/core/api/declarationsService';
 import { API_URL } from '@/constants/api';
 import type { Declaration } from '@/types';
@@ -78,12 +78,11 @@ function SkeletonCard({ width }: { width: number }) {
 }
 
 export default function RechercherScreen() {
-  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const clearance = useBottomTabClearance();
+  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
-  const { stats, loading: statsLoading } = useGlobalStats();
-  const { stats: perfStats, loading: perfLoading } = usePerformanceStats();
+  const { t } = useTranslation();
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Declaration[]>([]);
@@ -92,6 +91,7 @@ export default function RechercherScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [hasLost, setHasLost] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month'>('month');
+  const [filterMode, setFilterMode] = useState<'all' | 'found' | 'lost'>('found');
 
   // Preview modal
   const [previewDoc, setPreviewDoc] = useState<any>(null);
@@ -100,6 +100,15 @@ export default function RechercherScreen() {
   const [previewTypeName, setPreviewTypeName] = useState('');
 
   const [docTypeMap, setDocTypeMap] = useState<Record<string, string>>({});
+
+  const { stats, loading: statsLoading } = useGlobalStats();
+  const { stats: perfStats, loading: perfLoading } = usePerformanceStats(selectedPeriod);
+
+  const resolveName = useCallback((docType?: string, info?: { nom?: string } | null) => {
+    if (info?.nom) return info.nom;
+    if (docType && docTypeMap[docType]) return docTypeMap[docType];
+    return docType || t('rechercher:found');
+  }, [docTypeMap, t]);
 
   useEffect(() => {
     documentTypesService.getActive().then(res => {
@@ -110,8 +119,6 @@ export default function RechercherScreen() {
       }
     }).catch(() => {});
   }, []);
-
-  const resolveDocName = useCallback((name: string) => docTypeMap[name] || name, [docTypeMap]);
 
   useEffect(() => {
     if (!user) return;
@@ -125,29 +132,42 @@ export default function RechercherScreen() {
     }).catch(() => {});
   }, [user]);
 
-  const performSearch = useCallback(async (q: string) => {
+  const performSearch = useCallback(async (q: string, mode: 'all' | 'found' | 'lost' = filterMode) => {
     setLoading(true);
     setSearched(true);
     const trimmed = q.trim();
     try {
       const res = await declarationsService.searchPublic(trimmed);
-      setResults((res?.data as Declaration[]) || []);
+      const all = (res?.data as Declaration[]) || [];
+      const filtered = mode === 'all'
+        ? all
+        : all.filter((d: any) => (mode === 'found'
+            ? d.declaration_type === 'FOUND'
+            : d.declaration_type === 'LOST'));
+      setResults(filtered);
     } catch {
       setResults([]);
     } finally {
       setLoading(false);
     }
+  }, [filterMode]);
+
+  // Auto-load recent found documents on mount (the page is meant to list
+  // documents that have been "retrouvés" first, before the user types anything).
+  useEffect(() => {
+    performSearch('', 'found');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    if (query.trim()) await performSearch(query);
+    await performSearch(query, filterMode);
     setRefreshing(false);
-  }, [performSearch, query]);
+  }, [performSearch, query, filterMode]);
 
-  const handleSearch = () => { if (query.trim()) performSearch(query.trim()); };
-  const clearQuery = () => { setQuery(''); setResults([]); setSearched(false); };
-  const handleQuick = (f: string) => { setQuery(f); performSearch(f); };
+  const handleSearch = () => { performSearch(query.trim(), filterMode); };
+  const clearQuery = () => { setQuery(''); performSearch('', filterMode); };
+  const handleQuick = (f: string) => { setQuery(f); performSearch(f, filterMode); };
 
   const handlePeriodChange = (period: 'week' | 'month') => {
     setSelectedPeriod(period);
@@ -175,10 +195,11 @@ export default function RechercherScreen() {
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </Pressable>
           <View style={s.headerCenter}>
-            <Text style={[s.title, { color: colors.text }]}>Docmaster</Text>
+            <Text style={[s.title, { color: colors.text }]}>{t('rechercher:title')}</Text>
           </View>
           <View style={s.iconBtn} />
         </View>
+        <Text style={[s.subtitle, { color: colors.textSecondary }]}>{t('rechercher:subtitle')}</Text>
       </View>
 
       <ScrollView
@@ -191,7 +212,7 @@ export default function RechercherScreen() {
           <View style={s.statsHeader}>
             <View style={s.sectionTitleRow}>
               <Ionicons name="bar-chart-outline" size={16} color={colors.text} />
-              <Text style={[s.sectionTitle, { color: colors.text }]}>Statistiques</Text>
+              <Text style={[s.sectionTitle, { color: colors.text }]}>{t('rechercher:statsTitle')}</Text>
             </View>
             <View style={s.periodToggle}>
               {(['week', 'month'] as const).map((p) => (
@@ -205,7 +226,7 @@ export default function RechercherScreen() {
                 >
                   <Text style={[s.periodBtnText, {
                     color: selectedPeriod === p ? colors.onPrimary : colors.textSecondary,
-                  }]}>{p === 'week' ? 'Semaine' : 'Mois'}</Text>
+                  }]}>{p === 'week' ? t('rechercher:periodWeek') : t('rechercher:periodMonth')}</Text>
                 </Pressable>
               ))}
             </View>
@@ -220,7 +241,7 @@ export default function RechercherScreen() {
               <Text style={[s.statValue, { color: colors.text }]}>
                 {statsLoading ? '…' : stats?.total_declarations ?? 0}
               </Text>
-              <Text style={[s.statLabel, { color: colors.textSecondary }]}>Déclarations</Text>
+              <Text style={[s.statLabel, { color: colors.textSecondary }]}>{t('rechercher:statsTotal')}</Text>
             </View>
             <View style={[s.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={[s.statIcon, { backgroundColor: colors.dangerBg }]}>
@@ -229,7 +250,7 @@ export default function RechercherScreen() {
               <Text style={[s.statValue, { color: colors.text }]}>
                 {statsLoading ? '…' : stats?.total_lost ?? 0}
               </Text>
-              <Text style={[s.statLabel, { color: colors.textSecondary }]}>Perdus</Text>
+              <Text style={[s.statLabel, { color: colors.textSecondary }]}>{t('rechercher:statsLost')}</Text>
             </View>
             <View style={[s.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={[s.statIcon, { backgroundColor: colors.successBg }]}>
@@ -238,16 +259,16 @@ export default function RechercherScreen() {
               <Text style={[s.statValue, { color: colors.text }]}>
                 {statsLoading ? '…' : stats?.total_recovered ?? 0}
               </Text>
-              <Text style={[s.statLabel, { color: colors.textSecondary }]}>Retrouvés</Text>
+              <Text style={[s.statLabel, { color: colors.textSecondary }]}>{t('rechercher:statsFound')}</Text>
             </View>
           </View>
 
           {/* Performance by doc type */}
           <View style={s.perfSection}>
             <View style={s.perfHeader}>
-              <Text style={[s.perfTitle, { color: colors.text }]}>Par type de document</Text>
+              <Text style={[s.perfTitle, { color: colors.text }]}>{t('rechercher:perfSectionTitle')}</Text>
               <Text style={[s.perfSubtitle, { color: colors.textSecondary }]}>
-                {selectedPeriod === 'week' ? 'Cette semaine' : 'Ce mois'}
+                {selectedPeriod === 'week' ? t('rechercher:perfWeek') : t('rechercher:perfMonth')}
               </Text>
             </View>
 
@@ -259,7 +280,7 @@ export default function RechercherScreen() {
               </View>
             ) : perfStats.length === 0 ? (
               <Text style={[s.emptyHint, { color: colors.textSecondary }]}>
-                Pas encore d'activité.
+                {t('rechercher:perfEmpty')}
               </Text>
             ) : (
               <View style={s.perfGrid}>
@@ -269,7 +290,7 @@ export default function RechercherScreen() {
                   return (
                     <Pressable
                       key={doc.name}
-                      onPress={() => openTypePreview(doc.name, doc.recent_items || [])}
+                      onPress={() => openTypePreview(resolveName(doc.name), doc.recent_items || [])}
                       style={({ pressed }) => [s.perfCard, {
                         backgroundColor: colors.surface,
                         borderColor: pressed ? colors.primary : colors.border,
@@ -277,7 +298,7 @@ export default function RechercherScreen() {
                       }]}
                     >
                       <View style={s.perfTopRow}>
-                        <Ionicons name={getDocIcon(doc.name)} size={16} color={colors.primary} />
+                        <Ionicons name={getDocIcon(resolveName(doc.name))} size={16} color={colors.primary} />
                         <View style={[s.trendBadge, { backgroundColor: isUp ? colors.successBg : colors.dangerBg }]}>
                           <Ionicons name={isUp ? 'trending-up' : 'trending-down'} size={9} color={isUp ? colors.success : colors.danger} />
                           <Text style={[s.trendText, { color: isUp ? colors.success : colors.danger }]}>
@@ -285,7 +306,7 @@ export default function RechercherScreen() {
                           </Text>
                         </View>
                       </View>
-                      <Text style={[s.perfName, { color: colors.text }]} numberOfLines={1}>{resolveDocName(doc.name)}</Text>
+                      <Text style={[s.perfName, { color: colors.text }]} numberOfLines={1}>{resolveName(doc.name)}</Text>
                       <Text style={[s.perfCount, { color: colors.primary }]}>{doc.count}</Text>
                       <View style={[s.perfBarBg, { backgroundColor: colors.inputBg }]}>
                         <View style={[s.perfBarFill, {
@@ -293,7 +314,7 @@ export default function RechercherScreen() {
                           width: `${Math.min(100, (doc.count / Math.max(...perfStats.map(d => d.count), 1)) * 100)}%`,
                         }]} />
                       </View>
-                      <Text style={[s.perfPreviewHint, { color: colors.textSecondary }]}>Aperçu →</Text>
+                      <Text style={[s.perfPreviewHint, { color: colors.textSecondary }]}>{t('rechercher:perfPreview')}</Text>
                     </Pressable>
                   );
                 })}
@@ -310,7 +331,7 @@ export default function RechercherScreen() {
               value={query}
               onChangeText={setQuery}
               onSubmitEditing={handleSearch}
-              placeholder="N° document, nom, type…"
+              placeholder={t('rechercher:searchPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               returnKeyType="search"
               style={[s.searchInput, { color: colors.text }]}
@@ -326,7 +347,7 @@ export default function RechercherScreen() {
           </View>
 
           <View style={s.chipsRow}>
-            <Text style={[s.chipsLabel, { color: colors.textSecondary }]}>FILTRES :</Text>
+            <Text style={[s.chipsLabel, { color: colors.textSecondary }]}>{t('rechercher:filtersLabel')}</Text>
             {QUICK_FILTERS.map((f) => {
               const active = query === f;
               return (
@@ -354,7 +375,7 @@ export default function RechercherScreen() {
             <Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} />
           </View>
           <Text style={[s.noticeText, { color: colors.textSecondary }]}>
-            Les photos sont masquées tant que vous n'avez pas déclaré une perte.
+            {t('rechercher:protectionNotice')}
           </Text>
         </View>
 
@@ -364,12 +385,12 @@ export default function RechercherScreen() {
             <View style={s.sectionTitleRow}>
               <Ionicons name="document-outline" size={16} color={colors.text} />
               <Text style={[s.sectionTitle, { color: colors.text }]}>
-                {searched ? 'Résultats' : 'Recherche'}
+                {searched ? t('rechercher:searchedLabel') : t('rechercher:searchLabel')}
               </Text>
             </View>
             {searched && !loading ? (
               <Text style={[s.sectionHint, { color: colors.textSecondary }]}>
-                {results.length} trouvé{results.length > 1 ? 's' : ''}
+                {t('rechercher:foundCount', { count: results.length })}
               </Text>
             ) : null}
           </View>
@@ -385,9 +406,9 @@ export default function RechercherScreen() {
               <View style={[s.placeholderIcon, { backgroundColor: `${colors.primary}12` }]}>
                 <Ionicons name="search-outline" size={32} color={colors.primary} />
               </View>
-              <Text style={[s.placeholderTitle, { color: colors.text }]}>Recherchez un document</Text>
+              <Text style={[s.placeholderTitle, { color: colors.text }]}>{t('rechercher:placeholderTitle')}</Text>
               <Text style={[s.placeholderSub, { color: colors.textSecondary }]}>
-                Saisissez un numéro, un nom ou un type.
+                {t('rechercher:placeholderSub')}
               </Text>
             </View>
           ) : results.length === 0 ? (
@@ -395,23 +416,23 @@ export default function RechercherScreen() {
               <View style={[s.placeholderIcon, { backgroundColor: colors.inputBg }]}>
                 <Ionicons name="sad-outline" size={30} color={colors.textSecondary} />
               </View>
-              <Text style={[s.placeholderTitle, { color: colors.text }]}>Aucun résultat</Text>
+              <Text style={[s.placeholderTitle, { color: colors.text }]}>{t('rechercher:emptyTitleSearch')}</Text>
               <Text style={[s.placeholderSub, { color: colors.textSecondary }]}>
-                Essayez un autre terme.
+                {t('rechercher:emptySubSearch')}
               </Text>
               {user ? (
                 <Pressable onPress={() => router.push('/(tabs)/declarer')} style={[s.cta, { backgroundColor: colors.primary }]}>
                   <Ionicons name="alert-circle-outline" size={16} color={colors.onPrimary} />
-                  <Text style={[s.ctaText, { color: colors.onPrimary }]}>Déclarer une perte</Text>
+                  <Text style={[s.ctaText, { color: colors.onPrimary }]}>{t('rechercher:emptyCta')}</Text>
                 </Pressable>
               ) : null}
             </View>
           ) : (
             <View style={s.resultsGrid}>
               {results.map((doc) => {
-                const docName = (doc as any).docTypeInfo?.nom || doc.doc_type || 'Document';
+                const docName = resolveName(doc.doc_type, (doc as any).docTypeInfo);
                 const photoUrl = getFullImageUrl(doc.photo_recto);
-                const displayName = doc.owner_name || 'Propriétaire';
+                const displayName = doc.owner_name || t('rechercher:ownerFallback');
                 const dateField = (doc as any).date_trouvee || doc.date_perte || doc.created_at;
                 const location = doc.ville || '';
                 const isLost = (doc as any).declaration_type === 'LOST' || doc.is_lost;
@@ -432,7 +453,7 @@ export default function RechercherScreen() {
                         <Image source={{ uri: photoUrl }} style={s.photo} />
                       ) : (
                         <View style={s.photoPlaceholder}>
-                          <Text style={[s.photoPlaceholderText, { color: colors.textSecondary }]}>PHOTO PROTÉGÉE</Text>
+                          <Text style={[s.photoPlaceholderText, { color: colors.textSecondary }]}>{t('rechercher:photoProtected')}</Text>
                         </View>
                       )}
                       <View style={[s.docTypeBadge, { backgroundColor: `${colors.surface}E6` }]}>
@@ -441,7 +462,7 @@ export default function RechercherScreen() {
                       </View>
                       {isLost && (
                         <View style={[s.statusBadge, { backgroundColor: colors.dangerBg }]}>
-                          <Text style={[s.statusBadgeText, { color: colors.danger }]}>Perdu</Text>
+                          <Text style={[s.statusBadgeText, { color: colors.danger }]}>{t('rechercher:lost')}</Text>
                         </View>
                       )}
                     </View>
@@ -473,15 +494,18 @@ export default function RechercherScreen() {
       {/* ═══ PREVIEW MODAL ═══ */}
       <Modal visible={showPreview} transparent animationType="slide" onRequestClose={() => setShowPreview(false)}>
         <Pressable style={s.modalOverlay} onPress={() => setShowPreview(false)}>
-          <Pressable style={[s.modalContent, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={[s.modalContent, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 20 }]} onPress={(e) => e.stopPropagation()}>
             <View style={[s.modalHandle, { backgroundColor: colors.border }]} />
 
             {/* Single doc preview */}
             {previewDoc ? (
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 8 }}
+              >
                 <View style={s.modalHeader}>
-                  <Text style={[s.modalTitle, { color: colors.text }]}>Détails</Text>
-                  <Pressable onPress={() => { setShowPreview(false); setPreviewDoc(null); }}>
+                  <Text style={[s.modalTitle, { color: colors.text }]}>{t('rechercher:previewTitle')}</Text>
+                  <Pressable onPress={() => { setShowPreview(false); setPreviewDoc(null); }} hitSlop={8}>
                     <Ionicons name="close" size={20} color={colors.textSecondary} />
                   </Pressable>
                 </View>
@@ -499,10 +523,10 @@ export default function RechercherScreen() {
 
                 <View style={s.modalInfo}>
                   <Text style={[s.modalDocType, { color: colors.primary }]}>
-                    {(previewDoc as any).docTypeInfo?.nom || previewDoc.doc_type || 'Document'}
+                    {resolveName((previewDoc as any).doc_type, (previewDoc as any).docTypeInfo)}
                   </Text>
                   <Text style={[s.modalOwner, { color: colors.text }]}>
-                    {previewDoc.owner_name || 'Propriétaire'}
+                    {previewDoc.owner_name || t('rechercher:ownerFallback')}
                   </Text>
                   {previewDoc.ville ? (
                     <View style={s.modalInfoRow}>
@@ -529,7 +553,7 @@ export default function RechercherScreen() {
                         style={[s.modalCta, { backgroundColor: colors.primary }]}
                       >
                         <Ionicons name="hand-left-outline" size={16} color={colors.onPrimary} />
-                        <Text style={[s.modalCtaText, { color: colors.onPrimary }]}>C'est le mien</Text>
+                        <Text style={[s.modalCtaText, { color: colors.onPrimary }]}>{t('rechercher:previewClaim')}</Text>
                       </Pressable>
                     ) : (
                       <Pressable
@@ -537,7 +561,7 @@ export default function RechercherScreen() {
                         style={[s.modalCta, { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border }]}
                       >
                         <Ionicons name="add-circle-outline" size={16} color={colors.text} />
-                        <Text style={[s.modalCtaText, { color: colors.text }]}>Déclarer pour voir</Text>
+                        <Text style={[s.modalCtaText, { color: colors.text }]}>{t('rechercher:previewDeclare')}</Text>
                       </Pressable>
                     )}
                   </View>
@@ -545,16 +569,16 @@ export default function RechercherScreen() {
               </ScrollView>
             ) : previewItems.length > 0 ? (
               /* Type preview (list of items) */
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
                 <View style={s.modalHeader}>
                   <Text style={[s.modalTitle, { color: colors.text }]}>{previewTypeName}</Text>
-                  <Pressable onPress={() => { setShowPreview(false); setPreviewItems([]); }}>
+                  <Pressable onPress={() => { setShowPreview(false); setPreviewItems([]); }} hitSlop={8}>
                     <Ionicons name="close" size={20} color={colors.textSecondary} />
                   </Pressable>
                 </View>
 
                 <Text style={[s.modalSubtitle, { color: colors.textSecondary }]}>
-                  {previewItems.length} élément{previewItems.length > 1 ? 's' : ''}
+                  {t('rechercher:itemsCount', { count: previewItems.length })}
                 </Text>
 
                 {previewItems.map((item: any, idx: number) => (
@@ -570,10 +594,10 @@ export default function RechercherScreen() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[s.previewItemTitle, { color: colors.text }]} numberOfLines={1}>
-                        {item.type === 'LOST' ? 'Perte' : 'Trouvaille'}
+                        {item.type === 'LOST' ? t('rechercher:previewLoss') : t('rechercher:previewFound')}
                       </Text>
                       <Text style={[s.previewItemMeta, { color: colors.textSecondary }]}>
-                        {item.ville || 'Lieu inconnu'} · {timeAgo(item.date)}
+                        {item.ville || t('rechercher:previewUnknownLocation')} · {timeAgo(item.date)}
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} />
@@ -590,11 +614,12 @@ export default function RechercherScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-  headerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8 },
+  header: { paddingTop: 4, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  headerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, minHeight: 48 },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerCenter: { flex: 1, alignItems: 'center' },
   title: { fontSize: 16, fontWeight: '800' },
+  subtitle: { fontSize: 13, paddingHorizontal: 16, marginTop: 2 },
 
   /* Stats */
   statsSection: { paddingHorizontal: PAD, paddingTop: 14 },
@@ -675,23 +700,24 @@ const s = StyleSheet.create({
   resultCard: { width: (SCREEN_WIDTH - PAD * 2 - CARD_GAP) / 2, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
   photoSection: { height: 110, position: 'relative', overflow: 'hidden' },
   photo: { width: '100%', height: '100%', resizeMode: 'cover' },
-  photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  photoPlaceholderText: { fontSize: 8, fontWeight: '800', letterSpacing: 1 },
+  photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  photoPlaceholderText: { fontSize: 8, fontWeight: '800', letterSpacing: 1, textAlign: 'center' },
   docTypeBadge: {
     position: 'absolute', top: 6, left: 6,
     flexDirection: 'row', alignItems: 'center', gap: 3,
     paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6,
+    maxWidth: '60%',
   },
-  docTypeBadgeText: { fontSize: 9, fontWeight: '700' },
+  docTypeBadgeText: { fontSize: 9, fontWeight: '700', flexShrink: 1 },
   statusBadge: {
     position: 'absolute', top: 6, right: 6,
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5,
   },
   statusBadgeText: { fontSize: 9, fontWeight: '800' },
-  infoSection: { padding: 8, gap: 3 },
+  infoSection: { padding: 8, gap: 4 },
   ownerName: { fontSize: 12, fontWeight: '700' },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
-  infoText: { fontSize: 10 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  infoText: { fontSize: 10, flexShrink: 1 },
 
   cta: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -703,11 +729,11 @@ const s = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: {
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    maxHeight: '85%', padding: 20,
+    maxHeight: '85%', paddingTop: 12, paddingHorizontal: 20, paddingBottom: 20,
   },
   modalHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  modalTitle: { fontSize: 16, fontWeight: '800' },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, minHeight: 32 },
+  modalTitle: { fontSize: 16, fontWeight: '800', flex: 1 },
   modalSubtitle: { fontSize: 12, marginBottom: 12 },
   modalPhoto: { width: '100%', height: 180, borderRadius: 14, marginBottom: 14 },
   modalPhotoPlaceholder: { width: '100%', height: 180, borderRadius: 14, marginBottom: 14, alignItems: 'center', justifyContent: 'center' },
@@ -720,7 +746,7 @@ const s = StyleSheet.create({
   modalActions: { marginTop: 16, gap: 8 },
   modalCta: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    paddingVertical: 12, borderRadius: 12,
+    paddingVertical: 12, minHeight: 48, borderRadius: 12,
   },
   modalCtaText: { fontSize: 13, fontWeight: '700' },
 

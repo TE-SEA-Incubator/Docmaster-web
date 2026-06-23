@@ -425,10 +425,25 @@ export class DeclarationService {
       results = await this.declarationRepository.searchPublicFound(query);
     }
 
-    return results.map((doc) => ({
+    // Attach doc type info to each result
+    const enriched = await Promise.all(
+      results.map(async (doc) => {
+        let docType = null;
+        if (doc.doc_type && this.isUuid(doc.doc_type)) {
+          docType = await this.docTypeRepository.findById(doc.doc_type);
+        }
+        if (!docType) {
+          docType = await this.docTypeRepository.findByCode(doc.doc_type);
+        }
+        return { ...doc, docTypeInfo: docType || null };
+      })
+    );
+
+    return enriched.map((doc) => ({
       id: doc.id,
       identifiant_doc_dm: doc.identifiant_doc_dm,
       doc_type: doc.doc_type,
+      docTypeInfo: doc.docTypeInfo,
       owner_name: doc.owner_name,
       date_trouvaille: doc.date_perte,
       date_perte: doc.date_perte,

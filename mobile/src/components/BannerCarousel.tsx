@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { View, Text, ScrollView, Dimensions, Pressable, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import Svg, { Circle, Rect, Polygon, Path } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -11,8 +12,8 @@ const AUTO_SCROLL_INTERVAL = 5000;
 
 interface BannerItem {
   id: string;
-  title: string;
-  subtitle: string;
+  titleKey: string;
+  subtitleKey: string;
   icon: keyof typeof Ionicons.glyphMap;
   gradient: [string, string];
   accentColor: string;
@@ -22,8 +23,8 @@ interface BannerItem {
 const BANNERS: BannerItem[] = [
   {
     id: '1',
-    title: 'Protégez\nvos documents',
-    subtitle: 'Sécurisez vos pièces importantes en un clic',
+    titleKey: 'banners:b1Title',
+    subtitleKey: 'banners:b1Sub',
     icon: 'shield-checkmark-outline',
     gradient: ['#1E3A2F', '#2D5A42'],
     accentColor: '#F5A64B',
@@ -31,8 +32,8 @@ const BANNERS: BannerItem[] = [
   },
   {
     id: '2',
-    title: 'Déclaration\nrapide',
-    subtitle: 'Signalez un document perdu ou trouvé en quelques secondes',
+    titleKey: 'banners:b2Title',
+    subtitleKey: 'banners:b2Sub',
     icon: 'flash-outline',
     gradient: ['#D97706', '#F5A64B'],
     accentColor: '#FFFFFF',
@@ -40,8 +41,8 @@ const BANNERS: BannerItem[] = [
   },
   {
     id: '3',
-    title: 'Communauté\nsolidaire',
-    subtitle: 'Rejoignez des milliers d\'utilisateurs engagés',
+    titleKey: 'banners:b3Title',
+    subtitleKey: 'banners:b3Sub',
     icon: 'people-outline',
     gradient: ['#3B82F6', '#60A5FA'],
     accentColor: '#FFFFFF',
@@ -49,8 +50,8 @@ const BANNERS: BannerItem[] = [
   },
   {
     id: '4',
-    title: 'Gagnez des\nrécompenses',
-    subtitle: 'Helpez les autres et accumulez des points',
+    titleKey: 'banners:b4Title',
+    subtitleKey: 'banners:b4Sub',
     icon: 'gift-outline',
     gradient: ['#7C3AED', '#A78BFA'],
     accentColor: '#FDE68A',
@@ -130,6 +131,7 @@ const patterns = {
 };
 
 function BannerCarouselInner() {
+  const { t } = useTranslation();
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -233,13 +235,13 @@ function BannerCarouselInner() {
                       fontSize: 22, fontWeight: '800', color: '#FFFFFF',
                       lineHeight: 28, marginBottom: 6,
                     }}>
-                      {banner.title}
+                      {t(banner.titleKey)}
                     </Text>
                     <Text style={{
                       fontSize: 12, fontWeight: '500', color: 'rgba(255,255,255,0.7)',
                       lineHeight: 17, maxWidth: 200,
                     }}>
-                      {banner.subtitle}
+                      {t(banner.subtitleKey)}
                     </Text>
                   </View>
                   <View style={{
@@ -275,7 +277,7 @@ function BannerCarouselInner() {
                       paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
                     }}
                   >
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>Découvrir</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>{t('banners:discover')}</Text>
                     <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
                   </Pressable>
                 </View>

@@ -18,6 +18,7 @@ export interface DocTypeCatalog {
   nom: string;
   icone: string;
   is_active: boolean;
+  delai_expiration_mois?: number;
   fields?: any[];
   color?: string;
   bg?: string;
@@ -35,8 +36,10 @@ export interface Document {
   photo_verso?: string;
   is_lost?: boolean;
   is_verified?: boolean;
+  is_archived?: boolean;
   date_delivrance?: string;
   date_expiration?: string;
+  archived_at?: string;
   nom_autorite?: string;
   notes?: string;
   created_at: string;

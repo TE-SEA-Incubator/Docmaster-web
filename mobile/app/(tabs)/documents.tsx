@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, View, Text, Pressable, ActivityIndicator, RefreshControl, Modal, TextInput, Alert, Platform, ToastAndroid, Dimensions, Image } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,14 +28,37 @@ function getIcon(type?: string) {
   return 'document-outline';
 }
 
+function addMonths(dateStr: string, months: number): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const day = date.getDate();
+  date.setMonth(date.getMonth() + months);
+  if (date.getDate() !== day) date.setDate(0);
+  return date.toISOString().split('T')[0];
+}
+
+/**
+ * Returns true if the document has a date_expiration in the past
+ * (compared to the current local date). Permanent docs (no date_expiration)
+ * are never considered expired.
+ */
+function isDocumentExpired(doc: Document): boolean {
+  if (!doc.date_expiration) return false;
+  const exp = new Date(doc.date_expiration);
+  if (isNaN(exp.getTime())) return false;
+  return exp.getTime() < Date.now();
+}
+
 const SCREEN = Dimensions.get('window');
 const PRIMARY = '#F5A64B';
 const GREEN_DARK = '#1E3A2F';
 
 const EMPTY_FORM = {
   type_id: '',
+  custom_type_name: '',
   numero_doc: '',
   nom_sur_doc: '',
+  nom_autorite: '',
   date_delivrance: '',
   date_expiration: '',
   notes: '',
@@ -43,6 +67,7 @@ const EMPTY_FORM = {
 };
 
 export default function DocumentsScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [docs, setDocs] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,13 +84,20 @@ export default function DocumentsScreen() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [validityOption, setValidityOption] = useState<'EXPIRING' | 'PERMANENT'>('EXPIRING');
+  const [showTypePicker, setShowTypePicker] = useState(false);
+  const [viewMode, setViewMode] = useState<'active' | 'archived'>('active');
   const [feedback, setFeedback] = useState<{ visible: boolean; type: FeedbackType; title: string; message?: string; detail?: string; detailLabel?: string }>({
     visible: false, type: 'success', title: '',
   });
 
-  const uniqueTypes = [...new Set(docs.map(d => d.type_doc).filter(Boolean))] as string[];
+  const visibleDocs = docs.filter((doc) =>
+    viewMode === 'archived' ? !!doc.is_archived : !doc.is_archived
+  );
 
-  const filteredDocs = docs.filter((doc) => {
+  const uniqueTypes = [...new Set(visibleDocs.map(d => d.type_doc).filter(Boolean))] as string[];
+
+  const filteredDocs = visibleDocs.filter((doc) => {
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch = !q || (doc.nom_sur_doc || '').toLowerCase().includes(q) || (doc.type_doc || '').toLowerCase().includes(q) || (doc.numero_doc || '').toLowerCase().includes(q);
     const matchesType = !selectedType || doc.type_doc === selectedType;
@@ -78,7 +110,30 @@ export default function DocumentsScreen() {
   const fetchData = useCallback(async () => {
     try {
       const res = await documentsService.getAll().catch(() => ({ success: false, data: [] }));
-      if (res.success && res.data) setDocs(res.data);
+      if (res.success && res.data) {
+        setDocs(res.data);
+        // Archivage immédiat côté UI : pour tout document actif dont la
+        // date d'expiration est dépassée, on demande au backend de l'archiver
+        // (défense en profondeur — évite d'attendre le cron quotidien de 2h).
+        const expiredActive = res.data.filter(
+          (d) => !d.is_archived && isDocumentExpired(d)
+        );
+        if (expiredActive.length > 0) {
+          const results = await Promise.allSettled(
+            expiredActive.map((d) => documentsService.archive(d.id))
+          );
+          setDocs((prev) =>
+            prev.map((d) => {
+              const match = results.find(
+                (r, i) => r.status === 'fulfilled' && expiredActive[i].id === d.id
+              );
+              return match
+                ? { ...d, is_archived: true, archived_at: new Date().toISOString() }
+                : d;
+            })
+          );
+        }
+      }
     } catch {} finally {
       setLoading(false);
     }
@@ -122,66 +177,103 @@ export default function DocumentsScreen() {
     setStep(1);
     setCertify(false);
     setFormErrors({});
+    setSelectedType(null);
+    setValidityOption('EXPIRING');
+    setShowTypePicker(false);
     setShowAddModal(true);
   };
 
   const closeAdd = () => {
     setShowAddModal(false);
     setStep(1);
+    setShowTypePicker(false);
   };
+
+  const activeCount = docs.filter((doc) => !doc.is_archived).length;
+  const archivedCount = docs.filter((doc) => !!doc.is_archived).length;
+  const expiredUnarchivedCount = docs.filter(
+    (doc) => !doc.is_archived && isDocumentExpired(doc)
+  ).length;
+
+  const selectedDocType = docTypes.find(dt => dt.id === form.type_id) || null;
+  const isCustomType = form.type_id === 'AUTRES';
+  const hasExpiration = validityOption === 'EXPIRING';
+  const autoExpirationMonths = selectedDocType?.delai_expiration_mois ?? 0;
+  const isAutoExpiry = validityOption === 'EXPIRING' && !isCustomType && autoExpirationMonths > 0;
+  const availableDocTypes = docTypes.filter((dt) =>
+    validityOption === 'EXPIRING'
+      ? (dt.delai_expiration_mois ?? 0) > 0
+      : (dt.delai_expiration_mois ?? 0) === 0
+  );
 
   const handleScanDocument = async (side: 'photo_recto' | 'photo_verso') => {
     try {
       const { scannedImages, status } = await DocumentScanner.scanDocument({
         maxNumDocuments: 1,
         croppedImageQuality: 85,
-        documentScannerOptions: {
-          detectionMode: 'auto',
-          enableAutoCrop: true,
-        },
       });
 
       if (status === 'success' && scannedImages && scannedImages.length > 0) {
         updateForm(side, scannedImages[0]);
-      } else if (status === 'failed') {
-        Alert.alert('Erreur', 'Une erreur est survenue lors du scan.');
+      } else if (status === 'cancel') {
+        return;
+      } else {
+        Alert.alert(t('documents:error'), t('documents:scanError'));
       }
     } catch (error) {
-      console.error('Erreur scan:', error);
-      Alert.alert('Erreur', 'Impossible de lancer le scanner.');
+      console.error(t('documents:scanErrorLog'), error);
+      Alert.alert(t('documents:error'), t('documents:scanLaunchError'));
     }
   };
 
   const handleSubmit = async () => {
     if (!certify) {
-      Alert.alert('Certification requise', 'Veuillez certifier que les informations sont authentiques.');
+      Alert.alert(t('documents:certificationRequired'), t('documents:certifyAlertMessage'));
       return;
     }
 
     setSaving(true);
     try {
-      const typeName = docTypes.find(dt => dt.id === form.type_id)?.nom || form.type_id;
+      const typeName = isCustomType ? 'AUTRES' : (selectedDocType?.nom || form.type_id);
+      // Si la date d'expiration est déjà dépassée à la soumission, on force
+      // l'archivage immédiat (le backend applique aussi la même règle).
+      const expDate = form.date_expiration ? new Date(form.date_expiration) : null;
+      const submitAlreadyExpired = !!(
+        validityOption === 'EXPIRING' &&
+        expDate && !isNaN(expDate.getTime()) && expDate.getTime() < Date.now()
+      );
       const payload = {
         type_doc: typeName,
         numero_doc: form.numero_doc,
         nom_sur_doc: form.nom_sur_doc,
-        date_delivrance: form.date_delivrance || undefined,
-        date_expiration: form.date_expiration || undefined,
+        nom_autorite: form.nom_autorite || undefined,
+        date_delivrance: validityOption === 'PERMANENT' ? undefined : (form.date_delivrance || undefined),
+        date_expiration: validityOption === 'PERMANENT' ? undefined : (form.date_expiration || undefined),
         photo_recto: form.photo_recto || undefined,
         photo_verso: form.photo_verso || undefined,
         notes: form.notes || undefined,
+        validity_option: validityOption,
+        custom_type_name: isCustomType ? (form.custom_type_name || undefined) : undefined,
+        is_archived: submitAlreadyExpired ? true : undefined,
       };
 
       const res = await documentsService.register(payload);
       if (res.success) {
         closeAdd();
         fetchData();
-        setFeedback({ visible: true, type: 'success', title: 'Document enregistré', message: 'Votre document a été ajouté avec succès à votre coffre-fort numérique.' });
+        setFeedback({
+          visible: true,
+          type: 'success',
+          title: submitAlreadyExpired ? t('documents:documentArchived') : t('documents:documentRegistered'),
+          message: submitAlreadyExpired
+            ? t('documents:documentArchivedDesc')
+            : t('documents:documentRegisteredDesc'),
+        });
       } else {
-        setFeedback({ visible: true, type: 'error', title: 'Erreur', message: res.message || "Une erreur est survenue lors de l'enregistrement." });
+        setFeedback({ visible: true, type: 'error', title: t('documents:error'), message: res.message || t('documents:registrationError') });
       }
     } catch (err: any) {
-      setFeedback({ visible: true, type: 'error', title: 'Erreur réseau', message: err?.response?.data?.message || 'Erreur réseau lors de l\'enregistrement.' });
+      setFeedback({ visible: true, type: 'error', title: t('documents:networkError'), message: err?.response?.data?.message || t('documents:networkErrorDesc') });
     } finally {
       setSaving(false);
     }
@@ -189,15 +281,16 @@ export default function DocumentsScreen() {
 
   const handleNextStep = () => {
     if (step === 1) {
-      if (!form.type_id) {
-        Alert.alert('Type requis', 'Veuillez sélectionner un type de document.');
-        return;
-      }
       setStep(2);
     } else if (step === 2) {
       const errs: Record<string, string> = {};
-      if (!form.nom_sur_doc.trim()) errs.nom_sur_doc = 'Requis';
-      if (!form.numero_doc.trim()) errs.numero_doc = 'Requis';
+      if (!form.type_id) errs.type_id = t('documents:required');
+      if (isCustomType && !form.custom_type_name.trim()) errs.custom_type_name = t('documents:required');
+      if (!form.nom_sur_doc.trim()) errs.nom_sur_doc = t('documents:required');
+      if (!form.numero_doc.trim()) errs.numero_doc = t('documents:required');
+      if (validityOption === 'EXPIRING' && !form.date_delivrance.trim()) errs.date_delivrance = t('documents:required');
+      if (validityOption === 'EXPIRING' && !isAutoExpiry && !form.date_expiration.trim()) errs.date_expiration = t('documents:required');
+      if (!form.photo_recto.trim()) errs.photo_recto = t('documents:required');
       if (Object.keys(errs).length > 0) {
         setFormErrors(errs);
         return;
@@ -209,6 +302,26 @@ export default function DocumentsScreen() {
 
   const handlePrevStep = () => {
     if (step > 1) setStep(step - 1);
+  };
+
+  const handleValidityChange = (nextValidity: 'EXPIRING' | 'PERMANENT') => {
+    setValidityOption(nextValidity);
+    setForm((prev) => ({
+      ...prev,
+      type_id: '',
+      custom_type_name: '',
+      date_delivrance: '',
+      date_expiration: '',
+    }));
+    setShowTypePicker(false);
+  };
+
+  const updateIssuedDate = (value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      date_delivrance: value,
+      date_expiration: isAutoExpiry && value ? addMonths(value, autoExpirationMonths) : prev.date_expiration,
+    }));
   };
 
   if (loading) {
@@ -226,8 +339,8 @@ export default function DocumentsScreen() {
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <View style={{ flex: 1, marginRight: 16 }}>
-              <ThemedText style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>Mes documents</ThemedText>
-              <ThemedText style={{ fontSize: 13, color: '#9CA3AF' }}>Tous vos documents enregistrés</ThemedText>
+              <ThemedText style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>{t('documents:title')}</ThemedText>
+              <ThemedText style={{ fontSize: 13, color: '#9CA3AF' }}>{t('documents:subtitle')}</ThemedText>
             </View>
             <Pressable
               onPress={openAdd}
@@ -242,6 +355,56 @@ export default function DocumentsScreen() {
             </Pressable>
           </View>
 
+          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+            <Pressable
+              onPress={() => {
+                setViewMode('active');
+                setSelectedType(null);
+              }}
+              style={({ pressed }) => ({
+                flex: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                paddingVertical: 12,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: viewMode === 'active' ? PRIMARY : '#E5E7EB',
+                backgroundColor: viewMode === 'active' ? '#FFF3E0' : (pressed ? '#FAFAFA' : '#FFFFFF'),
+              })}
+            >
+              <Ionicons name="document-text-outline" size={16} color={viewMode === 'active' ? PRIMARY : '#6B7280'} />
+              <Text style={{ fontSize: 13, fontWeight: '800', color: viewMode === 'active' ? '#92400E' : '#6B7280' }}>
+                {t('documents:active')} ({activeCount})
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                setViewMode('archived');
+                setSelectedType(null);
+              }}
+              style={({ pressed }) => ({
+                flex: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                paddingVertical: 12,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: viewMode === 'archived' ? PRIMARY : '#E5E7EB',
+                backgroundColor: viewMode === 'archived' ? '#FFF3E0' : (pressed ? '#FAFAFA' : '#FFFFFF'),
+              })}
+            >
+              <Ionicons name="archive-outline" size={16} color={viewMode === 'archived' ? PRIMARY : '#6B7280'} />
+              <Text style={{ fontSize: 13, fontWeight: '800', color: viewMode === 'archived' ? '#92400E' : '#6B7280' }}>
+                {t('documents:archived')} ({archivedCount})
+              </Text>
+            </Pressable>
+          </View>
+
           {/* Search Bar */}
           <View style={{
             flexDirection: 'row', alignItems: 'center',
@@ -251,7 +414,7 @@ export default function DocumentsScreen() {
           }}>
             <Ionicons name="search-outline" size={18} color="#9CA3AF" />
             <TextInput
-              placeholder="Rechercher un document..."
+              placeholder={t('documents:searchPlaceholder')}
               value={searchQuery}
               onChangeText={setSearchQuery}
               style={{ flex: 1, fontSize: 14, color: '#1A1A1A', padding: 0 }}
@@ -278,7 +441,7 @@ export default function DocumentsScreen() {
               >
                 <Ionicons name="layers-outline" size={14} color={!selectedType ? '#FFFFFF' : '#6B7280'} />
                 <Text style={{ fontSize: 13, fontWeight: '700', color: !selectedType ? '#FFFFFF' : '#6B7280' }}>
-                  Tous
+                  {t('documents:all')}
                 </Text>
                 <View style={{
                   backgroundColor: !selectedType ? 'rgba(255,255,255,0.3)' : '#F0F0F0',
@@ -333,9 +496,9 @@ export default function DocumentsScreen() {
             <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="document-text-outline" size={30} color="#F5A64B" />
             </View>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>Aucun document</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>{t('documents:noDocuments')}</Text>
             <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 }}>
-              Enregistrez vos documents pour les sécuriser
+              {t('documents:noDocumentsDesc')}
             </Text>
           </View>
         ) : filteredDocs.length === 0 ? (
@@ -343,15 +506,18 @@ export default function DocumentsScreen() {
             <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="search-outline" size={30} color="#9CA3AF" />
             </View>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>Aucun résultat</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>{viewMode === 'archived' ? t('documents:noArchivedDocs') : t('documents:noResults')}</Text>
             <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 18 }}>
-              Aucun document ne correspond à votre recherche
+              {viewMode === 'archived'
+                ? t('documents:archivedDesc')
+                : t('documents:noSearchResultsDesc')}
             </Text>
           </View>
         ) : (
           <View style={{ paddingHorizontal: 20, gap: 14 }}>
             {filteredDocs.map((doc) => {
               const hasPhoto = !!doc.photo_recto;
+              const isArchived = !!doc.is_archived;
               return (
                 <Pressable
                   key={doc.id}
@@ -386,7 +552,7 @@ export default function DocumentsScreen() {
                         }}>
                           <Ionicons name={getIcon(doc.type_doc) as any} size={28} color="#F5A64B" />
                         </View>
-                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#C4BAB0' }}>Aucune photo</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#C4BAB0' }}>{t('documents:noPhoto')}</Text>
                       </View>
                     )}
 
@@ -410,31 +576,37 @@ export default function DocumentsScreen() {
                       {doc.is_lost ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(239,68,68,0.9)' }}>
                           <Ionicons name="alert-circle" size={11} color="#FFFFFF" />
-                          <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFFFFF' }}>Perdu</Text>
+                          <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFFFFF' }}>{t('documents:lost')}</Text>
                         </View>
                       ) : doc.is_verified ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(22,163,74,0.9)' }}>
                           <Ionicons name="checkmark-circle" size={11} color="#FFFFFF" />
-                          <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFFFFF' }}>Certifié</Text>
+                          <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFFFFF' }}>{t('documents:certified')}</Text>
                         </View>
                       ) : null}
                     </View>
 
                     {/* Type badge top-left */}
                     <View style={{ position: 'absolute', top: 12, left: 12 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.9)' }}>
-                        <Ionicons name={getIcon(doc.type_doc) as any} size={12} color="#F5A64B" />
-                        <Text style={{ fontSize: 11, fontWeight: '800', color: '#1A1A1A' }}>
-                          {doc.type_doc || 'Document'}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, backgroundColor: isArchived ? 'rgba(107,114,128,0.9)' : 'rgba(255,255,255,0.9)' }}>
+                        <Ionicons name={isArchived ? 'archive-outline' : (getIcon(doc.type_doc) as any)} size={12} color={isArchived ? '#FFFFFF' : '#F5A64B'} />
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: isArchived ? '#FFFFFF' : '#1A1A1A' }}>
+                          {isArchived ? t('documents:archived') : (doc.type_doc || t('documents:document'))}
                         </Text>
                       </View>
                     </View>
+
+                    {isArchived && (
+                      <View style={{ position: 'absolute', top: 12, right: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(107,114,128,0.9)' }}>
+                        <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFFFFF' }}>{t('documents:archived').toUpperCase()}</Text>
+                      </View>
+                    )}
 
                     {/* Bottom info overlay on image */}
                     {hasPhoto && (
                       <View style={{ position: 'absolute', bottom: 12, left: 14, right: 14 }}>
                         <Text style={{ fontSize: 18, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 }} numberOfLines={1}>
-                          {doc.nom_sur_doc || doc.type_doc || 'Document'}
+                          {doc.nom_sur_doc || doc.type_doc || t('documents:document')}
                         </Text>
                         {doc.numero_doc && (
                           <Text style={{
@@ -451,7 +623,14 @@ export default function DocumentsScreen() {
                   {/* Bottom Info Bar (below image) */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                      {doc.date_expiration ? (
+                      {isArchived ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Ionicons name="archive-outline" size={13} color="#6B7280" />
+                          <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280' }}>
+                            {t('documents:archived')}{doc.archived_at ? ` ${t('documents:on')} ${new Date(doc.archived_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}
+                          </Text>
+                        </View>
+                      ) : doc.date_expiration ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                           <Ionicons
                             name="time-outline"
@@ -463,7 +642,7 @@ export default function DocumentsScreen() {
                             color: new Date(doc.date_expiration).getTime() < Date.now() ? '#EF4444' : '#9CA3AF',
                           }}>
                             {new Date(doc.date_expiration).getTime() < Date.now()
-                              ? 'Expiré'
+                              ? t('documents:expired')
                               : new Date(doc.date_expiration).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
                             }
                           </Text>
@@ -471,7 +650,7 @@ export default function DocumentsScreen() {
                       ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                           <Ionicons name="infinite-outline" size={13} color="#9CA3AF" />
-                          <Text style={{ fontSize: 12, fontWeight: '600', color: '#9CA3AF' }}>Permanent</Text>
+                          <Text style={{ fontSize: 12, fontWeight: '600', color: '#9CA3AF' }}>{t('documents:permanent')}</Text>
                         </View>
                       )}
                     </View>
@@ -494,9 +673,9 @@ export default function DocumentsScreen() {
             {/* Header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#F0EAE0' }}>
               <View>
-                <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>Enregistrer un document</Text>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>{t('documents:registerDocument')}</Text>
                 <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
-                  {step === 1 ? 'Étape 1 : Choisir le type' : step === 2 ? 'Étape 2 : Saisir les détails' : 'Étape 3 : Certification'}
+                  {step === 1 ? t('documents:step1') : step === 2 ? t('documents:step2') : t('documents:step3')}
                 </Text>
               </View>
               <Pressable onPress={closeAdd} style={{ width: 34, height: 34, borderRadius: 9, borderWidth: 1.5, borderColor: '#E0D5C4', alignItems: 'center', justifyContent: 'center' }}>
@@ -526,55 +705,25 @@ export default function DocumentsScreen() {
               {step === 1 && (
                 <View style={{ marginBottom: 30 }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 12 }}>
-                    Quel document voulez-vous sauvegarder ?
+                    {t('documents:chooseValidity')}
                   </Text>
-                  
-                  {loadingTypes ? (
-                    <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                      <ActivityIndicator size="large" color={PRIMARY} />
-                      <Text style={{ marginTop: 10, color: '#9CA3AF', fontSize: 13 }}>Chargement des types...</Text>
-                    </View>
-                  ) : (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-                      {docTypes.map((dt) => {
-                        const selected = form.type_id === dt.id;
-                        return (
-                          <Pressable
-                            key={dt.id}
-                            onPress={() => updateForm('type_id', dt.id)}
-                            style={{
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              gap: 10,
-                              padding: 16,
-                              borderRadius: 14,
-                              borderWidth: 2,
-                              borderColor: selected ? PRIMARY : '#F0EAE0',
-                              backgroundColor: selected ? '#FFF9F2' : '#FFFFFF',
-                              width: (SCREEN.width - 50) / 2, // 2 columns
-                            }}
-                          >
-                            <View style={{
-                              width: 32, height: 32, borderRadius: 8,
-                              backgroundColor: selected ? 'rgba(245,166,75,0.2)' : '#F5F5F5',
-                              alignItems: 'center', justifyContent: 'center'
-                            }}>
-                              <Ionicons name={getIcon(dt.nom) as any} size={16} color={selected ? PRIMARY : '#6B7280'} />
-                            </View>
-                            <Text style={{ fontSize: 13, fontWeight: '700', color: selected ? '#92400E' : '#374151', flex: 1 }} numberOfLines={1}>
-                              {dt.nom}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  )}
+
+                  <View style={{ gap: 10 }}>
+                    <Pressable onPress={() => handleValidityChange('EXPIRING')} style={{ padding: 16, borderRadius: 16, borderWidth: 2, borderColor: validityOption === 'EXPIRING' ? PRIMARY : '#EAE3D8', backgroundColor: validityOption === 'EXPIRING' ? '#FFF9F2' : '#FFFFFF' }}>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A1A1A' }}>{t('documents:expirable')}</Text>
+                      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>{t('documents:expirableDesc')}</Text>
+                    </Pressable>
+                    <Pressable onPress={() => handleValidityChange('PERMANENT')} style={{ padding: 16, borderRadius: 16, borderWidth: 2, borderColor: validityOption === 'PERMANENT' ? PRIMARY : '#EAE3D8', backgroundColor: validityOption === 'PERMANENT' ? '#FFF9F2' : '#FFFFFF' }}>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A1A1A' }}>{t('documents:permanent')}</Text>
+                      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>{t('documents:permanentDesc')}</Text>
+                    </Pressable>
+                  </View>
 
                   <View style={{ marginTop: 30, marginBottom: 20 }}>
                     <Button
-                      title="Suivant"
+                      title={t('documents:next')}
                       onPress={handleNextStep}
-                      disabled={!form.type_id}
+                      disabled={!validityOption}
                       icon="arrow-forward-outline"
                       iconPosition="right"
                     />
@@ -586,12 +735,78 @@ export default function DocumentsScreen() {
               {step === 2 && (
                 <View style={{ marginBottom: 30 }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 12 }}>
-                    Informations du document
+                    {t('documents:typeAndInfo')}
                   </Text>
+
+                  {loadingTypes ? (
+                    <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                      <ActivityIndicator size="large" color={PRIMARY} />
+                      <Text style={{ marginTop: 10, color: '#9CA3AF', fontSize: 13 }}>{t('documents:loadingTypes')}</Text>
+                    </View>
+                  ) : (
+                    <View style={{ marginBottom: 16 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: '#6B7280', marginBottom: 8 }}>
+                        {t('documents:documentType')} {validityOption === 'EXPIRING' ? `(${t('documents:expirable')})` : `(${t('documents:permanent')})`}
+                      </Text>
+
+                      <Pressable onPress={() => setShowTypePicker(prev => !prev)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 14, borderWidth: 2, borderColor: '#EAE3D8', backgroundColor: '#FFFFFF' }}>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: form.type_id ? '#1A1A1A' : '#9CA3AF' }}>
+                          {form.type_id === 'AUTRES' ? t('documents:otherDocument') : (selectedDocType?.nom || t('documents:chooseType'))}
+                        </Text>
+                        <Ionicons name={showTypePicker ? 'chevron-up' : 'chevron-down'} size={18} color="#6B7280" />
+                      </Pressable>
+
+                      {showTypePicker && (
+                        <View style={{ marginTop: 10, borderRadius: 14, borderWidth: 1, borderColor: '#EAE3D8', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
+                          <ScrollView style={{ maxHeight: 250 }} nestedScrollEnabled>
+                            {availableDocTypes.map((dt) => {
+                              const selected = form.type_id === dt.id;
+                              return (
+                                <Pressable
+                                  key={dt.id}
+                                  onPress={() => {
+                                    updateForm('type_id', dt.id);
+                                    if (form.date_delivrance && (dt.delai_expiration_mois ?? 0) > 0) {
+                                      updateForm('date_expiration', addMonths(form.date_delivrance, dt.delai_expiration_mois ?? 0));
+                                    }
+                                    setShowTypePicker(false);
+                                  }}
+                                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderBottomWidth: 1, borderBottomColor: '#F5F5F5', backgroundColor: selected ? '#FFF9F2' : '#FFFFFF' }}
+                                >
+                                  <Ionicons name={getIcon(dt.nom) as any} size={16} color={selected ? PRIMARY : '#6B7280'} />
+                                  <Text style={{ fontSize: 14, fontWeight: '700', color: selected ? '#92400E' : '#374151' }}>{dt.nom}</Text>
+                                </Pressable>
+                              );
+                            })}
+                            <Pressable
+                              onPress={() => {
+                                updateForm('type_id', 'AUTRES');
+                                setShowTypePicker(false);
+                              }}
+                              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, backgroundColor: form.type_id === 'AUTRES' ? '#FFF9F2' : '#FFFFFF' }}
+                            >
+                              <Ionicons name="create-outline" size={16} color={form.type_id === 'AUTRES' ? PRIMARY : '#6B7280'} />
+                              <Text style={{ fontSize: 14, fontWeight: '700', color: form.type_id === 'AUTRES' ? '#92400E' : '#374151' }}>{t('documents:otherDocument')}</Text>
+                            </Pressable>
+                          </ScrollView>
+                        </View>
+                      )}
+                    </View>
+                  )}
                   
                   <Input
-                    label="Nom complet sur le document *"
-                    placeholder="Nom complet"
+                    label={t('documents:customType')}
+                    placeholder={t('documents:documentName')}
+                    icon="create-outline"
+                    value={form.custom_type_name}
+                    onChangeText={(v) => updateForm('custom_type_name', v)}
+                    error={formErrors.custom_type_name}
+                    containerStyle={{ display: form.type_id === 'AUTRES' ? 'flex' : 'none' }}
+                  />
+
+                  <Input
+                    label={t('documents:fullName')}
+                    placeholder={t('documents:fullNamePlaceholder')}
                     icon="person-outline"
                     value={form.nom_sur_doc}
                     onChangeText={(v) => updateForm('nom_sur_doc', v)}
@@ -600,8 +815,8 @@ export default function DocumentsScreen() {
 
                   <View style={{ marginTop: 12 }}>
                     <Input
-                      label="Numéro du document *"
-                      placeholder="Ex: CNI, N° de passeport, etc."
+                      label={t('documents:documentNumber')}
+                      placeholder={t('documents:documentNumberPlaceholder')}
                       icon="barcode-outline"
                       value={form.numero_doc}
                       onChangeText={(v) => updateForm('numero_doc', v)}
@@ -611,39 +826,51 @@ export default function DocumentsScreen() {
 
                   <View style={{ marginTop: 12 }}>
                     <Input
-                      label="Notes"
-                      placeholder="Ajouter des notes ou remarques..."
+                      label={t('documents:issuingAuthority')}
+                      placeholder={t('documents:issuingAuthorityPlaceholder')}
+                      icon="business-outline"
+                      value={form.nom_autorite}
+                      onChangeText={(v) => updateForm('nom_autorite', v)}
+                    />
+                  </View>
+
+                  <View style={{ marginTop: 12 }}>
+                    <Input
+                      label={t('documents:notes')}
+                      placeholder={t('documents:notesPlaceholder')}
                       icon="document-text-outline"
                       value={form.notes}
                       onChangeText={(v) => updateForm('notes', v)}
                     />
                   </View>
-                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-                    <View style={{ flex: 1 }}>
-                      <DatePickerInput 
-                        label="Date de délivrance" 
-                        value={form.date_delivrance ? new Date(form.date_delivrance) : new Date()} 
-                        onChange={(d) => updateForm('date_delivrance', d.toISOString().split('T')[0])} 
-                      />
+                  {validityOption === 'EXPIRING' && (
+                    <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+                      <View style={{ flex: 1 }}>
+                        <DatePickerInput 
+                          label={t('documents:issueDate')} 
+                          value={form.date_delivrance ? new Date(form.date_delivrance) : new Date()} 
+                          onChange={(d) => updateIssuedDate(d.toISOString().split('T')[0])} 
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <DatePickerInput 
+                          label={t('documents:expiryDate')} 
+                          value={form.date_expiration ? new Date(form.date_expiration) : new Date()} 
+                          onChange={(d) => updateForm('date_expiration', d.toISOString().split('T')[0])}
+                        />
+                      </View>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <DatePickerInput 
-                        label="Date d'expiration" 
-                        value={form.date_expiration ? new Date(form.date_expiration) : new Date()} 
-                        onChange={(d) => updateForm('date_expiration', d.toISOString().split('T')[0])} 
-                      />
-                    </View>
-                  </View>
+                  )}
 
                   {/* Photo Section */}
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 20, marginBottom: 10 }}>
-                    Photos du document
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 20, marginBottom: 10 }}>
+                    {t('documents:documentPhotos')}
                   </Text>
 
                   <View style={{ flexDirection: 'row', gap: 12 }}>
                     {/* Recto Card */}
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#9CA3AF', marginBottom: 6 }}>Photo Recto</Text>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#9CA3AF', marginBottom: 6 }}>{t('documents:photoRecto')}</Text>
                       {form.photo_recto ? (
                         <View style={{ borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#F0EAE0' }}>
                           <Image source={{ uri: form.photo_recto }} style={{ width: '100%', height: 110, resizeMode: 'cover' }} />
@@ -667,14 +894,15 @@ export default function DocumentsScreen() {
                           }}
                         >
                           <Ionicons name="scan-outline" size={24} color="#9CA3AF" />
-                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF' }}>Scanner Recto</Text>
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF' }}>{t('documents:scanRecto')}</Text>
                         </Pressable>
                       )}
+                      {formErrors.photo_recto ? <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '700', color: '#EF4444' }}>{formErrors.photo_recto}</Text> : null}
                     </View>
 
                     {/* Verso Card */}
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#9CA3AF', marginBottom: 6 }}>Photo Verso</Text>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: '#9CA3AF', marginBottom: 6 }}>{t('documents:photoVerso')}</Text>
                       {form.photo_verso ? (
                         <View style={{ borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#F0EAE0' }}>
                           <Image source={{ uri: form.photo_verso }} style={{ width: '100%', height: 110, resizeMode: 'cover' }} />
@@ -698,18 +926,19 @@ export default function DocumentsScreen() {
                           }}
                         >
                           <Ionicons name="scan-outline" size={24} color="#9CA3AF" />
-                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF' }}>Scanner Verso</Text>
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF' }}>{t('documents:scanVerso')}</Text>
                         </Pressable>
                       )}
+                      {formErrors.photo_verso ? <Text style={{ marginTop: 6, fontSize: 11, fontWeight: '700', color: '#EF4444' }}>{formErrors.photo_verso}</Text> : null}
                     </View>
                   </View>
 
                   <View style={{ flexDirection: 'row', gap: 10, marginTop: 30, marginBottom: 20 }}>
                     <View style={{ flex: 1 }}>
-                      <Button title="Retour" variant="outline" onPress={handlePrevStep} />
+                      <Button title={t('documents:back')} variant="outline" onPress={handlePrevStep} />
                     </View>
                     <View style={{ flex: 2 }}>
-                      <Button title="Suivant" onPress={handleNextStep} icon="arrow-forward-outline" iconPosition="right" />
+                      <Button title={t('documents:next')} onPress={handleNextStep} icon="arrow-forward-outline" iconPosition="right" />
                     </View>
                   </View>
                 </View>
@@ -719,34 +948,42 @@ export default function DocumentsScreen() {
               {step === 3 && (
                 <View style={{ marginBottom: 30 }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 12 }}>
-                    Récapitulatif des données
+                    {t('documents:recap')}
                   </Text>
                   
                   {/* Summary Box */}
                   <View style={{ backgroundColor: '#FAF7F2', borderRadius: 16, padding: 16, borderStyle: 'solid', borderWidth: 1, borderColor: '#EAE3D8', gap: 10 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>Type :</Text>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>
-                        {docTypes.find(dt => dt.id === form.type_id)?.nom || 'Document'}
-                      </Text>
+                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:validity')}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{validityOption === 'PERMANENT' ? t('documents:permanent') : t('documents:expirable')}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>Numéro :</Text>
+                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:type')}</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{isCustomType ? (form.custom_type_name || t('documents:otherDocument')) : (selectedDocType?.nom || t('documents:document'))}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:number')}</Text>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{form.numero_doc}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>Nom complet :</Text>
+                      <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:fullNameLabel')}</Text>
                       <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{form.nom_sur_doc}</Text>
                     </View>
-                    {form.date_delivrance ? (
+                    {form.nom_autorite ? (
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={{ fontSize: 12, color: '#9CA3AF' }}>Délivré le :</Text>
+                        <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:authority')}</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{form.nom_autorite}</Text>
+                      </View>
+                    ) : null}
+                    {validityOption === 'EXPIRING' && form.date_delivrance ? (
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:issuedOn')}</Text>
                         <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{form.date_delivrance}</Text>
                       </View>
                     ) : null}
-                    {form.date_expiration ? (
+                    {validityOption === 'EXPIRING' && form.date_expiration ? (
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={{ fontSize: 12, color: '#9CA3AF' }}>Expire le :</Text>
+                        <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('documents:expiresOn')}</Text>
                         <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A' }}>{form.date_expiration}</Text>
                       </View>
                     ) : null}
@@ -757,13 +994,13 @@ export default function DocumentsScreen() {
                     {form.photo_recto ? (
                       <View style={{ flex: 1, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#F0EAE0' }}>
                         <Image source={{ uri: form.photo_recto }} style={{ width: '100%', height: 80, resizeMode: 'cover' }} />
-                        <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: '#FFF', paddingVertical: 2 }}>Recto</Text>
+                        <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: '#FFF', paddingVertical: 2 }}>{t('documents:recto')}</Text>
                       </View>
                     ) : null}
                     {form.photo_verso ? (
                       <View style={{ flex: 1, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: '#F0EAE0' }}>
                         <Image source={{ uri: form.photo_verso }} style={{ width: '100%', height: 80, resizeMode: 'cover' }} />
-                        <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: '#FFF', paddingVertical: 2 }}>Verso</Text>
+                        <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: '#FFF', paddingVertical: 2 }}>{t('documents:verso')}</Text>
                       </View>
                     ) : null}
                   </View>
@@ -789,17 +1026,17 @@ export default function DocumentsScreen() {
                       color={certify ? '#10B981' : '#9CA3AF'}
                     />
                     <Text style={{ flex: 1, fontSize: 12, fontWeight: '600', color: certify ? '#1E3A2F' : '#6B7280', lineHeight: 18 }}>
-                      Je certifie que toutes les informations saisies sont authentiques et correctes.
+                      {t('documents:certifyText')}
                     </Text>
                   </Pressable>
 
                   <View style={{ flexDirection: 'row', gap: 10, marginTop: 30, marginBottom: 20 }}>
                     <View style={{ flex: 1 }}>
-                      <Button title="Retour" variant="outline" onPress={handlePrevStep} />
+                      <Button title={t('documents:back')} variant="outline" onPress={handlePrevStep} />
                     </View>
                     <View style={{ flex: 2 }}>
                       <Button
-                        title="Certifier & Enregistrer"
+                        title={t('documents:certifyAndSave')}
                         onPress={handleSubmit}
                         loading={saving}
                         disabled={!certify}

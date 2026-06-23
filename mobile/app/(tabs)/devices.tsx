@@ -17,23 +17,24 @@ import { DevicesSkeleton } from '@/components/Skeletons';
 import { DatePickerInput } from '@/components/declarations/wizard/DatePickerInput';
 import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
 import { devicesService } from '@/core/api/devicesService';
+import { useTranslation, getI18n } from 'react-i18next';
 
 const SCREEN = Dimensions.get('window');
 
-const TYPE_META: Record<DeviceType, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
-  telephone: { label: 'Téléphone', icon: 'phone-portrait-outline', color: '#3B82F6', bg: '#EFF6FF' },
-  ordinateur: { label: 'Ordinateur', icon: 'laptop-outline', color: '#8B5CF6', bg: '#F5F3FF' },
-  tablette: { label: 'Tablette', icon: 'tablet-portrait-outline', color: '#10B981', bg: '#ECFDF5' },
-  tv: { label: 'TV', icon: 'tv-outline', color: '#F59E0B', bg: '#FFFBEB' },
-  autre: { label: 'Autre', icon: 'cube-outline', color: '#6B7280', bg: '#F9FAFB' },
+const TYPE_META: Record<DeviceType, { labelKey: string; icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
+  telephone: { labelKey: 'devices:deviceTelephone', icon: 'phone-portrait-outline', color: '#3B82F6', bg: '#EFF6FF' },
+  ordinateur: { labelKey: 'devices:deviceOrdinateur', icon: 'laptop-outline', color: '#8B5CF6', bg: '#F5F3FF' },
+  tablette: { labelKey: 'devices:deviceTablette', icon: 'tablet-portrait-outline', color: '#10B981', bg: '#ECFDF5' },
+  tv: { labelKey: 'devices:deviceTv', icon: 'tv-outline', color: '#F59E0B', bg: '#FFFBEB' },
+  autre: { labelKey: 'devices:deviceAutre', icon: 'cube-outline', color: '#6B7280', bg: '#F9FAFB' },
 };
 
-const FILTERS: { key: string; label: string; icon?: keyof typeof Ionicons.glyphMap }[] = [
-  { key: 'all', label: 'Tous' },
-  { key: 'telephone', label: 'Téléphones', icon: 'phone-portrait-outline' },
-  { key: 'ordinateur', label: 'Ordinateurs', icon: 'laptop-outline' },
-  { key: 'tablette', label: 'Tablettes', icon: 'tablet-portrait-outline' },
-  { key: 'autre', label: 'Autres', icon: 'cube-outline' },
+const FILTERS: { key: string; labelKey: string; icon?: keyof typeof Ionicons.glyphMap }[] = [
+  { key: 'all', labelKey: 'devices:filterAll' },
+  { key: 'telephone', labelKey: 'devices:filterTelephones', icon: 'phone-portrait-outline' },
+  { key: 'ordinateur', labelKey: 'devices:filterOrdinateurs', icon: 'laptop-outline' },
+  { key: 'tablette', labelKey: 'devices:filterTablettes', icon: 'tablet-portrait-outline' },
+  { key: 'autre', labelKey: 'devices:filterAutres', icon: 'cube-outline' },
 ];
 
 function getDeviceType(category: string): DeviceType {
@@ -62,7 +63,8 @@ const CARD_H = 216;
 function formatDate(s: string) {
   if (!s) return '—';
   try {
-    return new Date(s).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+    const locale = getI18n().language || 'fr';
+    return new Date(s).toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
   } catch { return s; }
 }
 
@@ -84,6 +86,7 @@ function InfoRow({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap;
 function DetailContent({ d, onClose, onEdit, onDelete, onReport }: {
   d: Device; onClose: () => void; onEdit: () => void; onDelete: () => void; onReport: () => void;
 }) {
+  const { t } = useTranslation();
   const meta = TYPE_META[d.type] || TYPE_META.autre;
   const expired = d.garantie ? new Date(d.garantie) < new Date() : false;
   return (
@@ -108,32 +111,33 @@ function DetailContent({ d, onClose, onEdit, onDelete, onReport }: {
         </View>
       </View>
       <View style={{ flexDirection: 'row', gap: 5, marginBottom: 20, flexWrap: 'wrap' }}>
-        <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: meta.bg }}><Text style={{ fontSize: 11, fontWeight: '700', color: meta.color }}>{meta.label}</Text></View>
-        {d.assurance === 'oui' && <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: '#FEF0DC' }}><Text style={{ fontSize: 11, fontWeight: '700', color: '#D98A30' }}>Assuré</Text></View>}
-        {d.garantie ? <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: expired ? '#FEF2F2' : '#E8F5EE' }}><Text style={{ fontSize: 11, fontWeight: '700', color: expired ? '#EF4444' : '#1E3A2F' }}>{expired ? 'Garantie expirée' : 'Garantie OK'}</Text></View> : null}
-        {d.is_lost && <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: '#EF4444' }}><Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>Signalé {d.status === 'STOLEN' ? 'volé' : 'perdu'}</Text></View>}
+        <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: meta.bg }}><Text style={{ fontSize: 11, fontWeight: '700', color: meta.color }}>{t(meta.labelKey)}</Text></View>
+        {d.assurance === 'oui' && <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: '#FEF0DC' }}><Text style={{ fontSize: 11, fontWeight: '700', color: '#D98A30' }}>{t('devices:insured')}</Text></View>}
+        {d.garantie ? <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: expired ? '#FEF2F2' : '#E8F5EE' }}><Text style={{ fontSize: 11, fontWeight: '700', color: expired ? '#EF4444' : '#1E3A2F' }}>{expired ? t('devices:warrantyExpired') : t('devices:warrantyOk')}</Text></View> : null}
+        {d.is_lost && <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: '#EF4444' }}><Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>{t('devices:reported')} {d.status === 'STOLEN' ? t('devices:stolen') : t('devices:lost')}</Text></View>}
       </View>
-      <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>Détails</Text>
-      <InfoRow icon="barcode-outline" label="N° série / IMEI" value={d.serial} />
-      <InfoRow icon="color-palette-outline" label="Couleur" value={d.couleur} />
-      <InfoRow icon="calendar-outline" label="Date d'achat" value={d.dateAchat ? formatDate(d.dateAchat) : ''} />
-      <InfoRow icon="calendar-outline" label="Fin garantie" value={d.garantie ? formatDate(d.garantie) : ''} />
-      <InfoRow icon="wallet-outline" label="Prix" value={d.prix ? d.prix.toLocaleString('fr') + ' FCFA' : ''} />
-      <InfoRow icon="location-outline" label="Lieu d'achat" value={d.lieu} />
-      <InfoRow icon="document-text-outline" label="Notes" value={d.notes} />
+      <Text style={{ fontSize: 10, fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>{t('devices:details')}</Text>
+      <InfoRow icon="barcode-outline" label={t('devices:serialLabel')} value={d.serial} />
+      <InfoRow icon="color-palette-outline" label={t('devices:colorLabel')} value={d.couleur} />
+      <InfoRow icon="calendar-outline" label={t('devices:purchaseDateLabel')} value={d.dateAchat ? formatDate(d.dateAchat) : ''} />
+      <InfoRow icon="calendar-outline" label={t('devices:warrantyLabel')} value={d.garantie ? formatDate(d.garantie) : ''} />
+      <InfoRow icon="wallet-outline" label={t('devices:priceLabel')} value={d.prix ? d.prix.toLocaleString(getI18n().language || 'fr') + ' FCFA' : ''} />
+      <InfoRow icon="location-outline" label={t('devices:locationLabel')} value={d.lieu} />
+      <InfoRow icon="document-text-outline" label={t('devices:notesLabel')} value={d.notes} />
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 24 }}>
-        <View style={{ flex: 1 }}><Button title="Fermer" variant="outline" onPress={onClose} /></View>
-        <View style={{ flex: 1 }}><Button title={d.is_lost ? 'Retrouvé' : 'Signaler perdu'} variant={d.is_lost ? 'secondary' : 'danger'} onPress={onReport} /></View>
+        <View style={{ flex: 1 }}><Button title={t('common:close')} variant="outline" onPress={onClose} /></View>
+        <View style={{ flex: 1 }}><Button title={d.is_lost ? t('devices:found') : t('devices:reportLost')} variant={d.is_lost ? 'secondary' : 'danger'} onPress={onReport} /></View>
       </View>
     </View>
   );
 }
 
 function ReportTypeSelector({ value, onChange }: { value: 'LOST' | 'STOLEN'; onChange: (v: 'LOST' | 'STOLEN') => void }) {
+  const { t } = useTranslation();
   return (
     <View style={{ flexDirection: 'row', gap: 10 }}>
-      {([{ key: 'LOST' as const, label: 'Perdu', icon: 'search-outline' as const },
-         { key: 'STOLEN' as const, label: 'Volé', icon: 'lock-closed-outline' as const }] as const).map((opt) => (
+      {([{ key: 'LOST' as const, label: t('devices:lost'), icon: 'search-outline' as const },
+         { key: 'STOLEN' as const, label: t('devices:stolen'), icon: 'lock-closed-outline' as const }] as const).map((opt) => (
         <Pressable key={opt.key} onPress={() => onChange(opt.key)} style={{
           flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
           gap: 6, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5,
@@ -149,6 +153,7 @@ function ReportTypeSelector({ value, onChange }: { value: 'LOST' | 'STOLEN'; onC
 }
 
 function PhotoPicker({ label, uri, onSelect }: { label: string, uri: string | null, onSelect: (uri: string) => void }) {
+  const { t } = useTranslation();
   // Wraps the camera intent in a safety net: some Android OEM ROMs
   // (Samsung One UI 6+, Xiaomi MIUI 14+, Vivo FunTouch) throw an
   // IllegalStateException from CameraX initialisation when the system
@@ -162,8 +167,8 @@ function PhotoPicker({ label, uri, onSelect }: { label: string, uri: string | nu
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (perm.status !== 'granted') {
         Alert.alert(
-          'Permission requise',
-          "L'accès à l'appareil photo est nécessaire. Activez-le dans les réglages.",
+          t('devices:permissionRequired'),
+          t('devices:cameraPermissionDesc'),
         );
         return;
       }
@@ -180,11 +185,11 @@ function PhotoPicker({ label, uri, onSelect }: { label: string, uri: string | nu
     } catch (error) {
       console.warn('[PhotoPicker] Camera unavailable, falling back to gallery:', error);
       Alert.alert(
-        'Caméra indisponible',
-        "L'appareil photo n'a pas pu s'ouvrir sur ce téléphone. Choisissez une photo depuis votre galerie.",
+        t('devices:cameraUnavailable'),
+        t('devices:cameraUnavailableDesc'),
         [
-          { text: 'Choisir dans la galerie', onPress: () => { launchLibrarySafely(); } },
-          { text: 'Annuler', style: 'cancel' },
+          { text: t('devices:chooseFromGallery'), onPress: () => { launchLibrarySafely(); } },
+          { text: t('common:cancel'), style: 'cancel' },
         ],
       );
     }
@@ -195,8 +200,8 @@ function PhotoPicker({ label, uri, onSelect }: { label: string, uri: string | nu
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (perm.status !== 'granted') {
         Alert.alert(
-          'Permission requise',
-          "L'accès à la galerie est nécessaire. Activez-le dans les réglages.",
+          t('devices:permissionRequired'),
+          t('devices:galleryPermissionDesc'),
         );
         return;
       }
@@ -214,20 +219,20 @@ function PhotoPicker({ label, uri, onSelect }: { label: string, uri: string | nu
     } catch (error) {
       console.warn('[PhotoPicker] Gallery unavailable:', error);
       Alert.alert(
-        'Galerie indisponible',
-        "Impossible d'accéder à vos photos. Vérifiez les permissions dans les réglages.",
+        t('devices:galleryUnavailable'),
+        t('devices:galleryUnavailableDesc'),
       );
     }
   };
 
   const pickImage = () => {
     Alert.alert(
-      "Source de l'image",
-      "Voulez-vous prendre une photo ou choisir dans la galerie ?",
+      t('devices:imageSource'),
+      t('devices:imageSourceQuestion'),
       [
-        { text: 'Prendre une photo', onPress: () => { launchCameraSafely(); } },
-        { text: 'Choisir dans la galerie', onPress: () => { launchLibrarySafely(); } },
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('devices:takePhoto'), onPress: () => { launchCameraSafely(); } },
+        { text: t('devices:chooseFromGallery'), onPress: () => { launchLibrarySafely(); } },
+        { text: t('common:cancel'), style: 'cancel' },
       ],
     );
   };
@@ -247,6 +252,7 @@ function PhotoPicker({ label, uri, onSelect }: { label: string, uri: string | nu
 }
 
 export default function DevicesScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const {
     devices: cachedDevices,
@@ -347,8 +353,8 @@ export default function DevicesScreen() {
 
   const handleSave = () => {
     const errs: Record<string, string> = {};
-    if (!form.nom.trim()) errs.nom = 'Requis';
-    if (!form.marque.trim()) errs.marque = 'Requis';
+    if (!form.nom.trim()) errs.nom = t('common:required');
+    if (!form.marque.trim()) errs.marque = t('common:required');
     if (Object.keys(errs).length > 0) { setFormErrors(errs); return; }
 
     const formData = new FormData();
@@ -382,17 +388,17 @@ export default function DevicesScreen() {
 
     const onDone = (error: unknown) => {
       if (error) {
-        setFeedback({ visible: true, type: 'error', title: 'Erreur', message: "Impossible de sauvegarder l'appareil. Réessayez ou vérifiez votre connexion." });
+        setFeedback({ visible: true, type: 'error', title: t('common:error'), message: t('devices:saveErrorMessage') });
         return;
       }
       closeAdd();
       setFeedback({
         visible: true,
         type: 'success',
-        title: editingId ? 'Appareil modifié' : 'Appareil ajouté',
+        title: editingId ? t('devices:deviceUpdated') : t('devices:deviceAdded'),
         message: editingId
-          ? 'Les modifications ont été enregistrées avec succès.'
-          : 'Votre appareil a été ajouté à votre inventaire.',
+          ? t('devices:updateSuccessMessage')
+          : t('devices:addSuccessMessage'),
       });
     };
 
@@ -404,18 +410,18 @@ export default function DevicesScreen() {
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert('Supprimer', 'Cette action est irréversible.', [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(t('common:delete'), t('devices:deleteWarning'), [
+      { text: t('common:cancel'), style: 'cancel' },
       {
-        text: 'Supprimer',
+        text: t('common:delete'),
         style: 'destructive',
         onPress: () => {
           remove(id, {
             onSuccess: () => {
               setShowDetail(false);
-              setFeedback({ visible: true, type: 'success', title: 'Appareil supprimé', message: "L'appareil a été retiré de votre inventaire." });
+              setFeedback({ visible: true, type: 'success', title: t('devices:deviceDeleted'), message: t('devices:deleteSuccessMessage') });
             },
-            onError: () => setFeedback({ visible: true, type: 'error', title: 'Suppression échouée', message: 'Suppression impossible pour le moment. Réessayez.' }),
+            onError: () => setFeedback({ visible: true, type: 'error', title: t('devices:deleteFailed'), message: t('devices:deleteFailedMessage') }),
           });
         },
       },
@@ -431,13 +437,13 @@ export default function DevicesScreen() {
     const finish = (error: unknown) => {
       setConfirming(false);
       if (error) {
-        setFeedback({ visible: true, type: 'error', title: 'Opération échouée', message: "L'opération a échoué. Réessayez." });
+        setFeedback({ visible: true, type: 'error', title: t('common:error'), message: t('devices:operationFailedMessage') });
         return;
       }
       setShowReport(false);
       setShowDetail(false);
-      const title = reportIsFound ? 'Appareil retrouvé' : 'Appareil signalé';
-      const msg = reportIsFound ? 'Appareil marqué comme retrouvé avec succès !' : 'L\'appareil a été signalé. Les utilisateurs seront notifiés.';
+      const title = reportIsFound ? t('devices:deviceFound') : t('devices:deviceReported');
+      const msg = reportIsFound ? t('devices:foundSuccessMessage') : t('devices:reportedSuccessMessage');
       setFeedback({ visible: true, type: 'success', title, message: msg });
     };
     if (reportIsFound) {
@@ -448,7 +454,7 @@ export default function DevicesScreen() {
   };
 
   const handleVerify = async () => {
-    if (!verifyImei.trim()) { Alert.alert('Erreur', 'Veuillez saisir un IMEI ou numéro de série.'); return; }
+    if (!verifyImei.trim()) { Alert.alert(t('common:error'), t('devices:enterImei')); return; }
     setVerifyLoading(true); setVerifyResult(null);
     try {
       const res = await devicesService.verifyDevice(verifyImei.trim());
@@ -473,7 +479,7 @@ export default function DevicesScreen() {
           {/* Header */}
           <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: '#1A1A1A' }}>Mes appareils</Text>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#1A1A1A' }}>{t('devices:title')}</Text>
             <Pressable onPress={() => setShowVerify(true)} style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 12, backgroundColor: pressed ? '#F5F5F5' : '#F5F5F5', alignItems: 'center', justifyContent: 'center' })}>
               <Ionicons name="shield-checkmark-outline" size={20} color="#6B7280" />
             </Pressable>
@@ -484,11 +490,11 @@ export default function DevicesScreen() {
         <View style={{ marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 12, paddingHorizontal: 12, height: 42 }}>
             <Ionicons name="search-outline" size={16} color="#C4BAB0" />
-            <TextInput style={{ flex: 1, marginLeft: 8, fontSize: 13, color: '#1A1A1A', paddingVertical: 0 }} placeholder="Rechercher..." placeholderTextColor="#C4BAB0" value={searchQuery} onChangeText={setSearchQuery} />
+            <TextInput style={{ flex: 1, marginLeft: 8, fontSize: 13, color: '#1A1A1A', paddingVertical: 0 }} placeholder={t('common:search')} placeholderTextColor="#C4BAB0" value={searchQuery} onChangeText={setSearchQuery} />
           </View>
           <Pressable onPress={openAdd} style={({ pressed }) => ({ height: 42, paddingHorizontal: 18, backgroundColor: pressed ? '#E0932F' : PRIMARY, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 6 })}>
             <Ionicons name="add" size={18} color="#FFFFFF" />
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>Ajouter</Text>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFFFF' }}>{t('common:add')}</Text>
           </Pressable>
         </View>
 
@@ -499,7 +505,7 @@ export default function DevicesScreen() {
               <Pressable key={f.key} onPress={() => setCurrentFilter(f.key)} style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 99, backgroundColor: currentFilter === f.key ? '#1A1A1A' : '#F5F5F5' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                   {f.icon && <Ionicons name={f.icon} size={11} color={currentFilter === f.key ? '#FFFFFF' : '#6B7280'} />}
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: currentFilter === f.key ? '#FFFFFF' : '#6B7280' }}>{f.label}</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: currentFilter === f.key ? '#FFFFFF' : '#6B7280' }}>{t(f.labelKey)}</Text>
                 </View>
               </Pressable>
             ))}
@@ -514,15 +520,15 @@ export default function DevicesScreen() {
                 <Ionicons name="phone-portrait-outline" size={34} color="#9CA3AF" />
               </View>
               <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>
-                {devices.length === 0 ? 'Aucun appareil enregistré' : 'Aucun résultat'}
+                {devices.length === 0 ? t('devices:noDevicesDesc') : t('devices:noResults')}
               </Text>
               <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 }}>
-                {devices.length === 0 ? 'Ajoutez vos appareils pour les gérer.' : 'Essayez de modifier vos filtres.'}
+                {devices.length === 0 ? t('devices:addDevicesPrompt') : t('devices:adjustFilters')}
               </Text>
               {devices.length === 0 && (
                 <Pressable onPress={openAdd} style={({ pressed }) => ({ marginTop: 10, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: pressed ? '#E0932F' : PRIMARY, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 8 })}>
                   <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-                  <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFFFFF' }}>Ajouter mon premier appareil</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFFFFF' }}>{t('devices:addFirstDevice')}</Text>
                 </Pressable>
               )}
             </View>
@@ -563,8 +569,8 @@ export default function DevicesScreen() {
           <BottomSheetView style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#F0EAE0' }}>
               <View>
-                <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>{editingId ? "Modifier l'appareil" : 'Ajouter un appareil'}</Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Conservez toutes les infos importantes</Text>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>{editingId ? t('devices:editDevice') : t('devices:addDevice')}</Text>
+                <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{t('devices:addDeviceDesc')}</Text>
               </View>
               <Pressable onPress={closeAdd} style={{ width: 34, height: 34, borderRadius: 9, borderWidth: 1.5, borderColor: '#E0D5C4', alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="close" size={16} color="#6B7280" />
@@ -572,7 +578,7 @@ export default function DevicesScreen() {
             </View>
             <ScrollView style={{ paddingHorizontal: 20, paddingTop: 16 }} showsVerticalScrollIndicator={false}>
               <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10 }}>Type d'appareil</Text>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10 }}>{t('devices:deviceType')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 2 }}>
                   {(Object.keys(TYPE_META) as DeviceType[]).map((type) => {
                     const m = TYPE_META[type]; const selected = form.type === type;
@@ -585,57 +591,57 @@ export default function DevicesScreen() {
                         <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center' }}>
                           <Ionicons name={m.icon} size={22} color={m.color} />
                         </View>
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: color }}>{m.label}</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: color }}>{t(m.labelKey)}</Text>
                       </Pressable>
                     );
                   })}
                 </ScrollView>
               </View>
-              <Input label="Nom de l'appareil *" placeholder="Ex: iPhone 15 Pro, MacBook Air M2…" icon="pricetag-outline" value={form.nom} onChangeText={(v) => updateForm('nom', v)} error={formErrors.nom} />
+              <Input label={t('devices:deviceNameLabel')} placeholder={t('devices:deviceNamePlaceholder')} icon="pricetag-outline" value={form.nom} onChangeText={(v) => updateForm('nom', v)} error={formErrors.nom} />
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-                <View style={{ flex: 1 }}><Input label="Marque *" placeholder="Ex: Apple, Samsung…" icon="business-outline" value={form.marque} onChangeText={(v) => updateForm('marque', v)} error={formErrors.marque} /></View>
-                <View style={{ flex: 1 }}><Input label="Modèle" placeholder="Ex: Galaxy S23" icon="git-branch-outline" value={form.modele} onChangeText={(v) => updateForm('modele', v)} /></View>
+                <View style={{ flex: 1 }}><Input label={t('devices:brandLabel')} placeholder={t('devices:brandPlaceholder')} icon="business-outline" value={form.marque} onChangeText={(v) => updateForm('marque', v)} error={formErrors.marque} /></View>
+                <View style={{ flex: 1 }}><Input label={t('devices:modelLabel')} placeholder={t('devices:modelPlaceholder')} icon="git-branch-outline" value={form.modele} onChangeText={(v) => updateForm('modele', v)} /></View>
               </View>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-                <View style={{ flex: 1 }}><Input label="N° série / IMEI  code:*#06#" placeholder="SN ou IMEI" icon="barcode-outline" value={form.serial} onChangeText={(v) => updateForm('serial', v)} /></View>
-                <View style={{ flex: 1 }}><Input label="Couleur" placeholder="Ex: Noir" icon="color-palette-outline" value={form.couleur} onChangeText={(v) => updateForm('couleur', v)} /></View>
+                <View style={{ flex: 1 }}><Input label={t('devices:serialLabel')} placeholder={t('devices:serialPlaceholder')} icon="barcode-outline" value={form.serial} onChangeText={(v) => updateForm('serial', v)} /></View>
+                <View style={{ flex: 1 }}><Input label={t('devices:colorLabel')} placeholder={t('devices:colorPlaceholder')} icon="color-palette-outline" value={form.couleur} onChangeText={(v) => updateForm('couleur', v)} /></View>
               </View>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-                <View style={{ flex: 1 }}><DatePickerInput label="Date d'achat" value={form.dateAchat ? new Date(form.dateAchat) : new Date()} onChange={(d) => updateForm('dateAchat', d.toISOString().split('T')[0])} /></View>
-                <View style={{ flex: 1 }}><DatePickerInput label="Fin garantie" value={form.garantie ? new Date(form.garantie) : new Date()} onChange={(d) => updateForm('garantie', d.toISOString().split('T')[0])} /></View>
+                <View style={{ flex: 1 }}><DatePickerInput label={t('devices:purchaseDateLabel')} value={form.dateAchat ? new Date(form.dateAchat) : new Date()} onChange={(d) => updateForm('dateAchat', d.toISOString().split('T')[0])} /></View>
+                <View style={{ flex: 1 }}><DatePickerInput label={t('devices:warrantyLabel')} value={form.garantie ? new Date(form.garantie) : new Date()} onChange={(d) => updateForm('garantie', d.toISOString().split('T')[0])} /></View>
               </View>
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-                <View style={{ flex: 1 }}><Input label="Prix (FCFA)" placeholder="Ex: 850000" icon="wallet-outline" keyboardType="numeric" value={form.prix ? String(form.prix) : ''} onChangeText={(v) => updateForm('prix', v ? Number(v.replace(/[^0-9]/g, '')) : 0)} /></View>
-                <View style={{ flex: 1 }}><Input label="Lieu d'achat" placeholder="Ex: Jumia" icon="location-outline" value={form.lieu} onChangeText={(v) => updateForm('lieu', v)} /></View>
+                <View style={{ flex: 1 }}><Input label={t('devices:priceLabel')} placeholder={t('devices:pricePlaceholder')} icon="wallet-outline" keyboardType="numeric" value={form.prix ? String(form.prix) : ''} onChangeText={(v) => updateForm('prix', v ? Number(v.replace(/[^0-9]/g, '')) : 0)} /></View>
+                <View style={{ flex: 1 }}><Input label={t('devices:locationLabel')} placeholder={t('devices:locationPlaceholder')} icon="location-outline" value={form.lieu} onChangeText={(v) => updateForm('lieu', v)} /></View>
               </View>
               <View style={{ marginTop: 14 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>Photos</Text>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>{t('devices:photos')}</Text>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <PhotoPicker label="Facture" uri={form.photo_facture} onSelect={(uri) => updateForm('photo_facture', uri)} />
-                  <PhotoPicker label="Face" uri={form.photo_face} onSelect={(uri) => updateForm('photo_face', uri)} />
-                  <PhotoPicker label="Série" uri={form.photo_serial} onSelect={(uri) => updateForm('photo_serial', uri)} />
+                  <PhotoPicker label={t('devices:receiptPhoto')} uri={form.photo_facture} onSelect={(uri) => updateForm('photo_facture', uri)} />
+                  <PhotoPicker label={t('devices:facePhoto')} uri={form.photo_face} onSelect={(uri) => updateForm('photo_face', uri)} />
+                  <PhotoPicker label={t('devices:serialPhoto')} uri={form.photo_serial} onSelect={(uri) => updateForm('photo_serial', uri)} />
                 </View>
               </View>
 
               <View style={{ marginTop: 14 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>Assurance</Text>
+                <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>{t('devices:insurance')}</Text>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   {['non', 'oui'].map((v) => (
                     <Pressable key={v} onPress={() => updateForm('assurance', v)} style={{ flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1.5, borderColor: form.assurance === v ? PRIMARY : '#E0D5C4', backgroundColor: form.assurance === v ? '#FEF0DC' : '#FFFFFF' }}>
                       <Ionicons name={v === 'oui' ? 'shield-checkmark' : 'shield-outline'} size={20} color={form.assurance === v ? '#D98A30' : '#9CA3AF'} />
-                      <Text style={{ fontSize: 12, fontWeight: '600', marginTop: 4, color: form.assurance === v ? '#D98A30' : '#6B7280' }}>{v === 'oui' ? 'Assuré' : 'Non assuré'}</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '600', marginTop: 4, color: form.assurance === v ? '#D98A30' : '#6B7280' }}>{v === 'oui' ? t('devices:insured') : t('devices:notInsured')}</Text>
                     </Pressable>
                   ))}
                 </View>
               </View>
 
               <View style={{ marginTop: 14 }}>
-                <Input label="Notes" placeholder="Remarques ou informations complémentaires..." icon="document-text-outline" value={form.notes} onChangeText={(v) => updateForm('notes', v)} />
+                <Input label={t('devices:notesLabel')} placeholder={t('devices:notesPlaceholder')} icon="document-text-outline" value={form.notes} onChangeText={(v) => updateForm('notes', v)} />
               </View>
 
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 24, marginBottom: 40 }}>
-                <View style={{ flex: 1 }}><Button title="Annuler" variant="outline" onPress={closeAdd} /></View>
-                <View style={{ flex: 2 }}><Button title={editingId ? 'Enregistrer' : 'Ajouter'} onPress={handleSave} loading={isCreating || isUpdating} icon={editingId ? 'checkmark-circle-outline' : 'add-circle-outline'} /></View>
+                <View style={{ flex: 1 }}><Button title={t('common:cancel')} variant="outline" onPress={closeAdd} /></View>
+                <View style={{ flex: 2 }}><Button title={editingId ? t('common:save') : t('common:add')} onPress={handleSave} loading={isCreating || isUpdating} icon={editingId ? 'checkmark-circle-outline' : 'add-circle-outline'} /></View>
               </View>
             </ScrollView>
           </BottomSheetView>
@@ -663,11 +669,11 @@ export default function DevicesScreen() {
             <View style={{ width: 70, height: 70, borderRadius: 20, backgroundColor: '#FEF0DC', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 20 }}>
               <Ionicons name="shield-checkmark" size={34} color={PRIMARY} />
             </View>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#1A1A1A', textAlign: 'center' }}>Vérifier un appareil</Text>
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#1A1A1A', textAlign: 'center' }}>{t('devices:verifyDevice')}</Text>
             <Text style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 24, marginTop: 8, lineHeight: 20 }}>
-              Vous souhaitez acheter un appareil d'occasion ? Vérifiez si l'appareil n'a pas été déclaré <Text style={{ fontWeight: '700' }}>volé ou perdu</Text>.
+              {t('devices:verifyDescription')}
             </Text>
-            <Input label="Numéro de série / IMEI" placeholder="Saisissez l'IMEI ou N° de série" icon="barcode-outline" value={verifyImei} onChangeText={(v) => { setVerifyImei(v); setVerifyResult(null); }} />
+            <Input label={t('devices:serialLabel')} placeholder={t('devices:verifyPlaceholder')} icon="barcode-outline" value={verifyImei} onChangeText={(v) => { setVerifyImei(v); setVerifyResult(null); }} />
             {verifyResult && (
               <View style={{ marginTop: 16, padding: 16, borderRadius: 14, backgroundColor: verifyResult.status === 'safe' ? '#F0FDF4' : verifyResult.status === 'stolen' ? '#FEF2F2' : '#F8FAFC', borderWidth: 1, borderColor: verifyResult.status === 'safe' ? '#BBF7D0' : verifyResult.status === 'stolen' ? '#FECACA' : '#E2E8F0' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -676,18 +682,18 @@ export default function DevicesScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 14, fontWeight: '800', color: verifyResult.status === 'safe' ? '#166534' : verifyResult.status === 'stolen' ? '#991B1B' : '#1E293B' }}>
-                      {verifyResult.status === 'safe' ? 'Appareil sûr' : verifyResult.status === 'stolen' ? 'Attention !' : 'Inconnu'}
+                      {verifyResult.status === 'safe' ? t('devices:deviceSafe') : verifyResult.status === 'stolen' ? t('devices:attention') : t('devices:unknown')}
                     </Text>
                     <Text style={{ fontSize: 12, marginTop: 2, color: verifyResult.status === 'safe' ? '#15803D' : verifyResult.status === 'stolen' ? '#B91C1C' : '#475569' }}>
-                      {verifyResult.status === 'safe' ? `${verifyResult.device || 'Appareil'} — Statut: sûr` : verifyResult.status === 'stolen' ? `${verifyResult.device || 'Appareil'} — Signalé` : 'Non enregistré dans notre base.'}
+                      {verifyResult.status === 'safe' ? t('devices:safeStatus', { device: verifyResult.device || t('devices:device') }) : verifyResult.status === 'stolen' ? t('devices:stolenStatus', { device: verifyResult.device || t('devices:device') }) : t('devices:unknownStatus')}
                     </Text>
                   </View>
                 </View>
               </View>
             )}
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 24 }}>
-              <View style={{ flex: 1 }}><Button title="Annuler" variant="outline" onPress={() => { setShowVerify(false); setVerifyResult(null); setVerifyImei(''); }} /></View>
-              <View style={{ flex: 1.5 }}><Button title="Vérifier" onPress={handleVerify} loading={verifyLoading} icon="search-outline" /></View>
+              <View style={{ flex: 1 }}><Button title={t('common:cancel')} variant="outline" onPress={() => { setShowVerify(false); setVerifyResult(null); setVerifyImei(''); }} /></View>
+              <View style={{ flex: 1.5 }}><Button title={t('devices:verify')} onPress={handleVerify} loading={verifyLoading} icon="search-outline" /></View>
             </View>
           </Pressable>
         </Pressable>
@@ -701,25 +707,25 @@ export default function DevicesScreen() {
               <Ionicons name={reportIsFound ? 'checkmark-circle' : 'warning-outline'} size={30} color={reportIsFound ? '#16A34A' : '#EF4444'} />
             </View>
             <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A', textAlign: 'center' }}>
-              {reportIsFound ? 'Confirmer la trouvaille ?' : 'Signaler un problème'}
+              {reportIsFound ? t('devices:confirmFound') : t('devices:reportProblem')}
             </Text>
             <Text style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', marginVertical: 12, lineHeight: 20 }}>
-              {reportIsFound ? 'Marquer cet appareil comme sécurisé ?' : 'Voulez-vous déclarer cet appareil comme perdu ou volé ?'}
+              {reportIsFound ? t('devices:confirmFoundDesc') : t('devices:reportProblemDesc')}
             </Text>
             {!reportIsFound && (
               <View style={{ marginBottom: 16, backgroundColor: '#FFF7ED', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#FFEDD5' }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: '#6B7280', marginBottom: 8 }}>Type de signalement</Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: '#6B7280', marginBottom: 8 }}>{t('devices:reportType')}</Text>
                 <ReportTypeSelector value={reportType} onChange={setReportType} />
               </View>
             )}
             <View style={{ backgroundColor: reportIsFound ? '#F0FDF4' : '#FFF7ED', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: reportIsFound ? '#BBF7D0' : '#FFEDD5' }}>
-              <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Confirmer avec votre mot de passe</Text>
-              <Input placeholder="Votre mot de passe" icon="lock-closed-outline" secureTextEntry value={reportPassword} onChangeText={(v) => { setReportPassword(v); setReportError(false); }} error={reportError ? 'Mot de passe incorrect ou trop court.' : undefined} autoComplete="password" />
+              <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>{t('devices:confirmPassword')}</Text>
+              <Input placeholder={t('devices:passwordPlaceholder')} icon="lock-closed-outline" secureTextEntry value={reportPassword} onChangeText={(v) => { setReportPassword(v); setReportError(false); }} error={reportError ? t('devices:passwordError') : undefined} autoComplete="password" />
               <View style={{ marginTop: 16 }}>
-                <Button title={reportIsFound ? 'Confirmer le retour' : 'Confirmer la déclaration'} variant={reportIsFound ? 'secondary' : 'danger'} onPress={handleReport} loading={confirming} icon={reportIsFound ? 'checkmark-circle-outline' : 'warning-outline'} />
+                <Button title={reportIsFound ? t('devices:confirmReturn') : t('devices:confirmDeclaration')} variant={reportIsFound ? 'secondary' : 'danger'} onPress={handleReport} loading={confirming} icon={reportIsFound ? 'checkmark-circle-outline' : 'warning-outline'} />
               </View>
             </View>
-            <View style={{ marginTop: 12 }}><Button title="Annuler" variant="outline" onPress={() => setShowReport(false)} /></View>
+            <View style={{ marginTop: 12 }}><Button title={t('common:cancel')} variant="outline" onPress={() => setShowReport(false)} /></View>
           </Pressable>
         </Pressable>
       </Modal>

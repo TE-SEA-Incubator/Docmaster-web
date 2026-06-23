@@ -1,31 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Pressable, ActivityIndicator, Text } from 'react-native';
+import { ScrollView, View, Pressable, ActivityIndicator, Text, Modal, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { BottomTabInset } from '@/constants/theme';
 import { useAuthStore } from '@/core/store/useAuthStore';
+import { useLanguageStore } from '@/core/store/useLanguageStore';
 import { documentsService } from '@/core/api/documentsService';
+import { LANGUAGES, type LanguageCode } from '@/i18n/config';
 
 const PRIMARY = '#F5A64B';
 const GREEN_DARK = '#1E3A2F';
 
-const MENU_ITEMS = [
-  { key: 'gains', icon: 'wallet-outline', title: 'Mes gains', route: '/gains', color: '#D97706', bgColor: '#FFFBEB' },
-  { key: 'invite', icon: 'people-outline', title: 'Parrainer des amis', route: '/parrainage', color: '#7E22CE', bgColor: '#F3E8FF' },
-  { key: 'manage', icon: 'settings-outline', title: 'Modifier mon profil', route: '/manage-profile', color: '#F97316', bgColor: '#FFF7ED' },
-  { key: 'notifications', icon: 'notifications-outline', title: 'Gérer les notifications', route: '/notifications', color: '#8B5CF6', bgColor: '#F5F3FF' },
-  { key: 'faq', icon: 'bulb-outline', title: 'FAQ / Aide', route: '/faq', color: '#CA8A04', bgColor: '#FEFCE8' },
-  { key: 'subscription', icon: 'star-outline', title: 'Gérer mon abonnement', route: '/(tabs)/subscription', color: '#DC2626', bgColor: '#FEF2F2' },
-  { key: 'bug', icon: 'bug-outline', title: 'Signaler un bug', route: null, color: '#EA580C', bgColor: '#FFF7ED' },
+const LANG_LIST: { code: LanguageCode; flag: string }[] = [
+  { code: 'fr', flag: '🇫🇷' },
+  { code: 'en', flag: '🇬🇧' },
+  { code: 'ar', flag: '🇸🇦' },
 ];
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
   const { user, logout } = useAuthStore();
+  const { language, setLanguage } = useLanguageStore();
   const [loggingOut, setLoggingOut] = useState(false);
   const [docCount, setDocCount] = useState<number | null>(null);
+  const [showLangModal, setShowLangModal] = useState(false);
 
   useEffect(() => {
     documentsService.getAll().then(res => {
@@ -37,7 +39,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F8F8F8', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" color={PRIMARY} />
-        <Text style={{ marginTop: 12, color: '#9CA3AF', fontSize: 14 }}>Chargement du profil...</Text>
+        <Text style={{ marginTop: 12, color: '#9CA3AF', fontSize: 14 }}>{t('profile:loading')}</Text>
       </SafeAreaView>
     );
   }
@@ -51,6 +53,16 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     setLoggingOut(true);
     try { await logout(); } catch {} finally { setLoggingOut(false); }
+  };
+
+  const handleLanguageChange = async (code: LanguageCode) => {
+    setShowLangModal(false);
+    await setLanguage(code);
+    const isRTL = LANGUAGES[code].dir === 'rtl';
+    const msg = isRTL
+      ? t('language:restartMessageAr')
+      : t('language:restartMessageFr');
+    Alert.alert(t('language:restartTitle'), msg);
   };
 
   return (
@@ -93,7 +105,7 @@ export default function ProfileScreen() {
             {user.email}
           </Text>
           <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
-            {user.ville ? `${user.ville}, ${user.pays || ''}` : 'DocMaster User'}
+            {user.ville ? `${user.ville}, ${user.pays || ''}` : t('common:fallbackCityLabel')}
           </Text>
         </View>
 
@@ -108,15 +120,15 @@ export default function ProfileScreen() {
           zIndex: 10,
         }}>
           <View style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: '#444' }}>
-            <Text style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Documents</Text>
+            <Text style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>{t('profile:documents')}</Text>
             <Text style={{ fontSize: 18, fontWeight: '700', color: PRIMARY }}>{docCount ?? '...'}</Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: '#444' }}>
-            <Text style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Points</Text>
+            <Text style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>{t('profile:points')}</Text>
             <Text style={{ fontSize: 18, fontWeight: '700', color: PRIMARY }}>{user.points || 0}</Text>
           </View>
           <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>Portefeuille</Text>
+            <Text style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>{t('profile:wallet')}</Text>
             <Text style={{ fontSize: 18, fontWeight: '700', color: PRIMARY }}>
               {Number(user.wallet_balance || 0).toFixed(0)}
             </Text>
@@ -124,10 +136,19 @@ export default function ProfileScreen() {
         </View>
 
         <View style={{ marginHorizontal: 16, marginTop: 24, backgroundColor: '#FFFFFF', borderRadius: 20, overflow: 'hidden' }}>
-          {MENU_ITEMS.map((item, index) => (
+          {[
+            { key: 'gains', icon: 'wallet-outline', title: t('profile:menuTitle'), route: '/gains' as const, color: '#D97706', bgColor: '#FFFBEB' },
+            { key: 'invite', icon: 'people-outline', title: t('profile:menuInvite'), route: '/parrainage' as const, color: '#7E22CE', bgColor: '#F3E8FF' },
+            { key: 'manage', icon: 'settings-outline', title: t('profile:menuManage'), route: '/manage-profile' as const, color: '#F97316', bgColor: '#FFF7ED' },
+            { key: 'language', icon: 'language-outline', title: t('profile:menuLanguage'), route: null, color: '#6366F1', bgColor: '#EEF2FF', onPress: () => setShowLangModal(true) },
+            { key: 'notifications', icon: 'notifications-outline', title: t('profile:menuNotifications'), route: '/notifications' as const, color: '#8B5CF6', bgColor: '#F5F3FF' },
+            { key: 'faq', icon: 'bulb-outline', title: t('profile:menuFaq'), route: '/faq' as const, color: '#CA8A04', bgColor: '#FEFCE8' },
+            { key: 'subscription', icon: 'star-outline', title: t('profile:menuSubscription'), route: '/(tabs)/subscription' as const, color: '#DC2626', bgColor: '#FEF2F2' },
+            { key: 'bug', icon: 'bug-outline', title: t('profile:menuBug'), route: null, color: '#EA580C', bgColor: '#FFF7ED' },
+          ].map((item, index, arr) => (
             <Pressable
               key={item.key}
-              onPress={() => item.route && router.push(item.route as any)}
+              onPress={() => { if (item.onPress) { item.onPress(); } else if (item.route) { router.push(item.route); } }}
               style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
             >
               <View style={{
@@ -135,7 +156,7 @@ export default function ProfileScreen() {
                 alignItems: 'center',
                 paddingVertical: 16,
                 paddingHorizontal: 18,
-                borderBottomWidth: index < MENU_ITEMS.length - 1 ? 1 : 0,
+                borderBottomWidth: index < arr.length - 1 ? 1 : 0,
                 borderBottomColor: '#F3F4F6',
               }}>
                 <View style={{
@@ -192,13 +213,57 @@ export default function ProfileScreen() {
                 marginLeft: 14,
                 flexShrink: 1,
               }}>
-                {loggingOut ? 'Déconnexion...' : 'Se déconnecter'}
+                {loggingOut ? t('profile:loggingOut') : t('profile:logout')}
               </Text>
             </View>
           </Pressable>
         </View>
 
       </ScrollView>
+
+      <Modal visible={showLangModal} transparent animationType="fade" onRequestClose={() => setShowLangModal(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: 32 }} onPress={() => setShowLangModal(false)}>
+          <Pressable style={{ backgroundColor: '#FFFFFF', borderRadius: 24, width: '100%', maxWidth: 400, padding: 24 }} onPress={e => e.stopPropagation()}>
+            <View style={{ alignItems: 'center', marginBottom: 20 }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 }}>{t('language:changeTitle')}</Text>
+              <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>{t('language:currentLanguage')}: {LANGUAGES[language].flag} {LANGUAGES[language].label}</Text>
+            </View>
+            {LANG_LIST.map(({ code, flag }) => {
+              const lang = LANGUAGES[code];
+              const isActive = language === code;
+              return (
+                <Pressable
+                  key={code}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingVertical: 14,
+                    paddingHorizontal: 16,
+                    borderRadius: 12,
+                    backgroundColor: isActive ? '#FFFBEB' : 'transparent',
+                    marginBottom: 8,
+                    opacity: pressed ? 0.7 : 1,
+                  })}
+                  onPress={() => handleLanguageChange(code)}
+                >
+                  <Text style={{ fontSize: 28, marginRight: 12 }}>{flag}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#1A1A1A' }}>{lang.label}</Text>
+                    <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{lang.nativeLabel}</Text>
+                  </View>
+                  {isActive && <Ionicons name="checkmark-circle" size={22} color={PRIMARY} />}
+                </Pressable>
+              );
+            })}
+            <Pressable
+              onPress={() => setShowLangModal(false)}
+              style={{ paddingVertical: 12, alignItems: 'center', marginTop: 8 }}
+            >
+              <Text style={{ fontSize: 15, fontWeight: '600', color: '#9CA3AF' }}>{t('common:close')}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

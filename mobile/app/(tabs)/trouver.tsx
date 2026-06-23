@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,11 +12,12 @@ import { FoundPhotoUpload } from '@/components/declarations/found/FoundPhotoUplo
 import { FoundContactForm } from '@/components/declarations/found/FoundContactForm';
 import { FoundSuccessScreen } from '@/components/declarations/found/FoundSuccessScreen';
 
-const STEPS = ['Type', 'Infos', 'Lieu', 'Photos', 'Contact'];
 const PRIMARY = '#F5A64B';
 
 export default function TrouverScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const STEPS = [t('trouver:stepType'), t('trouver:stepInfo'), t('trouver:stepLocation'), t('trouver:stepPhotos'), t('trouver:stepContact')];
   const [step, setStep] = useState(0);
 
   const [docTypeId, setDocTypeId] = useState<string | null>(null);
@@ -38,20 +40,20 @@ export default function TrouverScreen() {
   const [refNumber, setRefNumber] = useState('');
 
   const validateStep = (s: number): string | null => {
-    if (s === 0 && !docTypeId) return 'Sélectionnez un type de document';
+    if (s === 0 && !docTypeId) return t('trouver:selectType');
     if (s === 2) {
-      if (!city.trim()) return 'Indiquez la ville où vous avez trouvé le document';
+      if (!city.trim()) return t('trouver:selectCity');
     }
     if (s === 4) {
-      if (!phone.trim()) return 'Entrez votre numéro de téléphone';
-      if (!consent) return 'Veuillez accepter les conditions';
+      if (!phone.trim()) return t('trouver:enterPhone');
+      if (!consent) return t('trouver:acceptTerms');
     }
     return null;
   };
 
   const goNext = () => {
     const err = validateStep(step);
-    if (err) { Alert.alert('Attention', err); return; }
+    if (err) { Alert.alert(t('common:warning'), err); return; }
     if (step < STEPS.length - 1) setStep(s => s + 1);
     else handleSubmit();
   };
@@ -75,8 +77,8 @@ export default function TrouverScreen() {
       let desc = description;
       if (tags.length > 0) {
         desc = desc
-          ? `${desc}\n\nMots-clés : ${tags.join(', ')}`
-          : `Mots-clés : ${tags.join(', ')}`;
+          ? `${desc}\n\n${t('trouver:keywords')}${tags.join(', ')}`
+          : `${t('trouver:keywords')}${tags.join(', ')}`;
       }
       formData.append('description', desc);
       formData.append('mode_contact', contactMode);
@@ -106,10 +108,10 @@ export default function TrouverScreen() {
         setRefNumber(res.data.identifiant_doc_dm || res.data.id);
         setSuccess(true);
       } else {
-        Alert.alert('Erreur', res.message || 'Impossible de publier la déclaration');
+        Alert.alert(t('common:error'), res.message || t('trouver:publishError'));
       }
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.message || 'Erreur réseau');
+      Alert.alert(t('common:error'), err?.response?.data?.message || t('common:networkError'));
     } finally {
       setSubmitting(false);
     }
@@ -133,8 +135,8 @@ export default function TrouverScreen() {
                 <Ionicons name="search-outline" size={18} color={PRIMARY} />
               </View>
               <View>
-                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>Quel type de document ?</Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>Sélectionnez le type de document trouvé</Text>
+                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>{t('trouver:typeTitle')}</Text>
+                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('trouver:typeDesc')}</Text>
               </View>
             </View>
             <FoundDocTypeCard selectedId={docTypeId} onSelect={setDocTypeId} />
@@ -148,8 +150,8 @@ export default function TrouverScreen() {
                 <Ionicons name="information-circle-outline" size={18} color={PRIMARY} />
               </View>
               <View>
-                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>Informations</Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>Décrivez le document que vous avez trouvé</Text>
+                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>{t('trouver:infoTitle')}</Text>
+                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('trouver:infoDesc')}</Text>
               </View>
             </View>
             <FoundInfoForm
@@ -167,8 +169,8 @@ export default function TrouverScreen() {
                 <Ionicons name="location-outline" size={18} color="#16A34A" />
               </View>
               <View>
-                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>Lieu et date</Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>Où et quand avez-vous trouvé le document ?</Text>
+                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>{t('trouver:locationTitle')}</Text>
+                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('trouver:locationDesc')}</Text>
               </View>
             </View>
             <FoundLocationForm
@@ -185,8 +187,8 @@ export default function TrouverScreen() {
                 <Ionicons name="camera-outline" size={18} color={PRIMARY} />
               </View>
               <View>
-                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>Photos</Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>Ajoutez des photos du document (optionnel)</Text>
+                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>{t('trouver:photosTitle')}</Text>
+                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('trouver:photosDesc')}</Text>
               </View>
             </View>
             <FoundPhotoUpload
@@ -203,18 +205,18 @@ export default function TrouverScreen() {
                 <Ionicons name="hand-left-outline" size={18} color={PRIMARY} />
               </View>
               <View>
-                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>Contact</Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>Comment le propriétaire peut vous joindre</Text>
+                <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>{t('trouver:contactTitle')}</Text>
+                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>{t('trouver:contactDesc')}</Text>
               </View>
             </View>
             <FoundContactForm
               phone={phone} contactMode={contactMode}
               rewardChoice={rewardChoice} consent={consent}
               summary={[
-                { label: 'Type', value: 'Document trouvé' },
-                { label: 'Ville', value: city || '—' },
-                { label: 'Date', value: dateFound.toLocaleDateString('fr-FR') },
-                { label: 'Photos', value: `${[photoRecto, photoVerso].filter(Boolean).length}` },
+                { label: t('trouver:type'), value: t('trouver:documentFound') },
+                { label: t('trouver:city'), value: city || '—' },
+                { label: t('common:date'), value: dateFound.toLocaleDateString('fr-FR') },
+                { label: t('trouver:photos'), value: `${[photoRecto, photoVerso].filter(Boolean).length}` },
               ]}
               onChangePhone={setPhone} onChangeContactMode={setContactMode}
               onChangeReward={setRewardChoice} onChangeConsent={setConsent}
@@ -231,7 +233,7 @@ export default function TrouverScreen() {
         <Pressable onPress={goBack} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: '#F0F0F0', alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name={step === 0 ? 'close' : 'arrow-back'} size={18} color="#1A1A1A" />
         </Pressable>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>J'ai trouvé un document</Text>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>{t('trouver:title')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -285,7 +287,7 @@ export default function TrouverScreen() {
             <>
               <Ionicons name={step === STEPS.length - 1 ? 'checkmark-circle' : 'arrow-forward'} size={18} color="#FFFFFF" />
               <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>
-                {step === STEPS.length - 1 ? 'Publier la déclaration' : 'Continuer'}
+                {step === STEPS.length - 1 ? t('trouver:publish') : t('trouver:continue')}
               </Text>
             </>
           )}

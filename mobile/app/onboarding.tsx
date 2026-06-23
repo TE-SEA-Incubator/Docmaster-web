@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { Colors } from '@/constants/theme';
@@ -11,26 +12,27 @@ const { width } = Dimensions.get('window');
 const SLIDES = [
   {
     id: 1,
-    title: 'Vos documents,\nenfin sécurisés',
-    description: 'Ne craignez plus de perdre vos papiers officiels. Stockez-les numériquement, accédez-y instantanément, où que vous soyez.',
+    titleKey: 'onboarding:slide1Title',
+    descKey: 'onboarding:slide1Desc',
     image: require('../assets/onbording/19197294.jpg'),
   },
   {
     id: 2,
-    title: 'Une solution contre\nla perte',
-    description: 'Perdu ou trouvé un document ? Notre réseau communautaire et nos outils de matching vous aident à les retrouver ou à les restituer rapidement.',
+    titleKey: 'onboarding:slide2Title',
+    descKey: 'onboarding:slide2Desc',
     image: require('../assets/onbording/document-vectoriel-vectoriel-conception-coloree.png'),
   },
   {
     id: 3,
-    title: 'Soyez récompensé\npour vos gestes',
-    description: 'Rejoignez une communauté solidaire. Aidez les autres à retrouver leurs biens et gagnez des points DocMaster échangeables.',
+    titleKey: 'onboarding:slide3Title',
+    descKey: 'onboarding:slide3Desc',
     image: require('../assets/onbording/59337.jpg'),
   },
 ];
 
 export default function OnboardingScreen() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { t } = useTranslation();
   const completeOnboarding = useAuthStore((state) => state.completeOnboarding);
   const tintColor = Colors.light.tint;
 
@@ -73,15 +75,15 @@ export default function OnboardingScreen() {
             ))}
           </View>
 
-          <Text style={styles.title}>{slide.title}</Text>
-          <Text style={styles.description}>{slide.description}</Text>
+          <Text style={styles.title}>{t(slide.titleKey)}</Text>
+          <Text style={styles.description}>{t(slide.descKey)}</Text>
         </View>
       </Animated.View>
 
       <View style={styles.footer}>
         <Pressable style={[styles.nextButton, { backgroundColor: tintColor }]} onPress={next}>
           <Text style={styles.nextButtonText}>
-            {currentSlide === SLIDES.length - 1 ? 'COMMENCER' : 'CONTINUER'}
+            {currentSlide === SLIDES.length - 1 ? t('onboarding:start') : t('onboarding:continue')}
           </Text>
         </Pressable>
       </View>

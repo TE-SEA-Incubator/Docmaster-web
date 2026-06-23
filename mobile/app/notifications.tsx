@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, View, ActivityIndicator, Text } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { notificationsService } from '@/core/api/notificationsService';
@@ -20,6 +21,7 @@ const defaultMeta: NotifMeta = { icon: 'notifications-outline', bg: '#FFF3E0', i
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -69,7 +71,7 @@ export default function NotificationsScreen() {
         </Pressable>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>Notifications</Text>
+          <Text style={{ fontSize: 17, fontWeight: '800', color: '#1A1A1A' }}>{t('notifications:title')}</Text>
           {unread > 0 && (
             <View style={{ backgroundColor: PRIMARY, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 }}>
               <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700' }}>{unread}</Text>
@@ -79,7 +81,7 @@ export default function NotificationsScreen() {
 
         {unread > 0 ? (
           <Pressable onPress={markAllRead} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: PRIMARY }}>Tout lu</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: PRIMARY }}>{t('notifications:markAllRead')}</Text>
           </Pressable>
         ) : <View style={{ width: 38 }} />}
       </View>
@@ -96,15 +98,15 @@ export default function NotificationsScreen() {
             <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="notifications-off-outline" size={28} color={PRIMARY} />
             </View>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>Aucune notification</Text>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A' }}>{t('notifications:emptyTitle')}</Text>
             <Text style={{ fontSize: 14, color: '#9CA3AF', textAlign: 'center', lineHeight: 20 }}>
-              Vous serez notifié en cas de correspondance ou de mise à jour.
+              {t('notifications:emptyDesc')}
             </Text>
           </View>
         ) : (
           <View style={{ gap: 10 }}>
             {notifications.map((notif) => {
-              const meta = typeMeta[notif.type] || defaultMeta;
+              const meta = (notif.type && typeMeta[notif.type]) || defaultMeta;
               const isUnread = !notif.is_read && !notif.lue;
               return (
                 <Pressable

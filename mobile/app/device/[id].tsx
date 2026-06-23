@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert, Image, Sty
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { devicesService } from '@/core/api/devicesService';
 import type { Device as ApiDevice } from '@/types';
 
@@ -10,11 +11,11 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PRIMARY = '#F5A64B';
 
 const TYPE_META: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
-  telephone: { label: 'Téléphone', icon: 'phone-portrait-outline', color: '#3B82F6', bg: '#DBEAFE' },
-  ordinateur: { label: 'Ordinateur', icon: 'laptop-outline', color: '#8B5CF6', bg: '#EDE9FE' },
-  tablette: { label: 'Tablette', icon: 'tablet-portrait-outline', color: '#10B981', bg: '#D1FAE5' },
-  tv: { label: 'TV', icon: 'tv-outline', color: '#F59E0B', bg: '#FEF3C7' },
-  autre: { label: 'Autre', icon: 'cube-outline', color: '#6B7280', bg: '#F3F4F6' },
+  telephone: { label: 'deviceDetail:type_telephone', icon: 'phone-portrait-outline', color: '#3B82F6', bg: '#DBEAFE' },
+  ordinateur: { label: 'deviceDetail:type_ordinateur', icon: 'laptop-outline', color: '#8B5CF6', bg: '#EDE9FE' },
+  tablette: { label: 'deviceDetail:type_tablette', icon: 'tablet-portrait-outline', color: '#10B981', bg: '#D1FAE5' },
+  tv: { label: 'deviceDetail:type_tv', icon: 'tv-outline', color: '#F59E0B', bg: '#FEF3C7' },
+  autre: { label: 'deviceDetail:type_autre', icon: 'cube-outline', color: '#6B7280', bg: '#F3F4F6' },
 };
 
 function fmt(d?: string) {
@@ -34,11 +35,11 @@ function normaliseType(category: string): string {
   return 'autre';
 }
 
-function normalise(d: ApiDevice | null) {
+function normalise(d: ApiDevice | null, t: (key: string) => string) {
   if (!d) return null;
   return {
     id: d.id || '',
-    nom: d.model || d.modele || d.nom || 'Appareil',
+    nom: d.model || d.modele || d.nom || t('deviceDetail:title'),
     type: normaliseType(d.category || d.type || ''),
     marque: d.brand || d.marque || '',
     modele: d.model || d.modele || '',
@@ -58,22 +59,25 @@ function normalise(d: ApiDevice | null) {
 
 export default function DeviceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [device, setDevice] = useState<ReturnType<typeof normalise>>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const fetchDevice = useCallback(async () => {
-    if (!id) { setError('Aucun identifiant'); setLoading(false); return; }
+    if (!id) { setError(t('deviceDetail:noIdentifier')); setLoading(false); return; }
     try {
-      const res = await devicesService.getById(id);
-      if (res.success && res.data) {
-        setDevice(normalise(res.data));
+      const res = await devicesService.getAll();
+      if (res.success && Array.isArray(res.data)) {
+        const found = res.data.find(d => d.id === id);
+        if (found) setDevice(normalise(found, t));
+        else setError(t('deviceDetail:notFound'));
       } else {
-        setError('Appareil introuvable');
+        setError(t('deviceDetail:loadError'));
       }
-    } catch (e: any) {
-      setError(e?.message || 'Impossible de charger les informations');
+    } catch {
+      setError(t('common:error'));
     } finally {
       setLoading(false);
     }
@@ -95,10 +99,10 @@ export default function DeviceDetailScreen() {
         <View style={{ width: 72, height: 72, borderRadius: 24, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
           <Ionicons name="alert-circle-outline" size={36} color="#EF4444" />
         </View>
-        <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A', marginBottom: 8 }}>Oups !</Text>
-        <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24, lineHeight: 20 }}>{error || 'Impossible de charger les détails de cet appareil.'}</Text>
+        <Text style={{ fontSize: 18, fontWeight: '800', color: '#1A1A1A', marginBottom: 8 }}>{t('common:oops')}</Text>
+        <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24, lineHeight: 20 }}>{error || t('deviceDetail:detailLoadError')}</Text>
         <Pressable onPress={() => router.back()} style={{ paddingVertical: 14, paddingHorizontal: 32, backgroundColor: PRIMARY, borderRadius: 14 }}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Retour</Text>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>{t('common:back')}</Text>
         </Pressable>
       </View>
     );
@@ -123,7 +127,7 @@ export default function DeviceDetailScreen() {
   const warranty = d.assurance;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
         <View style={styles.hero}>
           {photos.length > 0 ? (
@@ -140,7 +144,7 @@ export default function DeviceDetailScreen() {
             {isLost && (
               <View style={styles.lostBadge}>
                 <Ionicons name="alert" size={12} color="#FFFFFF" />
-                <Text style={styles.lostBadgeText}>{warrantyStatus === 'STOLEN' ? 'Volé' : 'Perdu'}</Text>
+                <Text style={styles.lostBadgeText}>{warrantyStatus === 'STOLEN' ? t('deviceDetail:stolen') : t('deviceDetail:lost')}</Text>
               </View>
             )}
           </View>
@@ -150,7 +154,7 @@ export default function DeviceDetailScreen() {
           <View style={styles.headerRow}>
             <View style={[styles.typePill, { backgroundColor: meta.bg }]}>
               <Ionicons name={meta.icon} size={16} color={meta.color} />
-              <Text style={[styles.typePillText, { color: meta.color }]}>{meta.label}</Text>
+              <Text style={[styles.typePillText, { color: meta.color }]}>{t(meta.label)}</Text>
             </View>
           </View>
 
@@ -160,40 +164,40 @@ export default function DeviceDetailScreen() {
           <View style={styles.quickGrid}>
             <View style={styles.quickCard}>
               <Ionicons name="barcode-outline" size={18} color={PRIMARY} />
-              <Text style={styles.quickLabel}>Série/IMEI</Text>
+              <Text style={styles.quickLabel}>{t('deviceDetail:serialImei')}</Text>
               <Text style={styles.quickValue} numberOfLines={1}>{val(serial)}</Text>
             </View>
             <View style={styles.quickCard}>
               <Ionicons name="color-palette-outline" size={18} color="#7C3AED" />
-              <Text style={styles.quickLabel}>Couleur</Text>
+              <Text style={styles.quickLabel}>{t('deviceDetail:color')}</Text>
               <Text style={styles.quickValue}>{val(color)}</Text>
             </View>
             <View style={styles.quickCard}>
               <Ionicons name="wallet-outline" size={18} color="#059669" />
-              <Text style={styles.quickLabel}>Prix</Text>
+              <Text style={styles.quickLabel}>{t('deviceDetail:price')}</Text>
               <Text style={styles.quickValue}>{price ? `${Number(price).toLocaleString('fr')} F` : '—'}</Text>
             </View>
             <View style={styles.quickCard}>
               <Ionicons name="shield-checkmark-outline" size={18} color={warranty === 'oui' ? '#059669' : '#9CA3AF'} />
-              <Text style={styles.quickLabel}>Assurance</Text>
-              <Text style={styles.quickValue}>{warranty === 'oui' ? 'Oui' : 'Non'}</Text>
+              <Text style={styles.quickLabel}>{t('deviceDetail:insurance')}</Text>
+              <Text style={styles.quickValue}>{warranty === 'oui' ? t('common:yes') : t('common:no')}</Text>
             </View>
           </View>
 
-          <Text style={styles.sectionTitle}>Informations</Text>
+          <Text style={styles.sectionTitle}>{t('deviceDetail:info')}</Text>
           <View style={styles.detailCard}>
-            <Row icon="barcode-outline" label="N° série / IMEI" value={val(serial)} color="#D97706" />
-            <Row icon="color-palette-outline" label="Couleur" value={val(color)} color="#7C3AED" />
-            <Row icon="calendar-outline" label="Date d'achat" value={fmt(purchaseDate)} color="#2563EB" />
-            <Row icon="calendar-outline" label="Fin garantie" value={fmt(warrantyEnd)} color={expired ? '#EF4444' : '#059669'} extra={expired ? 'Expirée' : undefined} />
-            <Row icon="wallet-outline" label="Prix d'achat" value={price ? `${Number(price).toLocaleString('fr')} FCFA` : '—'} color="#059669" />
-            <Row icon="location-outline" label="Lieu d'achat" value={val(location)} color="#D97706" />
-            <Row icon="document-text-outline" label="Notes" value={val(notes)} color="#6B7280" />
+            <Row icon="barcode-outline" label={t('deviceDetail:serialNumber')} value={val(serial)} color="#D97706" />
+            <Row icon="color-palette-outline" label={t('deviceDetail:color')} value={val(color)} color="#7C3AED" />
+            <Row icon="calendar-outline" label={t('deviceDetail:purchaseDate')} value={fmt(purchaseDate)} color="#2563EB" />
+            <Row icon="calendar-outline" label={t('deviceDetail:warrantyEnd')} value={fmt(warrantyEnd)} color={expired ? '#EF4444' : '#059669'} extra={expired ? t('deviceDetail:expired') : undefined} />
+            <Row icon="wallet-outline" label={t('deviceDetail:purchasePrice')} value={price ? `${Number(price).toLocaleString('fr')} FCFA` : '—'} color="#059669" />
+            <Row icon="location-outline" label={t('deviceDetail:purchaseLocation')} value={val(location)} color="#D97706" />
+            <Row icon="document-text-outline" label={t('deviceDetail:notes')} value={val(notes)} color="#6B7280" />
           </View>
 
           {photos.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Photos</Text>
+              <Text style={styles.sectionTitle}>{t('deviceDetail:photos')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoRow}>
                 {photos.map((uri, i) => (
                   <Image key={i} source={{ uri }} style={styles.thumbPhoto} />
@@ -206,16 +210,16 @@ export default function DeviceDetailScreen() {
             {!isLost ? (
               <Pressable style={styles.dangerBtn}>
                 <Ionicons name="alert-circle-outline" size={18} color="#FFFFFF" />
-                <Text style={styles.dangerBtnText}>Signaler perdu / volé</Text>
+                <Text style={styles.dangerBtnText}>{t('deviceDetail:reportLostStolen')}</Text>
               </Pressable>
             ) : (
               <Pressable style={styles.successBtn}>
                 <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-                <Text style={styles.successBtnText}>Marquer comme retrouvé</Text>
+                <Text style={styles.successBtnText}>{t('deviceDetail:markFound')}</Text>
               </Pressable>
             )}
             <Pressable onPress={() => router.back()} style={styles.ghostBtn}>
-              <Text style={styles.ghostBtnText}>Retour</Text>
+              <Text style={styles.ghostBtnText}>{t('common:back')}</Text>
             </Pressable>
           </View>
         </View>

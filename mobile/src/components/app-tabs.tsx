@@ -4,20 +4,21 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Colors, BottomTabInset } from '@/constants/theme';
 import { PlusSheet } from '@/components/plus-sheet';
 
-const TABS = [
-  { name: 'index', label: 'Accueil', icon: 'home', iconOutline: 'home-outline' },
-  { name: 'documents', label: 'Documents', icon: 'document-text', iconOutline: 'document-text-outline' },
-  { name: 'devices', label: 'Mes appareils', icon: 'phone-portrait', iconOutline: 'phone-portrait-outline' },
-  { name: 'rechercher', label: 'Docmaster', icon: 'search', iconOutline: 'search-outline' },
-] as const;
-
 const HIDDEN_ROUTES = ['declarer', 'trouver', 'recuperer', 'rendre'];
 
+type TabDef = {
+  name: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  iconOutline: keyof typeof Ionicons.glyphMap;
+};
+
 type TabButtonProps = {
-  tab: typeof TABS[number];
+  tab: TabDef;
   isFocused: boolean;
   onPress: () => void;
   colors: (typeof Colors)['light'] | (typeof Colors)['dark'];
@@ -47,7 +48,18 @@ function TabBar({ state, navigation }: any) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation('navbar');
   const [sheetVisible, setSheetVisible] = useState(false);
+
+  // Tabs labels are translated, but their route names and icons are static.
+  // We rebuild the array on each render so a language change is reflected
+  // immediately in the bottom bar.
+  const TABS = [
+    { name: 'index', label: t('home'), icon: 'home', iconOutline: 'home-outline' },
+    { name: 'documents', label: t('documents'), icon: 'document-text', iconOutline: 'document-text-outline' },
+    { name: 'devices', label: t('devices'), icon: 'phone-portrait', iconOutline: 'phone-portrait-outline' },
+    { name: 'rechercher', label: t('search'), icon: 'search', iconOutline: 'search-outline' },
+  ] as const;
 
   const openSheet = useCallback(() => setSheetVisible(true), []);
   const closeSheet = useCallback(() => setSheetVisible(false), []);

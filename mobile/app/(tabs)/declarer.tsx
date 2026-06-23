@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Animated,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { declarationsService, documentTypesService } from '@/core/api/declarationsService';
 import { useAuthStore } from '@/core/store/useAuthStore';
@@ -16,29 +17,44 @@ import { ContactBlock } from '@/components/declarations/wizard/ContactBlock';
 import { UrgencySelector } from '@/components/declarations/wizard/UrgencySelector';
 import { SuccessOverlay } from '@/components/declarations/wizard/SuccessOverlay';
 import { DatePickerInput } from '@/components/declarations/wizard/DatePickerInput';
+import { DOC_FIELDS_META, getDocFields } from '@/components/declarations/wizard/DOC_FIELDS_META';
 import { Button } from '@/components/common/Button';
 import { ThemedText } from '@/components/themed-text';
+import { Input } from '@/components/common/Input';
 import { Ionicons } from '@expo/vector-icons';
 import { PRIMARY, TEXT_MUTED, BORDER, CREAM, TEXT_MAIN, GREEN } from '@/components/declarations/wizard/DOC_TYPE_META';
 import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
 
 type Urgency = 'Basse' | 'Modérée' | 'Haute';
-const STEPS = ['Pour qui', 'Type', 'Détails', 'Lieu', 'Contact', 'Récap'];
-
-const STEP_HEADINGS = [
-  { title: 'Pour qui déclarez-vous ?', desc: 'Choisissez si c\'est pour vous ou un proche' },
-  { title: 'Quel document ?', desc: 'Sélectionnez le type de document perdu' },
-  { title: 'Détails du document', desc: 'Remplissez les informations du document' },
-  { title: 'Lieu et date', desc: 'Où et quand a eu lieu la perte ?' },
-  { title: 'Contact & urgence', desc: 'Comment vous joindre et priorité' },
-  { title: 'Vérification', desc: 'Confirmez les informations avant envoi' },
-];
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+/**
+ * Ajoute N mois à une date (aligné sur web Declarer.tsx addMonths).
+ * Si la date initiale est le 31 et que le mois cible n'a pas de jour 31,
+ * on retombe sur le dernier jour du mois (comportement ISO/JS).
+ */
+function addMonths(date: Date, months: number): Date {
+  const d = new Date(date);
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + months);
+  if (d.getDate() !== day) d.setDate(0);
+  return d;
+}
+
 export default function DeclarerScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { user } = useAuthStore();
+  const STEPS = [t('declarer:step0Short'), t('declarer:step1Short'), t('declarer:step2Short'), t('declarer:step3Short'), t('declarer:step4Short'), t('declarer:step5Short')];
+  const STEP_HEADINGS = [
+    { title: t('declarer:step0Title'), desc: t('declarer:step0Desc') },
+    { title: t('declarer:step1Title'), desc: t('declarer:step1Desc') },
+    { title: t('declarer:step2Title'), desc: t('declarer:step2Desc') },
+    { title: t('declarer:step3Title'), desc: t('declarer:step3Desc') },
+    { title: t('declarer:step4Title'), desc: t('declarer:step4Desc') },
+    { title: t('declarer:step5Title'), desc: t('declarer:step5Desc') },
+  ];
   const [step, setStep] = useState(0);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
@@ -48,9 +64,16 @@ export default function DeclarerScreen() {
   const [dynamicValues, setDynamicValues] = useState<Record<string, string>>({});
   const [place, setPlace] = useState('');
   const [datePerte, setDatePerte] = useState(new Date());
+  const [lossTime, setLossTime] = useState<Date | null>(null);
+  const [quartier, setQuartier] = useState('');
+  const [lieuPrecis, setLieuPrecis] = useState('');
+  const [circumstances, setCircumstances] = useState('');
+  const [dateDelivrance, setDateDelivrance] = useState<Date | null>(null);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [urgency, setUrgency] = useState<Urgency | null>(null);
+  const [rewardEnabled, setRewardEnabled] = useState(false);
+  const [rewardAmount, setRewardAmount] = useState('');
   const [successRef, setSuccessRef] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ visible: boolean; type: FeedbackType; title: string; message?: string }>({
     visible: false, type: 'error', title: '',
@@ -63,9 +86,20 @@ export default function DeclarerScreen() {
     });
   }, []);
 
-  const selectedTypeMeta = useMemo(() =>
-    docTypes.find(t => t.code === docType),
-  [docTypes, docType]);
+  const selectedTypeMeta = useMemo(() => {
+    if (!docType) return null;
+    const fromBackend = docTypes.find(t => t.code === docType);
+    const fields = getDocFields(docType);
+    const delai = fromBackend?.delai_expiration_mois ?? 0;
+    return {
+      ...(fromBackend || { code: docType, nom: docType, icone: 'document-text-outline' }),
+      fields,
+      hasExpiration: delai > 0,
+    };
+  }, [docTypes, docType]);
+
+  const hasDateDelivranceField = !!selectedTypeMeta?.fields.some((f: any) => f.key === 'date_delivrance');
+  const hasDateExpirationField = !!selectedTypeMeta?.fields.some((f: any) => f.key === 'date_expiration');
 
   const canProceed = useCallback(() => {
     switch (step) {
@@ -74,7 +108,12 @@ export default function DeclarerScreen() {
       case 2: {
         if (!selectedTypeMeta) return false;
         const fields = selectedTypeMeta.fields || [];
-        const required = fields.filter((f: any) => f.required);
+        const required = fields.filter((f: any) => !f.optional);
+        // Si le type a une expiration et qu'aucun champ date_delivrance n'est défini,
+        // on exige ce champ (cf. comportement web Declarer.tsx:344-348)
+        if (selectedTypeMeta.hasExpiration && !hasDateDelivranceField) {
+          return required.every((f: any) => !!dynamicValues[f.key]?.trim()) && !!dateDelivrance;
+        }
         return required.every((f: any) => !!dynamicValues[f.key]?.trim());
       }
       case 3: return !!place.trim();
@@ -82,7 +121,7 @@ export default function DeclarerScreen() {
       case 5: return true;
       default: return false;
     }
-  }, [step, declType, docType, dynamicValues, place, phone, selectedTypeMeta]);
+  }, [step, declType, docType, dynamicValues, place, phone, dateDelivrance, selectedTypeMeta, hasDateDelivranceField]);
 
   const handleNext = () => {
     if (!canProceed()) {
@@ -126,9 +165,27 @@ export default function DeclarerScreen() {
       if (urgency) formData.append("urgence_niveau", urgency);
       formData.append("description", dynamicValues.description || "");
 
+      // Si une date de délivrance a été saisie (champ auto pour types expirants
+      // ou champ explicite dans DOC_FIELDS_META), on l'envoie + calcule l'expiration.
+      const delai = selectedTypeMeta?.delai_expiration_mois ?? 0;
+      const effectiveDelivrance = hasDateDelivranceField
+        ? dynamicValues.date_delivrance
+        : dateDelivrance?.toISOString().split('T')[0];
+      if (effectiveDelivrance) {
+        formData.append("date_delivrance", effectiveDelivrance);
+        if (delai > 0) {
+          const exp = addMonths(new Date(effectiveDelivrance), delai);
+          formData.append("date_expiration", exp.toISOString().split('T')[0]);
+        }
+      }
+      if (dynamicValues.date_expiration && !hasDateDelivranceField) {
+        // Cas passeport : l'utilisateur remplit date_expiration directement
+        formData.append("date_expiration", dynamicValues.date_expiration);
+      }
+
       const metadata: Record<string, string> = {};
       Object.entries(dynamicValues).forEach(([key, val]) => {
-        if (!['titulaire', 'numero', 'description'].includes(key)) {
+        if (!['titulaire', 'numero', 'description', 'date_expiration'].includes(key)) {
           metadata[key] = val;
         }
       });
@@ -142,10 +199,10 @@ export default function DeclarerScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setSuccessRef(result.data?.identifiant_doc_dm || "SUCCES");
       } else {
-        setFeedback({ visible: true, type: 'error', title: 'Erreur', message: result.message || "Une erreur est survenue lors de la déclaration." });
+        setFeedback({ visible: true, type: 'error', title: t('common:error'), message: result.message || t('declarer:genericErrorMessage') });
       }
     } catch (error) {
-      setFeedback({ visible: true, type: 'error', title: 'Erreur réseau', message: "Impossible de soumettre la déclaration. Vérifiez votre connexion." });
+      setFeedback({ visible: true, type: 'error', title: t('common:networkError'), message: t('declarer:networkErrorMessage') });
     } finally {
       setSubmitting(false);
     }
@@ -167,17 +224,77 @@ export default function DeclarerScreen() {
 
         {step === 0 && <DeclarationTypePicker selected={declType} onSelect={setDeclType} />}
         {step === 1 && <DocTypePicker types={docTypes} selectedCode={docType} onSelect={setDocType} />}
-        {step === 2 && (selectedTypeMeta ? <DocDynamicFields fields={selectedTypeMeta.fields} values={dynamicValues} onChange={handleFieldChange} /> : (
+        {step === 2 && (selectedTypeMeta ? (
+          <View style={{ gap: 14 }}>
+            <DocDynamicFields
+              fields={selectedTypeMeta.fields.filter((f: any) => !(selectedTypeMeta.hasExpiration && f.key === 'date_expiration'))}
+              values={dynamicValues}
+              onChange={handleFieldChange}
+            />
+            {/* Si le type a une expiration et qu'aucun champ date_delivrance n'est défini,
+                on l'exige (cf. web Declarer.tsx:810-848). */}
+            {selectedTypeMeta.hasExpiration && !hasDateDelivranceField && (
+              <DatePickerInput
+                label={t('declarer:dateDelivrance')}
+                value={dateDelivrance || new Date()}
+                onChange={setDateDelivrance}
+              />
+            )}
+            {selectedTypeMeta.hasExpiration && (
+              <View style={styles.expirationBox}>
+                <ThemedText style={styles.expirationLabel}>{t('declarer:expirationDate')}</ThemedText>
+                <View style={styles.expirationInput}>
+                  <Ionicons name="calendar-outline" size={18} color="#9CA3AF" />
+                  <ThemedText style={styles.expirationText}>
+                    {dateDelivrance
+                      ? addMonths(dateDelivrance, selectedTypeMeta.delai_expiration_mois).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+                      : t('declarer:fillDelivranceDate')}
+                  </ThemedText>
+                </View>
+              </View>
+            )}
+          </View>
+        ) : (
           <View style={styles.gap}>
             <ThemedText style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>
-              Chargement des champs pour ce type de document...
+              {t('declarer:loadingFields')}
             </ThemedText>
           </View>
         ))}
         {step === 3 && (
           <View style={styles.gap}>
-            <DatePickerInput label="Date de la perte" value={datePerte} onChange={setDatePerte} />
+            <DatePickerInput label={t('declarer:dateLost')} value={datePerte} onChange={setDatePerte} />
+            <DatePickerInput
+              mode="time"
+              label={t('declarer:timeLost')}
+              value={lossTime || new Date()}
+              onChange={setLossTime}
+            />
             <PlaceChipInput value={place} onChange={setPlace} />
+            <Input
+              label={t('declarer:district')}
+              value={quartier}
+              onChangeText={setQuartier}
+              placeholder={t('declarer:districtPlaceholder')}
+              icon="location-outline"
+            />
+            <Input
+              label={t('declarer:exactPlace')}
+              value={lieuPrecis}
+              onChangeText={setLieuPrecis}
+              placeholder={t('declarer:exactPlacePlaceholder')}
+              icon="map-outline"
+            />
+            <Input
+              label={t('declarer:circumstances')}
+              value={circumstances}
+              onChangeText={setCircumstances}
+              placeholder={t('declarer:circumstancesPlaceholder')}
+              icon="chatbox-ellipses-outline"
+              multiline
+              numberOfLines={3}
+              style={{ height: 90, paddingTop: 12, textAlignVertical: 'top' }}
+            />
           </View>
         )}
         {step === 4 && (
@@ -206,7 +323,7 @@ export default function DeclarerScreen() {
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <WizardTopBar
-        title="Déclarer une perte"
+        title={t('declarer:title')}
         onBack={handleBack}
         onClose={() => router.back()}
       />
@@ -219,12 +336,12 @@ export default function DeclarerScreen() {
       <View style={styles.bottomBar}>
         <View style={styles.bottomBarInner}>
           {step > 0 ? (
-            <Button title="Retour" variant="outline" onPress={handleBack} style={styles.backBtn} />
+            <Button title={t('common:back')} variant="outline" onPress={handleBack} style={styles.backBtn} />
           ) : (
             <View style={styles.backBtn} />
           )}
           <Button
-            title={step === 5 ? (submitting ? 'Envoi en cours...' : 'Soumettre') : 'Continuer'}
+            title={step === 5 ? (submitting ? t('declarer:sending') : t('declarer:submit')) : t('common:continue')}
             onPress={handleNext}
             disabled={!canProceed() || submitting}
             loading={submitting}
@@ -260,12 +377,13 @@ function RecapSection({
   urgency: Urgency | null;
   onEditStep: (s: number) => void;
 }) {
+  const { t } = useTranslation();
   const formatDate = (d: Date) =>
     d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
 
   const FIELDS: { label: string; value: string; step: number; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { label: 'Déclaration pour', value: declType === 'self' ? 'Moi-même' : 'Un proche', step: 0, icon: declType === 'self' ? 'person-outline' : 'people-outline' },
-    { label: 'Type de document', value: selectedTypeMeta?.nom || '—', step: 1, icon: selectedTypeMeta?.icone || 'document-text-outline' },
+    { label: t('declarer:recapDeclarationFor'), value: declType === 'self' ? t('declarer:myself') : t('declarer:someoneElse'), step: 0, icon: declType === 'self' ? 'person-outline' : 'people-outline' },
+    { label: t('declarer:documentType'), value: selectedTypeMeta?.nom || '—', step: 1, icon: selectedTypeMeta?.icone || 'document-text-outline' },
   ];
 
   // Add dynamic fields
@@ -278,11 +396,11 @@ function RecapSection({
   }
 
   FIELDS.push(
-    { label: 'Date de perte', value: formatDate(datePerte), step: 3, icon: 'calendar-outline' },
-    { label: 'Lieu', value: place || '—', step: 3, icon: 'location-outline' },
-    { label: 'Téléphone', value: phone || '—', step: 4, icon: 'call-outline' },
-    { label: 'Email', value: email || 'Non renseigné', step: 4, icon: 'mail-outline' },
-    { label: 'Urgence', value: urgency || 'Non spécifiée', step: 4, icon: 'flash-outline' },
+    { label: t('declarer:dateLost'), value: formatDate(datePerte), step: 3, icon: 'calendar-outline' },
+    { label: t('declarer:recapPlace'), value: place || '—', step: 3, icon: 'location-outline' },
+    { label: t('declarer:recapPhone'), value: phone || '—', step: 4, icon: 'call-outline' },
+    { label: t('declarer:recapEmail'), value: email || t('common:notProvided'), step: 4, icon: 'mail-outline' },
+    { label: t('declarer:recapUrgency'), value: urgency || t('declarer:urgencyNotSpecified'), step: 4, icon: 'flash-outline' },
   );
 
   return (
@@ -309,7 +427,7 @@ function RecapSection({
       <View style={recapStyles.notice}>
         <Ionicons name="shield-checkmark-outline" size={16} color={GREEN} />
         <ThemedText style={recapStyles.noticeText}>
-          En soumettant, vous confirmez que ces informations sont authentiques.
+          {t('declarer:recapNotice')}
         </ThemedText>
       </View>
     </View>
@@ -406,6 +524,31 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   gap: { gap: 24 },
+  expirationBox: {
+    gap: 6,
+  },
+  expirationLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: TEXT_MAIN,
+    marginLeft: 4,
+  },
+  expirationInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 12,
+    gap: 10,
+    backgroundColor: '#F9FAFB',
+    opacity: 0.7,
+  },
+  expirationText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: TEXT_MUTED,
+  },
   bottomBar: {
     borderTopWidth: 1,
     borderTopColor: BORDER,

@@ -142,6 +142,35 @@ export class DocumentService {
   }
 
   /**
+   * Archive a single document by id.
+   * Returns the updated document, or null if not found / not owned by user.
+   * Only marks `is_archived = true` when the document is currently not archived
+   * and `validity_option = 'EXPIRING'` (permanent documents are never auto-archived).
+   */
+  async archiveDocument(id: string, userId: string): Promise<UserDocument | null> {
+    const existing = await this.documentRepository.findById(id);
+    if (!existing || existing.user_id !== userId) {
+      return null;
+    }
+    if (existing.is_archived) {
+      return await encodeMediaFields(existing);
+    }
+    // Only auto-archive if validity_option is EXPIRING and expiration has actually passed.
+    const isExpired = existing.validity_option === 'EXPIRING'
+      && existing.date_expiration
+      && new Date(existing.date_expiration).getTime() < Date.now();
+    if (!isExpired) {
+      // Refuse silently: caller can handle null vs current state
+      return await encodeMediaFields(existing);
+    }
+    const archived = await this.documentRepository.updateDocument(id, userId, {
+      is_archived: true,
+      archived_at: new Date(),
+    });
+    return archived ? await encodeMediaFields(archived) : null;
+  }
+
+  /**
    * Report a document as lost
    */
   async reportDocumentLost(id: string, userId: string, password?: string): Promise<{ document: UserDocument, declarationId?: string, declarationIdentifiant?: string }> {

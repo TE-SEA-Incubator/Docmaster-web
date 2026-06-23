@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Pressable, View, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
@@ -10,22 +11,23 @@ import { authService } from '@/core/api/authService';
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {
-    if (!email) { setError('Email requis'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Email invalide'); return; }
+    if (!email) { setError(t('forgotPassword:emailRequired')); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError(t('forgotPassword:emailInvalid')); return; }
     setError('');
     setLoading(true);
     try {
       const res = await authService.requestPasswordReset({ email });
       if (res.success) setSuccess(true);
-      else setError(res.error || res.message || 'Erreur lors de la demande');
+      else setError(res.error || res.message || t('forgotPassword:requestError'));
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Une erreur est survenue');
+      setError(err?.response?.data?.message || err?.message || t('forgotPassword:requestErrorDesc'));
     } finally {
       setLoading(false);
     }
@@ -39,16 +41,16 @@ export default function ForgotPasswordScreen() {
           <Pressable onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.headerTitle}>Mot de passe oublié</Text>
+          <Text style={styles.headerTitle}>{t('forgotPassword:title')}</Text>
           <View style={{ width: 24 }} /> {/* Spacer pour centrer le titre */}
         </View>
 
         <View style={styles.logoBlock}>
           {/* Remplacer cette icône par l'Image de votre logo DocMaster si nécessaire */}
           <Ionicons name="document-text" size={48} color="#FFFFFF" />
-          <Text style={styles.logoText}>DocMaster</Text>
+          <Text style={styles.logoText}>{t('forgotPassword:logoText')}</Text>
           <Text style={styles.descriptionText}>
-            Entrez votre adresse email. Nous vous enverrons un lien pour réinitialiser votre mot de passe de manière sécurisée.
+            {t('forgotPassword:description')}
           </Text>
         </View>
       </View>
@@ -70,8 +72,8 @@ export default function ForgotPasswordScreen() {
                 ) : null}
 
                 <Input 
-                  label="Adresse email" 
-                  placeholder="votre@email.com" 
+                  label={t('forgotPassword:emailLabel')} 
+                  placeholder={t('forgotPassword:emailPlaceholder')} 
                   value={email} 
                   onChangeText={setEmail} 
                   keyboardType="email-address" 
@@ -81,7 +83,7 @@ export default function ForgotPasswordScreen() {
                 
                 <View style={styles.buttonWrapper}>
                   <Button 
-                    title="Envoyer le lien" 
+                    title={t('forgotPassword:sendLink')} 
                     variant="primary" 
                     loading={loading} 
                     onPress={handleSubmit} 
@@ -93,12 +95,12 @@ export default function ForgotPasswordScreen() {
                 <View style={styles.successIconCircle}>
                   <Ionicons name="checkmark-circle" size={64} color="#1A8744" />
                 </View>
-                <Text style={styles.successTitle}>Email envoyé !</Text>
+                <Text style={styles.successTitle}>{t('forgotPassword:emailSent')}</Text>
                 <Text style={styles.successSubtitle}>
-                  Un lien a été envoyé à <Text style={styles.successEmail}>{email}</Text>.
+                  {t('forgotPassword:emailSentDesc').replace('{{email}}', email)}
                 </Text>
                 <Button 
-                  title="Retour à la connexion" 
+                  title={t('forgotPassword:backToLogin')} 
                   variant="secondary" 
                   onPress={() => router.replace('/(auth)')} 
                   style={{ marginTop: 24 }}

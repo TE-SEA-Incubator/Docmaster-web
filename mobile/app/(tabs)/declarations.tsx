@@ -16,6 +16,7 @@ import { DeclarationCard } from '@/components/declarations/DeclarationCard';
 import type { Declaration } from '@/types';
 import { BottomTabInset } from '@/constants/theme';
 import { DeclarationsSkeleton } from '@/components/Skeletons';
+import { useTranslation } from 'react-i18next';
 
 // ── Design tokens (from DOC_TYPE_META) ──────────────────────────────────────
 const PRIMARY    = '#F5A64B';          // orange principal
@@ -29,10 +30,10 @@ const TEXT_SUBTLE = '#9CA3AF';
 
 // ── Filters ─────────────────────────────────────────────────────────────────
 const FILTERS = [
-  { key: 'all',    label: 'Toutes',   icon: 'layers-outline'    },
-  { key: 'lost',   label: 'Perdues',  icon: 'alert-circle-outline' },
-  { key: 'found',  label: 'Trouvées', icon: 'checkmark-circle-outline' },
-  { key: 'active', label: 'Actives',  icon: 'time-outline'      },
+  { key: 'all',    icon: 'layers-outline'    },
+  { key: 'lost',   icon: 'alert-circle-outline' },
+  { key: 'found',  icon: 'checkmark-circle-outline' },
+  { key: 'active', icon: 'time-outline'      },
 ] as const;
 
 type FilterKey = (typeof FILTERS)[number]['key'];
@@ -40,6 +41,7 @@ type FilterKey = (typeof FILTERS)[number]['key'];
 // ────────────────────────────────────────────────────────────────────────────
 export default function DeclarationsScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -97,12 +99,12 @@ export default function DeclarationsScreen() {
             >
               <Ionicons name="arrow-back" size={20} color={TEXT_MAIN} />
             </Pressable>
-            <Text style={styles.headerTitle}>Mes déclarations</Text>
+            <Text style={styles.headerTitle}>{t('declarations:title')}</Text>
           </View>
 
           {/* Row 2 : count badge */}
           <Text style={styles.headerCount}>
-            {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
+            {filtered.length} {t(filtered.length !== 1 ? 'declarations:results' : 'declarations:result')}
           </Text>
 
           {/* Row 3 : CTA buttons — full-width, well-separated */}
@@ -116,8 +118,8 @@ export default function DeclarationsScreen() {
                 <Ionicons name="alert-circle-outline" size={16} color={PRIMARY} />
               </View>
               <View style={styles.ctaBtnText}>
-                <Text style={styles.ctaBtnLabel}>Déclarer une perte</Text>
-                <Text style={styles.ctaBtnSub}>Signaler un document perdu</Text>
+                <Text style={styles.ctaBtnLabel}>{t('declarations:declareLost')}</Text>
+                <Text style={styles.ctaBtnSub}>{t('declarations:declareLostSub')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={PRIMARY} />
             </Pressable>
@@ -131,8 +133,8 @@ export default function DeclarationsScreen() {
                 <Ionicons name="search-outline" size={16} color={GREEN_DARK} />
               </View>
               <View style={styles.ctaBtnText}>
-                <Text style={[styles.ctaBtnLabel, styles.ctaBtnLabelFound]}>Document trouvé</Text>
-                <Text style={[styles.ctaBtnSub, styles.ctaBtnSubFound]}>Signaler un document récupéré</Text>
+                <Text style={[styles.ctaBtnLabel, styles.ctaBtnLabelFound]}>{t('declarations:declareFound')}</Text>
+                <Text style={[styles.ctaBtnSub, styles.ctaBtnSubFound]}>{t('declarations:declareFoundSub')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={GREEN_DARK} />
             </Pressable>
@@ -164,7 +166,7 @@ export default function DeclarationsScreen() {
                   color={active ? '#fff' : TEXT_MUTED}
                 />
                 <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
-                  {f.label}
+                  {t('declarations:' + f.key)}
                 </Text>
               </Pressable>
             );
@@ -173,14 +175,14 @@ export default function DeclarationsScreen() {
 
         {/* ── LIST ───────────────────────────────────────────────────────── */}
         {filtered.length === 0 ? (
-          <EmptyState activeFilter={activeFilter} />
+          <EmptyState activeFilter={activeFilter} t={t} />
         ) : (
           <View style={styles.list}>
             {filtered.map((dec) => (
               <DeclarationCard
                 key={dec.id}
                 type={dec.declaration_type === 'LOST' || dec.is_lost ? 'LOST' : 'FOUND'}
-                docType={dec.docTypeInfo?.nom || dec.doc_type || 'Document'}
+                docType={dec.docTypeInfo?.nom || dec.doc_type || t('declarations:document')}
                 status={dec.status as any}
                 reference={dec.identifiant_doc_dm || dec.reference || '---'}
                 ownerName={dec.nom_complet || dec.owner_name}
@@ -199,24 +201,24 @@ export default function DeclarationsScreen() {
 }
 
 // ── Empty state ──────────────────────────────────────────────────────────────
-function EmptyState({ activeFilter }: { activeFilter: FilterKey }) {
+function EmptyState({ activeFilter, t }: { activeFilter: FilterKey; t: (key: string) => string }) {
   return (
     <View style={styles.emptyBox}>
       <View style={styles.emptyIcon}>
         <Ionicons name="megaphone-outline" size={28} color={PRIMARY} />
       </View>
-      <Text style={styles.emptyTitle}>Aucune déclaration</Text>
+      <Text style={styles.emptyTitle}>{t('declarations:noDeclarations')}</Text>
       <Text style={styles.emptySubtitle}>
         {activeFilter === 'all'
-          ? "Vous n'avez encore fait aucune déclaration."
-          : 'Aucune déclaration ne correspond à ce filtre.'}
+          ? t('declarations:noDeclarationsDesc')
+          : t('declarations:noFilterResults')}
       </Text>
       <Pressable
         onPress={() => router.push('/declarer')}
         style={({ pressed }) => [styles.emptyBtn, pressed && { opacity: 0.85 }]}
       >
         <Ionicons name="add" size={16} color="#fff" />
-        <Text style={styles.emptyBtnText}>Nouvelle déclaration</Text>
+        <Text style={styles.emptyBtnText}>{t('declarations:newDeclaration')}</Text>
       </Pressable>
     </View>
   );

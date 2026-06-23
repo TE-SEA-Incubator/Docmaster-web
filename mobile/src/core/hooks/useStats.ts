@@ -10,6 +10,7 @@ export function useGlobalStats() {
     setLoading(true);
     try {
       const res = await statsService.getGlobal();
+      console.log("response" ,res)
       if (mountedRef.current) setStats((res.data as GlobalStats) || null);
     } catch (e) {
       console.warn('[useGlobalStats] error', e);
@@ -28,18 +29,17 @@ export function useGlobalStats() {
   return { stats, loading, refresh: fetch };
 }
 
-export function usePerformanceStats() {
+export function usePerformanceStats(period?: string) {
   const [stats, setStats] = useState<PerformanceDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
 
-  const fetch = useCallback(async (period?: string) => {
+  const fetch = useCallback(async (p?: string) => {
     setLoading(true);
     try {
-      const res = await statsService.getPerformance(period);
+      const res = await statsService.getPerformance(p);
       if (mountedRef.current) setStats((res.data as PerformanceDoc[]) || []);
-    } catch (e) {
-      console.warn('[usePerformanceStats] error', e);
+    } catch {
       if (mountedRef.current) setStats([]);
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -48,9 +48,9 @@ export function usePerformanceStats() {
 
   useEffect(() => {
     mountedRef.current = true;
-    fetch();
+    fetch(period);
     return () => { mountedRef.current = false; };
-  }, [fetch]);
+  }, [fetch, period]);
 
   return { stats, loading, refresh: fetch };
 }

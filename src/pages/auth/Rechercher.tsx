@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
@@ -32,6 +32,7 @@ interface ResultDoc {
   ville?: string;
   photo_recto?: string;
   document_type?: string;
+  doc_type?: string;
   docTypeInfo?: { nom: string };
   [key: string]: unknown;
 }
@@ -48,6 +49,12 @@ export default function Rechercher() {
   const [loading, setLoading] = useState(false);
   const [hasLost, setHasLost] = useState(false);
   const [docTypes, setDocTypes] = useState<DocTypeCatalog[]>([]);
+
+  const docTypeMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    docTypes.forEach((dt) => { map[dt.id] = dt.nom; if (dt.code) map[dt.code] = dt.nom; });
+    return map;
+  }, [docTypes]);
 
   // Check if we have pre-loaded potential match IDs from Dashboard
   const potentialIds = (location.state as { potentialIds?: string[] } | null)?.potentialIds;
@@ -262,8 +269,13 @@ export default function Rechercher() {
                 const displayName = typeof doc.owner_name === "string" ? doc.owner_name : t("rechercher_owner");
                 const dateField = typeof doc.date_trouvaille === "string" ? doc.date_trouvaille : typeof doc.date_perte === "string" ? doc.date_perte : typeof doc.created_at === "string" ? doc.created_at : "";
                 const location = typeof doc.ville === "string" ? doc.ville : "";
-                const rawDocType = doc.docTypeInfo;
-                const docType = rawDocType && typeof rawDocType === "object" && "nom" in rawDocType && typeof (rawDocType as Record<string, unknown>).nom === "string" ? (rawDocType as Record<string, unknown>).nom : typeof doc.document_type === "string" ? doc.document_type : t("rechercher_document");
+                const docType = (() => {
+                  const raw = doc.docTypeInfo;
+                  if (raw && typeof raw === "object" && "nom" in raw && typeof (raw as Record<string, unknown>).nom === "string") return (raw as Record<string, unknown>).nom as string;
+                  if (doc.doc_type && docTypeMap[doc.doc_type]) return docTypeMap[doc.doc_type];
+                  if (doc.document_type && docTypeMap[doc.document_type]) return docTypeMap[doc.document_type];
+                  return doc.document_type || doc.doc_type || t("rechercher_document");
+                })();
                 const showFull = isMatchView || hasLost;
 
                 return (

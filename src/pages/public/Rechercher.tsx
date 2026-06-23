@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import Footer from "../../layout/Footer";
@@ -58,6 +58,11 @@ export default function Rechercher() {
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("recent");
   const [docTypes, setDocTypes] = useState<DocType[]>([]);
+  const docTypeMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    docTypes.forEach((dt) => { map[dt.id] = dt.nom; });
+    return map;
+  }, [docTypes]);
   const [visibleCount, setVisibleCount] = useState(9);
   const [totalCount, setTotalCount] = useState(0);
   const [filterDate, setFilterDate] = useState("");
@@ -162,8 +167,13 @@ export default function Rechercher() {
   const visibleDocs = filteredDocs.slice(0, visibleCount);
   const hasMore = visibleCount < filteredDocs.length;
 
-  const getDocType = (doc: DocResult): string =>
-    doc.document_type || doc.type_doc || doc.doc_type || t("rechercher_document");
+  const getDocType = (doc: DocResult): string => {
+    const raw = doc.document_type || doc.type_doc || doc.doc_type || "";
+    if (docTypeMap[raw]) return docTypeMap[raw];
+    // check if raw looks like a UUID — if so, fall back to the translation
+    if (/^[0-9a-f]{8}-/i.test(raw)) return t("rechercher_document");
+    return raw || t("rechercher_document");
+  };
 
   const getOwnerName = (doc: DocResult): string =>
     doc.document_owner || doc.owner_name || doc.nom_sur_doc || t("rechercher_owner_unknown");

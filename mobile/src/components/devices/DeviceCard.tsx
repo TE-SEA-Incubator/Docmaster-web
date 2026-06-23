@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Pressable, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export const PRIMARY = '#F5A64B';
 const DEEP_GREEN = '#1E3A2F';
@@ -29,19 +30,6 @@ export type Device = {
   photo_face?: string | null;
   photo_serial?: string | null;
 };
-
-const TYPE_META: Record<DeviceType, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
-  telephone: { label: 'Téléphone', icon: 'phone-portrait-outline', color: '#3B82F6', bg: '#DBEAFE' },
-  ordinateur: { label: 'Ordinateur', icon: 'laptop-outline', color: '#8B5CF6', bg: '#EDE9FE' },
-  tablette: { label: 'Tablette', icon: 'tablet-portrait-outline', color: '#10B981', bg: '#D1FAE5' },
-  tv: { label: 'TV', icon: 'tv-outline', color: '#F59E0B', bg: '#FEF3C7' },
-  autre: { label: 'Autre', icon: 'cube-outline', color: '#6B7280', bg: '#F3F4F6' },
-};
-
-function formatPrice(n: number) {
-  if (!n) return '—';
-  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
 
 const styles = StyleSheet.create({
   card: {
@@ -159,6 +147,19 @@ const styles = StyleSheet.create({
   },
 });
 
+function formatPrice(n: number) {
+  if (!n) return '—';
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+const TYPE_META_KEYS: Record<DeviceType, { labelKey: string; icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
+  telephone: { labelKey: 'devices:typeTelephone', icon: 'phone-portrait-outline', color: '#3B82F6', bg: '#DBEAFE' },
+  ordinateur: { labelKey: 'devices:typeOrdinateur', icon: 'laptop-outline', color: '#8B5CF6', bg: '#EDE9FE' },
+  tablette: { labelKey: 'devices:typeTablette', icon: 'tablet-portrait-outline', color: '#10B981', bg: '#D1FAE5' },
+  tv: { labelKey: 'devices:typeTv', icon: 'tv-outline', color: '#F59E0B', bg: '#FEF3C7' },
+  autre: { labelKey: 'devices:typeAutre', icon: 'cube-outline', color: '#6B7280', bg: '#F3F4F6' },
+};
+
 export const DeviceCard = React.memo(function DeviceCard({
   device,
   index,
@@ -172,7 +173,8 @@ export const DeviceCard = React.memo(function DeviceCard({
   onReportLost?: () => void;
   onReportFound?: () => void;
 }) {
-  const meta = TYPE_META[device.type] || TYPE_META.autre;
+  const { t } = useTranslation();
+  const meta = TYPE_META_KEYS[device.type] || TYPE_META_KEYS.autre;
   const hasPhoto = device.photo || device.photo_face || device.photo_facture;
   const photoUri = device.photo || device.photo_face || device.photo_facture;
   const expired = device.garantie ? new Date(device.garantie) < new Date() : false;
@@ -191,11 +193,11 @@ export const DeviceCard = React.memo(function DeviceCard({
           )}
           <View style={[styles.typeBadge, { backgroundColor: meta.bg }]}>
             <Ionicons name={meta.icon} size={10} color={meta.color} />
-            <Text style={[styles.typeBadgeText, { color: meta.color }]}>{meta.label}</Text>
+            <Text style={[styles.typeBadgeText, { color: meta.color }]}>{t(meta.labelKey)}</Text>
           </View>
           {device.is_lost && (
             <View style={styles.lostBadge}>
-              <Text style={styles.lostBadgeText}>Perdu</Text>
+              <Text style={styles.lostBadgeText}>{t('devices:lostStatus')}</Text>
             </View>
           )}
         </View>
@@ -215,13 +217,13 @@ export const DeviceCard = React.memo(function DeviceCard({
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.price}>
-            {device.prix ? `${formatPrice(device.prix)} F` : '—'}
+            {device.prix ? `${formatPrice(device.prix)} ${t('devices:currency')}` : '—'}
           </Text>
           {device.garantie && (
             <View style={[styles.guaranteeBadge, { backgroundColor: expired ? '#FEF2F2' : '#F0FDF4' }]}>
               <Ionicons name={expired ? 'close-circle' : 'checkmark-circle'} size={10} color={expired ? '#EF4444' : '#16A34A'} />
               <Text style={[styles.guaranteeText, { color: expired ? '#EF4444' : '#16A34A' }]}>
-                {expired ? 'Expirée' : 'Garantie'}
+                {expired ? t('devices:expired') : t('devices:warranty')}
               </Text>
             </View>
           )}

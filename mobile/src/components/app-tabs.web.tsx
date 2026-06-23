@@ -3,20 +3,23 @@ import { Tabs } from 'expo-router';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '@/constants/theme';
 import { PlusSheet } from '@/components/plus-sheet';
-
-const TABS = [
-  { name: 'index', label: 'Accueil', icon: 'home', iconOutline: 'home-outline' },
-  { name: 'documents', label: 'Documents', icon: 'document-text', iconOutline: 'document-text-outline' },
-  { name: 'devices', label: 'Mes appareils', icon: 'phone-portrait', iconOutline: 'phone-portrait-outline' },
-  { name: 'profile', label: 'Profile', icon: 'person', iconOutline: 'person-outline' },
-];
 
 function TabBar({ state, navigation }: any) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const { t } = useTranslation('navbar');
   const [sheetVisible, setSheetVisible] = useState(false);
+
+  // Tabs labels are translated; route names and icons stay static.
+  const TABS = [
+    { name: 'index', label: t('home'), icon: 'home', iconOutline: 'home-outline' },
+    { name: 'documents', label: t('documents'), icon: 'document-text', iconOutline: 'document-text-outline' },
+    { name: 'devices', label: t('devices'), icon: 'phone-portrait', iconOutline: 'phone-portrait-outline' },
+    { name: 'profile', label: t('profile'), icon: 'person', iconOutline: 'person-outline' },
+  ] as const;
 
   const openSheet = useCallback(() => setSheetVisible(true), []);
   const closeSheet = useCallback(() => setSheetVisible(false), []);

@@ -7,8 +7,10 @@ export const statsService = {
     return res.data;
   },
 
-  async getPerformance() {
-    const res = await apiClient.get<ApiResponse>("declarations/performance");
+  async getPerformance(period?: string) {
+    const res = await apiClient.get<ApiResponse>("declarations/performance", {
+      params: period ? { period } : undefined,
+    });
     return res.data;
   },
 

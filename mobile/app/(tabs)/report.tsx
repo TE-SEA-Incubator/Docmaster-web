@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, router } from 'expo-router';
 import { declarationsService, documentTypesService } from '@/core/api/declarationsService';
 import { useAuthStore } from '@/core/store/useAuthStore';
@@ -16,6 +17,7 @@ const GREEN_DARK = '#1E3A2F';
 
 export default function ReportScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { type: initialType } = useLocalSearchParams<{ type?: string }>();
   const { user } = useAuthStore();
 
@@ -61,21 +63,21 @@ export default function ReportScreen() {
 
   const handleSubmit = useCallback(async () => {
     const errors: string[] = [];
-    if (!form.type_id) errors.push('Type de document');
-    if (!form.nom_complet.trim()) errors.push('Nom complet');
-    if (!form.numero_document.trim()) errors.push('Numéro du document');
-    if (!form.description.trim() || form.description.length < 10) errors.push('Description (min 10 caractères)');
+    if (!form.type_id) errors.push(t('report:docType'));
+    if (!form.nom_complet.trim()) errors.push(t('report:fullName'));
+    if (!form.numero_document.trim()) errors.push(t('report:docNumber'));
+    if (!form.description.trim() || form.description.length < 10) errors.push(t('report:description'));
 
     if (declarationType === 'lost') {
-      if (!form.date_perte.trim()) errors.push('Date de perte');
-      if (!form.lieu_perte.trim()) errors.push('Lieu de perte');
+      if (!form.date_perte.trim()) errors.push(t('report:dateLost'));
+      if (!form.lieu_perte.trim()) errors.push(t('report:placeLost'));
     } else {
-      if (!form.date_perte.trim()) errors.push('Date de trouvaille');
-      if (!form.lieu_perte.trim()) errors.push('Lieu de trouvaille');
+      if (!form.date_perte.trim()) errors.push(t('report:dateFound'));
+      if (!form.lieu_perte.trim()) errors.push(t('report:placeFound'));
     }
 
     if (errors.length > 0) {
-      setFeedback({ visible: true, type: 'warning', title: 'Champs requis', message: `Veuillez remplir: ${errors.join(', ')}` });
+      setFeedback({ visible: true, type: 'warning', title: t('report:requiredFields'), message: t('report:requiredFieldsMsg') + errors.join(', ') });
       return;
     }
 
@@ -106,7 +108,7 @@ export default function ReportScreen() {
 
       setSubmitted(true);
     } catch (err: any) {
-      setFeedback({ visible: true, type: 'error', title: 'Erreur', message: err?.response?.data?.message || 'Une erreur est survenue. Veuillez réessayer.' });
+      setFeedback({ visible: true, type: 'error', title: t('common:error'), message: err?.response?.data?.message || t('report:errorMsg') });
     } finally {
       setSubmitting(false);
     }
@@ -128,10 +130,10 @@ export default function ReportScreen() {
             />
           </View>
           <Text style={{ fontSize: 22, fontWeight: '800', color: '#1A1A1A', textAlign: 'center' }}>
-            Déclaration envoyée
+            {t('report:successTitle')}
           </Text>
           <Text style={{ fontSize: 14, color: '#9CA3AF', textAlign: 'center', lineHeight: 22 }}>
-            Votre déclaration de document {declarationType === 'lost' ? 'perdu' : 'trouvé'} a été enregistrée avec succès.
+            {declarationType === 'lost' ? t('report:successLost') : t('report:successFound')}
           </Text>
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
             <Pressable
@@ -141,7 +143,7 @@ export default function ReportScreen() {
                 backgroundColor: GREEN_DARK, opacity: pressed ? 0.85 : 1,
               })}
             >
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>Retour à l'accueil</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>{t('report:backToHome')}</Text>
             </Pressable>
           </View>
         </View>
@@ -169,10 +171,10 @@ export default function ReportScreen() {
           </Pressable>
           <View>
             <Text style={{ fontSize: 22, fontWeight: '800', color: '#1A1A1A' }}>
-              {declarationType === 'lost' ? 'Déclarer perdu' : 'Déclarer trouvé'}
+              {declarationType === 'lost' ? t('report:lostTitle') : t('report:foundTitle')}
             </Text>
             <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-              {declarationType === 'lost' ? 'Signalez un document perdu' : 'Enregistrez un document trouvé'}
+              {declarationType === 'lost' ? t('report:lostSubtitle') : t('report:foundSubtitle')}
             </Text>
           </View>
         </View>
@@ -180,8 +182,8 @@ export default function ReportScreen() {
         {/* Type toggle */}
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
           {([
-            { key: 'lost' as const, label: 'Perdu', icon: 'alert-circle-outline' as const, color: '#EF4444', bg: '#FEF2F2' },
-            { key: 'found' as const, label: 'Trouvé', icon: 'checkmark-circle-outline' as const, color: '#16A34A', bg: '#F0FDF4' },
+            { key: 'lost' as const, label: t('report:lost'), icon: 'alert-circle-outline' as const, color: '#EF4444', bg: '#FEF2F2' },
+            { key: 'found' as const, label: t('report:found'), icon: 'checkmark-circle-outline' as const, color: '#16A34A', bg: '#F0FDF4' },
           ] as const).map((opt) => (
             <Pressable
               key={opt.key}
@@ -205,7 +207,7 @@ export default function ReportScreen() {
 
         {/* Document type selector */}
         <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, marginLeft: 4 }}>Type de document *</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, marginLeft: 4 }}>{t('report:docType')}</Text>
           {loadingTypes ? (
             <ActivityIndicator size="small" color={PRIMARY} />
           ) : (
@@ -239,32 +241,32 @@ export default function ReportScreen() {
         {/* Form fields */}
         <View style={{ gap: 14 }}>
           <Input
-            label="Nom complet *"
-            placeholder="Nom et prénom du propriétaire"
+            label={t('report:fullName')}
+            placeholder={t('report:fullNamePlaceholder')}
             icon="person-outline"
             value={form.nom_complet}
             onChangeText={(v) => updateForm('nom_complet', v)}
           />
 
           <Input
-            label="Numéro du document *"
-            placeholder="Ex: 123456789"
+            label={t('report:docNumber')}
+            placeholder={t('report:docNumberPlaceholder')}
             icon="finger-print-outline"
             value={form.numero_document}
             onChangeText={(v) => updateForm('numero_document', v)}
           />
 
           <Input
-            label={declarationType === 'lost' ? 'Date de perte *' : 'Date de trouvaille *'}
-            placeholder="AAAA-MM-JJ"
+            label={declarationType === 'lost' ? t('report:dateLost') : t('report:dateFound')}
+            placeholder={t('report:datePlaceholder')}
             icon="calendar-outline"
             value={form.date_perte}
             onChangeText={(v) => updateForm('date_perte', v)}
           />
 
           <Input
-            label={declarationType === 'lost' ? 'Lieu de perte *' : 'Lieu de trouvaille *'}
-            placeholder="Ex: Marché Central, Douala"
+            label={declarationType === 'lost' ? t('report:placeLost') : t('report:placeFound')}
+            placeholder={t('report:placePlaceholder')}
             icon="location-outline"
             value={form.lieu_perte}
             onChangeText={(v) => updateForm('lieu_perte', v)}
@@ -272,7 +274,7 @@ export default function ReportScreen() {
 
           <View style={{ gap: 1.5 }}>
             <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginLeft: 4 }}>
-              Description * <Text style={{ color: '#9CA3AF', fontWeight: '400' }}>(min. 10 caractères)</Text>
+              {t('report:description')} <Text style={{ color: '#9CA3AF', fontWeight: '400' }}>{t('report:descriptionSuffix')}</Text>
             </Text>
             <View style={{
               backgroundColor: '#FFFFFF', borderRadius: 16,
@@ -280,7 +282,7 @@ export default function ReportScreen() {
               paddingHorizontal: 16, paddingVertical: 12, minHeight: 100,
             }}>
               <Input
-                placeholder="Décrivez le document en détail..."
+                placeholder={t('report:descriptionPlaceholder')}
                 value={form.description}
                 onChangeText={(v) => updateForm('description', v)}
                 multiline
@@ -292,7 +294,7 @@ export default function ReportScreen() {
           </View>
 
           <View>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, marginLeft: 4 }}>Urgence</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, marginLeft: 4 }}>{t('report:urgency')}</Text>
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {[1, 2, 3, 4, 5].map((level) => {
                 const selected = Number(form.urgence) === level;
@@ -320,8 +322,8 @@ export default function ReportScreen() {
 
           {declarationType === 'lost' && (
             <Input
-              label="Récompense (optionnel)"
-              placeholder="Montant en FCFA"
+              label={t('report:reward')}
+              placeholder={t('report:rewardPlaceholder')}
               icon="wallet-outline"
               keyboardType="numeric"
               value={form.recompense}
@@ -332,7 +334,7 @@ export default function ReportScreen() {
 
         <View style={{ marginTop: 28 }}>
           <Button
-            title={declarationType === 'lost' ? 'Envoyer la déclaration' : 'Enregistrer le document trouvé'}
+            title={declarationType === 'lost' ? t('report:submitLost') : t('report:submitFound')}
             onPress={handleSubmit}
             loading={submitting}
             icon={declarationType === 'lost' ? 'alert-circle-outline' : 'checkmark-circle-outline'}

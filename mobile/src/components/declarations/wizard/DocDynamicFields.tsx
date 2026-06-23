@@ -2,7 +2,8 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Input } from '@/components/common/Input';
 import { ThemedText } from '@/components/themed-text';
-import { BORDER, TEXT_MUTED, PRIMARY } from './DOC_TYPE_META';
+import { DatePickerInput } from './DatePickerInput';
+import { BORDER, TEXT_MUTED } from './DOC_TYPE_META';
 import type { DocFieldDef } from './DOC_TYPE_META';
 
 type DocDynamicFieldsProps = {
@@ -25,19 +26,30 @@ export const DocDynamicFields: React.FC<DocDynamicFieldsProps> = ({ fields, valu
   return (
     <View style={styles.container}>
       {fields.map((field) => {
-        const isRequired = field.required;
+        const isOptional = !!field.optional;
+        const labelText = isOptional ? `${field.label} (Optionnel)` : `${field.label} *`;
+        const isDate = field.type === 'date';
+
         return (
-          <Input
-            key={field.key}
-            label={isRequired ? `${field.label} *` : field.label}
-            value={values[field.key] || ''}
-            onChangeText={(val) => onChange(field.key, val)}
-            placeholder={field.placeholder || ''}
-            containerStyle={styles.fieldContainer}
-            multiline={field.multiline}
-            keyboardType={field.keyboardType}
-            icon={(field.icon || 'create-outline') as any}
-          />
+          <View key={field.key} style={styles.fieldContainer}>
+            <ThemedText style={styles.fieldLabel}>{labelText}</ThemedText>
+            {isDate ? (
+              <DatePickerInput
+                label=""
+                value={values[field.key] ? new Date(values[field.key]) : new Date()}
+                onChange={(d) => onChange(field.key, d.toISOString().split('T')[0])}
+              />
+            ) : (
+              <Input
+                value={values[field.key] || ''}
+                onChangeText={(val) => onChange(field.key, val)}
+                placeholder={field.placeholder || ''}
+                multiline={field.multiline || field.type === 'textarea'}
+                keyboardType={field.keyboardType}
+                icon={(field.icon || 'create-outline') as any}
+              />
+            )}
+          </View>
         );
       })}
     </View>
@@ -50,6 +62,12 @@ const styles = StyleSheet.create({
   },
   fieldContainer: {
     gap: 6,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginLeft: 4,
   },
   emptyBox: {
     backgroundColor: '#FFFFFF',

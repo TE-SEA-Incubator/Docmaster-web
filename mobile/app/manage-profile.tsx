@@ -3,6 +3,7 @@ import { ScrollView, View, Pressable, ActivityIndicator, Text } from 'react-nati
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { BottomTabInset } from '@/constants/theme';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { authService } from '@/core/api/authService';
@@ -14,6 +15,7 @@ const PRIMARY = '#F5A64B';
 export default function ManageProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
   const { user, fetchProfile } = useAuthStore();
 
   const [form, setForm] = useState({ nom: '', prenom: '', telephone: '', ville: '', pays: '' });
@@ -41,8 +43,8 @@ export default function ManageProfileScreen() {
 
   const handleUpdate = async () => {
     const errs: Record<string, string> = {};
-    if (!form.nom.trim()) errs.nom = 'Requis';
-    if (!form.prenom.trim()) errs.prenom = 'Requis';
+    if (!form.nom.trim()) errs.nom = t('manageProfile:required');
+    if (!form.prenom.trim()) errs.prenom = t('manageProfile:required');
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
 
     setErrors({});
@@ -52,21 +54,21 @@ export default function ManageProfileScreen() {
       const res = await authService.updateProfile(form);
       if (res.success) {
         await fetchProfile();
-        setMessage({ text: 'Profil mis à jour !', type: 'success' });
+        setMessage({ text: t('manageProfile:saved'), type: 'success' });
         setTimeout(() => setMessage({ text: '', type: '' }), 3000);
       } else {
-        setMessage({ text: res.error || 'Erreur', type: 'error' });
+        setMessage({ text: res.error || t('common:error'), type: 'error' });
       }
     } catch {
-      setMessage({ text: 'Erreur réseau', type: 'error' });
+      setMessage({ text: t('common:networkError'), type: 'error' });
     } finally { setLoading(false); }
   };
 
   const handleChangePassword = async () => {
     const errs: Record<string, string> = {};
-    if (!passwordForm.currentPassword) errs.currentPassword = 'Requis';
-    if (!passwordForm.newPassword || passwordForm.newPassword.length < 6) errs.newPassword = '6 car. min';
-    if (passwordForm.newPassword !== passwordForm.confirmNewPassword) errs.confirmNewPassword = 'Ne correspond pas';
+    if (!passwordForm.currentPassword) errs.currentPassword = t('manageProfile:required');
+    if (!passwordForm.newPassword || passwordForm.newPassword.length < 6) errs.newPassword = t('manageProfile:min6Chars');
+    if (passwordForm.newPassword !== passwordForm.confirmNewPassword) errs.confirmNewPassword = t('manageProfile:noMatch');
     if (Object.keys(errs).length > 0) { setPasswordErrors(errs); return; }
 
     setPasswordErrors({});
@@ -77,13 +79,13 @@ export default function ManageProfileScreen() {
       if (res.success) {
         setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
         setIsPasswordOpen(false);
-        setPasswordMessage({ text: 'Mot de passe modifié !', type: 'success' });
+        setPasswordMessage({ text: t('manageProfile:passwordChanged'), type: 'success' });
         setTimeout(() => setPasswordMessage({ text: '', type: '' }), 3000);
       } else {
-        setPasswordMessage({ text: res.error || 'Erreur', type: 'error' });
+        setPasswordMessage({ text: res.error || t('common:error'), type: 'error' });
       }
     } catch {
-      setPasswordMessage({ text: 'Erreur réseau', type: 'error' });
+      setPasswordMessage({ text: t('common:networkError'), type: 'error' });
     } finally { setPasswordLoading(false); }
   };
 
@@ -97,7 +99,7 @@ export default function ManageProfileScreen() {
           <Pressable onPress={() => router.back()} style={{ marginRight: 12 }}>
             <Ionicons name="arrow-back" size={24} color="#1F2937" />
           </Pressable>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937' }}>Manage profile</Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937' }}>{t('manageProfile:title')}</Text>
         </View>
 
         {message.text ? (
@@ -109,22 +111,22 @@ export default function ManageProfileScreen() {
         <View style={{ marginHorizontal: 16, marginTop: 20, gap: 14 }}>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ flex: 1 }}>
-              <Input label="Nom" value={form.nom} onChangeText={(v: string) => setForm(p => ({ ...p, nom: v }))} error={errors.nom} />
+              <Input label={t('manageProfile:nom')} value={form.nom} onChangeText={(v: string) => setForm(p => ({ ...p, nom: v }))} error={errors.nom} />
             </View>
             <View style={{ flex: 1 }}>
-              <Input label="Prénom" value={form.prenom} onChangeText={(v: string) => setForm(p => ({ ...p, prenom: v }))} error={errors.prenom} />
+              <Input label={t('manageProfile:prenom')} value={form.prenom} onChangeText={(v: string) => setForm(p => ({ ...p, prenom: v }))} error={errors.prenom} />
             </View>
           </View>
-          <Input label="Téléphone" value={form.telephone} onChangeText={(v: string) => setForm(p => ({ ...p, telephone: v }))} keyboardType="phone-pad" />
+          <Input label={t('manageProfile:telephone')} value={form.telephone} onChangeText={(v: string) => setForm(p => ({ ...p, telephone: v }))} keyboardType="phone-pad" />
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ flex: 1 }}>
-              <Input label="Ville" value={form.ville} onChangeText={(v: string) => setForm(p => ({ ...p, ville: v }))} />
+              <Input label={t('manageProfile:ville')} value={form.ville} onChangeText={(v: string) => setForm(p => ({ ...p, ville: v }))} />
             </View>
             <View style={{ flex: 1 }}>
-              <Input label="Pays" value={form.pays} onChangeText={(v: string) => setForm(p => ({ ...p, pays: v }))} />
+              <Input label={t('manageProfile:pays')} value={form.pays} onChangeText={(v: string) => setForm(p => ({ ...p, pays: v }))} />
             </View>
           </View>
-          <Button title={loading ? 'Enregistrement...' : 'Enregistrer'} onPress={handleUpdate} loading={loading} />
+          <Button title={loading ? t('manageProfile:saving') : t('manageProfile:save')} onPress={handleUpdate} loading={loading} />
         </View>
 
         <View style={{ marginHorizontal: 16, marginTop: 28, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
@@ -134,7 +136,7 @@ export default function ManageProfileScreen() {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Ionicons name="lock-closed-outline" size={20} color="#4B5563" />
-              <Text style={{ fontSize: 15, fontWeight: '500', color: '#1F2937' }}>Modifier le mot de passe</Text>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: '#1F2937' }}>{t('manageProfile:changePassword')}</Text>
             </View>
             <Ionicons name={isPasswordOpen ? 'chevron-up' : 'chevron-forward'} size={18} color="#D1D5DB" />
           </Pressable>
@@ -146,10 +148,10 @@ export default function ManageProfileScreen() {
                   <Text style={{ fontSize: 12, fontWeight: '600', color: passwordMessage.type === 'success' ? '#15803D' : '#EF4444', textAlign: 'center' }}>{passwordMessage.text}</Text>
                 </View>
               ) : null}
-              <Input label="Mot de passe actuel" secureTextEntry value={passwordForm.currentPassword} onChangeText={(v: string) => setPasswordForm(p => ({ ...p, currentPassword: v }))} error={passwordErrors.currentPassword} />
-              <Input label="Nouveau mot de passe" secureTextEntry value={passwordForm.newPassword} onChangeText={(v: string) => setPasswordForm(p => ({ ...p, newPassword: v }))} error={passwordErrors.newPassword} />
-              <Input label="Confirmer" secureTextEntry value={passwordForm.confirmNewPassword} onChangeText={(v: string) => setPasswordForm(p => ({ ...p, confirmNewPassword: v }))} error={passwordErrors.confirmNewPassword} />
-              <Button title={passwordLoading ? 'Modification...' : 'Modifier'} variant="secondary" onPress={handleChangePassword} loading={passwordLoading} />
+              <Input label={t('manageProfile:currentPassword')} secureTextEntry value={passwordForm.currentPassword} onChangeText={(v: string) => setPasswordForm(p => ({ ...p, currentPassword: v }))} error={passwordErrors.currentPassword} />
+              <Input label={t('manageProfile:newPassword')} secureTextEntry value={passwordForm.newPassword} onChangeText={(v: string) => setPasswordForm(p => ({ ...p, newPassword: v }))} error={passwordErrors.newPassword} />
+              <Input label={t('manageProfile:confirmPassword')} secureTextEntry value={passwordForm.confirmNewPassword} onChangeText={(v: string) => setPasswordForm(p => ({ ...p, confirmNewPassword: v }))} error={passwordErrors.confirmNewPassword} />
+              <Button title={passwordLoading ? t('manageProfile:modifying') : t('manageProfile:modify')} variant="secondary" onPress={handleChangePassword} loading={passwordLoading} />
             </View>
           )}
         </View>

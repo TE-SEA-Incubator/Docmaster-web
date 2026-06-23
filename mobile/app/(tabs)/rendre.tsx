@@ -3,6 +3,7 @@ import { View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert } from
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { declarationsService } from '@/core/api/declarationsService';
@@ -34,6 +35,7 @@ function formatDate(s?: string): string {
 }
 
 export default function RendreScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
@@ -52,10 +54,10 @@ export default function RendreScreen() {
         setDeclaration(res.data);
         setCurrentStep(getStepFromStatus(res.data.status as DeclarationStatus));
       } else {
-        Alert.alert('Erreur', 'Impossible de charger les détails de la déclaration');
+        Alert.alert(t('common:error'), t('rendre:loadError'));
       }
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.message || 'Erreur de chargement');
+      Alert.alert(t('common:error'), err?.response?.data?.message || t('rendre:loadGenericError'));
     } finally {
       setLoading(false);
     }
@@ -80,20 +82,20 @@ export default function RendreScreen() {
   const handleValidateCode = async () => {
     const finalCode = code.join('');
     if (finalCode.length < 6) {
-      Alert.alert('Code incomplet', 'Veuillez entrer les 6 chiffres du code de sécurité');
+      Alert.alert(t('rendre:codeIncomplete'), t('rendre:codeInstructions'));
       return;
     }
     setValidatingCode(true);
     try {
       const res = await claimsService.validateRecoveryCode({ docId: id!, code: finalCode });
       if (res.success) {
-        Alert.alert('Succès', res.message || 'Code validé avec succès !');
+        Alert.alert(t('common:success'), res.message || t('rendre:codeValidated'));
         setCurrentStep(3);
       } else {
-        Alert.alert('Code invalide', res.message || 'Le code saisi est incorrect');
+        Alert.alert(t('rendre:invalidCode'), res.message || t('rendre:invalidCodeMessage'));
       }
     } catch (err: any) {
-      Alert.alert('Erreur', err?.response?.data?.message || 'Erreur lors de la validation du code');
+      Alert.alert(t('common:error'), err?.response?.data?.message || t('rendre:validationError'));
     } finally {
       setValidatingCode(false);
     }
@@ -111,9 +113,9 @@ export default function RendreScreen() {
     return (
       <SafeAreaView className="flex-1 bg-[#F4EFE6] items-center justify-center p-6 gap-4">
         <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
-        <ThemedText className="text-lg font-bold text-textMain">Déclaration introuvable</ThemedText>
+        <ThemedText className="text-lg font-bold text-textMain">{t('rendre:declarationNotFound')}</ThemedText>
         <Pressable onPress={() => router.back()} className="px-6 py-3 bg-primary rounded-2xl">
-          <ThemedText className="text-white font-bold">Retour</ThemedText>
+          <ThemedText className="text-white font-bold">{t('common:back')}</ThemedText>
         </Pressable>
       </SafeAreaView>
     );
@@ -135,7 +137,7 @@ export default function RendreScreen() {
           <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full bg-white items-center justify-center border border-borderMain">
             <Ionicons name="chevron-back" size={20} color="#1A1A1A" />
           </Pressable>
-          <ThemedText className="text-base font-bold text-textMain">Rendre le document</ThemedText>
+          <ThemedText className="text-base font-bold text-textMain">{t('rendre:title')}</ThemedText>
           <View className="w-10" />
         </View>
 
@@ -151,13 +153,13 @@ export default function RendreScreen() {
             </View>
             <View className="flex-1">
               <ThemedText className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-0.5">
-                Statut de la remise
+                {t('rendre:statusLabel')}
               </ThemedText>
               <ThemedText className="text-base font-bold text-white" numberOfLines={2}>
-                {currentStep >= 3 ? 'Document remis avec succès' :
-                 currentStep >= 2 ? 'Paiement confirmé par le propriétaire' :
-                 currentStep >= 1 ? 'Propriétaire identifié' :
-                 'En attente de correspondance'}
+                {currentStep >= 3 ? t('rendre:statusReturned') :
+                 currentStep >= 2 ? t('rendre:statusPaymentConfirmed') :
+                 currentStep >= 1 ? t('rendre:statusOwnerIdentified') :
+                 t('rendre:statusWaiting')}
               </ThemedText>
             </View>
             <ThemedText className="text-3xl font-black text-white/20">{progressPercent}%</ThemedText>
@@ -171,19 +173,19 @@ export default function RendreScreen() {
         <ThemedView className="bg-white rounded-[32px] border border-borderMain p-6 shadow-sm mb-6">
           <View className="flex-row justify-between items-center mb-6">
             <ThemedText className="text-base font-bold text-textMain">
-              Suivi #{id?.slice(0, 8).toUpperCase()}
+              {t('rendre:trackingId')}{id?.slice(0, 8).toUpperCase()}
             </ThemedText>
             <View className="flex-row items-center gap-1.5 px-3 py-1 bg-green-50 rounded-full border border-green-100">
               <View className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-              <ThemedText className="text-[10px] font-bold text-green-700 uppercase">ACTIF</ThemedText>
+              <ThemedText className="text-[10px] font-bold text-green-700 uppercase">{t('rendre:statusActive')}</ThemedText>
             </View>
           </View>
 
           {[
-            { label: 'Document trouvé signalé', done: currentStep >= 0, active: currentStep === 0, date: formatDate(declaration.created_at), icon: 'hand-left' },
-            { label: 'Propriétaire identifié', done: currentStep >= 1, active: currentStep === 1, date: declaration.matched_at ? formatDate(declaration.matched_at) : '—', icon: 'people' },
-            { label: 'Paiement reçu du propriétaire', done: currentStep >= 2, active: currentStep === 2, date: currentStep >= 2 ? 'Effectué' : 'En attente', icon: 'cash' },
-            { label: 'Remise & Gains versés', done: currentStep >= 3, active: currentStep === 3, date: currentStep >= 3 ? formatDate(declaration.returned_at) : 'À venir', icon: 'checkmark-circle' },
+            { label: t('rendre:stepFound'), done: currentStep >= 0, active: currentStep === 0, date: formatDate(declaration.created_at), icon: 'hand-left' },
+            { label: t('rendre:stepOwner'), done: currentStep >= 1, active: currentStep === 1, date: declaration.matched_at ? formatDate(declaration.matched_at) : '—', icon: 'people' },
+            { label: t('rendre:stepPayment'), done: currentStep >= 2, active: currentStep === 2, date: currentStep >= 2 ? t('rendre:stepPaymentDone') : t('rendre:stepPaymentPending'), icon: 'cash' },
+            { label: t('rendre:stepReturned'), done: currentStep >= 3, active: currentStep === 3, date: currentStep >= 3 ? formatDate(declaration.returned_at) : t('rendre:stepUpcoming'), icon: 'checkmark-circle' },
           ].map((step, idx) => (
             <View key={idx} className="flex-row gap-3 mb-6 relative">
               {idx < 3 && (
@@ -219,7 +221,7 @@ export default function RendreScreen() {
               <Ionicons name="cash" size={22} color="#D97706" />
             </View>
             <View>
-              <ThemedText className="text-[10px] font-bold text-textMuted uppercase">Gains</ThemedText>
+              <ThemedText className="text-[10px] font-bold text-textMuted uppercase">{t('common:earnings')}</ThemedText>
               <ThemedText className="text-lg font-extrabold text-textMain">{rewardAmount.toLocaleString()} FCFA</ThemedText>
             </View>
           </ThemedView>
@@ -228,7 +230,7 @@ export default function RendreScreen() {
               <Ionicons name="star" size={22} color="#7C3AED" />
             </View>
             <View>
-              <ThemedText className="text-[10px] font-bold text-textMuted uppercase">Points</ThemedText>
+              <ThemedText className="text-[10px] font-bold text-textMuted uppercase">{t('common:points')}</ThemedText>
               <ThemedText className="text-lg font-extrabold text-purple-700">+{pointsReward} pts</ThemedText>
             </View>
           </ThemedView>
@@ -244,22 +246,33 @@ export default function RendreScreen() {
               </View>
             </View>
 
-            <ThemedText className="text-lg font-bold text-textMain mb-2">Validation de la remise</ThemedText>
+            <ThemedText className="text-lg font-bold text-textMain mb-2">{t('rendre:validationTitle')}</ThemedText>
             <ThemedText className="text-[12px] text-textMuted leading-relaxed mb-8 text-center px-4">
-              Une fois en agence ou face au propriétaire, saisissez le code qu'il vous fournira pour confirmer la remise et percevoir vos gains.
+              {t('rendre:validationDesc')}
             </ThemedText>
 
             <View className="w-full gap-6">
               <View>
                 <ThemedText className="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-4 text-center">
-                  Code de sécurité
+                  {t('rendre:securityCode')}
                 </ThemedText>
                 <View className="flex-row justify-center gap-2">
                   {code.map((digit, idx) => (
                     <TextInput
                       key={idx}
                       ref={(el) => { inputRefs.current[idx] = el; }}
-                      className="w-10 h-14 bg-[#FAF7F2] border border-borderMain rounded-2xl text-center font-bold text-xl text-textMain outline-none"
+                      style={{
+                        width: 40,
+                        height: 56,
+                        backgroundColor: '#FAF7F2',
+                        borderWidth: 1,
+                        borderColor: '#E5E7EB',
+                        borderRadius: 16,
+                        textAlign: 'center',
+                        fontWeight: 'bold',
+                        fontSize: 20,
+                        color: '#1A1A1A',
+                      }}
                       maxLength={1}
                       keyboardType="number-pad"
                       value={digit}
@@ -282,7 +295,7 @@ export default function RendreScreen() {
                 ) : (
                   <>
                     <Ionicons name="checkmark-circle" size={20} color="white" />
-                    <ThemedText className="text-white font-bold text-sm">Valider & percevoir mes gains</ThemedText>
+                    <ThemedText className="text-white font-bold text-sm">{t('rendre:validateAndEarn')}</ThemedText>
                   </>
                 )}
               </Pressable>
@@ -290,7 +303,7 @@ export default function RendreScreen() {
               <View className="flex-row items-center justify-center gap-2">
                 <Ionicons name="lock-closed" size={10} color="#9CA3AF" />
                 <ThemedText className="text-[10px] text-textMuted italic">
-                  Le code sera fourni par le propriétaire après validation du paiement
+                  {t('rendre:codeHint')}
                 </ThemedText>
               </View>
             </View>
@@ -303,9 +316,9 @@ export default function RendreScreen() {
             <View className="w-20 h-20 rounded-full bg-green-50 items-center justify-center mb-5">
               <Ionicons name="checkmark-circle" size={40} color="#16A34A" />
             </View>
-            <ThemedText className="text-lg font-bold text-green-700 mb-2">Document remis avec succès !</ThemedText>
+            <ThemedText className="text-lg font-bold text-green-700 mb-2">{t('rendre:successTitle')}</ThemedText>
             <ThemedText className="text-[12px] text-textMuted text-center mb-6">
-              Vos gains de {rewardAmount.toLocaleString()} FCFA ont été crédités sur votre portefeuille.
+              {t('rendre:successDesc', { amount: rewardAmount.toLocaleString() })}
             </ThemedText>
           </ThemedView>
         )}
@@ -313,7 +326,7 @@ export default function RendreScreen() {
         {/* Document Summary */}
         <ThemedView className="bg-white rounded-[32px] border border-borderMain p-6 shadow-sm mb-6">
           <ThemedText className="text-[11px] font-bold text-textMuted uppercase tracking-widest mb-4">
-            Résumé du document
+            {t('rendre:summaryTitle')}
           </ThemedText>
 
           <View className="flex-row items-center gap-4 p-4 bg-[#FAF7F2] rounded-2xl border border-borderMain/50">
@@ -322,10 +335,10 @@ export default function RendreScreen() {
             </View>
             <View className="flex-1">
               <ThemedText className="text-[13px] font-bold text-textMain">
-                {declaration.doc_type || 'Document'} {declaration.document_number ? `N°${declaration.document_number}` : ''}
+                {declaration.doc_type || t('rendre:documentFallback')} {declaration.document_number ? `N°${declaration.document_number}` : ''}
               </ThemedText>
               <ThemedText className="text-[10px] text-textMuted italic mt-0.5">
-                <Ionicons name="location" size={9} /> {declaration.ville || declaration.lieu_trouvee || 'Non spécifié'}
+                <Ionicons name="location" size={9} /> {declaration.ville || declaration.lieu_trouvee || t('rendre:unspecified')}
               </ThemedText>
             </View>
           </View>
@@ -340,7 +353,7 @@ export default function RendreScreen() {
                   {declaration.counterPart.nom} {declaration.counterPart.prenom}
                 </ThemedText>
                 <ThemedText className="text-[10px] text-green-700/80">
-                  Propriétaire du document
+                  {t('rendre:documentOwner')}
                 </ThemedText>
               </View>
             </View>
@@ -357,19 +370,19 @@ export default function RendreScreen() {
           <View className="flex-1 mr-3">
             <View className="flex-row items-center gap-1.5 mb-0.5">
               <ThemedText className="text-[12px] font-black text-textMain truncate" numberOfLines={1}>
-                {declaration.doc_type || 'Document'}
+                {declaration.doc_type || t('rendre:documentFallback')}
               </ThemedText>
               <View className="w-1.5 h-1.5 rounded-full bg-primary" />
               <ThemedText className="text-[12px] text-green-600 font-black">+{rewardAmount.toLocaleString()} FCFA</ThemedText>
             </View>
-            <ThemedText className="text-[10px] text-textMuted">Validation requise • Code à 6 chiffres</ThemedText>
+            <ThemedText className="text-[10px] text-textMuted">{t('rendre:validationRequired')}</ThemedText>
           </View>
           <Pressable
             onPress={() => inputRefs.current[0]?.focus()}
             style={{ backgroundColor: GREEN_DARK }}
             className="px-6 py-3 rounded-2xl shadow-lg active:scale-95"
           >
-            <ThemedText className="text-white font-black text-[12px]">Valider</ThemedText>
+            <ThemedText className="text-white font-black text-[12px]">{t('rendre:validate')}</ThemedText>
           </Pressable>
         </View>
       )}

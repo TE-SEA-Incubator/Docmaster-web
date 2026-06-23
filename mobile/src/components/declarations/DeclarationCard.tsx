@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 type DeclarationStatus = 'SEARCHING' | 'MATCHED' | 'RETURNED' | 'AVAILABLE' | 'CANCELLED' | 'CLAIMED';
 
@@ -39,6 +40,7 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
   declarationId,
 }) => {
   const router = useRouter();
+  const { t } = useTranslation();
   const isMatch = status === 'MATCHED' || status === 'RETURNED';
   const colorKey = isMatch ? 'green' : (type === 'LOST' ? (hasPotentialMatches ? 'orange' : 'red') : 'blue');
   const palette = PALETTES[colorKey as keyof typeof PALETTES] || PALETTES.red;
@@ -49,12 +51,19 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
   if (status === 'MATCHED') currentStep = 3;
   if (status === 'RETURNED' || status === 'CLAIMED') currentStep = 4;
 
-  const steps = type === 'LOST' 
-    ? ['Dépôt', 'Recherche', 'Match', 'Récupéré']
-    : ['Trouvé', 'Signalé', 'Propriétaire', 'Remis'];
+  const steps = t(
+    type === 'LOST' ? 'declarations:stepsLost' : 'declarations:stepsFound',
+    { returnObjects: true }
+  ) as string[];
+
+  const headerTitle = isMatch
+    ? t('declarations:matchedTitle')
+    : (type === 'LOST' ? t('declarations:lostTitle') : t('declarations:foundTitle'));
+
+  const statusLabel = t(`declarations:${status.toLowerCase()}`);
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[styles.container, { borderColor: palette.border, backgroundColor: '#FFFFFF' }]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -62,17 +71,17 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
       {/* Header */}
       <View style={[styles.header, { backgroundColor: palette.bg, borderBottomColor: palette.light }]}>
         <View style={styles.headerLeft}>
-          <Ionicons 
-            name={isMatch ? "checkmark-circle" : (type === 'LOST' ? "warning" : "hand-left")} 
-            size={16} 
-            color={palette.text} 
+          <Ionicons
+            name={isMatch ? "checkmark-circle" : (type === 'LOST' ? "warning" : "hand-left")}
+            size={16}
+            color={palette.text}
           />
           <Text style={[styles.headerTitle, { color: palette.text }]}>
-            {isMatch ? "Document Matché !" : (type === 'LOST' ? "Objet Perdu" : "Objet Trouvé")}
+            {headerTitle}
           </Text>
         </View>
         <View style={[styles.badge, { backgroundColor: palette.text }]}>
-          <Text style={styles.badgeText}>{status}</Text>
+          <Text style={styles.badgeText}>{statusLabel}</Text>
         </View>
       </View>
 
@@ -83,8 +92,8 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
             <FontAwesome5 name={getIconName(docType)} size={20} color={palette.text} />
           </View>
           <View style={styles.docText}>
-            <Text style={styles.docName}>{docType} — {ownerName || 'Inconnu'}</Text>
-            <Text style={styles.docRef}>Réf: {reference}</Text>
+            <Text style={styles.docName}>{docType} — {ownerName || t('declarations:unknown')}</Text>
+            <Text style={styles.docRef}>{t('declarations:reference')}{reference}</Text>
           </View>
         </View>
 
@@ -93,14 +102,14 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
           <View style={styles.stepLineContainer}>
              <View style={[styles.stepLine, { backgroundColor: palette.light }]} />
              <View style={[
-               styles.stepLineActive, 
-               { 
-                 backgroundColor: palette.border, 
-                 width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` 
+               styles.stepLineActive,
+               {
+                 backgroundColor: palette.border,
+                 width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`
                }
              ]} />
           </View>
-          
+
           <View style={styles.stepsContainer}>
             {steps.map((step, i) => {
               const isActive = i <= currentStep - 1;
@@ -108,8 +117,8 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
               return (
                 <View key={i} style={styles.stepItem}>
                   <View style={[
-                    styles.stepCircle, 
-                    { 
+                    styles.stepCircle,
+                    {
                       backgroundColor: isActive ? palette.border : '#FFFFFF',
                       borderColor: isActive ? palette.border : palette.light,
                       borderWidth: isCurrent ? 2 : 1,
@@ -118,7 +127,7 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
                     {isActive && <Ionicons name="checkmark" size={10} color="#FFFFFF" />}
                   </View>
                   <Text style={[
-                    styles.stepLabel, 
+                    styles.stepLabel,
                     { color: isActive ? palette.text : '#999', fontWeight: isCurrent ? 'bold' : 'normal' }
                   ]}>
                     {step}
@@ -141,7 +150,7 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
             activeOpacity={0.8}
           >
             <Ionicons name="handshake-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.matchActionText}>Récupérer</Text>
+            <Text style={styles.matchActionText}>{t('declarations:recover')}</Text>
           </TouchableOpacity>
         )}
         {status === 'MATCHED' && type === 'FOUND' && (
@@ -155,7 +164,7 @@ export const DeclarationCard: React.FC<DeclarationCardProps> = React.memo(({
             activeOpacity={0.8}
           >
             <Ionicons name="return-down-back-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.matchActionText}>Rendre</Text>
+            <Text style={styles.matchActionText}>{t('declarations:return')}</Text>
           </TouchableOpacity>
         )}
       </View>

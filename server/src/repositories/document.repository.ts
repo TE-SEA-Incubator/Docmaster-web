@@ -8,13 +8,21 @@ export class DocumentRepository {
   async createUserDocument(data: Partial<UserDocument>): Promise<UserDocument> {
     const query = `
       INSERT INTO my_documents (
-        user_id, type_doc, numero_doc, nom_sur_doc, 
+        user_id, type_doc, numero_doc, nom_sur_doc,
         date_expiration, date_delivrance, nom_autorite, notes,
         fingerprint, photo_recto, photo_verso, is_protected,
-        validity_option
-      ) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+        validity_option, is_archived, archived_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *`;
+
+    // Auto-archive if validity_option=EXPIRING and date_expiration is already in the past
+    const dateExp = data.date_expiration ? new Date(data.date_expiration) : null;
+    const shouldArchive = !!(
+      data.is_archived ||
+      (data.validity_option === 'EXPIRING' && dateExp && dateExp.getTime() < Date.now())
+    );
+    const archivedAt = shouldArchive ? new Date() : (data.archived_at || null);
 
     const { rows } = await pool.query(query, [
       data.user_id,
@@ -29,7 +37,9 @@ export class DocumentRepository {
       data.photo_recto,
       data.photo_verso,
       data.is_protected !== undefined ? data.is_protected : true,
-      data.validity_option || 'EXPIRING'
+      data.validity_option || 'EXPIRING',
+      shouldArchive,
+      archivedAt
     ]);
 
     return rows[0];

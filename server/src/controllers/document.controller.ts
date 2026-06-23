@@ -145,6 +145,33 @@ export const reportDocumentLost = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Archive a single document by id. Used by mobile to immediately archive
+ * a document whose date_expiration has passed (avoids waiting for the 2 AM cron).
+ */
+export const archiveDocument = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Utilisateur non authentifié' });
+    }
+    const docId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+    const doc = await documentService.archiveDocument(docId, userId);
+    if (!doc) {
+      return res.status(404).json({ success: false, message: 'Document introuvable ou accès non autorisé' });
+    }
+    res.json({
+      success: true,
+      message: 'Document archivé',
+      data: doc
+    });
+  } catch (error: any) {
+    console.error('❌ Erreur archivage document:', error);
+    res.status(500).json({ success: false, message: error.message || 'Erreur lors de l\'archivage' });
+  }
+};
+
 export const getDocumentMedia = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;

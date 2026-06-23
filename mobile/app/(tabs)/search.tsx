@@ -3,6 +3,7 @@ import { View, Text, TextInput, ScrollView, Pressable, ActivityIndicator, Image,
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { declarationsService } from '@/core/api/declarationsService';
 import { documentsService } from '@/core/api/documentsService';
 import { BottomTabInset } from '@/constants/theme';
@@ -45,6 +46,7 @@ type SearchResult = {
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -72,8 +74,8 @@ export default function SearchScreen() {
               id: d.id,
               type: 'declaration',
               title: docName,
-              subtitle: d.owner_name || (d as any).ville || 'Lieu non spécifié',
-              status: isLost ? 'Perdu' : 'Trouvé',
+              subtitle: d.owner_name || (d as any).ville || t('search:locationNotSpecified'),
+              status: isLost ? t('search:lost') : t('search:found'),
               date: d.created_at,
               icon: getDocIcon(docName),
               color: isLost ? '#EF4444' : '#16A34A',
@@ -98,9 +100,9 @@ export default function SearchScreen() {
               allResults.push({
                 id: d.id,
                 type: 'document',
-                title: d.type_doc || 'Document',
-                subtitle: d.numero_doc || d.nom_sur_doc || '—',
-                status: d.is_lost ? 'Perdu' : 'Actif',
+                title: d.type_doc || t('declarations:document'),
+                subtitle: d.numero_doc || d.nom_sur_doc || t('common:noResult'),
+                status: d.is_lost ? t('search:lost') : t('search:active'),
                 date: d.created_at || '',
                 icon: getDocIcon(d.type_doc),
                 color: d.is_lost ? '#EF4444' : '#16A34A',
@@ -131,8 +133,8 @@ export default function SearchScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ marginBottom: 20 }}>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>Recherche</Text>
-          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>Documents et déclarations</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>{t('search:title')}</Text>
+          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t('search:subtitle')}</Text>
         </View>
 
         <View style={{
@@ -144,7 +146,7 @@ export default function SearchScreen() {
           <Ionicons name="search-outline" size={20} color="#9CA3AF" />
           <TextInput
             style={{ flex: 1, fontSize: 15, color: '#1A1A1A' }}
-            placeholder="Nom, numéro, type de document..."
+            placeholder={t('search:placeholder')}
             placeholderTextColor="#9CA3AF"
             value={query}
             onChangeText={setQuery}
@@ -174,7 +176,7 @@ export default function SearchScreen() {
                   fontSize: 12, fontWeight: '700',
                   color: mode === m ? '#FFFFFF' : '#6B7280',
                 }}>
-                  {m === 'tous' ? 'Tout' : m === 'declarations' ? 'Déclarations' : 'Documents'}
+                  {m === 'tous' ? t('search:all') : m === 'declarations' ? t('search:declarations') : t('search:documents')}
                 </Text>
               </Pressable>
             ))}
@@ -184,7 +186,7 @@ export default function SearchScreen() {
         {loading ? (
           <View style={{ paddingVertical: 60, alignItems: 'center' }}>
             <ActivityIndicator size="large" color={PRIMARY} />
-            <Text style={{ marginTop: 12, color: '#9CA3AF', fontSize: 13 }}>Recherche en cours...</Text>
+            <Text style={{ marginTop: 12, color: '#9CA3AF', fontSize: 13 }}>{t('search:searching')}</Text>
           </View>
         ) : !searched ? (
           <View style={{ paddingVertical: 60, alignItems: 'center', gap: 12 }}>
@@ -195,10 +197,10 @@ export default function SearchScreen() {
               <Ionicons name="search-outline" size={34} color={PRIMARY} />
             </View>
             <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>
-              Recherchez un document
+              {t('search:emptyTitle')}
             </Text>
             <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', lineHeight: 20, maxWidth: 280 }}>
-              Tapez un nom, numéro ou type de document pour trouver des déclarations publiques ou vos documents
+              {t('search:emptyDesc')}
             </Text>
           </View>
         ) : results.length === 0 ? (
@@ -209,15 +211,15 @@ export default function SearchScreen() {
             }}>
               <Ionicons name="search-outline" size={28} color="#D1D5DB" />
             </View>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1A1A1A' }}>Aucun résultat</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1A1A1A' }}>{t('search:noResultsTitle')}</Text>
             <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>
-              Aucun document trouvé pour "{query}"
+              {t('search:noResultsDesc').replace('{{query}}', query)}
             </Text>
           </View>
         ) : (
           <View style={{ gap: 10 }}>
             <Text style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 4 }}>
-              {results.length} résultat{results.length > 1 ? 's' : ''}
+              {results.length} {results.length > 1 ? t('search:results') : t('search:result')}
             </Text>
             {results.map((item) => (
               <Pressable

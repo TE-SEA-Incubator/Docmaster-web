@@ -8,7 +8,8 @@ import { subscriptionsService, paymentsService } from '@/core/api';
 import type { Plan, Transaction } from '@/types';
 import { Spacing, Colors } from '@/constants/theme';
 import { Button } from '@/components/common/Button';
-import { PaymentModal } from '@/components/modals/PaymentModal';
+import { PaymentModal, type PaymentMethod } from '@/components/modals/PaymentModal';
+import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { ActionFeedbackModal, type FeedbackType } from '@/components/feedback/ActionFeedbackModal';
 
@@ -17,6 +18,7 @@ const GREEN_DARK = '#1E3A2F';
 const { width } = Dimensions.get('window');
 
 export default function SubscriptionScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
 
@@ -70,12 +72,15 @@ export default function SubscriptionScreen() {
     loadData();
   };
 
-  const handlePay = async (method: 'orange' | 'mtn', phone: string) => {
+  const handlePay = async (method: PaymentMethod, phone: string) => {
     if (!selectedPlan) return;
     setProcessing(true);
     setPayError('');
     try {
-      const paymentMethod = method === 'orange' ? 'ORANGE_MONEY' : 'MTN_MOMO';
+      const paymentMethod =
+        method === 'orange' ? 'ORANGE_MONEY'
+        : method === 'mtn' ? 'MTN_MOMO'
+        : 'POINTS';
       const months = billingPeriod === 'annual' ? 12 : 1;
       const result = await subscriptionsService.subscribe({
         planId: selectedPlan.id,
@@ -84,15 +89,28 @@ export default function SubscriptionScreen() {
         phone,
       });
       if (result.success) {
-        setPollingStatus('Validation du paiement en cours...');
-        startPolling();
+        if (paymentMethod === 'POINTS') {
+          // Paiement par points : pas de polling, succès immédiat
+          setProcessing(false);
+          setModalOpen(false);
+          setFeedback({
+            visible: true,
+            type: 'success',
+            title: t('subscription:activatedTitle'),
+            message: t('subscription:activatedPointsMessage'),
+          });
+          loadData();
+        } else {
+          setPollingStatus(t('subscription:validatingPayment'));
+          startPolling();
+        }
       } else {
-        setPayError(result.message || 'Erreur lors de la souscription');
+        setPayError(result.message || t('subscription:subscribeError'));
       }
     } catch (e: any) {
-      setPayError(e.response?.data?.message || 'Erreur de paiement');
+      setPayError(e.response?.data?.message || t('subscription:paymentError'));
     } finally {
-      setProcessing(false);
+      if (method === 'points') setProcessing(false);
     }
   };
 
@@ -104,7 +122,7 @@ export default function SubscriptionScreen() {
           clearInterval(interval);
           setPollingStatus(null);
           setModalOpen(false);
-          setFeedback({ visible: true, type: 'success', title: 'Abonnement activé', message: 'Votre abonnement a été activé avec succès. Profitez de toutes les fonctionnalités premium !' });
+          setFeedback({ visible: true, type: 'success', title: t('subscription:activatedTitle'), message: t('subscription:activatedSuccessMessage') });
           loadData();
         }
       } catch (e) {
@@ -121,23 +139,23 @@ export default function SubscriptionScreen() {
     if (!raw) return [];
     if (typeof raw === 'object' && !Array.isArray(raw)) {
       const featureMap: Record<string, { label: string; icon: string }> = {
-        objects: { label: 'Objets personnels', icon: 'mobile-outline' },
-        docs_per_type: { label: 'Déclarations actives', icon: 'shield-checkmark-outline' },
-        vault: { label: 'Coffre-fort numérique', icon: 'lock-closed-outline' },
-        prioritaire: { label: 'Support Prioritaire', icon: 'headset-outline' },
-        certification: { label: 'Certification', icon: 'ribbon-outline' },
-        matching_speed: { label: 'Vitesse Matching', icon: 'flash-outline' },
+        objects: { label: t('subscription:featureObjects'), icon: 'mobile-outline' },
+        docs_per_type: { label: t('subscription:featureActiveDeclarations'), icon: 'shield-checkmark-outline' },
+        vault: { label: t('subscription:featureDigitalVault'), icon: 'lock-closed-outline' },
+        prioritaire: { label: t('subscription:featurePrioritySupport'), icon: 'headset-outline' },
+        certification: { label: t('subscription:featureCertification'), icon: 'ribbon-outline' },
+        matching_speed: { label: t('subscription:featureMatchingSpeed'), icon: 'flash-outline' },
       };
       return Object.entries(raw).map(([key, val]) => ({
         label: featureMap[key]?.label || key,
-        value: val === true ? 'Inclus' : val === false ? 'Non inclus' : String(val),
+        value: val === true ? t('subscription:included') : val === false ? t('subscription:notIncluded') : String(val),
         icon: featureMap[key]?.icon || 'check',
       }));
     }
     return Array.isArray(raw) ? raw.map(f => (typeof f === 'string' ? { label: '', value: f, icon: 'check' } : f)) : [];
   };
 
-  const currentPlanName = usage?.plan_name || 'Gratuit';
+  const currentPlanName = usage?.plan_name || t('subscription:free');
   const percentage = usage?.percentage || 0;
   const displayedPlans = billingPeriod === 'annual'
     ? plans.map(p => ({ ...p, price: Math.round((p.price || 0) * 12 * 0.8) }))
@@ -150,7 +168,7 @@ export default function SubscriptionScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#1A1A1A" />
         </Pressable>
-        <Text style={styles.headerTitle}>Abonnement</Text>
+        <Text style={styles.headerTitle}>{t('subscription:title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -164,11 +182,11 @@ export default function SubscriptionScreen() {
           <View style={styles.planHeader}>
             <View style={styles.planBadge}>
               <Ionicons name="flash" size={12} color={PRIMARY} />
-              <Text style={styles.planBadgeText}>PLAN ACTUEL</Text>
+              <Text style={styles.planBadgeText}>{t('subscription:currentPlanBadge')}</Text>
             </View>
             <ThemedText style={styles.currentPlanName}>{currentPlanName}</ThemedText>
             <Text style={styles.usageText}>
-               {usage?.usage?.objects || 0} / {usage?.limits?.objects || 0} objets utilisés
+               {t('subscription:objectsUsed', { used: usage?.usage?.objects || 0, total: usage?.limits?.objects || 0 })}
             </Text>
           </View>
           
@@ -177,7 +195,7 @@ export default function SubscriptionScreen() {
                 <View style={[styles.progressBarFill, { width: `${percentage}%` }]} />
              </View>
              <View style={styles.progressLabelRow}>
-                <Text style={styles.progressLabel}>Capacité utilisée</Text>
+                 <Text style={styles.progressLabel}>{t('subscription:capacityUsed')}</Text>
                 <Text style={styles.progressValue}>{percentage}%</Text>
              </View>
           </View>
@@ -185,19 +203,19 @@ export default function SubscriptionScreen() {
 
         {/* ── Billing Toggle ── */}
         <View style={styles.toggleRow}>
-           <Text style={styles.sectionTitle}>Nos Formules</Text>
+            <Text style={styles.sectionTitle}>{t('subscription:ourPlans')}</Text>
            <View style={styles.toggleContainer}>
               <Pressable 
                 onPress={() => setBillingPeriod('monthly')}
                 style={[styles.toggleBtn, billingPeriod === 'monthly' && styles.toggleBtnActive]}
               >
-                <Text style={[styles.toggleText, billingPeriod === 'monthly' && styles.toggleTextActive]}>Mensuel</Text>
+                 <Text style={[styles.toggleText, billingPeriod === 'monthly' && styles.toggleTextActive]}>{t('subscription:monthly')}</Text>
               </Pressable>
               <Pressable 
                 onPress={() => setBillingPeriod('annual')}
                 style={[styles.toggleBtn, billingPeriod === 'annual' && styles.toggleBtnActive]}
               >
-                <Text style={[styles.toggleText, billingPeriod === 'annual' && styles.toggleTextActive]}>Annuel</Text>
+                 <Text style={[styles.toggleText, billingPeriod === 'annual' && styles.toggleTextActive]}>{t('subscription:annual')}</Text>
                 <View style={styles.discountBadge}><Text style={styles.discountText}>-20%</Text></View>
               </Pressable>
            </View>
@@ -231,7 +249,7 @@ export default function SubscriptionScreen() {
                       {plan.price?.toLocaleString()} <Text style={styles.currency}>XAF</Text>
                     </Text>
                     <Text style={[styles.planPeriod, isFeatured && { color: 'rgba(255,255,255,0.6)' }]}>
-                      {billingPeriod === 'annual' ? 'par an' : 'par mois'}
+                      {billingPeriod === 'annual' ? t('subscription:perYear') : t('subscription:perMonth')}
                     </Text>
                   </View>
 
@@ -247,7 +265,7 @@ export default function SubscriptionScreen() {
                   </View>
 
                   <Button
-                    title={isCurrent ? "Plan actuel" : "Choisir ce plan"}
+                    title={isCurrent ? t('subscription:currentPlan') : t('subscription:choosePlan')}
                     variant={isFeatured ? 'primary' : 'outline'}
                     disabled={isCurrent}
                     onPress={() => {
@@ -264,28 +282,28 @@ export default function SubscriptionScreen() {
 
         {/* ── Transactions ── */}
         <View style={styles.sectionHeader}>
-           <Text style={styles.sectionTitle}>Historique de paiement</Text>
+            <Text style={styles.sectionTitle}>{t('subscription:paymentHistory')}</Text>
         </View>
         <View style={styles.transactionsContainer}>
           {loadingTransactions ? (
             <ActivityIndicator size="small" color={PRIMARY} />
           ) : transactions.length === 0 ? (
-            <Text style={styles.emptyText}>Aucune transaction trouvée.</Text>
+            <Text style={styles.emptyText}>{t('subscription:noTransactions')}</Text>
           ) : (
-            transactions.slice(0, 5).map((t, i) => (
-              <View key={t.id || i} style={styles.transactionItem}>
+            transactions.slice(0, 5).map((tx, i) => (
+              <View key={tx.id || i} style={styles.transactionItem}>
                 <View style={styles.txIcon}>
                    <Ionicons name="receipt-outline" size={18} color={GREEN_DARK} />
                 </View>
                 <View style={{ flex: 1 }}>
-                   <Text style={styles.txTitle}>{t.type === 'subscription' ? 'Abonnement' : 'Paiement'}</Text>
-                   <Text style={styles.txDate}>{t.created_at ? new Date(t.created_at).toLocaleDateString() : '-'}</Text>
+                    <Text style={styles.txTitle}>{tx.type === 'subscription' ? t('subscription:subscription') : t('subscription:payment')}</Text>
+                   <Text style={styles.txDate}>{tx.created_at ? new Date(tx.created_at).toLocaleDateString() : '-'}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                   <Text style={styles.txAmount}>{t.amount} XAF</Text>
-                   <View style={[styles.txStatus, { backgroundColor: t.status === 'SUCCESS' ? '#DCFCE7' : '#FEE2E2' }]}>
-                      <Text style={[styles.txStatusText, { color: t.status === 'SUCCESS' ? '#16A34A' : '#EF4444' }]}>
-                        {t.status === 'SUCCESS' ? 'Payé' : 'Échoué'}
+                   <Text style={styles.txAmount}>{tx.amount} XAF</Text>
+                   <View style={[styles.txStatus, { backgroundColor: tx.status === 'SUCCESS' ? '#DCFCE7' : '#FEE2E2' }]}>
+                      <Text style={[styles.txStatusText, { color: tx.status === 'SUCCESS' ? '#16A34A' : '#EF4444' }]}>
+                        {tx.status === 'SUCCESS' ? t('subscription:paid') : t('subscription:failed')}
                       </Text>
                    </View>
                 </View>
@@ -296,33 +314,33 @@ export default function SubscriptionScreen() {
 
         {/* ── Subscription Management ── */}
         <View style={styles.sectionHeader}>
-           <Text style={styles.sectionTitle}>Gestion de l'abonnement</Text>
+            <Text style={styles.sectionTitle}>{t('subscription:management')}</Text>
         </View>
         <View style={styles.managementContainer}>
            <Text style={styles.managementText}>
-              Votre abonnement se renouvelle automatiquement. Vous pouvez l'annuler à tout moment.
+               {t('subscription:autoRenewDesc')}
            </Text>
            <Button 
-             title="Annuler l'abonnement" 
+              title={t('subscription:cancelSubscription')}
              variant="outline" 
              style={styles.cancelBtn}
              textStyle={{ color: '#EF4444' }}
               onPress={() => {
                 Alert.alert(
-                  'Annuler l' + "'" + 'abonnement',
-                  'Êtes-vous sûr de vouloir annuler votre abonnement actuel ? Vos avantages resteront actifs jusqu' + "'" + 'à la fin de la période.',
+                  t('subscription:cancelAlertTitle'),
+                  t('subscription:cancelAlertMessage'),
                   [
-                    { text: 'Non', style: 'cancel' },
+                    { text: t('subscription:no'), style: 'cancel' },
                     { 
-                      text: 'Oui, annuler', 
+                      text: t('subscription:yesCancel'), 
                       style: 'destructive',
                       onPress: async () => {
                         try {
                           await subscriptionsService.cancel();
-                          setFeedback({ visible: true, type: 'success', title: 'Abonnement annulé', message: 'Votre abonnement a été annulé. Les avantages restent actifs jusqu\'à la fin de la période.' });
+                          setFeedback({ visible: true, type: 'success', title: t('subscription:cancelledTitle'), message: t('subscription:cancelledMessage') });
                           loadData();
                         } catch (e) {
-                          setFeedback({ visible: true, type: 'error', title: 'Erreur', message: "Impossible d'annuler l'abonnement. Réessayez." });
+                          setFeedback({ visible: true, type: 'error', title: t('subscription:error'), message: t('subscription:cancelErrorMessage') });
                         }
                       }
                     }
@@ -340,11 +358,11 @@ export default function SubscriptionScreen() {
         onClose={() => setModalOpen(false)}
         onPay={handlePay}
         amount={selectedPlan?.price || 0}
-        title="Confirmation"
-        description="Activez vos avantages DocMaster"
+        title={t('subscription:confirmation')}
+        description={t('subscription:activateBenefits')}
         processing={processing}
         error={payError}
-        submitLabel="Payer maintenant"
+        submitLabel={t('subscription:payNow')}
       />
 
       {/* ── Polling Overlay ── */}
@@ -352,10 +370,10 @@ export default function SubscriptionScreen() {
         <View style={styles.pollingOverlay}>
            <View style={styles.pollingContent}>
               <ActivityIndicator size="large" color={PRIMARY} />
-              <Text style={styles.pollingTitle}>Traitement en cours</Text>
+               <Text style={styles.pollingTitle}>{t('subscription:processing')}</Text>
               <Text style={styles.pollingSubtitle}>{pollingStatus}</Text>
               <Button 
-                title="Fermer" 
+                title={t('subscription:close')} 
                 variant="ghost" 
                 onPress={() => setPollingStatus(null)} 
                 style={{ marginTop: 20 }}

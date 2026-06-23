@@ -66,7 +66,8 @@
           }
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      "react-native-document-scanner-plugin"
     ],
     "experiments": {
       "typedRoutes": true

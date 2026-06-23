@@ -16,11 +16,13 @@ export type DocFieldKey =
   | 'description';
 
 export type DocFieldDef = {
-  key: DocFieldKey;
+  key: DocFieldKey | string;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  required: boolean;
+  required?: boolean;
+  optional?: boolean;
   multiline?: boolean;
+  type?: 'text' | 'date' | 'textarea' | 'tel' | 'email';
   keyboardType?: 'default' | 'numeric' | 'phone-pad';
   placeholder?: string;
 };

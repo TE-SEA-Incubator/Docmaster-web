@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert, Image, NativeScrollEvent, NativeSyntheticEvent, Dimensions, ToastAndroid, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,32 +25,32 @@ function formatDate(s?: string) {
   }
 }
 
-function timeAgo(dateString?: string) {
+function timeAgo(dateString?: string, t?: (key: string, opts?: Record<string, any>) => string) {
   if (!dateString) return '';
   const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-  if (diff < 60) return "À l'instant";
-  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)}min`;
-  if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return `Il y a ${Math.floor(diff / 86400)}j`;
+  if (diff < 60) return t ? t('common:justNow') : "À l'instant";
+  if (diff < 3600) return t ? t('common:minutesAgo', { count: Math.floor(diff / 60) }) : `Il y a ${Math.floor(diff / 60)}min`;
+  if (diff < 86400) return t ? t('common:hoursAgo', { count: Math.floor(diff / 3600) }) : `Il y a ${Math.floor(diff / 3600)}h`;
+  if (diff < 604800) return t ? t('common:daysAgo', { count: Math.floor(diff / 86400) }) : `Il y a ${Math.floor(diff / 86400)}j`;
   return new Date(dateString).toLocaleDateString('fr-FR');
 }
 
-function getStatusMeta(status: string, isLost?: boolean) {
+function getStatusMeta(status: string, isLost?: boolean, t?: (key: string) => string) {
   if (status === 'SEARCHING' || status === 'AVAILABLE') return {
-    label: isLost ? 'En recherche' : 'En attente',
+    label: isLost ? (t ? t('declarationDetail:statusSearching') : 'En recherche') : (t ? t('declarationDetail:statusWaiting') : 'En attente'),
     color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: 'time-outline',
   };
   if (status === 'MATCHED') return {
-    label: 'Match trouvé', color: '#059669', bg: '#ECFDF5', border: '#A7F3D0', icon: 'checkmark-circle-outline',
+    label: t ? t('declarationDetail:statusMatched') : 'Match trouvé', color: '#059669', bg: '#ECFDF5', border: '#A7F3D0', icon: 'checkmark-circle-outline',
   };
   if (status === 'RETURNED' || status === 'CLAIMED') return {
-    label: 'Résolu', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE', icon: 'shield-checkmark-outline',
+    label: t ? t('declarationDetail:statusResolved') : 'Résolu', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE', icon: 'shield-checkmark-outline',
   };
   if (status === 'CANCELLED') return {
-    label: 'Annulé', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', icon: 'close-circle-outline',
+    label: t ? t('declarationDetail:statusCancelled') : 'Annulé', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', icon: 'close-circle-outline',
   };
   return {
-    label: 'Brouillon', color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB', icon: 'document-outline',
+    label: t ? t('declarationDetail:statusDraft') : 'Brouillon', color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB', icon: 'document-outline',
   };
 }
 
@@ -73,6 +74,7 @@ const URGENCY_LABELS: Record<number, { label: string; color: string }> = {
 export default function DeclarationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [dec, setDec] = useState<Declaration | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -95,7 +97,7 @@ export default function DeclarationDetailScreen() {
   useEffect(() => { fetchDeclaration(); }, [fetchDeclaration]);
 
   const isLost = dec?.declaration_type === 'LOST' || dec?.is_lost;
-  const statusMeta = getStatusMeta(dec?.status || '', isLost);
+  const statusMeta = getStatusMeta(dec?.status || '', isLost, t);
 
   const photos: string[] = [];
   if (dec?.photo_recto) photos.push(dec.photo_recto);
@@ -111,12 +113,12 @@ export default function DeclarationDetailScreen() {
     const htmlContent = `
       <html>
         <body style="font-family: sans-serif; padding: 20px;">
-          <h1 style="color: #F5A64B;">Déclaration DocMaster</h1>
-          <p><strong>Référence:</strong> ${dec.identifiant_doc_dm || '---'}</p>
-          <p><strong>Type:</strong> ${dec.doc_type}</p>
-          <p><strong>Date:</strong> ${formatDate(dec.created_at)}</p>
-          <p><strong>Propriétaire:</strong> ${dec.nom_complet || dec.owner_name}</p>
-          <p><strong>Description:</strong> ${dec.description || '---'}</p>
+          <h1 style="color: #F5A64B;">${t('declarationDetail:title')} DocMaster</h1>
+          <p><strong>${t('declarationDetail:reference')}:</strong> ${dec.identifiant_doc_dm || '---'}</p>
+          <p><strong>${t('declarationDetail:documentType')}:</strong> ${dec.doc_type}</p>
+          <p><strong>${t('declarationDetail:date')}:</strong> ${formatDate(dec.created_at)}</p>
+          <p><strong>${t('declarationDetail:owner')}:</strong> ${dec.nom_complet || dec.owner_name}</p>
+          <p><strong>${t('declarationDetail:description')}:</strong> ${dec.description || '---'}</p>
         </body>
       </html>
     `;
@@ -126,31 +128,31 @@ export default function DeclarationDetailScreen() {
       await Sharing.shareAsync(fileUri, { mimeType: 'application/pdf' });
     } catch (e) {
       console.error(e);
-      Alert.alert('Erreur', 'Impossible de générer le PDF');
+      Alert.alert(t('common:error'), t('declarationDetail:pdfError'));
     }
   };
 
   const handleDelete = () => {
     if (!id) return;
     Alert.alert(
-      'Supprimer la déclaration',
-      'Êtes-vous sûr de vouloir supprimer cette déclaration ?',
+      t('declarationDetail:deleteTitle'),
+      t('declarationDetail:deleteConfirm'),
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('common:cancel'), style: 'cancel' },
         {
-          text: 'Supprimer', style: 'destructive',
+          text: t('common:delete'), style: 'destructive',
           onPress: async () => {
             try {
               const res = await declarationsService.delete(id);
               if (res.success) {
-                if (Platform.OS === 'android') ToastAndroid.show('Déclaration supprimée', ToastAndroid.SHORT);
-                else Alert.alert('Succès', 'Déclaration supprimée.');
+                if (Platform.OS === 'android') ToastAndroid.show(t('declarationDetail:deletedSuccess'), ToastAndroid.SHORT);
+                else Alert.alert(t('common:success'), t('declarationDetail:deletedSuccess'));
                 router.back();
               } else {
-                Alert.alert('Erreur', res.message || 'Impossible de supprimer.');
+                Alert.alert(t('common:error'), res.message || t('declarationDetail:deleteError'));
               }
             } catch {
-              Alert.alert('Erreur', 'Erreur lors de la suppression.');
+              Alert.alert(t('common:error'), t('declarationDetail:deleteException'));
             }
           },
         },
@@ -178,15 +180,15 @@ export default function DeclarationDetailScreen() {
           })}>
             <Ionicons name="arrow-back" size={18} color="#1A1A1A" />
           </Pressable>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: '#1A1A1A' }}>Déclaration</Text>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: '#1A1A1A' }}>{t('declarationDetail:title')}</Text>
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 12 }}>
           <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="alert-circle-outline" size={30} color="#EF4444" />
           </View>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>Déclaration introuvable</Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A' }}>{t('declarationDetail:notFound')}</Text>
           <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center' }}>
-            Cette déclaration n'existe pas ou a été supprimée.
+            {t('declarationDetail:notFoundDesc')}
           </Text>
         </View>
       </View>
@@ -286,7 +288,7 @@ export default function DeclarationDetailScreen() {
             }}>
               <Ionicons name={getDocIcon(dec.doc_type)} size={36} color={PRIMARY} />
             </View>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: '#9CA3AF', marginTop: 12 }}>Aucune photo</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#9CA3AF', marginTop: 12 }}>{t('declarationDetail:noPhoto')}</Text>
             <View style={{ position: 'absolute', top: 16, left: 20 }}>
               <Pressable
                 onPress={() => router.back()}
@@ -326,10 +328,10 @@ export default function DeclarationDetailScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 14, fontWeight: '800', color: statusMeta.color }}>
-                {isLost ? 'Document perdu' : 'Document trouvé'}
+                {isLost ? t('declarationDetail:loss') : t('declarationDetail:found')}
               </Text>
               <Text style={{ fontSize: 12, color: statusMeta.color, marginTop: 1 }}>
-                Statut : {statusMeta.label}
+                {t('declarationDetail:status')} : {statusMeta.label}
               </Text>
             </View>
             <View style={{
@@ -349,7 +351,7 @@ export default function DeclarationDetailScreen() {
               padding: 12, borderWidth: 1, borderColor: '#F0F0F0',
             }}>
               <Text style={{ fontSize: 9, fontWeight: '800', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>
-                Référence
+                {t('declarationDetail:reference')}
               </Text>
               <Text style={{ fontSize: 13, fontWeight: '700', color: '#1A1A1A', fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace' }}>
                 {dec.identifiant_doc_dm || dec.reference || '---'}
@@ -361,12 +363,12 @@ export default function DeclarationDetailScreen() {
                 padding: 12, borderWidth: 1, borderColor: '#F0F0F0',
               }}>
                 <Text style={{ fontSize: 9, fontWeight: '800', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>
-                  Urgence
+                  {t('declarationDetail:urgency')}
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Ionicons name="speedometer-outline" size={14} color={URGENCY_LABELS[dec.urgence]?.color || '#9CA3AF'} />
                   <Text style={{ fontSize: 13, fontWeight: '700', color: URGENCY_LABELS[dec.urgence]?.color || '#1A1A1A' }}>
-                    {URGENCY_LABELS[dec.urgence]?.label || `${dec.urgence}/5`}
+                    {t(`declarationDetail:urgency${dec.urgence}`, { defaultValue: URGENCY_LABELS[dec.urgence]?.label }) || `${dec.urgence}/5`}
                   </Text>
                 </View>
               </View>
@@ -380,19 +382,19 @@ export default function DeclarationDetailScreen() {
             marginBottom: 16,
           }}>
             <Text style={{ fontSize: 11, fontWeight: '800', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
-              Informations déclarant
+              {t('declarationDetail:info')}
             </Text>
             <View style={{ gap: 10 }}>
               {[
-                { icon: 'person-outline', label: 'Nom complet', value: dec.nom_complet || dec.owner_name },
-                { icon: 'document-text-outline', label: 'Type document', value: dec.docTypeInfo?.nom || dec.doc_type },
-                { icon: 'barcode-outline', label: 'Numéro document', value: dec.numero_document || dec.document_number },
-                { icon: 'calendar-outline', label: isLost ? 'Date de perte' : 'Date de trouvaille', value: formatDate(isLost ? dec.date_perte : dec.date_trouvee) },
-                { icon: 'location-outline', label: 'Lieu', value: dec.lieu_perte || dec.lieu_trouvee || dec.found_location },
-                { icon: 'map-outline', label: 'Ville / Région / Pays', value: [dec.ville, dec.region, dec.pays].filter(Boolean).join(', ') },
-                { icon: 'calendar-outline', label: 'Date délivrance', value: formatDate(dec.date_delivrance) },
-                { icon: 'calendar-outline', label: "Date d'expiration", value: formatDate(dec.date_expiration) },
-                { icon: 'document-text-outline', label: 'État physique', value: dec.etat_physique },
+                { icon: 'person-outline', label: t('declarationDetail:fullName'), value: dec.nom_complet || dec.owner_name },
+                { icon: 'document-text-outline', label: t('declarationDetail:documentType'), value: dec.docTypeInfo?.nom || dec.doc_type },
+                { icon: 'barcode-outline', label: t('declarationDetail:documentNumber'), value: dec.numero_document || dec.document_number },
+                { icon: 'calendar-outline', label: isLost ? t('declarationDetail:lossDate') : t('declarationDetail:foundDate'), value: formatDate(isLost ? dec.date_perte : dec.date_trouvee) },
+                { icon: 'location-outline', label: t('declarationDetail:location'), value: dec.lieu_perte || dec.lieu_trouvee || dec.found_location },
+                { icon: 'map-outline', label: t('declarationDetail:cityRegionCountry'), value: [dec.ville, dec.region, dec.pays].filter(Boolean).join(', ') },
+                { icon: 'calendar-outline', label: t('declarationDetail:issueDate'), value: formatDate(dec.date_delivrance) },
+                { icon: 'calendar-outline', label: t('declarationDetail:expiryDate'), value: formatDate(dec.date_expiration) },
+                { icon: 'document-text-outline', label: t('declarationDetail:physicalState'), value: dec.etat_physique },
               ].filter((r) => r.value && r.value !== '—' && r.value !== '').map((row, idx, arr) => (
                 <View
                   key={idx}
@@ -430,13 +432,13 @@ export default function DeclarationDetailScreen() {
               marginBottom: 16,
             }}>
               <Text style={{ fontSize: 11, fontWeight: '800', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
-                Contact propriétaire
+                {t('declarationDetail:ownerContact')}
               </Text>
               <View style={{ gap: 10 }}>
                 {[
-                  { icon: 'person-outline', label: 'Propriétaire', value: dec.prenom_owner && dec.nom_owner ? `${dec.prenom_owner} ${dec.nom_owner}` : undefined },
-                  { icon: 'mail-outline', label: 'Email', value: dec.email_owner },
-                  { icon: 'call-outline', label: 'Téléphone', value: dec.telephone_owner },
+                  { icon: 'person-outline', label: t('declarationDetail:owner'), value: dec.prenom_owner && dec.nom_owner ? `${dec.prenom_owner} ${dec.nom_owner}` : undefined },
+                  { icon: 'mail-outline', label: t('common:email'), value: dec.email_owner },
+                  { icon: 'call-outline', label: t('common:phone'), value: dec.telephone_owner },
                 ].filter((r) => r.value).map((row, idx, arr) => (
                   <View
                     key={idx}
@@ -478,9 +480,9 @@ export default function DeclarationDetailScreen() {
                 <Ionicons name="gift-outline" size={20} color="#D97706" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400E' }}>Récompense proposée</Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400E' }}>{t('declarationDetail:reward')}</Text>
                 <Text style={{ fontSize: 12, color: '#B45309', marginTop: 2 }}>
-                  {dec.recompense === 'yes' && dec.recompense_montant ? `${dec.recompense_montant} FCFA` : dec.recompense || 'Oui'}
+                  {dec.recompense === 'yes' && dec.recompense_montant ? `${dec.recompense_montant} FCFA` : dec.recompense || t('common:yes')}
                 </Text>
               </View>
             </View>
@@ -495,7 +497,7 @@ export default function DeclarationDetailScreen() {
             }}>
               <Ionicons name="chatbubbles-outline" size={16} color="#2563EB" />
               <Text style={{ fontSize: 12, fontWeight: '600', color: '#1D4ED8', flex: 1 }}>
-                Mode de contact préféré : {dec.mode_contact}
+                {t('declarationDetail:preferredContact')} : {dec.mode_contact}
               </Text>
             </View>
           )}
@@ -508,7 +510,7 @@ export default function DeclarationDetailScreen() {
               marginBottom: 16,
             }}>
               <Text style={{ fontSize: 11, fontWeight: '800', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
-                Description
+                {t('declarationDetail:description')}
               </Text>
               <Text style={{ fontSize: 14, color: '#4B5563', lineHeight: 20 }}>
                 {dec.description}
@@ -520,19 +522,19 @@ export default function DeclarationDetailScreen() {
           {photos.length > 0 && (
             <View style={{ marginBottom: 16 }}>
               <Text style={{ fontSize: 11, fontWeight: '800', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>
-                Photos du document
+                {t('declarationDetail:documentPhotos')}
               </Text>
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 {dec.photo_recto && (
                   <View style={{ flex: 1, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#F0F0F0' }}>
                     <Image source={{ uri: dec.photo_recto }} style={{ width: '100%', height: 140, resizeMode: 'cover' }} />
-                    <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: '#FFF', paddingVertical: 3 }}>Recto</Text>
+                    <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: '#FFF', paddingVertical: 3 }}>{t('declarationDetail:recto')}</Text>
                   </View>
                 )}
                 {dec.photo_verso && (
                   <View style={{ flex: 1, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#F0F0F0' }}>
                     <Image source={{ uri: dec.photo_verso }} style={{ width: '100%', height: 140, resizeMode: 'cover' }} />
-                    <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: '#FFF', paddingVertical: 3 }}>Verso</Text>
+                    <Text style={{ fontSize: 9, fontWeight: '700', textAlign: 'center', backgroundColor: '#FFF', paddingVertical: 3 }}>{t('declarationDetail:verso')}</Text>
                   </View>
                 )}
               </View>
@@ -541,7 +543,7 @@ export default function DeclarationDetailScreen() {
 
           {/* Créé le */}
           <Text style={{ fontSize: 11, color: '#C4C4C4', marginBottom: 20 }}>
-            Créé {timeAgo(dec.created_at)}
+            {t('declarationDetail:created')} {timeAgo(dec.created_at, t)}
           </Text>
 
           {/* Actions */}
@@ -556,7 +558,7 @@ export default function DeclarationDetailScreen() {
               })}
             >
               <Ionicons name="document-text-outline" size={18} color={PRIMARY} />
-              <Text style={{ fontSize: 14, fontWeight: '700', color: PRIMARY }}>Télécharger PDF</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: PRIMARY }}>{t('declarationDetail:downloadPDF')}</Text>
             </Pressable>
             <Pressable
               onPress={handleDelete}
@@ -568,7 +570,7 @@ export default function DeclarationDetailScreen() {
               })}
             >
               <Ionicons name="trash-outline" size={18} color="#EF4444" />
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>Supprimer</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#EF4444' }}>{t('common:delete')}</Text>
             </Pressable>
             <Pressable
               onPress={() => router.back()}
@@ -579,7 +581,7 @@ export default function DeclarationDetailScreen() {
                 borderWidth: 1, borderColor: '#F0F0F0',
               })}
             >
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#6B7280' }}>Retour</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#6B7280' }}>{t('common:back')}</Text>
             </Pressable>
           </View>
         </View>

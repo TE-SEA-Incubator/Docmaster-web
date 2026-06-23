@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, Modal, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
 import { BottomTabInset } from '@/constants/theme';
@@ -11,6 +12,7 @@ const GREEN_DARK = '#1E3A2F';
 
 export default function CardScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [verifyResult, setVerifyResult] = useState<'safe' | 'stolen' | 'unknown' | null>(null);
@@ -27,8 +29,8 @@ export default function CardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>Scanner</Text>
-          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>Vérifiez l'authenticité d'un document</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 }}>{t('card:title')}</Text>
+          <Text style={{ fontSize: 13, color: '#9CA3AF' }}>{t('card:subtitle')}</Text>
         </View>
 
         {/* Scanner area */}
@@ -50,19 +52,19 @@ export default function CardScreen() {
             </View>
           </View>
           <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>
-            Scanner un document
+            {t('card:scanLabel')}
           </Text>
           <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>
-            Placez le document dans le cadre{'\n'}pour vérifier son authenticité
+            {t('card:scanInstruction')}
           </Text>
         </View>
 
         {/* Feature cards */}
         <View style={{ gap: 12, marginBottom: 24 }}>
           {[
-            { icon: 'shield-checkmark-outline', title: 'Vérification', desc: 'Vérifiez si un document est authentique ou signalé', color: '#16A34A', bg: '#F0FDF4' },
-            { icon: 'document-text-outline', title: 'Enregistrement', desc: 'Scannez et enregistrez vos documents en un clic', color: '#3B82F6', bg: '#EFF6FF' },
-            { icon: 'search-outline', title: 'Recherche rapide', desc: 'Trouvez des informations sur un document trouvé', color: '#8B5CF6', bg: '#F5F3FF' },
+            { icon: 'shield-checkmark-outline', title: t('card:verify'), desc: t('card:verifyDesc'), color: '#16A34A', bg: '#F0FDF4' },
+            { icon: 'document-text-outline', title: t('card:register'), desc: t('card:registerDesc'), color: '#3B82F6', bg: '#EFF6FF' },
+            { icon: 'search-outline', title: t('card:quickSearch'), desc: t('card:quickSearchDesc'), color: '#8B5CF6', bg: '#F5F3FF' },
           ].map((feature, idx) => (
             <View
               key={idx}
@@ -97,7 +99,7 @@ export default function CardScreen() {
           })}
         >
           <Ionicons name="keypad-outline" size={18} color={PRIMARY} />
-          <Text style={{ fontSize: 14, fontWeight: '600', color: PRIMARY }}>Saisie manuelle du code</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: PRIMARY }}>{t('card:manualEntry')}</Text>
         </Pressable>
       </ScrollView>
 
@@ -109,15 +111,15 @@ export default function CardScreen() {
               <Ionicons name="keypad" size={30} color={PRIMARY} />
             </View>
             <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', textAlign: 'center', marginBottom: 8 }}>
-              Vérifier un code
+              {t('card:verifyCode')}
             </Text>
             <Text style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', marginBottom: 20 }}>
-              Saisissez le code de vérification du document
+              {t('card:verifyCodeDesc')}
             </Text>
 
             <Input
-              label="Code de vérification"
-              placeholder="Ex: DM-123456"
+              label={t('card:codeLabel')}
+              placeholder={t('card:codePlaceholder')}
               icon="key-outline"
               value={manualCode}
               onChangeText={(v) => { setManualCode(v); setVerifyResult(null); }}
@@ -139,10 +141,10 @@ export default function CardScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 14, fontWeight: '700', color: verifyResult === 'safe' ? '#166534' : verifyResult === 'stolen' ? '#991B1B' : '#1F2937' }}>
-                      {verifyResult === 'safe' ? 'Document authentique' : verifyResult === 'stolen' ? 'Attention !' : 'Inconnu'}
+                      {verifyResult === 'safe' ? t('card:resultAuthentic') : verifyResult === 'stolen' ? t('card:resultWarning') : t('card:resultUnknown')}
                     </Text>
                     <Text style={{ fontSize: 12, color: verifyResult === 'safe' ? '#15803D' : verifyResult === 'stolen' ? '#B91C1C' : '#6B7280' }}>
-                      {verifyResult === 'safe' ? "Ce document n'est pas signalé." : verifyResult === 'stolen' ? 'Ce document est signalé !' : 'Code non reconnu.'}
+                      {verifyResult === 'safe' ? t('card:resultAuthenticDesc') : verifyResult === 'stolen' ? t('card:resultWarningDesc') : t('card:resultUnknownDesc')}
                     </Text>
                   </View>
                 </View>
@@ -151,10 +153,10 @@ export default function CardScreen() {
 
             <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
               <View style={{ flex: 1 }}>
-                <Button title="Fermer" variant="outline" onPress={() => setShowManualEntry(false)} />
+                <Button title={t('card:close')} variant="outline" onPress={() => setShowManualEntry(false)} />
               </View>
               <View style={{ flex: 1.5 }}>
-                <Button title="Vérifier" onPress={handleVerify} />
+                <Button title={t('card:verify')} onPress={handleVerify} />
               </View>
             </View>
           </Pressable>
