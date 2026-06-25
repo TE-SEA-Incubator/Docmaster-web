@@ -9,9 +9,9 @@
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.1.18",
-    "axios": "^1.15.2",
+    "axios": "^1.16.0",
     "chart.js": "^4.5.1",
-    "concurrently": "^9.2.1",
+    "concurrently": "^9.2.3",
     "daisyui": "^5.5.1-beta.2",
     "firebase": "^12.12.1",
     "flatpickr": "^4.6.13",
@@ -32,6 +32,6 @@
     "@playwright/test": "^1.60.0",
     "@tailwindcss/vite": "^4.2.4",
     "typescript": "^6.0.3",
-    "vite": "^8.0.10"
+    "vite": "^8.1.0"
   }
 }
