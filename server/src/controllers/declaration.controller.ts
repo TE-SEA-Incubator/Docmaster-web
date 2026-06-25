@@ -314,7 +314,7 @@ export const searchPublicFound = async (req: Request, res: Response) => {
 export const getDeclarationById = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const result = await declarationService.getDeclarationById(id);
+    const result = await declarationService.getDeclarationById(id as string);
     if (!result) {
       return res.status(404).json({ success: false, message: 'Déclaration introuvable' });
     }
@@ -363,7 +363,7 @@ export const getRenderContext = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Non authentifié' });
     }
 
-    const result = await declarationService.getDeclarationById(id);
+    const result = await declarationService.getDeclarationById(id as string);
     if (!result) {
       return res.status(404).json({ success: false, message: 'Déclaration introuvable' });
     }
@@ -398,7 +398,7 @@ export const validateRecovery = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Code de validation requis' });
     }
 
-    const result = await declarationService.validateRecovery(id, userId, code);
+    const result = await declarationService.validateRecovery(id as string, userId, code);
     res.json(result);
   } catch (error: any) {
     console.error('❌ Erreur validateRecovery:', error);

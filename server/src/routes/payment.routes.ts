@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { nokashCallback, getMyTransactions, getAllTransactions, payRecovery } from '../controllers/payment.controller.ts';
+import { nokashCallback, getMyTransactions, getAllTransactions, payRecovery, forceCheckTransaction } from '../controllers/payment.controller.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
 
 const router = Router();
@@ -181,5 +181,30 @@ router.get('/transactions', authMiddleware, getMyTransactions);
  *         description: Erreur serveur
  */
 router.get('/admin/all', authMiddleware, getAllTransactions);
+
+/**
+ * @swagger
+ * /payments/check/{externalRef}:
+ *   get:
+ *     summary: Vérifier manuellement le statut d'une transaction auprès de Nokash
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: externalRef
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Référence externe Nokash de la transaction
+ *     responses:
+ *       200:
+ *         description: Statut vérifié
+ *       401:
+ *         description: Non authentifié
+ *       404:
+ *         description: Transaction non trouvée
+ */
+router.get('/check/:externalRef', authMiddleware, forceCheckTransaction);
 
 export default router;

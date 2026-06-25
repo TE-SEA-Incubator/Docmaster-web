@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Modal, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal, ActivityIndicator, Alert, RefreshControl, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -309,6 +309,7 @@ export default function WalletScreen() {
 
       {/* Withdrawal Modal */}
       <Modal visible={showWithdraw} transparent animationType="fade" onRequestClose={() => setShowWithdraw(false)}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }} onPress={() => setShowWithdraw(false)}>
           <Pressable style={{ backgroundColor: colors.backgroundElement, borderRadius: 24, width: '100%', maxWidth: 420, padding: 28 }} onPress={e => e.stopPropagation()}>
             <View style={{ width: 60, height: 60, borderRadius: 20, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
@@ -369,6 +370,7 @@ export default function WalletScreen() {
             </View>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Withdrawal History Modal */}

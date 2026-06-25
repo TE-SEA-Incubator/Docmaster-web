@@ -1,17 +1,18 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, View, RefreshControl, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/core/store/useAuthStore';
-import type { Document, Declaration } from '@/types';
+import type { Document, Declaration, SubscriptionUsage } from '@/types';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBottomTabClearance } from '@/hooks/useBottomTabClearance';
 import { BannerCarousel } from '@/components/BannerCarousel';
 import { DeclarationCard } from '@/components/declarations/DeclarationCard';
 import { useDashboardData } from '@/core/hooks/useDashboardData';
 import { HomeSkeleton } from '@/components/HomeSkeleton';
+import { subscriptionsService } from '@/core/api/subscriptionsService';
 
 function timeAgo(dateString?: string, t?: (key: string, options?: any) => string) {
   if (!dateString) return '—';
@@ -218,37 +219,76 @@ const ActivityItem = React.memo(function ActivityItem({ declaration: dec, index:
   );
 });
 
+type PlanFeature = {
+  key: string;
+  label: string;
+  value: string;
+  included: boolean;
+};
+
 type PlanCardProps = {
   planName: string;
-  docLimit: number;
-  objectLimit: number;
-  docCount: number;
-  objectCount: number;
+  usage?: SubscriptionUsage | null;
+  features: PlanFeature[];
   colors: ReturnType<typeof useThemeColors>;
 };
 
-const PlanCard = React.memo(function PlanCard({ planName, docLimit, objectLimit, docCount, objectCount, colors }: PlanCardProps) {
+const FEATURE_ICONS: Record<string, string> = {
+  objects: 'phone-portrait-outline',
+  docs_per_type: 'shield-checkmark-outline',
+  vault: 'lock-closed-outline',
+  prioritaire: 'headset-outline',
+  certification: 'ribbon-outline',
+  matching_speed: 'flash-outline',
+};
+
+const PlanCard = React.memo(function PlanCard({ planName, usage, features, colors }: PlanCardProps) {
   const { t } = useTranslation();
-  const usagePercent = Math.min(((docCount + objectCount) / (docLimit + objectLimit)) * 100, 100);
+  const usedObjects = usage?.usage?.objects || 0;
+  const limitObjects = usage?.limits?.objects || '∞';
+  const usedDocs = usage?.usage?.docs_per_type || 0;
+  const totalUsed = usedObjects + usedDocs;
+  const totalLimit = typeof limitObjects === 'number' ? limitObjects : 999;
+  const usagePercent = typeof limitObjects === 'number' && limitObjects > 0
+    ? Math.min((totalUsed / totalLimit) * 100, 100)
+    : Math.min(usage?.percentage || 0, 100);
+
   return (
     <View style={[styles.planCard, { backgroundColor: colors.greenDark }]}>
       <View style={[styles.planBlob, { backgroundColor: colors.primary + '20' }]} />
-      <View style={styles.planHeader}>
-        <View style={[styles.planBadge, { backgroundColor: colors.primary + '30' }]}>
-          <Ionicons name="star" size={10} color={colors.primary} />
-          <Text style={[styles.planBadgeText, { color: colors.primary }]}>{t('subscription:currentPlan')}</Text>
-        </View>
-        <Text style={[styles.planName, { color: colors.onPrimary }]}>{planName}</Text>
-        <Text style={[styles.planLimit, { color: '#FFFFFF' + '80' }]}>{t('home:planLimit', { count: docLimit + objectLimit })}</Text>
+
+      <View style={[styles.planBadge, { backgroundColor: colors.primary + '30' }]}>
+        <Ionicons name="star" size={10} color={colors.primary} />
+        <Text style={[styles.planBadgeText, { color: colors.primary }]}>{t('subscription:currentPlan')}</Text>
       </View>
+
+      <Text style={[styles.planName, { color: colors.onPrimary }]}>{planName}</Text>
+
       <View style={styles.planUsage}>
         <View style={styles.planUsageHeader}>
-          <Text style={[styles.planUsageLabel, { color: '#FFFFFF' + '80' }]}>{t('home:usage')}</Text>
-          <Text style={[styles.planUsageValue, { color: colors.primary }]}>{docCount + objectCount} / {docLimit + objectLimit}</Text>
+          <Text style={[styles.planUsageLabel, { color: colors.onPrimary + '80' }]}>{t('home:quotaUsed')}</Text>
+          <Text style={[styles.planUsageValue, { color: colors.primary }]}>{usedObjects} / {limitObjects}</Text>
         </View>
-        <View style={[styles.planBar, { backgroundColor: '#FFFFFF' + '20' }]}>
+        <View style={[styles.planBar, { backgroundColor: colors.onPrimary + '20' }]}>
           <View style={[styles.planBarFill, { backgroundColor: colors.primary, width: `${usagePercent}%` }]} />
         </View>
+      </View>
+
+      <View style={styles.planFeatures}>
+        {features.map((f) => (
+          <View key={f.key} style={styles.planFeatureRow}>
+            <View style={[styles.planFeatureIcon, { backgroundColor: f.included ? colors.primary + '30' : colors.onPrimary + '15' }]}>
+              <Ionicons
+                name={f.included ? 'checkmark' : 'lock-closed'}
+                size={12}
+                color={f.included ? colors.primary : colors.onPrimary + '50'}
+              />
+            </View>
+            <Text style={[styles.planFeatureText, { color: f.included ? colors.onPrimary : colors.onPrimary + '50' }]}>
+              {f.label}
+            </Text>
+          </View>
+        ))}
       </View>
 
       <Pressable
@@ -260,7 +300,7 @@ const PlanCard = React.memo(function PlanCard({ planName, docLimit, objectLimit,
         ]}
       >
         <Ionicons name="rocket-outline" size={14} color={colors.greenDark} />
-        <Text style={[styles.planUpgradeText, { color: colors.greenDark }]}>{t('subscription:choosePlan')}</Text>
+        <Text style={[styles.planUpgradeText, { color: colors.greenDark }]}>{t('subscription:improvePlan')}</Text>
       </Pressable>
     </View>
   );
@@ -325,12 +365,23 @@ export default function HomeScreen() {
   const user = useAuthStore(state => state.user);
   const { data, isLoading, refetch, isRefetching } = useDashboardData();
 
+  const [usage, setUsage] = useState<SubscriptionUsage | null>(null);
+
+  useEffect(() => {
+    subscriptionsService.getUsage().then((res) => {
+      if (res.success && res.data) setUsage(res.data);
+    }).catch(() => {});
+  }, []);
+
   const docs = data?.docs || [];
   const declarations = data?.declarations || [];
   const notifications = data?.notifications || [];
 
   const onRefresh = useCallback(async () => {
     await refetch();
+    subscriptionsService.getUsage().then((res) => {
+      if (res.success && res.data) setUsage(res.data);
+    }).catch(() => {});
   }, [refetch]);
 
   const unreadCount = useMemo(() =>
@@ -341,9 +392,26 @@ export default function HomeScreen() {
     declarations.filter((d) => !['recovered', 'resolved', 'cancelled'].includes(d.status)),
   [declarations]);
 
-  const planName = user?.subscription?.plan_name || t('subscription:free');
-  const docLimit = user?.subscription?.doc_limit || 5; 
-  const objectLimit = 10; 
+  const planName = usage?.plan_name || user?.subscription?.plan_name || t('subscription:free');
+
+  const planFeatures: PlanFeature[] = useMemo(() => {
+    if (usage) {
+      const usedObjects = usage.usage?.objects || 0;
+      const limitObjects = usage.limits?.objects;
+      const usedDocs = usage.usage?.docs_per_type || 0;
+      return [
+        { key: 'objects', label: t('subscription:featurePersonal'), value: `${usedObjects} / ${limitObjects ?? '∞'}`, included: true },
+        { key: 'docs_per_type', label: t('subscription:featureDeclarations'), value: `${usedDocs}`, included: true },
+        { key: 'vault', label: t('subscription:featureVault'), value: '✓', included: true },
+      ];
+    }
+    return [
+      { key: 'objects', label: t('subscription:featurePersonal'), value: '0', included: true },
+      { key: 'docs_per_type', label: t('subscription:featureDeclarations'), value: '0', included: true },
+      { key: 'vault', label: t('subscription:featureVault'), value: '✓', included: true },
+    ];
+  }, [usage, t]);
+
   const walletBalance = user?.wallet_balance || 0;
   const userName = user?.prenom || t('common:unknown');
   const initials = getInitials(user?.prenom && user?.nom ? `${user.prenom} ${user.nom}` : undefined);
@@ -529,10 +597,8 @@ export default function HomeScreen() {
 
           <PlanCard
             planName={planName}
-            docLimit={docLimit}
-            objectLimit={objectLimit}
-            docCount={docs.length}
-            objectCount={0}
+            usage={usage}
+            features={planFeatures}
             colors={colors}
           />
         </View>
@@ -887,9 +953,6 @@ const styles = StyleSheet.create({
     bottom: -30,
     right: -30,
   },
-  planHeader: {
-    marginBottom: 12,
-  },
   planBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -906,15 +969,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   planName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
     marginBottom: 2,
   },
-  planLimit: {
-    fontSize: 12,
-  },
   planUsage: {
-    marginBottom: 14,
+    marginBottom: 16,
   },
   planUsageHeader: {
     flexDirection: 'row',
@@ -929,13 +989,33 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   planBar: {
-    height: 4,
-    borderRadius: 2,
+    height: 5,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   planBarFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
+  },
+  planFeatures: {
+    gap: 8,
+    marginBottom: 16,
+  },
+  planFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  planFeatureIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planFeatureText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   planUpgradeBtn: {
     paddingVertical: 12,

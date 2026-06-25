@@ -45,6 +45,13 @@ export const NAMESPACES = [
   'notifications',
   'banners',
   'plusSheet',
+  'faq',
+  'manageProfile',
+  'declarationDetail',
+  'documentDetail',
+  'deviceDetail',
+  'errors',
+  'notFound',
 ];
 
 function buildResources(bundle: Record<string, any>) {

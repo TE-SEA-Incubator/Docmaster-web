@@ -11,6 +11,7 @@ interface Transaction {
   id: string;
   user_name?: string;
   amount: number;
+  payment_method?: string;
   method?: string;
   status?: string;
   created_at?: string;
@@ -24,10 +25,15 @@ const statusStyles: Record<string, string> = {
 };
 
 const methodIcons: Record<string, string> = {
+  ORANGE_MONEY: "fa-solid fa-mobile-screen",
+  MTN_MOMO: "fa-solid fa-mobile-screen",
+  OM: "fa-solid fa-mobile-screen",
+  MOMO: "fa-solid fa-mobile-screen",
   orange_money: "fa-solid fa-mobile-screen",
   mtn_momo: "fa-solid fa-mobile-screen",
   card: "fa-solid fa-credit-card",
   stripe: "fa-brands fa-cc-stripe",
+  POINTS: "fa-solid fa-coins",
 };
 
 export default function AdminTransactions() {
@@ -62,7 +68,7 @@ export default function AdminTransactions() {
     exportCSV(filtered, [
       { key: "user_name", label: "Utilisateur" },
       { key: "amount", label: "Montant" },
-      { key: "method", label: "Méthode" },
+      { key: "payment_method", label: "Méthode" },
       { key: "status", label: "Statut" },
       { key: "created_at", label: "Date" },
     ], "transactions");
@@ -120,7 +126,7 @@ export default function AdminTransactions() {
                   <tr key={tx.id} className="hover:bg-gray-50/60 transition-colors">
                     <td className="px-4 py-3.5 font-semibold text-gray-900">{tx.user_name || "—"}</td>
                     <td className="px-4 py-3.5"><span className="font-bricolage font-extrabold text-gray-900">{tx.amount?.toLocaleString("fr-FR")} <span className="text-[11px] text-gray-400">XAF</span></span></td>
-                    <td className="px-4 py-3.5"><span className="flex items-center gap-2 text-gray-600"><i className={`${methodIcons[tx.method?.toLowerCase() || ""] || "fa-solid fa-circle"} text-gray-400 text-[11px]`} />{tx.method?.replace(/_/g, " ") || "—"}</span></td>
+                    <td className="px-4 py-3.5"><span className="flex items-center gap-2 text-gray-600"><i className={`${methodIcons[tx.payment_method || tx.method || ""] || "fa-solid fa-circle"} text-gray-400 text-[11px]`} />{(tx.payment_method || tx.method || "").replace(/_/g, " ") || "—"}</span></td>
                     <td className="px-4 py-3.5">
                       <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border ${statusStyles[tx.status || ""] || "bg-gray-100 text-gray-400 border-gray-200"}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${tx.status === "completed" || tx.status === "success" ? "bg-emerald-500" : tx.status === "pending" ? "bg-amber-500" : tx.status === "failed" ? "bg-red-500" : "bg-gray-400"}`} />

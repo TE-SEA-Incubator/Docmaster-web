@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import type { ApiResponse, Plan } from '@/types';
+import type { ApiResponse, Plan, SubscriptionUsage } from '@/types';
 
 export const subscriptionsService = {
   async getAllPlans() {
@@ -8,7 +8,7 @@ export const subscriptionsService = {
   },
 
   async getUsage() {
-    const res = await apiClient.get<ApiResponse<any>>('/subscriptions/usage');
+    const res = await apiClient.get<ApiResponse<SubscriptionUsage>>('/subscriptions/usage');
     return res.data;
   },
 

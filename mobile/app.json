@@ -12,6 +12,7 @@
       "bundleIdentifier": "com.tesea.docmaster"
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -70,12 +71,13 @@
             "minSdkVersion": 24,
             "compileSdkVersion": 36,
             "targetSdkVersion": 36,
-            "ndkVersion": "28.2.13676358"
+            "ndkVersion": "30.0.14904198"
           }
         }
       ],
       "expo-audio",
-      "react-native-document-scanner-plugin"
+      "react-native-document-scanner-plugin",
+      ["./plugins/withNdkVersion", "30.0.14904198"]
     ],
     "experiments": {
       "typedRoutes": true

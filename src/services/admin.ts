@@ -65,6 +65,7 @@ interface Transaction {
   user_id?: string;
   amount: number;
   method?: string;
+  payment_method?: string;
   status?: string;
   created_at?: string;
   [key: string]: unknown;

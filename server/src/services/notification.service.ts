@@ -113,11 +113,24 @@ export class NotificationService {
         const tokens = await this.pushTokenRepository.findByUserId(user_id);
         const fcmTokens = tokens.map(t => t.token).filter(Boolean);
         if (fcmTokens.length > 0) {
-          const fcmMessage = {
+          const response = await admin.messaging().sendEachForMulticast({
             notification: { title, body: message },
             tokens: fcmTokens,
-          };
-          await admin.messaging().sendEachForMulticast(fcmMessage);
+          });
+          // Clean up invalid/expired tokens returned by FCM
+          const invalidTokens: string[] = [];
+          response.responses.forEach((r, idx) => {
+            if (!r.success && r.error?.code && [
+              'messaging/invalid-registration-token',
+              'messaging/registration-token-not-registered',
+            ].includes(r.error.code)) {
+              invalidTokens.push(fcmTokens[idx]);
+            }
+          });
+          if (invalidTokens.length > 0) {
+            await this.pushTokenRepository.deleteInvalidTokens(invalidTokens);
+            console.log(`[Push] Cleaned ${invalidTokens.length} invalid tokens for user ${user_id}`);
+          }
         }
       } catch (err) {
         console.error('Error sending push notification:', err);
@@ -296,6 +309,19 @@ export class NotificationService {
           tokens: batch,
         });
         sentCount += response.successCount;
+        // Clean invalid tokens
+        const invalidTokens: string[] = [];
+        response.responses.forEach((r, idx) => {
+          if (!r.success && r.error?.code && [
+            'messaging/invalid-registration-token',
+            'messaging/registration-token-not-registered',
+          ].includes(r.error.code)) {
+            invalidTokens.push(batch[idx]);
+          }
+        });
+        if (invalidTokens.length > 0) {
+          await this.pushTokenRepository.deleteInvalidTokens(invalidTokens);
+        }
       } catch (err) {
         console.error(`[Broadcast] FCM batch error at index ${i}:`, err);
       }

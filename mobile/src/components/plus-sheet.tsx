@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Modal, useColorScheme } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTranslation } from 'react-i18next';
 
 interface PlusSheetProps {
@@ -12,8 +12,7 @@ interface PlusSheetProps {
 }
 
 export function PlusSheet({ visible, onClose }: PlusSheetProps) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation('plusSheet');
 
@@ -83,14 +82,14 @@ export function PlusSheet({ visible, onClose }: PlusSheetProps) {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={[styles.overlay]} onPress={onClose}>
         <Pressable
-          style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 60 }]}
+          style={[styles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + 60 }]}
           onPress={(e) => e.stopPropagation()}
         >
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
           <View style={styles.header}>
-            <View style={[styles.headerIcon, { backgroundColor: scheme === 'dark' ? '#3A2E20' : '#FEF0DC' }]}>
-              <Ionicons name="add-circle" size={28} color="#F5A64B" />
+            <View style={[styles.headerIcon, { backgroundColor: colors.warningBg }]}>
+              <Ionicons name="add-circle" size={28} color={colors.tint} />
             </View>
             <Text style={[styles.headerTitle, { color: colors.text }]}>{t('title')}</Text>
           </View>
@@ -103,10 +102,10 @@ export function PlusSheet({ visible, onClose }: PlusSheetProps) {
                 style={({ pressed }) => [
                   styles.actionRow,
                   {
-                    backgroundColor: colors.surface,
+                    backgroundColor: colors.backgroundElement,
                     borderColor: colors.border,
                   },
-                  pressed && { backgroundColor: action.bg, borderColor: action.color + '30' },
+                  pressed && { backgroundColor: action.bg, borderColor: action.color + '40' },
                 ]}
               >
                 {/* Icône de gauche enveloppée correctement */}

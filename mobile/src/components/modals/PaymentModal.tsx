@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, Pressable, Animated, Dimensions, Modal,
   TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard,
+  ScrollView, StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -18,25 +19,55 @@ interface PaymentModalProps {
   onClose: () => void;
   onPay: (method: PaymentMethod, phone: string) => void;
   amount: number;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   processing: boolean;
   error: string;
-  submitLabel: string;
+  submitLabel?: string;
   children?: React.ReactNode;
 }
 
-type Step = 'form' | 'success';
+const METHODS = [
+  {
+    id: 'orange' as PaymentMethod,
+    name: 'Orange Money',
+    icon: 'chatbubble-ellipses' as const,
+    color: '#F96900',
+    bg: '#fff4ee',
+  },
+  {
+    id: 'mtn' as PaymentMethod,
+    name: 'MTN MoMo',
+    icon: 'flash' as const,
+    color: '#FFCC00',
+    textColor: '#000',
+    bg: '#fffde7',
+  },
+  {
+    id: 'points' as PaymentMethod,
+    name: 'Mes Points',
+    icon: 'star' as const,
+    color: '#16a34a',
+    bg: '#f0fdf4',
+  },
+  {
+    id: 'paypoint' as 'paypoint',
+    name: 'PayPoint',
+    icon: 'card' as const,
+    color: '#9ca3af',
+    bg: '#f9fafb',
+    disabled: true,
+  },
+];
 
 export function PaymentModal({
-  isOpen, onClose, onPay, amount, title, description, processing, error, submitLabel, children
+  isOpen, onClose, onPay, amount, title = 'Paiement', description, processing, error, submitLabel, children,
 }: PaymentModalProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [method, setMethod] = useState<PaymentMethod>('orange');
   const [phone, setPhone] = useState('');
   const [pointsNeeded, setPointsNeeded] = useState<number | null>(null);
-  const [step, setStep] = useState<Step>('form');
   const slideAnim = useRef(new Animated.Value(SCREEN.height)).current;
 
   useEffect(() => {
@@ -44,33 +75,25 @@ export function PaymentModal({
       Animated.spring(slideAnim, { toValue: 0, damping: 22, stiffness: 220, useNativeDriver: true }).start();
     } else {
       Animated.timing(slideAnim, { toValue: SCREEN.height, duration: 220, useNativeDriver: true }).start(() => {
-        setStep('form');
         setPhone('');
         setMethod('orange');
       });
     }
   }, [isOpen]);
 
-  // Calcul du coût en points via /points/rate (aligné sur le web).
   useEffect(() => {
     if (!isOpen || amount <= 0) return;
     let cancelled = false;
-    paymentsService
-      .getPointsRate()
-      .then((rate) => {
-        if (!cancelled) setPointsNeeded(Math.ceil(amount * rate));
-      })
-      .catch(() => {
-        if (!cancelled) setPointsNeeded(null);
-      });
-    return () => {
-      cancelled = true;
-    };
+    paymentsService.getPointsRate().then((rate) => {
+      if (!cancelled) setPointsNeeded(Math.ceil(amount * rate));
+    }).catch(() => {
+      if (!cancelled) setPointsNeeded(null);
+    });
+    return () => { cancelled = true; };
   }, [amount, isOpen]);
 
   const handlePay = () => {
-    if (!method) return;
-    // Le paiement par points ne nécessite pas de numéro de téléphone.
+    if (!method || method === 'paypoint' as any) return;
     if (method !== 'points' && !phone) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onPay(method, method === 'points' ? '' : phone);
@@ -81,7 +104,7 @@ export function PaymentModal({
     onClose();
   };
 
-  const isFormValid = method === 'points' ? true : !!phone;
+  const isFormValid = method === 'points' ? true : phone.length >= 9;
 
   return (
     <Modal visible={isOpen} transparent animationType="none" onRequestClose={handleClose}>
@@ -89,146 +112,94 @@ export function PaymentModal({
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={{ flex: 1, justifyContent: 'flex-end' }}>
             <Pressable style={{ flex: 1 }} onPress={handleClose} />
-            <Animated.View style={{
+            <Animated.View style={[s.sheet, {
               backgroundColor: colors.backgroundElement,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              paddingTop: 12,
-              maxHeight: SCREEN.height * 0.92,
-              paddingBottom: insets.bottom + 16,
+              paddingBottom: insets.bottom + 20,
               transform: [{ translateY: slideAnim }],
-            }}>
-              <View style={{
-                width: 40, height: 4, borderRadius: 2,
-                backgroundColor: colors.border, alignSelf: 'center', marginBottom: 8,
-              }} />
+            }]}>
+              {/* Handle */}
+              <View style={[s.handle, { backgroundColor: colors.border }]} />
 
-              <View style={{ paddingHorizontal: 20 }}>
-                {/* Icon + Title */}
-                <View style={{ alignItems: 'center', paddingVertical: 16 }}>
-                  <View style={{
-                    width: 56, height: 56, borderRadius: 16,
-                    backgroundColor: colors.backgroundSelected, alignItems: 'center', justifyContent: 'center',
-                    marginBottom: 12,
-                  }}>
-                    <Ionicons name="card-outline" size={24} color={colors.tint} />
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 8 }}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* Header */}
+                <View style={s.headerRow}>
+                  <View style={[s.headerIcon, { backgroundColor: colors.backgroundSelected }]}>
+                    <Ionicons name="lock-closed-outline" size={20} color={colors.tint} />
                   </View>
-                  <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: 4 }}>{title}</Text>
-                  <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center' }}>{description}</Text>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={[s.headerTitle, { color: colors.text }]}>{title}</Text>
+                    {description && <Text style={[s.headerSub, { color: colors.textSecondary }]}>{description}</Text>}
+                  </View>
+                  <Pressable onPress={handleClose} style={{ padding: 4 }}>
+                    <Ionicons name="close-circle" size={26} color={colors.border} />
+                  </Pressable>
                 </View>
 
                 {/* Amount */}
-                <View style={{
-                  backgroundColor: colors.backgroundSelected, borderRadius: 16,
-                  borderWidth: 1, borderColor: colors.border,
-                  paddingVertical: 20, alignItems: 'center', marginBottom: 20,
-                }}>
-                  <Text style={{ fontSize: 34, fontWeight: '800', color: colors.greenDark, letterSpacing: -0.5 }}>{amount.toLocaleString()} XAF</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Montant à payer</Text>
+                <View style={[s.amountBox, { backgroundColor: colors.backgroundSelected, borderColor: colors.border }]}>
+                  <Text style={[s.amountLabel, { color: colors.textSecondary }]}>Montant à payer</Text>
+                  <Text style={[s.amountValue, { color: colors.greenDark }]}>{amount.toLocaleString('fr-FR')} XAF</Text>
                 </View>
 
                 {children}
 
-                {/* Payment method — Mobile Money */}
-                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 8 }}>Mode de paiement</Text>
-                <Text style={{
-                  fontSize: 10, fontWeight: '700', color: colors.textSecondary,
-                  textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8,
-                }}>Mobile Money</Text>
-                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 18 }}>
-                  {([
-                    { id: 'orange', name: 'Orange Money', icon: 'chatbubble-ellipses', color: '#F96900' },
-                    { id: 'mtn', name: 'MTN MoMo', icon: 'flash', color: colors.warning },
-                  ] as const).map((p) => {
-                    const sel = method === p.id;
+                {/* Method selector — horizontal scroll */}
+                <Text style={[s.label, { color: colors.text, marginBottom: 10 }]}>Mode de paiement</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 10, paddingBottom: 4, paddingRight: 4 }}
+                  style={{ marginBottom: 18 }}
+                >
+                  {METHODS.map((m) => {
+                    const sel = method === m.id;
+                    const disabled = (m as any).disabled;
                     return (
                       <Pressable
-                        key={p.id}
-                        onPress={() => setMethod(p.id)}
-                        style={{
-                          flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-                          paddingVertical: 14, borderRadius: 14,
-                          backgroundColor: sel ? p.color : colors.backgroundSelected,
-                          borderWidth: 1.5,
-                          borderColor: sel ? p.color : colors.border,
-                        }}
+                        key={m.id}
+                        onPress={() => !disabled && setMethod(m.id as PaymentMethod)}
+                        style={[
+                          s.methodCard,
+                          {
+                            backgroundColor: sel ? m.color : colors.backgroundSelected,
+                            borderColor: sel ? m.color : colors.border,
+                            opacity: disabled ? 0.5 : 1,
+                          },
+                        ]}
                       >
-                        <Ionicons name={p.icon} size={18} color={sel ? '#FFF' : p.color} />
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: sel ? '#FFF' : colors.textSecondary }}>{p.name}</Text>
+                        <View style={[s.methodIconWrap, { backgroundColor: sel ? 'rgba(255,255,255,0.2)' : m.bg }]}>
+                          <Ionicons name={m.icon} size={20} color={sel ? '#fff' : m.color} />
+                        </View>
+                        <Text style={[s.methodName, { color: sel ? '#fff' : colors.text }]}>{m.name}</Text>
+                        {m.id === 'points' && (
+                          <Text style={[s.methodSub, { color: sel ? 'rgba(255,255,255,0.8)' : colors.textSecondary }]}>
+                            {pointsNeeded ? `${pointsNeeded.toLocaleString()} pts` : '…'}
+                          </Text>
+                        )}
+                        {disabled && (
+                          <Text style={[s.methodSub, { color: colors.textSecondary }]}>Bientôt</Text>
+                        )}
+                        {sel && !disabled && (
+                          <View style={s.methodCheck}>
+                            <Ionicons name="checkmark-circle" size={16} color="#fff" />
+                          </View>
+                        )}
                       </Pressable>
                     );
                   })}
-                </View>
+                </ScrollView>
 
-                {/* Other payment methods: Points (actif) + PayPoint (bientôt dispo) */}
-                <Text style={{
-                  fontSize: 10, fontWeight: '700', color: colors.textSecondary,
-                  textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8,
-                }}>Autres</Text>
-                <View style={{ gap: 10, marginBottom: 18 }}>
-                  <Pressable
-                    onPress={() => setMethod('points')}
-                    style={{
-                      flexDirection: 'row', alignItems: 'center', gap: 12,
-                      padding: 14, borderRadius: 14,
-                      backgroundColor: method === 'points' ? colors.successBg : colors.backgroundSelected,
-                      borderWidth: 1.5,
-                      borderColor: method === 'points' ? colors.success : colors.border,
-                    }}
-                  >
-                    <View style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: colors.success,
-                    }}>
-                      <Ionicons name="star" size={18} color="#FFF" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 2 }}>Payer avec mes Points</Text>
-                      <Text style={{ fontSize: 11, color: colors.textSecondary }}>
-                        {pointsNeeded === null
-                          ? 'Chargement...'
-                          : `Coût: ${pointsNeeded.toLocaleString()} pts`}
-                      </Text>
-                    </View>
-                    {method === 'points' && (
-                      <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-                    )}
-                  </Pressable>
-
-                  {/* PayPoint (désactivé, bientôt disponible) */}
-                  <View style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 12,
-                    padding: 14, borderRadius: 14,
-                    backgroundColor: colors.backgroundSelected,
-                    borderWidth: 1.5, borderColor: colors.border,
-                    opacity: 0.7,
-                  }}>
-                    <View style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: colors.textSecondary,
-                    }}>
-                      <Ionicons name="card" size={18} color="#FFF" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textSecondary }}>PayPoint</Text>
-                      <Text style={{ fontSize: 11, color: colors.textSecondary }}>Bientôt disponible</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Phone (uniquement pour Orange / MTN) */}
+                {/* Phone input */}
                 {method !== 'points' && (
                   <>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 8 }}>Numéro de téléphone</Text>
-                    <View style={{
-                      flexDirection: 'row', alignItems: 'center',
-                      backgroundColor: colors.backgroundSelected, borderRadius: 14, borderWidth: 1, borderColor: colors.border,
-                      paddingHorizontal: 16, marginBottom: 14,
-                    }}>
-                      <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text, marginRight: 10 }}>+237</Text>
-                      <View style={{ width: 1, height: 24, backgroundColor: colors.border, marginRight: 12 }} />
+                    <Text style={[s.label, { color: colors.text, marginBottom: 8 }]}>Numéro de téléphone</Text>
+                    <View style={[s.phoneRow, { backgroundColor: colors.backgroundSelected, borderColor: colors.border }]}>
+                      <Text style={[s.phonePrefix, { color: colors.text }]}>+237</Text>
+                      <View style={[s.phoneDivider, { backgroundColor: colors.border }]} />
                       <TextInput
                         value={phone}
                         onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, '').slice(0, 9))}
@@ -236,51 +207,51 @@ export function PaymentModal({
                         placeholderTextColor={colors.border}
                         keyboardType="phone-pad"
                         maxLength={9}
-                        style={{ flex: 1, fontSize: 15, paddingVertical: 14, color: colors.text }}
+                        style={[s.phoneInput, { color: colors.text }]}
                       />
                     </View>
+                    <Text style={[s.phoneHint, { color: colors.textSecondary }]}>
+                      {method === 'mtn' ? 'Ex: 677 000 000' : 'Ex: 699 000 000'}
+                    </Text>
                   </>
                 )}
 
-                {error ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                {/* Error */}
+                {!!error && (
+                  <View style={[s.errorBox, { backgroundColor: colors.dangerBg }]}>
                     <Ionicons name="alert-circle" size={16} color={colors.danger} />
-                    <Text style={{ fontSize: 13, color: colors.danger, flex: 1 }}>{error}</Text>
+                    <Text style={[s.errorTxt, { color: colors.danger }]}>{error}</Text>
                   </View>
-                ) : null}
+                )}
 
                 {/* Submit */}
                 <Pressable
                   onPress={handlePay}
                   disabled={!isFormValid || processing}
-                  style={({ pressed }) => ({
-                    backgroundColor: (!isFormValid || processing) ? colors.border : colors.greenDark,
-                    borderRadius: 16, paddingVertical: 16,
-                    alignItems: 'center', marginTop: 4,
-                    opacity: pressed && !processing ? 0.85 : 1,
-                  })}
+                  style={({ pressed }) => ([
+                    s.submitBtn,
+                    { backgroundColor: (!isFormValid || processing) ? colors.border : colors.greenDark },
+                    pressed && { opacity: 0.85 },
+                  ])}
                 >
                   {processing ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Ionicons name="sync" size={18} color="#FFF" />
-                      <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFF' }}>Traitement...</Text>
+                    <View style={s.submitInner}>
+                      <Ionicons name="sync" size={18} color="#fff" />
+                      <Text style={s.submitTxt}>Traitement en cours…</Text>
                     </View>
                   ) : (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Ionicons name="lock-closed" size={18} color="#FFF" />
-                      <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFF' }}>{submitLabel}</Text>
+                    <View style={s.submitInner}>
+                      <Ionicons name="lock-closed" size={18} color="#fff" />
+                      <Text style={s.submitTxt}>{submitLabel || `Payer ${amount.toLocaleString('fr-FR')} XAF`}</Text>
                     </View>
                   )}
                 </Pressable>
 
-                <View style={{
-                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                  gap: 6, marginTop: 16, marginBottom: 8,
-                }}>
+                <View style={s.secureRow}>
                   <Ionicons name="shield-checkmark" size={12} color={colors.success} />
-                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>Paiement sécurisé</Text>
+                  <Text style={[s.secureTxt, { color: colors.textSecondary }]}>Paiement sécurisé & crypté</Text>
                 </View>
-              </View>
+              </ScrollView>
             </Animated.View>
           </View>
         </TouchableWithoutFeedback>
@@ -288,3 +259,38 @@ export function PaymentModal({
     </Modal>
   );
 }
+
+const s = StyleSheet.create({
+  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 12, maxHeight: SCREEN.height * 0.9 },
+  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  headerIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '800' },
+  headerSub: { fontSize: 12, marginTop: 2 },
+  amountBox: { borderRadius: 16, borderWidth: 1, padding: 18, alignItems: 'center', marginBottom: 20 },
+  amountLabel: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+  amountValue: { fontSize: 32, fontWeight: '900', letterSpacing: -0.5 },
+  label: { fontSize: 13, fontWeight: '700' },
+  // Method cards
+  methodCard: { width: 100, borderRadius: 16, borderWidth: 1.5, padding: 14, alignItems: 'center', gap: 8, position: 'relative' },
+  methodIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  methodName: { fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  methodSub: { fontSize: 10, textAlign: 'center' },
+  methodCheck: { position: 'absolute', top: 6, right: 6 },
+  // Phone
+  phoneRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, paddingHorizontal: 16, marginBottom: 6 },
+  phonePrefix: { fontSize: 15, fontWeight: '700', marginRight: 10 },
+  phoneDivider: { width: 1, height: 24, marginRight: 12 },
+  phoneInput: { flex: 1, fontSize: 15, paddingVertical: 14 },
+  phoneHint: { fontSize: 11, marginBottom: 16 },
+  // Error
+  errorBox: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 12, borderRadius: 12, marginBottom: 12 },
+  errorTxt: { fontSize: 13, flex: 1 },
+  // Submit
+  submitBtn: { borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
+  submitInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  submitTxt: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  // Secure
+  secureRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 14, marginBottom: 4 },
+  secureTxt: { fontSize: 11 },
+});

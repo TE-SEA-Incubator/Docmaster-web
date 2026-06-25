@@ -11,6 +11,8 @@ import {
   Dimensions,
   Image,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -212,9 +214,11 @@ export default function RechercherScreen() {
         <Text style={[s.subtitle, { color: colors.textSecondary }]}>{t('rechercher:subtitle')}</Text>
       </View>
 
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: clearance + 24 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
         {/* ═══ STATS DASHBOARD ═══ */}
@@ -500,6 +504,7 @@ export default function RechercherScreen() {
           )}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* ═══ PREVIEW MODAL ═══ */}
       <Modal visible={showPreview} transparent animationType="slide" onRequestClose={() => setShowPreview(false)}>

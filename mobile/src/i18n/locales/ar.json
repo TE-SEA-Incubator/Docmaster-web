@@ -134,7 +134,7 @@
       "daysAgo": "منذ {{n}} ي"
     },
     "usage": "الاستخدام",
-    "planLimit": "الحد الأقصى {{count} مستندات"
+    "planLimit": "الحد الأقصى {{count}} مستندات"
   },
   "profile": {
     "title": "الملف الشخصي",

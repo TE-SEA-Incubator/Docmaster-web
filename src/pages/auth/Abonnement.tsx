@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { subscriptionsService } from "../../services/subscriptionsService";
 import { paymentsService, type SavedPaymentMethod } from "../../services/paymentsService";
+import apiClient from "../../services/api";
 import { useI18n } from "../../context/I18nContext";
 import Topbar from "../../layout/Topbar";
 import PaymentModal from "../../components/modals/PaymentModal";
@@ -40,6 +41,9 @@ export default function Abonnement() {
   const [payError, setPayError] = useState("");
   const [paySuccess, setPaySuccess] = useState(false);
   const [pollingStatus, setPollingStatus] = useState<string | null>(null);
+  const [nokashTransactionId, setNokashTransactionId] = useState<string | null>(null);
+  const [manualChecking, setManualChecking] = useState(false);
+  const [pollingElapsed, setPollingElapsed] = useState(0);
 
   // Cancel modal
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -95,6 +99,8 @@ export default function Abonnement() {
   const openSubscribeModal = (plan: Plan) => {
     setSelectedPlan(plan);
     setPollingStatus(null);
+    setNokashTransactionId(null);
+    setPollingElapsed(0);
     setPayError("");
     setPaySuccess(false);
     setModalOpen(true);
@@ -104,6 +110,8 @@ export default function Abonnement() {
     setModalOpen(false);
     setSelectedPlan(null);
     setPollingStatus(null);
+    setNokashTransactionId(null);
+    setPollingElapsed(0);
     setPayError("");
   };
 
@@ -138,7 +146,10 @@ export default function Abonnement() {
             // Success for mobile money: DO NOT close modal. Set polling state instead.
             // This allows the "polling status" modal (which appears based on pollingStatus)
             // to show the pending state.
+            const transactionId = (result as any).data?.transactionId || null;
+            setNokashTransactionId(transactionId);
             setPollingStatus(t("abonnement_payment_pending"));
+            setPollingElapsed(0);
             startPolling();
         }
       } else {
@@ -153,20 +164,64 @@ export default function Abonnement() {
   };
 
   const startPolling = () => {
+    const startedAt = Date.now();
     const interval = setInterval(async () => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      setPollingElapsed(elapsed);
+
       try {
+        // Check if subscription is now active
         const res = await subscriptionsService.getUsage();
         if (res.success && res.data?.subscription_id) {
           clearInterval(interval);
           setPollingStatus(null);
+          setPollingElapsed(0);
           setPaySuccess(true);
           loadData();
+          return;
         }
-        } catch (e: any) {
-          console.error("[Abonnement] polling error:", e?.response?.data || e);
+
+        // If we have a transaction ID and more than 30s have passed,
+        // try a direct force-check with Nokash
+        if (nokashTransactionId && elapsed > 30) {
+          try {
+            await apiClient.get(`payments/check/${nokashTransactionId}`);
+          } catch {}
         }
+
+        // Update status message based on elapsed time
+        if (elapsed > 120) {
+          setPollingStatus("Le paiement est en cours de traitement. Vous recevrez une notification dès confirmation. Vous pouvez fermer cette page.");
+        } else if (elapsed > 60) {
+          setPollingStatus("Confirmation en cours auprès de votre opérateur... Cette opération peut prendre jusqu'à 2 minutes.");
+        } else {
+          setPollingStatus(t("abonnement_payment_pending"));
+        }
+      } catch (e: any) {
+        console.error("[Abonnement] polling error:", e?.response?.data || e);
+      }
     }, 5000);
     setTimeout(() => clearInterval(interval), 300000);
+  };
+
+  const manualCheck = async () => {
+    if (!nokashTransactionId) return;
+    setManualChecking(true);
+    try {
+      const res = await apiClient.get(`payments/check/${nokashTransactionId}`);
+      if (res.data?.success && res.data?.data?.updated) {
+        setPollingStatus(null);
+        setPollingElapsed(0);
+        setPaySuccess(true);
+        loadData();
+      } else if (res.data?.data?.status) {
+        setPollingStatus(`Statut actuel: ${res.data.data.status}. En attente de confirmation...`);
+      }
+    } catch (e: any) {
+      console.error("[Abonnement] manual check error:", e);
+    } finally {
+      setManualChecking(false);
+    }
   };
 
   // ── Helpers ──
@@ -699,11 +754,40 @@ export default function Abonnement() {
             </div>
             <div className="px-8 pb-8">
               <div className="text-center py-10 space-y-6 animate-fade-in">
-                <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                {pollingElapsed >= 120 ? (
+                  <div className="w-16 h-16 mx-auto rounded-full bg-amber-50 flex items-center justify-center">
+                    <i className="fa-solid fa-clock text-amber-500 text-2xl" />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                )}
                 <div>
-                  <p className="font-bricolage text-lg font-black text-slate-800">Validation en cours...</p>
+                  <p className="font-bricolage text-lg font-black text-slate-800">
+                    {pollingElapsed >= 120 ? "Traitement en cours" : "Validation en cours..."}
+                  </p>
                   <p className="text-sm text-slate-500 mt-2">{pollingStatus}</p>
+                  <p className="text-xs text-slate-400 mt-1 font-mono">
+                    {Math.floor(pollingElapsed / 60)}:{(pollingElapsed % 60).toString().padStart(2, "0")}
+                  </p>
                 </div>
+                {nokashTransactionId && (
+                  <div className="pt-2">
+                    <button
+                      onClick={manualCheck}
+                      disabled={manualChecking}
+                      className="px-5 py-2.5 rounded-xl bg-primary text-white text-[13px] font-bold hover:bg-primary-dark transition-all disabled:opacity-40 flex items-center gap-2 mx-auto"
+                    >
+                      {manualChecking ? (
+                        <><i className="fa-solid fa-spinner fa-spin" /> Vérification...</>
+                      ) : (
+                        <><i className="fa-solid fa-rotate" /> Vérifier manuellement</>
+                      )}
+                    </button>
+                    <p className="text-[11px] text-slate-400 mt-2">
+                      Si la confirmation tarde, cliquez sur "Vérifier manuellement"
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

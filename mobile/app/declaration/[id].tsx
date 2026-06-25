@@ -28,10 +28,10 @@ function formatDate(s?: string) {
 function timeAgo(dateString?: string, t?: (key: string, opts?: Record<string, any>) => string) {
   if (!dateString) return '';
   const diff = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-  if (diff < 60) return t ? t('common:justNow') : "À l'instant";
-  if (diff < 3600) return t ? t('common:minutesAgo', { count: Math.floor(diff / 60) }) : `Il y a ${Math.floor(diff / 60)}min`;
-  if (diff < 86400) return t ? t('common:hoursAgo', { count: Math.floor(diff / 3600) }) : `Il y a ${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return t ? t('common:daysAgo', { count: Math.floor(diff / 86400) }) : `Il y a ${Math.floor(diff / 86400)}j`;
+  if (diff < 60) return t ? t('home:timeAgo.justNow') : "À l'instant";
+  if (diff < 3600) return t ? t('home:timeAgo.minutesAgo', { count: Math.floor(diff / 60) }) : `Il y a ${Math.floor(diff / 60)}min`;
+  if (diff < 86400) return t ? t('home:timeAgo.hoursAgo', { count: Math.floor(diff / 3600) }) : `Il y a ${Math.floor(diff / 3600)}h`;
+  if (diff < 604800) return t ? t('home:timeAgo.daysAgo', { count: Math.floor(diff / 86400) }) : `Il y a ${Math.floor(diff / 86400)}j`;
   return new Date(dateString).toLocaleDateString('fr-FR');
 }
 

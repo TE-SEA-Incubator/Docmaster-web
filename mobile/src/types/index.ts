@@ -10,6 +10,7 @@ export type {
   Notification,
   Plan,
   Subscription,
+  SubscriptionUsage,
   Referral,
   ReferralStats,
   Transaction,

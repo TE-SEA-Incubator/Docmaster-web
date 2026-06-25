@@ -62,10 +62,17 @@ export class NotificationController {
   registerPushToken = async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user.id;
-      const { token, platform } = req.body;
+      const { token, platform, device_name, unregister } = req.body;
 
       if (!token) {
         res.status(400).json({ success: false, message: 'Token is required' });
+        return;
+      }
+
+      // Handle unregistration (logout / permission revoked)
+      if (unregister === true) {
+        await this.pushTokenRepository.delete(userId, token);
+        res.json({ success: true, message: 'Push token unregistered' });
         return;
       }
 
@@ -73,6 +80,7 @@ export class NotificationController {
         user_id: userId,
         token,
         platform: platform || 'android',
+        device_name: device_name || null,
       });
 
       res.json({ success: true, message: 'Push token registered' });

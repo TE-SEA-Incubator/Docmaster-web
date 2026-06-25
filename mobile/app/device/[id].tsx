@@ -11,11 +11,11 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const TYPE_META: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  telephone: { label: 'deviceDetail:type_telephone', icon: 'phone-portrait-outline' },
-  ordinateur: { label: 'deviceDetail:type_ordinateur', icon: 'laptop-outline' },
-  tablette: { label: 'deviceDetail:type_tablette', icon: 'tablet-portrait-outline' },
-  tv: { label: 'deviceDetail:type_tv', icon: 'tv-outline' },
-  autre: { label: 'deviceDetail:type_autre', icon: 'cube-outline' },
+  telephone: { label: 'deviceDetail:typePhone', icon: 'phone-portrait-outline' },
+  ordinateur: { label: 'deviceDetail:typeComputer', icon: 'laptop-outline' },
+  tablette: { label: 'deviceDetail:typeTablet', icon: 'tablet-portrait-outline' },
+  tv: { label: 'deviceDetail:typeTv', icon: 'tv-outline' },
+  autre: { label: 'deviceDetail:typeOther', icon: 'cube-outline' },
 };
 
 function fmt(d?: string) {
@@ -70,13 +70,11 @@ export default function DeviceDetailScreen() {
   const fetchDevice = useCallback(async () => {
     if (!id) { setError(t('deviceDetail:noIdentifier')); setLoading(false); return; }
     try {
-      const res = await devicesService.getAll();
-      if (res.success && Array.isArray(res.data)) {
-        const found = res.data.find(d => d.id === id);
-        if (found) setDevice(normalise(found, t));
-        else setError(t('deviceDetail:notFound'));
+      const res = await devicesService.getById(id);
+      if (res.success && res.data) {
+        setDevice(normalise(res.data, t));
       } else {
-        setError(t('deviceDetail:loadError'));
+        setError(t('deviceDetail:notFound'));
       }
     } catch {
       setError(t('common:error'));
@@ -164,7 +162,7 @@ export default function DeviceDetailScreen() {
           <Text style={styles.subtitle}>{brand}{model ? ` ${model}` : ''}</Text>
 
           <View style={styles.quickGrid}>
-            <QuickCard icon="barcode-outline" label={t('deviceDetail:serialImei')} value={val(serial)} color={colors.primary} />
+            <QuickCard icon="barcode-outline" label={t('deviceDetail:serieImei')} value={val(serial)} color={colors.primary} />
             <QuickCard icon="color-palette-outline" label={t('deviceDetail:color')} value={val(color)} color={colors.purple} />
             <QuickCard icon="wallet-outline" label={t('deviceDetail:price')} value={price ? `${Number(price).toLocaleString('fr')} F` : '—'} color={colors.success} />
             <QuickCard icon="shield-checkmark-outline" label={t('deviceDetail:insurance')} value={warranty === 'oui' ? t('common:yes') : t('common:no')} color={warranty === 'oui' ? colors.success : colors.tabInactive} />
@@ -177,7 +175,7 @@ export default function DeviceDetailScreen() {
             <Row icon="calendar-outline" label={t('deviceDetail:purchaseDate')} value={fmt(purchaseDate)} color={colors.info} />
             <Row icon="calendar-outline" label={t('deviceDetail:warrantyEnd')} value={fmt(warrantyEnd)} color={expired ? colors.danger : colors.success} extra={expired ? t('deviceDetail:expired') : undefined} />
             <Row icon="wallet-outline" label={t('deviceDetail:purchasePrice')} value={price ? `${Number(price).toLocaleString('fr')} FCFA` : '—'} color={colors.success} />
-            <Row icon="location-outline" label={t('deviceDetail:purchaseLocation')} value={val(location)} color={colors.warning} />
+            <Row icon="location-outline" label={t('deviceDetail:purchasePlace')} value={val(location)} color={colors.warning} />
             <Row icon="document-text-outline" label={t('deviceDetail:notes')} value={val(notes)} color={colors.textSecondary} />
           </View>
 
@@ -196,12 +194,12 @@ export default function DeviceDetailScreen() {
             {!isLost ? (
               <Pressable style={[styles.dangerBtn, { backgroundColor: colors.danger }]}>
                 <Ionicons name="alert-circle-outline" size={18} color={colors.onPrimary} />
-                <Text style={styles.dangerBtnText}>{t('deviceDetail:reportLostStolen')}</Text>
+                <Text style={styles.dangerBtnText}>{t('deviceDetail:reportLost')}</Text>
               </Pressable>
             ) : (
               <Pressable style={[styles.successBtn, { backgroundColor: colors.success }]}>
                 <Ionicons name="checkmark-circle-outline" size={18} color={colors.onPrimary} />
-                <Text style={styles.successBtnText}>{t('deviceDetail:markFound')}</Text>
+                <Text style={styles.successBtnText}>{t('deviceDetail:reportFound')}</Text>
               </Pressable>
             )}
             <Pressable onPress={() => router.back()} style={styles.ghostBtn}>

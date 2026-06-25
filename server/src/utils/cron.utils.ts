@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { matchingService } from '../services/matching.service.ts';
 import { expirationService } from '../services/expiration.service.ts';
+import { paymentReconciliationService } from '../services/payment-reconciliation.service.ts';
 
 /**
  * Initialize all background cron jobs
@@ -29,5 +30,11 @@ export const initCronJobs = () => {
     expirationService.checkAndArchive();
   });
 
-  console.log('✅ Background Cron Jobs scheduled (matching: 30s, expiration: daily).');
+  // 4. Payment Reconciliation - Runs every 15 minutes
+  cron.schedule('*/15 * * * *', () => {
+    console.log('🔄 Running payment reconciliation...');
+    paymentReconciliationService.reconcileStuckTransactions();
+  });
+
+  console.log('✅ Background Cron Jobs scheduled (matching: 30s, reconciliation: 15min, expiration: daily).');
 };

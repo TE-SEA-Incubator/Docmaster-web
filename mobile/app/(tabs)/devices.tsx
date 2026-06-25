@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ScrollView, View, Pressable, ActivityIndicator, RefreshControl, Text, Image,
-  TextInput, Alert, Platform, ToastAndroid, Dimensions, Modal,
+  TextInput, Alert, Platform, ToastAndroid, Dimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, router } from 'expo-router';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetView, BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { BottomTabInset } from '@/constants/theme';
 import { Input } from '@/components/common/Input';
 import { Button } from '@/components/common/Button';
@@ -277,11 +277,12 @@ export default function DevicesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [currentFilter, setCurrentFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+  // Edit form state (used by openEdit from detail sheet)
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [showDetail, setShowDetail] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [detailDevice, setDetailDevice] = useState<Device | null>(null);
   const [showVerify, setShowVerify] = useState(false);
   const [verifyImei, setVerifyImei] = useState('');
@@ -298,8 +299,10 @@ export default function DevicesScreen() {
     visible: false, type: 'success', title: '',
   });
 
-  const addSheetRef = useRef<BottomSheet>(null);
-  const addSnapPoints = ['92%'];
+  const detailSheetRef = useRef<BottomSheetModal>(null);
+  const editSheetRef = useRef<BottomSheetModal>(null);
+  const verifySheetRef = useRef<BottomSheetModal>(null);
+  const reportSheetRef = useRef<BottomSheetModal>(null);
 
   // Real data only — empty state is rendered when the user has no devices.
   const devices: Device[] = cachedDevices;
@@ -310,18 +313,42 @@ export default function DevicesScreen() {
   const openVerifyConsumed = useRef(false);
 
   useEffect(() => {
-    if (showAddModal) {
-      addSheetRef.current?.expand();
+    if (showDetail) {
+      detailSheetRef.current?.present();
     } else {
-      addSheetRef.current?.close();
+      detailSheetRef.current?.dismiss();
     }
-  }, [showAddModal]);
+  }, [showDetail]);
+
+  useEffect(() => {
+    if (showEditModal) {
+      editSheetRef.current?.present();
+    } else {
+      editSheetRef.current?.dismiss();
+    }
+  }, [showEditModal]);
+
+  useEffect(() => {
+    if (showVerify) {
+      verifySheetRef.current?.present();
+    } else {
+      verifySheetRef.current?.dismiss();
+    }
+  }, [showVerify]);
+
+  useEffect(() => {
+    if (showReport) {
+      reportSheetRef.current?.present();
+    } else {
+      reportSheetRef.current?.dismiss();
+    }
+  }, [showReport]);
 
   useEffect(() => {
     if (params.openAdd === 'true' && !openAddConsumed.current) {
       openAddConsumed.current = true;
-      openAdd();
       router.replace('/(tabs)/devices');
+      setTimeout(() => router.push('/device/add'), 100);
     }
     if (params.openVerify === 'true' && !openVerifyConsumed.current) {
       openVerifyConsumed.current = true;
@@ -342,7 +369,7 @@ export default function DevicesScreen() {
   });
 
   const updateForm = (key: string, value: string | number) => setForm((prev) => ({ ...prev, [key]: value }));
-  const openAdd = () => { setEditingId(null); setForm(EMPTY_FORM); setFormErrors({}); setShowAddModal(true); };
+  const openAdd = () => { router.push('/device/add'); };
   const openEdit = (d: Device) => {
     setEditingId(d.id);
     setForm({
@@ -353,9 +380,9 @@ export default function DevicesScreen() {
       photo_facture: null, photo_face: null, photo_serial: null,
     });
     setFormErrors({});
-    setShowAddModal(true);
+    setShowEditModal(true);
   };
-  const closeAdd = () => { setShowAddModal(false); setEditingId(null); };
+  const closeAdd = () => { setShowEditModal(false); setEditingId(null); };
 
   const handleSave = () => {
     const errs: Record<string, string> = {};
@@ -562,179 +589,169 @@ export default function DevicesScreen() {
         </View>
       </ScrollView>
 
-      {/* Add/Edit Bottom Sheet */}
-      {showAddModal && (
-        <BottomSheet
-          ref={addSheetRef}
-          snapPoints={addSnapPoints}
-          enablePanDownToClose
-          onClose={closeAdd}
-          handleIndicatorStyle={{ backgroundColor: colors.border, width: 40, height: 4, borderRadius: 2 }}
-          backgroundStyle={{ backgroundColor: colors.backgroundElement, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
-        >
-          <BottomSheetView style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <View>
-                <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>{editingId ? t('devices:editDevice') : t('devices:addDevice')}</Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{t('devices:addDeviceDesc')}</Text>
-              </View>
-              <Pressable onPress={closeAdd} style={{ width: 34, height: 34, borderRadius: 9, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="close" size={16} color={colors.textSecondary} />
-              </Pressable>
+      {/* Add Device → navigates to /device/add page */}
+
+      {/* Edit Device Bottom Sheet */}
+      <BottomSheetModal
+        ref={editSheetRef}
+        snapPoints={['92%']}
+        enablePanDownToClose
+        onDismiss={() => { setShowEditModal(false); setEditingId(null); }}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
+        backdropComponent={(props) => (
+          <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.6} pressBehavior="close" />
+        )}
+        handleIndicatorStyle={{ backgroundColor: colors.border, width: 40, height: 4, borderRadius: 2 }}
+        backgroundStyle={{ backgroundColor: colors.backgroundElement, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
+      >
+        <BottomSheetView style={{ flex: 1, paddingBottom: insets.bottom }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <View>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>{t('devices:editDevice')}</Text>
+              <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{t('devices:addDeviceDesc')}</Text>
             </View>
-            <ScrollView style={{ paddingHorizontal: 20, paddingTop: 16 }} showsVerticalScrollIndicator={false}>
-              <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10 }}>{t('devices:deviceType')}</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 2 }}>
-                  {(Object.keys(TYPE_META) as DeviceType[]).map((type) => {
-                    const m = TYPE_META[type]; const selected = form.type === type;
-                    const color = selected ? m.color : colors.text;
-                    const bgColor = selected ? m.bg : colors.backgroundElement;
-                    const iconBg = selected ? `${m.color}25` : colors.border;
-                    
-                    return (
-                      <Pressable key={type} onPress={() => updateForm('type', type)} style={{ alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, borderWidth: 2, borderColor: selected ? m.color : colors.border, backgroundColor: bgColor, marginRight: 8, minWidth: 90 }}>
-                        <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center' }}>
-                          <Ionicons name={m.icon} size={22} color={m.color} />
-                        </View>
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: color }}>{t(m.labelKey)}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-              <Input label={t('devices:deviceNameLabel')} placeholder={t('devices:deviceNamePlaceholder')} icon="pricetag-outline" value={form.nom} onChangeText={(v) => updateForm('nom', v)} error={formErrors.nom} />
-              <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-                <View style={{ flex: 1 }}><Input label={t('devices:brandLabel')} placeholder={t('devices:brandPlaceholder')} icon="business-outline" value={form.marque} onChangeText={(v) => updateForm('marque', v)} error={formErrors.marque} /></View>
-                <View style={{ flex: 1 }}><Input label={t('devices:modelLabel')} placeholder={t('devices:modelPlaceholder')} icon="git-branch-outline" value={form.modele} onChangeText={(v) => updateForm('modele', v)} /></View>
-              </View>
-              <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-                <View style={{ flex: 1 }}><Input label={t('devices:serialLabel')} placeholder={t('devices:serialPlaceholder')} icon="barcode-outline" value={form.serial} onChangeText={(v) => updateForm('serial', v)} /></View>
-                <View style={{ flex: 1 }}><Input label={t('devices:colorLabel')} placeholder={t('devices:colorPlaceholder')} icon="color-palette-outline" value={form.couleur} onChangeText={(v) => updateForm('couleur', v)} /></View>
-              </View>
-              <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-                <View style={{ flex: 1 }}><DatePickerInput label={t('devices:purchaseDateLabel')} value={form.dateAchat ? new Date(form.dateAchat) : new Date()} onChange={(d) => updateForm('dateAchat', d.toISOString().split('T')[0])} /></View>
-                <View style={{ flex: 1 }}><DatePickerInput label={t('devices:warrantyLabel')} value={form.garantie ? new Date(form.garantie) : new Date()} onChange={(d) => updateForm('garantie', d.toISOString().split('T')[0])} /></View>
-              </View>
-              <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-                <View style={{ flex: 1 }}><Input label={t('devices:priceLabel')} placeholder={t('devices:pricePlaceholder')} icon="wallet-outline" keyboardType="numeric" value={form.prix ? String(form.prix) : ''} onChangeText={(v) => updateForm('prix', v ? Number(v.replace(/[^0-9]/g, '')) : 0)} /></View>
-                <View style={{ flex: 1 }}><Input label={t('devices:locationLabel')} placeholder={t('devices:locationPlaceholder')} icon="location-outline" value={form.lieu} onChangeText={(v) => updateForm('lieu', v)} /></View>
-              </View>
-              <View style={{ marginTop: 14 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>{t('devices:photos')}</Text>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <PhotoPicker label={t('devices:receiptPhoto')} uri={form.photo_facture} onSelect={(uri) => updateForm('photo_facture', uri)} />
-                  <PhotoPicker label={t('devices:facePhoto')} uri={form.photo_face} onSelect={(uri) => updateForm('photo_face', uri)} />
-                  <PhotoPicker label={t('devices:serialPhoto')} uri={form.photo_serial} onSelect={(uri) => updateForm('photo_serial', uri)} />
+            <Pressable onPress={() => setShowEditModal(false)} style={{ width: 34, height: 34, borderRadius: 9, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="close" size={16} color={colors.textSecondary} />
+            </Pressable>
+          </View>
+          <BottomSheetScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
+            <Input label={t('devices:deviceNameLabel')} placeholder={t('devices:deviceNamePlaceholder')} icon="pricetag-outline" value={form.nom} onChangeText={(v) => setForm(f => ({ ...f, nom: v }))} error={formErrors.nom} />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+              <View style={{ flex: 1 }}><Input label={t('devices:brandLabel')} placeholder={t('devices:brandPlaceholder')} icon="business-outline" value={form.marque} onChangeText={(v) => setForm(f => ({ ...f, marque: v }))} error={formErrors.marque} /></View>
+              <View style={{ flex: 1 }}><Input label={t('devices:modelLabel')} placeholder={t('devices:modelPlaceholder')} icon="git-branch-outline" value={form.modele} onChangeText={(v) => setForm(f => ({ ...f, modele: v }))} /></View>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
+              <View style={{ flex: 1 }}><Input label={t('devices:serialLabel')} placeholder={t('devices:serialPlaceholder')} icon="barcode-outline" value={form.serial} onChangeText={(v) => setForm(f => ({ ...f, serial: v }))} /></View>
+              <View style={{ flex: 1 }}><Input label={t('devices:colorLabel')} placeholder={t('devices:colorPlaceholder')} icon="color-palette-outline" value={form.couleur} onChangeText={(v) => setForm(f => ({ ...f, couleur: v }))} /></View>
+            </View>
+            <View style={{ marginTop: 14 }}>
+              <Input label={t('devices:notesLabel')} placeholder={t('devices:notesPlaceholder')} icon="document-text-outline" value={form.notes} onChangeText={(v) => setForm(f => ({ ...f, notes: v }))} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 24, marginBottom: 20 }}>
+              <View style={{ flex: 1 }}><Button title={t('common:cancel')} variant="outline" onPress={() => setShowEditModal(false)} /></View>
+              <View style={{ flex: 2 }}><Button title={t('common:save')} onPress={handleSave} loading={isUpdating} icon="checkmark-circle-outline" /></View>
+            </View>
+          </BottomSheetScrollView>
+        </BottomSheetView>
+      </BottomSheetModal>
+
+      {/* Detail Bottom Sheet */}
+      {/* Detail Bottom Sheet */}
+      <BottomSheetModal
+        ref={detailSheetRef}
+        snapPoints={['70%']}
+        enablePanDownToClose
+        onDismiss={() => setShowDetail(false)}
+        backdropComponent={(props) => (
+          <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.6} pressBehavior="close" />
+        )}
+        handleIndicatorStyle={{ backgroundColor: colors.border, width: 40, height: 4, borderRadius: 2 }}
+        backgroundStyle={{ backgroundColor: colors.backgroundElement, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
+      >
+        <BottomSheetScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 }}>
+          {detailDevice ? (
+            <DetailContent
+              d={detailDevice}
+              onClose={() => setShowDetail(false)}
+              onEdit={() => { setShowDetail(false); setTimeout(() => openEdit(detailDevice), 300); }}
+              onDelete={() => handleDelete(detailDevice.id)}
+              onReport={() => { setShowDetail(false); openReport(detailDevice.id, detailDevice.is_lost); }}
+            />
+          ) : null}
+        </BottomSheetScrollView>
+      </BottomSheetModal>
+
+      {/* Verify IMEI Bottom Sheet */}
+      <BottomSheetModal
+        ref={verifySheetRef}
+        snapPoints={['65%']}
+        enablePanDownToClose
+        onDismiss={() => { setShowVerify(false); setVerifyResult(null); setVerifyImei(''); }}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
+        backdropComponent={(props) => (
+          <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.6} pressBehavior="close" />
+        )}
+        handleIndicatorStyle={{ backgroundColor: colors.border, width: 40, height: 4, borderRadius: 2 }}
+        backgroundStyle={{ backgroundColor: colors.backgroundElement, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
+      >
+        <BottomSheetScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 40 }}>
+          <View style={{ width: 70, height: 70, borderRadius: 20, backgroundColor: colors.warningBg, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 20 }}>
+            <Ionicons name="shield-checkmark" size={34} color={colors.primary} />
+          </View>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: colors.text, textAlign: 'center' }}>{t('devices:verifyDevice')}</Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginBottom: 24, marginTop: 8, lineHeight: 20 }}>
+            {t('devices:verifyDescription')}
+          </Text>
+          <Input label={t('devices:serialLabel')} placeholder={t('devices:verifyPlaceholder')} icon="barcode-outline" value={verifyImei} onChangeText={(v) => { setVerifyImei(v); setVerifyResult(null); }} />
+          {verifyResult && (
+            <View style={{ marginTop: 16, padding: 16, borderRadius: 14, backgroundColor: verifyResult.status === 'safe' ? colors.successBg : verifyResult.status === 'stolen' ? colors.dangerBg : colors.background, borderWidth: 1, borderColor: verifyResult.status === 'safe' ? '#BBF7D0' : verifyResult.status === 'stolen' ? '#FECACA' : '#E2E8F0' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: verifyResult.status === 'safe' ? colors.success : verifyResult.status === 'stolen' ? colors.danger : colors.textSecondary, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name={verifyResult.status === 'safe' ? 'checkmark' : verifyResult.status === 'stolen' ? 'warning' : 'help'} size={20} color={colors.onPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: verifyResult.status === 'safe' ? colors.success : verifyResult.status === 'stolen' ? colors.danger : colors.text }}>
+                    {verifyResult.status === 'safe' ? t('devices:deviceSafe') : verifyResult.status === 'stolen' ? t('devices:attention') : t('devices:unknown')}
+                  </Text>
+                  <Text style={{ fontSize: 12, marginTop: 2, color: verifyResult.status === 'safe' ? colors.success : verifyResult.status === 'stolen' ? colors.danger : colors.textSecondary }}>
+                    {verifyResult.status === 'safe' ? t('devices:safeStatus', { device: verifyResult.device || t('devices:device') }) : verifyResult.status === 'stolen' ? t('devices:stolenStatus', { device: verifyResult.device || t('devices:device') }) : t('devices:unknownStatus')}
+                  </Text>
                 </View>
               </View>
-
-              <View style={{ marginTop: 14 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 }}>{t('devices:insurance')}</Text>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  {['non', 'oui'].map((v) => (
-                    <Pressable key={v} onPress={() => updateForm('assurance', v)} style={{ flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1.5, borderColor: form.assurance === v ? colors.primary : colors.border, backgroundColor: form.assurance === v ? colors.warningBg : colors.backgroundElement }}>
-                      <Ionicons name={v === 'oui' ? 'shield-checkmark' : 'shield-outline'} size={20} color={form.assurance === v ? colors.warning : colors.textSecondary} />
-                      <Text style={{ fontSize: 12, fontWeight: '600', marginTop: 4, color: form.assurance === v ? colors.warning : colors.textSecondary }}>{v === 'oui' ? t('devices:insured') : t('devices:notInsured')}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-
-              <View style={{ marginTop: 14 }}>
-                <Input label={t('devices:notesLabel')} placeholder={t('devices:notesPlaceholder')} icon="document-text-outline" value={form.notes} onChangeText={(v) => updateForm('notes', v)} />
-              </View>
-
-              <View style={{ flexDirection: 'row', gap: 10, marginTop: 24, marginBottom: 40 }}>
-                <View style={{ flex: 1 }}><Button title={t('common:cancel')} variant="outline" onPress={closeAdd} /></View>
-                <View style={{ flex: 2 }}><Button title={editingId ? t('common:save') : t('common:add')} onPress={handleSave} loading={isCreating || isUpdating} icon={editingId ? 'checkmark-circle-outline' : 'add-circle-outline'} /></View>
-              </View>
-            </ScrollView>
-          </BottomSheetView>
-        </BottomSheet>
-      )}
-
-      {/* Detail Modal */}
-      <Modal visible={showDetail} transparent animationType="slide" onRequestClose={() => setShowDetail(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }} onPress={() => setShowDetail(false)}>
-          <Pressable style={{ backgroundColor: colors.backgroundElement, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%', marginBottom: insets.bottom + 8 }} onPress={(e) => e.stopPropagation()}>
-            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginTop: 12 }} />
-            <ScrollView style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-              {detailDevice ? (
-                <DetailContent d={detailDevice} onClose={() => setShowDetail(false)} onEdit={() => { setShowDetail(false); setTimeout(() => openEdit(detailDevice), 300); }} onDelete={() => handleDelete(detailDevice.id)} onReport={() => { setShowDetail(false); openReport(detailDevice.id, detailDevice.is_lost); }} />
-              ) : null}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Verify IMEI Modal */}
-      <Modal visible={showVerify} transparent animationType="fade" onRequestClose={() => { setShowVerify(false); setVerifyResult(null); setVerifyImei(''); }}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }} onPress={() => { setShowVerify(false); setVerifyResult(null); setVerifyImei(''); }}>
-          <Pressable style={{ backgroundColor: colors.backgroundElement, borderRadius: 24, width: '100%', maxWidth: 420, padding: 28 }} onPress={(e) => e.stopPropagation()}>
-            <View style={{ width: 70, height: 70, borderRadius: 20, backgroundColor: colors.warningBg, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 20 }}>
-              <Ionicons name="shield-checkmark" size={34} color={colors.primary} />
             </View>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: colors.text, textAlign: 'center' }}>{t('devices:verifyDevice')}</Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginBottom: 24, marginTop: 8, lineHeight: 20 }}>
-              {t('devices:verifyDescription')}
-            </Text>
-            <Input label={t('devices:serialLabel')} placeholder={t('devices:verifyPlaceholder')} icon="barcode-outline" value={verifyImei} onChangeText={(v) => { setVerifyImei(v); setVerifyResult(null); }} />
-            {verifyResult && (
-              <View style={{ marginTop: 16, padding: 16, borderRadius: 14, backgroundColor: verifyResult.status === 'safe' ? colors.successBg : verifyResult.status === 'stolen' ? colors.dangerBg : colors.background, borderWidth: 1, borderColor: verifyResult.status === 'safe' ? '#BBF7D0' : verifyResult.status === 'stolen' ? '#FECACA' : '#E2E8F0' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: verifyResult.status === 'safe' ? colors.success : verifyResult.status === 'stolen' ? colors.danger : colors.textSecondary, alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name={verifyResult.status === 'safe' ? 'checkmark' : verifyResult.status === 'stolen' ? 'warning' : 'help'} size={20} color={colors.onPrimary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '800', color: verifyResult.status === 'safe' ? colors.success : verifyResult.status === 'stolen' ? colors.danger : colors.text }}>
-                      {verifyResult.status === 'safe' ? t('devices:deviceSafe') : verifyResult.status === 'stolen' ? t('devices:attention') : t('devices:unknown')}
-                    </Text>
-                    <Text style={{ fontSize: 12, marginTop: 2, color: verifyResult.status === 'safe' ? colors.success : verifyResult.status === 'stolen' ? colors.danger : colors.textSecondary }}>
-                      {verifyResult.status === 'safe' ? t('devices:safeStatus', { device: verifyResult.device || t('devices:device') }) : verifyResult.status === 'stolen' ? t('devices:stolenStatus', { device: verifyResult.device || t('devices:device') }) : t('devices:unknownStatus')}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 24 }}>
-              <View style={{ flex: 1 }}><Button title={t('common:cancel')} variant="outline" onPress={() => { setShowVerify(false); setVerifyResult(null); setVerifyImei(''); }} /></View>
-              <View style={{ flex: 1.5 }}><Button title={t('devices:verify')} onPress={handleVerify} loading={verifyLoading} icon="search-outline" /></View>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+          )}
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 24 }}>
+            <View style={{ flex: 1 }}><Button title={t('common:cancel')} variant="outline" onPress={() => { setShowVerify(false); setVerifyResult(null); setVerifyImei(''); }} /></View>
+            <View style={{ flex: 1.5 }}><Button title={t('devices:verify')} onPress={handleVerify} loading={verifyLoading} icon="search-outline" /></View>
+          </View>
+        </BottomSheetScrollView>
+      </BottomSheetModal>
 
-      {/* Report Lost/Found Modal */}
-      <Modal visible={showReport} transparent animationType="fade" onRequestClose={() => setShowReport(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 }} onPress={() => setShowReport(false)}>
-          <Pressable style={{ backgroundColor: colors.backgroundElement, borderRadius: 24, width: '100%', maxWidth: 420, padding: 28 }} onPress={(e) => e.stopPropagation()}>
-            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: reportIsFound ? colors.successBg : colors.dangerBg, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-              <Ionicons name={reportIsFound ? 'checkmark-circle' : 'warning-outline'} size={30} color={reportIsFound ? colors.success : colors.danger} />
+      {/* Report Lost/Found Bottom Sheet */}
+      <BottomSheetModal
+        ref={reportSheetRef}
+        snapPoints={['60%']}
+        enablePanDownToClose
+        onDismiss={() => setShowReport(false)}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
+        backdropComponent={(props) => (
+          <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.6} pressBehavior="close" />
+        )}
+        handleIndicatorStyle={{ backgroundColor: colors.border, width: 40, height: 4, borderRadius: 2 }}
+        backgroundStyle={{ backgroundColor: colors.backgroundElement, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
+      >
+        <BottomSheetScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 40 }}>
+          <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: reportIsFound ? colors.successBg : colors.dangerBg, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
+            <Ionicons name={reportIsFound ? 'checkmark-circle' : 'warning-outline'} size={30} color={reportIsFound ? colors.success : colors.danger} />
+          </View>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center' }}>
+            {reportIsFound ? t('devices:confirmFound') : t('devices:reportProblem')}
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginVertical: 12, lineHeight: 20 }}>
+            {reportIsFound ? t('devices:confirmFoundDesc') : t('devices:reportProblemDesc')}
+          </Text>
+          {!reportIsFound && (
+            <View style={{ marginBottom: 16, backgroundColor: colors.warningBg, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 8 }}>{t('devices:reportType')}</Text>
+              <ReportTypeSelector value={reportType} onChange={setReportType} />
             </View>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center' }}>
-              {reportIsFound ? t('devices:confirmFound') : t('devices:reportProblem')}
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginVertical: 12, lineHeight: 20 }}>
-              {reportIsFound ? t('devices:confirmFoundDesc') : t('devices:reportProblemDesc')}
-            </Text>
-            {!reportIsFound && (
-              <View style={{ marginBottom: 16, backgroundColor: colors.warningBg, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.border }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 8 }}>{t('devices:reportType')}</Text>
-                <ReportTypeSelector value={reportType} onChange={setReportType} />
-              </View>
-            )}
-            <View style={{ backgroundColor: reportIsFound ? colors.successBg : colors.warningBg, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.border }}>
-              <Text style={{ fontSize: 11.5, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>{t('devices:confirmPassword')}</Text>
-              <Input placeholder={t('devices:passwordPlaceholder')} icon="lock-closed-outline" secureTextEntry value={reportPassword} onChangeText={(v) => { setReportPassword(v); setReportError(false); }} error={reportError ? t('devices:passwordError') : undefined} autoComplete="password" />
-              <View style={{ marginTop: 16 }}>
-                <Button title={reportIsFound ? t('devices:confirmReturn') : t('devices:confirmDeclaration')} variant={reportIsFound ? 'secondary' : 'danger'} onPress={handleReport} loading={confirming} icon={reportIsFound ? 'checkmark-circle-outline' : 'warning-outline'} />
-              </View>
+          )}
+          <View style={{ backgroundColor: reportIsFound ? colors.successBg : colors.warningBg, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.border }}>
+            <Text style={{ fontSize: 11.5, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>{t('devices:confirmPassword')}</Text>
+            <Input placeholder={t('devices:passwordPlaceholder')} icon="lock-closed-outline" secureTextEntry value={reportPassword} onChangeText={(v) => { setReportPassword(v); setReportError(false); }} error={reportError ? t('devices:passwordError') : undefined} autoComplete="password" />
+            <View style={{ marginTop: 16 }}>
+              <Button title={reportIsFound ? t('devices:confirmReturn') : t('devices:confirmDeclaration')} variant={reportIsFound ? 'secondary' : 'danger'} onPress={handleReport} loading={confirming} icon={reportIsFound ? 'checkmark-circle-outline' : 'warning-outline'} />
             </View>
-            <View style={{ marginTop: 12 }}><Button title={t('common:cancel')} variant="outline" onPress={() => setShowReport(false)} /></View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+          </View>
+          <View style={{ marginTop: 12 }}><Button title={t('common:cancel')} variant="outline" onPress={() => setShowReport(false)} /></View>
+        </BottomSheetScrollView>
+      </BottomSheetModal>
 
       <ActionFeedbackModal
         visible={feedback.visible}

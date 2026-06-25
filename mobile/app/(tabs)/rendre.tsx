@@ -1,28 +1,25 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert } from 'react-native';
+import {
+  View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert,
+  StyleSheet, Text, KeyboardAvoidingView, Platform,
+} from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { declarationsService } from '@/core/api/declarationsService';
 import { claimsService } from '@/core/api/claimsService';
-
-const PRIMARY = '#F5A64B';
-const GREEN_DARK = '#1E312B';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 type DeclarationStatus = 'SEARCHING' | 'MATCHED' | 'PAYMENT_PENDING' | 'PAYMENT_DONE' | 'RETURNED' | 'CLAIMED' | 'CANCELLED';
-
-const STEP_LABELS = ['Trouvé', 'Propriétaire', 'Paiement', 'Remis'];
 
 function getStepFromStatus(status: DeclarationStatus): number {
   switch (status) {
     case 'SEARCHING': return 0;
     case 'MATCHED': return 1;
-    case 'PAYMENT_PENDING': return 2;
+    case 'PAYMENT_PENDING':
     case 'PAYMENT_DONE': return 2;
-    case 'RETURNED': return 3;
+    case 'RETURNED':
     case 'CLAIMED': return 3;
     default: return 0;
   }
@@ -38,6 +35,7 @@ export default function RendreScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
 
   const [loading, setLoading] = useState(true);
   const [declaration, setDeclaration] = useState<any>(null);
@@ -103,19 +101,19 @@ export default function RendreScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#F4EFE6] items-center justify-center">
-        <ActivityIndicator size="large" color={PRIMARY} />
+      <SafeAreaView style={[s.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </SafeAreaView>
     );
   }
 
   if (!declaration) {
     return (
-      <SafeAreaView className="flex-1 bg-[#F4EFE6] items-center justify-center p-6 gap-4">
-        <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
-        <ThemedText className="text-lg font-bold text-textMain">{t('rendre:declarationNotFound')}</ThemedText>
-        <Pressable onPress={() => router.replace('/(tabs)')} className="px-6 py-3 bg-primary rounded-2xl">
-          <ThemedText className="text-white font-bold">{t('common:back')}</ThemedText>
+      <SafeAreaView style={[s.center, { backgroundColor: colors.background, padding: 24, gap: 16 }]}>
+        <Ionicons name="alert-circle-outline" size={48} color={colors.textSecondary} />
+        <Text style={[s.bodyBold, { color: colors.text, fontSize: 17 }]}>{t('rendre:declarationNotFound')}</Text>
+        <Pressable onPress={() => router.replace('/(tabs)')} style={[s.btn, { backgroundColor: colors.primary }]}>
+          <Text style={s.btnText}>{t('common:back')}</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -125,267 +123,334 @@ export default function RendreScreen() {
   const rewardAmount = declaration.reward_amount || 1500;
   const pointsReward = declaration.reward_points || 50;
 
+  const statusLabel =
+    currentStep >= 3 ? t('rendre:statusReturned') :
+    currentStep >= 2 ? t('rendre:statusPaymentConfirmed') :
+    currentStep >= 1 ? t('rendre:statusOwnerIdentified') :
+    t('rendre:statusWaiting');
+
+  const timelineSteps = [
+    { label: t('rendre:stepFound'), done: currentStep >= 0, active: currentStep === 0, date: formatDate(declaration.created_at) },
+    { label: t('rendre:stepOwner'), done: currentStep >= 1, active: currentStep === 1, date: declaration.matched_at ? formatDate(declaration.matched_at) : '—' },
+    { label: t('rendre:stepPayment'), done: currentStep >= 2, active: currentStep === 2, date: currentStep >= 2 ? t('rendre:stepPaymentDone') : t('rendre:stepPaymentPending') },
+    { label: t('rendre:stepReturned'), done: currentStep >= 3, active: currentStep === 3, date: currentStep >= 3 ? formatDate(declaration.returned_at) : t('rendre:stepUpcoming') },
+  ];
+
   return (
-    <SafeAreaView className="flex-1 bg-[#F4EFE6]">
+    <SafeAreaView style={[s.flex, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
-        className="px-4 pt-4"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 120, paddingHorizontal: 20, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between mb-6">
-          <Pressable onPress={() => router.replace('/(tabs)')} className="w-10 h-10 rounded-full bg-white items-center justify-center border border-borderMain">
-            <Ionicons name="chevron-back" size={20} color="#1A1A1A" />
+        <View style={s.header}>
+          <Pressable onPress={() => router.replace('/(tabs)')} style={[s.iconBtn, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+            <Ionicons name="chevron-back" size={20} color={colors.text} />
           </Pressable>
-          <ThemedText className="text-base font-bold text-textMain">{t('rendre:title')}</ThemedText>
-          <View className="w-10" />
+          <Text style={[s.headerTitle, { color: colors.text }]}>{t('rendre:title')}</Text>
+          <View style={{ width: 40 }} />
         </View>
 
         {/* Status Banner */}
-        <ThemedView
-          style={{ backgroundColor: GREEN_DARK }}
-          className="rounded-[28px] p-6 relative overflow-hidden mb-6"
-        >
-          <View className="absolute inset-0 bg-white/5" />
-          <View className="flex-row items-center gap-4 mb-4">
-            <View className="w-14 h-14 rounded-[22px] bg-white/10 items-center justify-center border border-white/10">
-              <Ionicons name="return-down-back-outline" size={28} color={PRIMARY} />
+        <View style={[s.banner, { backgroundColor: colors.greenDark, marginBottom: 20 }]}>
+          <View style={s.bannerRow}>
+            <View style={s.bannerIcon}>
+              <Ionicons name="return-down-back-outline" size={26} color={colors.primary} />
             </View>
-            <View className="flex-1">
-              <ThemedText className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-0.5">
-                {t('rendre:statusLabel')}
-              </ThemedText>
-              <ThemedText className="text-base font-bold text-white" numberOfLines={2}>
-                {currentStep >= 3 ? t('rendre:statusReturned') :
-                 currentStep >= 2 ? t('rendre:statusPaymentConfirmed') :
-                 currentStep >= 1 ? t('rendre:statusOwnerIdentified') :
-                 t('rendre:statusWaiting')}
-              </ThemedText>
+            <View style={{ flex: 1, marginLeft: 14 }}>
+              <Text style={s.bannerLabel}>{t('rendre:statusLabel')}</Text>
+              <Text style={s.bannerStatus} numberOfLines={2}>{statusLabel}</Text>
             </View>
-            <ThemedText className="text-3xl font-black text-white/20">{progressPercent}%</ThemedText>
+            <Text style={s.bannerPercent}>{progressPercent}%</Text>
           </View>
-          <View className="h-2 bg-white/10 rounded-full overflow-hidden border border-white/5">
-            <View className="bg-primary h-full rounded-full" style={{ width: `${progressPercent}%` }} />
+          <View style={s.progressTrack}>
+            <View style={[s.progressBar, { width: `${progressPercent}%`, backgroundColor: colors.primary }]} />
           </View>
-        </ThemedView>
+        </View>
 
         {/* Timeline */}
-        <ThemedView className="bg-white rounded-[32px] border border-borderMain p-6 shadow-sm mb-6">
-          <View className="flex-row justify-between items-center mb-6">
-            <ThemedText className="text-base font-bold text-textMain">
+        <View style={[s.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border, marginBottom: 20 }]}>
+          <View style={s.cardHeaderRow}>
+            <Text style={[s.cardTitle, { color: colors.text }]}>
               {t('rendre:trackingId')}{id?.slice(0, 8).toUpperCase()}
-            </ThemedText>
-            <View className="flex-row items-center gap-1.5 px-3 py-1 bg-green-50 rounded-full border border-green-100">
-              <View className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-              <ThemedText className="text-[10px] font-bold text-green-700 uppercase">{t('rendre:statusActive')}</ThemedText>
+            </Text>
+            <View style={[s.badge, { backgroundColor: colors.successBg, borderColor: '#bbf7d0' }]}>
+              <View style={s.badgeDot} />
+              <Text style={[s.badgeText, { color: colors.greenDark }]}>{t('rendre:statusActive')}</Text>
             </View>
           </View>
 
-          {[
-            { label: t('rendre:stepFound'), done: currentStep >= 0, active: currentStep === 0, date: formatDate(declaration.created_at), icon: 'hand-left' },
-            { label: t('rendre:stepOwner'), done: currentStep >= 1, active: currentStep === 1, date: declaration.matched_at ? formatDate(declaration.matched_at) : '—', icon: 'people' },
-            { label: t('rendre:stepPayment'), done: currentStep >= 2, active: currentStep === 2, date: currentStep >= 2 ? t('rendre:stepPaymentDone') : t('rendre:stepPaymentPending'), icon: 'cash' },
-            { label: t('rendre:stepReturned'), done: currentStep >= 3, active: currentStep === 3, date: currentStep >= 3 ? formatDate(declaration.returned_at) : t('rendre:stepUpcoming'), icon: 'checkmark-circle' },
-          ].map((step, idx) => (
-            <View key={idx} className="flex-row gap-3 mb-6 relative">
+          {timelineSteps.map((step, idx) => (
+            <View key={idx} style={s.timelineRow}>
               {idx < 3 && (
-                <View
-                  className={`absolute left-[11px] top-6 w-0.5 h-full ${step.done ? 'bg-green-500' : 'bg-borderMain'}`}
-                />
+                <View style={[s.timelineLine, {
+                  backgroundColor: step.done ? colors.success : colors.border,
+                }]} />
               )}
-              <View
-                className={`w-6 h-6 rounded-full items-center justify-center z-10 ${
-                  step.done ? 'bg-green-500' : step.active ? 'bg-primary' : 'bg-white border-2 border-borderMain'
-                }`}
-              >
+              <View style={[s.timelineDot, {
+                backgroundColor: step.done ? colors.success : step.active ? colors.primary : colors.backgroundElement,
+                borderWidth: step.done || step.active ? 0 : 2,
+                borderColor: colors.border,
+              }]}>
                 <Ionicons
                   name={step.done ? 'checkmark' : step.active ? 'hourglass' : 'ellipse'}
-                  size={12}
-                  color={step.done ? 'white' : step.active ? 'white' : '#9CA3AF'}
+                  size={11}
+                  color={step.done || step.active ? '#fff' : colors.textSecondary}
                 />
               </View>
-              <View className="flex-1">
-                <ThemedText className={`text-[13px] font-bold ${step.active ? 'text-primary' : step.done ? 'text-textMain' : 'text-textMuted'}`}>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[s.stepLabel, {
+                  color: step.active ? colors.primary : step.done ? colors.text : colors.textSecondary,
+                }]}>
                   {step.label}
-                </ThemedText>
-                {step.date && <ThemedText className="text-[10px] text-textMuted mt-0.5">{step.date}</ThemedText>}
+                </Text>
+                {step.date && <Text style={[s.stepDate, { color: colors.textSecondary }]}>{step.date}</Text>}
               </View>
             </View>
           ))}
-        </ThemedView>
+        </View>
 
-        {/* Gains Cards */}
-        <View className="flex-row gap-3 mb-6">
-          <ThemedView className="flex-1 bg-white rounded-3xl border border-borderMain p-5 flex-row items-center gap-4 shadow-sm">
-            <View className="w-12 h-12 rounded-2xl bg-orange-50 items-center justify-center">
-              <Ionicons name="cash" size={22} color="#D97706" />
+        {/* Rewards */}
+        <View style={[s.rewardsRow, { marginBottom: 20 }]}>
+          <View style={[s.rewardCard, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+            <View style={[s.rewardIcon, { backgroundColor: '#fff7ed' }]}>
+              <Ionicons name="cash" size={20} color="#d97706" />
             </View>
-            <View>
-              <ThemedText className="text-[10px] font-bold text-textMuted uppercase">{t('common:earnings')}</ThemedText>
-              <ThemedText className="text-lg font-extrabold text-textMain">{rewardAmount.toLocaleString()} FCFA</ThemedText>
+            <View style={{ marginLeft: 12 }}>
+              <Text style={[s.rewardLabel, { color: colors.textSecondary }]}>{t('common:earnings')}</Text>
+              <Text style={[s.rewardValue, { color: colors.text }]}>{rewardAmount.toLocaleString()} FCFA</Text>
             </View>
-          </ThemedView>
-          <ThemedView className="flex-1 bg-white rounded-3xl border border-borderMain p-5 flex-row items-center gap-4 shadow-sm">
-            <View className="w-12 h-12 rounded-2xl bg-purple-50 items-center justify-center">
-              <Ionicons name="star" size={22} color="#7C3AED" />
+          </View>
+          <View style={[s.rewardCard, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+            <View style={[s.rewardIcon, { backgroundColor: '#f5f3ff' }]}>
+              <Ionicons name="star" size={20} color="#7c3aed" />
             </View>
-            <View>
-              <ThemedText className="text-[10px] font-bold text-textMuted uppercase">{t('common:points')}</ThemedText>
-              <ThemedText className="text-lg font-extrabold text-purple-700">+{pointsReward} pts</ThemedText>
+            <View style={{ marginLeft: 12 }}>
+              <Text style={[s.rewardLabel, { color: colors.textSecondary }]}>{t('common:points')}</Text>
+              <Text style={[s.rewardValue, { color: '#7c3aed' }]}>+{pointsReward} pts</Text>
             </View>
-          </ThemedView>
+          </View>
         </View>
 
         {/* Code Validation */}
         {currentStep < 3 && (
-          <ThemedView className="bg-white rounded-[40px] border border-borderMain p-8 items-center mb-6 shadow-sm">
-            <View className="w-20 h-20 rounded-full bg-[#FAF7F2] border border-borderMain items-center justify-center mb-5 relative">
-              <Ionicons name="key" size={32} color={PRIMARY} />
-              <View className="absolute -right-1 -bottom-1 w-8 h-8 rounded-full bg-white border border-borderMain items-center justify-center shadow-sm">
-                <Ionicons name="shield-checkmark" size={14} color="#16A34A" />
-              </View>
+          <View style={[s.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border, alignItems: 'center', marginBottom: 20 }]}>
+            <View style={[s.bigIcon, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <Ionicons name="key" size={32} color={colors.primary} />
+            </View>
+            <Text style={[s.sectionTitle, { color: colors.text }]}>{t('rendre:validationTitle')}</Text>
+            <Text style={[s.sectionDesc, { color: colors.textSecondary }]}>{t('rendre:validationDesc')}</Text>
+
+            <Text style={[s.codeLabel, { color: colors.textSecondary }]}>{t('rendre:securityCode')}</Text>
+            <View style={s.pinRow}>
+              {code.map((digit, idx) => (
+                <TextInput
+                  key={idx}
+                  ref={(el) => { inputRefs.current[idx] = el; }}
+                  style={[s.pinInput, {
+                    backgroundColor: digit ? colors.successBg : colors.background,
+                    borderColor: digit ? colors.success : colors.border,
+                    color: colors.text,
+                  }]}
+                  maxLength={1}
+                  keyboardType="number-pad"
+                  value={digit}
+                  onChangeText={(v) => handleCodeChange(v, idx)}
+                  onKeyPress={(e) => handleKeyPress(e, idx)}
+                  selectTextOnFocus
+                />
+              ))}
             </View>
 
-            <ThemedText className="text-lg font-bold text-textMain mb-2">{t('rendre:validationTitle')}</ThemedText>
-            <ThemedText className="text-[12px] text-textMuted leading-relaxed mb-8 text-center px-4">
-              {t('rendre:validationDesc')}
-            </ThemedText>
+            <Pressable
+              onPress={handleValidateCode}
+              disabled={validatingCode || code.join('').length < 6}
+              style={[s.ctaBtn, {
+                backgroundColor: colors.greenDark,
+                opacity: (validatingCode || code.join('').length < 6) ? 0.6 : 1,
+                marginTop: 20,
+              }]}
+            >
+              {validatingCode ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                  <Text style={s.ctaBtnText}>{t('rendre:validateAndEarn')}</Text>
+                </>
+              )}
+            </Pressable>
 
-            <View className="w-full gap-6">
-              <View>
-                <ThemedText className="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-4 text-center">
-                  {t('rendre:securityCode')}
-                </ThemedText>
-                <View className="flex-row justify-center gap-2">
-                  {code.map((digit, idx) => (
-                    <TextInput
-                      key={idx}
-                      ref={(el) => { inputRefs.current[idx] = el; }}
-                      style={{
-                        width: 40,
-                        height: 56,
-                        backgroundColor: '#FAF7F2',
-                        borderWidth: 1,
-                        borderColor: '#E5E7EB',
-                        borderRadius: 16,
-                        textAlign: 'center',
-                        fontWeight: 'bold',
-                        fontSize: 20,
-                        color: '#1A1A1A',
-                      }}
-                      maxLength={1}
-                      keyboardType="number-pad"
-                      value={digit}
-                      onChangeText={(v) => handleCodeChange(v, idx)}
-                      onKeyPress={(e) => handleKeyPress(e, idx)}
-                      selectTextOnFocus
-                    />
-                  ))}
-                </View>
-              </View>
-
-              <Pressable
-                onPress={handleValidateCode}
-                disabled={validatingCode || code.join('').length < 6}
-                style={{ backgroundColor: GREEN_DARK }}
-                className="w-full py-4 rounded-[24px] items-center justify-center flex-row gap-2 shadow-lg active:scale-[0.98] disabled:opacity-60"
-              >
-                {validatingCode ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <>
-                    <Ionicons name="checkmark-circle" size={20} color="white" />
-                    <ThemedText className="text-white font-bold text-sm">{t('rendre:validateAndEarn')}</ThemedText>
-                  </>
-                )}
-              </Pressable>
-
-              <View className="flex-row items-center justify-center gap-2">
-                <Ionicons name="lock-closed" size={10} color="#9CA3AF" />
-                <ThemedText className="text-[10px] text-textMuted italic">
-                  {t('rendre:codeHint')}
-                </ThemedText>
-              </View>
+            <View style={s.hintRow}>
+              <Ionicons name="lock-closed" size={10} color={colors.textSecondary} />
+              <Text style={[s.hintText, { color: colors.textSecondary }]}>{t('rendre:codeHint')}</Text>
             </View>
-          </ThemedView>
+          </View>
         )}
 
-        {/* Success State */}
+        {/* Success */}
         {currentStep >= 3 && (
-          <ThemedView className="bg-white rounded-[40px] border border-green-200 p-8 items-center mb-6 shadow-sm">
-            <View className="w-20 h-20 rounded-full bg-green-50 items-center justify-center mb-5">
-              <Ionicons name="checkmark-circle" size={40} color="#16A34A" />
+          <View style={[s.card, { backgroundColor: colors.successBg, borderColor: '#bbf7d0', alignItems: 'center', marginBottom: 20 }]}>
+            <View style={[s.bigIcon, { backgroundColor: '#fff', borderColor: '#bbf7d0' }]}>
+              <Ionicons name="checkmark-circle" size={40} color={colors.success} />
             </View>
-            <ThemedText className="text-lg font-bold text-green-700 mb-2">{t('rendre:successTitle')}</ThemedText>
-            <ThemedText className="text-[12px] text-textMuted text-center mb-6">
+            <Text style={[s.sectionTitle, { color: colors.greenDark }]}>{t('rendre:successTitle')}</Text>
+            <Text style={[s.sectionDesc, { color: colors.textSecondary }]}>
               {t('rendre:successDesc', { amount: rewardAmount.toLocaleString() })}
-            </ThemedText>
-          </ThemedView>
+            </Text>
+          </View>
         )}
 
         {/* Document Summary */}
-        <ThemedView className="bg-white rounded-[32px] border border-borderMain p-6 shadow-sm mb-6">
-          <ThemedText className="text-[11px] font-bold text-textMuted uppercase tracking-widest mb-4">
-            {t('rendre:summaryTitle')}
-          </ThemedText>
-
-          <View className="flex-row items-center gap-4 p-4 bg-[#FAF7F2] rounded-2xl border border-borderMain/50">
-            <View className="w-12 h-12 rounded-xl bg-white items-center justify-center border border-borderMain shadow-sm">
-              <Ionicons name="document-text" size={24} color="#6B7280" />
+        <View style={[s.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border, marginBottom: 20 }]}>
+          <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>{t('rendre:summaryTitle')}</Text>
+          <View style={[s.docRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <View style={[s.docIcon, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+              <Ionicons name="document-text" size={22} color={colors.textSecondary} />
             </View>
-            <View className="flex-1">
-              <ThemedText className="text-[13px] font-bold text-textMain">
-                {declaration.doc_type || t('rendre:documentFallback')} {declaration.document_number ? `N°${declaration.document_number}` : ''}
-              </ThemedText>
-              <ThemedText className="text-[10px] text-textMuted italic mt-0.5">
-                <Ionicons name="location" size={9} /> {declaration.ville || declaration.lieu_trouvee || t('rendre:unspecified')}
-              </ThemedText>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              {/* Nom du propriétaire */}
+              {(declaration.nom_complet || declaration.owner_name || (declaration.nom_owner && declaration.prenom_owner)) && (
+                <Text style={[{ fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 2 }]}>
+                  {declaration.nom_complet || declaration.owner_name || `${declaration.prenom_owner} ${declaration.nom_owner}`}
+                </Text>
+              )}
+              {/* Type du document (label, pas ID) */}
+              <Text style={[s.docType, { color: colors.text }]}>
+                {declaration.docTypeInfo?.nom || declaration.doc_type || t('rendre:documentFallback')}
+                {declaration.document_number ? ` · N°${declaration.document_number}` : ''}
+                {declaration.numero_document ? ` · N°${declaration.numero_document}` : ''}
+              </Text>
+              {/* Date trouvée */}
+              {(declaration.date_trouvee || declaration.created_at) && (
+                <Text style={[{ fontSize: 11, color: colors.textSecondary, marginTop: 3 }]}>
+                  📅 Trouvé le {formatDate(declaration.date_trouvee || declaration.created_at)}
+                </Text>
+              )}
+              {/* Lieu */}
+              {(declaration.ville || declaration.lieu_trouvee) && (
+                <Text style={[s.docLoc, { color: colors.textSecondary }]}>
+                  📍 {declaration.ville || declaration.lieu_trouvee}
+                </Text>
+              )}
             </View>
           </View>
 
           {declaration.counterPart && (
-            <View className="mt-4 p-4 bg-green-50 rounded-2xl border border-green-100 flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-xl bg-green-dark items-center justify-center">
-                <Ionicons name="person" size={20} color="white" />
+            <View style={[s.finderRow, { backgroundColor: colors.successBg, borderColor: '#bbf7d0', marginTop: 12 }]}>
+              <View style={[s.finderAvatar, { backgroundColor: colors.greenDark }]}>
+                <Ionicons name="person" size={18} color="#fff" />
               </View>
-              <View className="flex-1">
-                <ThemedText className="text-[13px] font-bold text-green-900">
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[s.finderName, { color: colors.greenDark }]}>
                   {declaration.counterPart.nom} {declaration.counterPart.prenom}
-                </ThemedText>
-                <ThemedText className="text-[10px] text-green-700/80">
-                  {t('rendre:documentOwner')}
-                </ThemedText>
+                </Text>
+                <Text style={[s.finderPhone, { color: colors.success }]}>{t('rendre:documentOwner')}</Text>
               </View>
             </View>
           )}
-        </ThemedView>
+        </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Sticky Bottom Bar */}
       {currentStep < 3 && (
-        <View
-          className="bg-white border-t border-borderMain px-4 py-3 flex-row items-center justify-between shadow-2xl"
-          style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
-        >
-          <View className="flex-1 mr-3">
-            <View className="flex-row items-center gap-1.5 mb-0.5">
-              <ThemedText className="text-[12px] font-black text-textMain truncate" numberOfLines={1}>
-                {declaration.doc_type || t('rendre:documentFallback')}
-              </ThemedText>
-              <View className="w-1.5 h-1.5 rounded-full bg-primary" />
-              <ThemedText className="text-[12px] text-green-600 font-black">+{rewardAmount.toLocaleString()} FCFA</ThemedText>
+        <View style={[s.stickyBar, {
+          backgroundColor: colors.backgroundElement,
+          borderTopColor: colors.border,
+          paddingBottom: insets.bottom + 8,
+        }]}>
+          <View style={{ flex: 1, marginRight: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={[s.stickyDocType, { color: colors.text }]} numberOfLines={1}>
+                {declaration.docTypeInfo?.nom || declaration.doc_type || t('rendre:documentFallback')}
+              </Text>
+              <View style={[s.stickyDot, { backgroundColor: colors.primary }]} />
+              <Text style={[s.stickyReward, { color: colors.success }]}>+{rewardAmount.toLocaleString()} FCFA</Text>
             </View>
-            <ThemedText className="text-[10px] text-textMuted">{t('rendre:validationRequired')}</ThemedText>
+            <Text style={[s.stickyHint, { color: colors.textSecondary }]}>{t('rendre:validationRequired')}</Text>
           </View>
           <Pressable
             onPress={() => inputRefs.current[0]?.focus()}
-            style={{ backgroundColor: GREEN_DARK }}
-            className="px-6 py-3 rounded-2xl shadow-lg active:scale-95"
+            style={[s.stickyBtn, { backgroundColor: colors.greenDark }]}
           >
-            <ThemedText className="text-white font-black text-[12px]">{t('rendre:validate')}</ThemedText>
+            <Text style={s.stickyBtnText}>{t('rendre:validate')}</Text>
           </Pressable>
         </View>
       )}
     </SafeAreaView>
   );
 }
+
+const s = StyleSheet.create({
+  flex: { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  bodyBold: { fontWeight: '700' },
+  // Header
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  headerTitle: { fontSize: 16, fontWeight: '700' },
+  iconBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  btn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14 },
+  btnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  // Banner
+  banner: { borderRadius: 20, padding: 20 },
+  bannerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  bannerIcon: { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  bannerLabel: { fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 4 },
+  bannerStatus: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  bannerPercent: { fontSize: 28, fontWeight: '900', color: 'rgba(255,255,255,0.18)', marginLeft: 10 },
+  progressTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 99, overflow: 'hidden' },
+  progressBar: { height: '100%', borderRadius: 99 },
+  // Card
+  card: { borderRadius: 20, borderWidth: 1, padding: 20 },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  cardTitle: { fontSize: 14, fontWeight: '700' },
+  badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, borderWidth: 1, gap: 5 },
+  badgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e' },
+  badgeText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
+  // Timeline
+  timelineRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20, position: 'relative' },
+  timelineLine: { position: 'absolute', left: 11, top: 24, width: 2, height: '100%' },
+  timelineDot: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
+  stepLabel: { fontSize: 13, fontWeight: '600' },
+  stepDate: { fontSize: 11, marginTop: 2 },
+  // Rewards
+  rewardsRow: { flexDirection: 'row', gap: 12 },
+  rewardCard: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 1, padding: 16 },
+  rewardIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  rewardLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  rewardValue: { fontSize: 15, fontWeight: '800', marginTop: 2 },
+  // Section
+  bigIcon: { width: 72, height: 72, borderRadius: 36, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6, textAlign: 'center' },
+  sectionDesc: { fontSize: 13, lineHeight: 20, marginBottom: 16, textAlign: 'center', paddingHorizontal: 8 },
+  sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 },
+  // CTA
+  ctaBtn: { width: '100%', paddingVertical: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  ctaBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  // PIN
+  codeLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 14, textAlign: 'center' },
+  pinRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
+  pinInput: { width: 42, height: 54, borderWidth: 1.5, borderRadius: 14, textAlign: 'center', fontWeight: '700', fontSize: 20 },
+  hintRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 14 },
+  hintText: { fontSize: 11, fontStyle: 'italic' },
+  // Finder / Doc
+  finderRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1 },
+  finderAvatar: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  finderName: { fontSize: 13, fontWeight: '700' },
+  finderPhone: { fontSize: 11, marginTop: 2 },
+  docRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1 },
+  docIcon: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  docType: { fontSize: 13, fontWeight: '600' },
+  docLoc: { fontSize: 11, marginTop: 3 },
+  // Sticky bar
+  stickyBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
+  stickyDocType: { fontSize: 13, fontWeight: '700' },
+  stickyDot: { width: 5, height: 5, borderRadius: 3 },
+  stickyReward: { fontSize: 13, fontWeight: '800' },
+  stickyHint: { fontSize: 10, marginTop: 2 },
+  stickyBtn: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14 },
+  stickyBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+});

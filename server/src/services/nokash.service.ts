@@ -133,7 +133,11 @@ class NokashService {
       const response = await fetch(`${this.baseUrl}/310/status-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transaction_id: transactionId })
+        body: JSON.stringify({
+          i_space_key: this.i_space_key?.trim(),
+          app_space_key: this.app_space_key?.trim(),
+          transaction_id: transactionId
+        })
       });
 
       const result = await response.json();

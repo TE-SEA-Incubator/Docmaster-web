@@ -613,7 +613,6 @@ export class DeclarationService {
 
         // Record Transaction
         await this.transactionRepository.create({
-          id: uuidv4(),
           user_id: claim.finder_id,
           amount: rewardAmount,
           currency: 'XAF',

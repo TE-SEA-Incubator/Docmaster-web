@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Pressable, ActivityIndicator, Text } from 'react-native';
+import { ScrollView, View, Pressable, ActivityIndicator, Text, Image, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import * as ImagePicker from 'expo-image-picker';
 import { BottomTabInset } from '@/constants/theme';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { authService } from '@/core/api/authService';
@@ -21,7 +22,41 @@ export default function ManageProfileScreen() {
   const [form, setForm] = useState({ nom: '', prenom: '', telephone: '', ville: '', pays: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+
+  const handlePickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('devices:permissionRequired'), t('devices:galleryPermissionDesc'));
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setUploading(true);
+      try {
+        await authService.updateProfilePhoto(result.assets[0].uri);
+        await fetchProfile();
+      } catch (e) {
+        Alert.alert(t('common:error'), t('profile:photoUploadError'));
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  const getInitials = () => {
+    const p = user?.prenom?.charAt(0) || '';
+    const n = user?.nom?.charAt(0) || '';
+    return (p + n).toUpperCase() || 'DM';
+  };
 
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
@@ -91,15 +126,48 @@ export default function ManageProfileScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundElement }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + 40 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
           <Pressable onPress={() => router.back()} style={{ marginRight: 12 }}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </Pressable>
           <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>{t('manageProfile:title')}</Text>
+        </View>
+
+        <View style={{ alignItems: 'center', marginTop: 24, marginBottom: 10 }}>
+          <Pressable onPress={handlePickPhoto} disabled={uploading}>
+            <View style={{
+              width: 90, height: 90, borderRadius: 45,
+              backgroundColor: colors.backgroundElement,
+              alignItems: 'center', justifyContent: 'center',
+              borderWidth: 2, borderColor: colors.border,
+              overflow: 'hidden',
+            }}>
+              {user?.photo_url ? (
+                <Image source={{ uri: user.photo_url }} style={{ width: '100%', height: '100%' }} />
+              ) : (
+                <Text style={{ color: colors.greenDark, fontSize: 30, fontWeight: '800' }}>{getInitials()}</Text>
+              )}
+              {uploading && (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }]}>
+                  <ActivityIndicator color="white" />
+                </View>
+              )}
+            </View>
+            <View style={{
+              position: 'absolute', bottom: 0, right: 0,
+              backgroundColor: colors.primary,
+              padding: 5, borderRadius: 12,
+              borderWidth: 2, borderColor: colors.backgroundElement,
+            }}>
+              <Ionicons name="camera" size={14} color="white" />
+            </View>
+          </Pressable>
         </View>
 
         {message.text ? (
@@ -156,6 +224,7 @@ export default function ManageProfileScreen() {
           )}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

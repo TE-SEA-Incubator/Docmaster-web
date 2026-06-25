@@ -51,6 +51,11 @@ export const paymentsService = {
     return res.data;
   },
 
+  async checkTransaction(externalRef: string) {
+    const res = await apiClient.get(`payments/check/${externalRef}`);
+    return res.data;
+  },
+
   // Withdrawals
   async requestWithdrawal(data: {
     amount: number;

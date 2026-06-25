@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Pressable, ActivityIndicator, Text, Modal, Alert } from 'react-native';
+import { ScrollView, View, Pressable, ActivityIndicator, Text, Modal, Alert, Image, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import * as ImagePicker from 'expo-image-picker';
 import { BottomTabInset } from '@/constants/theme';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { useLanguageStore } from '@/core/store/useLanguageStore';
 import { useThemeStore } from '@/core/store/useThemeStore';
 import { documentsService } from '@/core/api/documentsService';
+import { authService } from '@/core/api/authService';
 import { LANGUAGES, type LanguageCode } from '@/i18n/config';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -22,13 +24,41 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
-  const { user, logout } = useAuthStore();
+  const { user, logout, fetchProfile } = useAuthStore();
   const { language, setLanguage } = useLanguageStore();
   const { mode, setMode } = useThemeStore();
   const colors = useThemeColors();
   const [loggingOut, setLoggingOut] = useState(false);
   const [docCount, setDocCount] = useState<number | null>(null);
   const [showLangModal, setShowLangModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const handlePickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('devices:permissionRequired'), t('devices:galleryPermissionDesc'));
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setUploading(true);
+      try {
+        await authService.updateProfilePhoto(result.assets[0].uri);
+        await fetchProfile();
+      } catch (e) {
+        Alert.alert(t('common:error'), t('profile:photoUploadError'));
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
 
   useEffect(() => {
     documentsService.getAll().then(res => {
@@ -95,14 +125,34 @@ export default function ProfileScreen() {
           </View>
 
           <View style={{ alignItems: 'center', marginBottom: 16 }}>
-            <View style={{
-              width: 100, height: 100, borderRadius: 50,
-              backgroundColor: colors.backgroundElement,
-              alignItems: 'center', justifyContent: 'center',
-              borderWidth: 4, borderColor: 'rgba(255,255,255,0.3)',
-            }}>
-              <Text style={{ color: colors.greenDark, fontSize: 34, fontWeight: '800' }}>{getInitials()}</Text>
-            </View>
+            <Pressable onPress={handlePickPhoto} disabled={uploading}>
+              <View style={{
+                width: 100, height: 100, borderRadius: 50,
+                backgroundColor: colors.backgroundElement,
+                alignItems: 'center', justifyContent: 'center',
+                borderWidth: 4, borderColor: 'rgba(255,255,255,0.3)',
+                overflow: 'hidden',
+              }}>
+                {user.photo_url ? (
+                  <Image source={{ uri: user.photo_url }} style={{ width: '100%', height: '100%' }} />
+                ) : (
+                  <Text style={{ color: colors.greenDark, fontSize: 34, fontWeight: '800' }}>{getInitials()}</Text>
+                )}
+                {uploading && (
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }]}>
+                    <ActivityIndicator color="white" />
+                  </View>
+                )}
+              </View>
+              <View style={{
+                position: 'absolute', bottom: 0, right: 0,
+                backgroundColor: colors.primary,
+                padding: 6, borderRadius: 15,
+                borderWidth: 2, borderColor: 'white',
+              }}>
+                <Ionicons name="camera" size={16} color="white" />
+              </View>
+            </Pressable>
           </View>
 
           <Text style={{ fontSize: 22, fontWeight: '800', color: colors.onPrimary, textAlign: 'center', marginBottom: 4 }}>

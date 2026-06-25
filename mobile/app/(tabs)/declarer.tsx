@@ -76,6 +76,7 @@ export default function DeclarerScreen() {
   const [rewardEnabled, setRewardEnabled] = useState(false);
   const [rewardAmount, setRewardAmount] = useState('');
   const [successRef, setSuccessRef] = useState<string | null>(null);
+  const [successId, setSuccessId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ visible: boolean; type: FeedbackType; title: string; message?: string }>({
     visible: false, type: 'error', title: '',
   });
@@ -198,7 +199,8 @@ export default function DeclarerScreen() {
 
       if (result.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setSuccessRef(result.data?.identifiant_doc_dm || "SUCCES");
+        setSuccessId(result.data?.id || null);
+        setSuccessRef(result.data?.identifiant_doc_dm || result.data?.id || 'SUCCES');
       } else {
         setFeedback({ visible: true, type: 'error', title: t('common:error'), message: result.message || t('declarer:submitError') });
       }
@@ -345,7 +347,7 @@ export default function DeclarerScreen() {
         onClose={() => router.replace('/(tabs)')}
       />
       <Stepper steps={STEPS} current={step} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 20 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {renderStepContent()}
         </ScrollView>
@@ -387,6 +389,18 @@ export default function DeclarerScreen() {
         message={feedback.message}
         onDismiss={() => setFeedback((f) => ({ ...f, visible: false }))}
         onPrimaryAction={() => setFeedback((f) => ({ ...f, visible: false }))}
+      />
+
+      <SuccessOverlay
+        visible={!!successRef}
+        reference={successRef || ''}
+        declarationId={successId || undefined}
+        docLabel={selectedTypeMeta?.nom || selectedTypeMeta?.label || undefined}
+        onClose={() => {
+          setSuccessRef(null);
+          setSuccessId(null);
+          router.replace('/(tabs)/declarations');
+        }}
       />
     </View>
   );

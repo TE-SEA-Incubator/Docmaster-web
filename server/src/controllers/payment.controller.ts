@@ -28,8 +28,10 @@ export const nokashCallback = async (req: Request, res: Response) => {
 
     const transaction = transRes.rows[0];
 
-    // 2. If status is SUCCESS and transaction was PENDING
-    if (status === 'SUCCESS' && transaction.status === 'PENDING') {
+    // 2. Normalize status (accept SUCCESS, SUCCEEDED, SUCCESSFUL, PAID, COMPLETED, etc.)
+    const normalized = normalizeNokashStatus({ status });
+
+    if (normalized.success && transaction.status === 'PENDING') {
       let metadata = transaction.metadata;
       
       // Safety parse if string (some DB adapters return JSONB as string)
@@ -62,8 +64,9 @@ export const nokashCallback = async (req: Request, res: Response) => {
         `Un paiement de ${transaction.amount} ${transaction.currency} a été effectué avec succès (Réf: ${id}, Type: ${transaction.type}).`,
         'INFO'
       );
-    } else if (status === 'FAILED' || status === 'CANCELED') {
-      await query('UPDATE transactions SET status = $1 WHERE id = $2', [status, transaction.id]);
+    } else if (normalized.terminal && !normalized.success) {
+      const terminalStatus = normalized.status === 'CANCELLED' ? 'CANCELED' : normalized.status;
+      await query('UPDATE transactions SET status = $1 WHERE id = $2', [terminalStatus, transaction.id]);
       
       // Notify user of failure
       await notificationService.createNotification({
@@ -112,7 +115,7 @@ export const getMyTransactions = async (req: Request, res: Response) => {
 export const getAllTransactions = async (req: Request, res: Response) => {
   try {
     const result = await query(
-      'SELECT t.*, u.nom, u.prenom, u.email FROM transactions t JOIN users u ON t.user_id = u.id ORDER BY t.created_at DESC'
+      `SELECT t.*, u.nom, u.prenom, u.email, CONCAT(u.prenom, ' ', u.nom) as user_name FROM transactions t JOIN users u ON t.user_id = u.id ORDER BY t.created_at DESC`
     );
 
     res.status(200).json({ 
@@ -397,3 +400,73 @@ export function stopNokashPolling(externalRef: string) {
       nokashPollTimers.delete(externalRef);
     }
 }
+
+/**
+ * Force check a transaction status with Nokash (manual reconciliation)
+ * GET /api/payments/check/:externalRef
+ * Accessible by the transaction owner or admin
+ */
+export const forceCheckTransaction = async (req: Request, res: Response) => {
+  try {
+    const externalRef = req.params.externalRef as string;
+    const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Non autorisé' });
+    }
+
+    const transRes = await query('SELECT * FROM transactions WHERE external_ref = $1 LIMIT 1', [externalRef]);
+
+    if (transRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Transaction non trouvée' });
+    }
+
+    const transaction = transRes.rows[0];
+
+    // Check ownership (user can check own, admin can check all)
+    if (transaction.user_id !== userId && userRole !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Accès refusé' });
+    }
+
+    if (transaction.status !== 'PENDING') {
+      return res.status(200).json({
+        success: true,
+        data: {
+          found: true,
+          updated: false,
+          reason: `Transaction déjà en statut ${transaction.status}`,
+          currentStatus: transaction.status
+        }
+      });
+    }
+
+    const { paymentReconciliationService } = await import('../services/payment-reconciliation.service.ts');
+    const result = await paymentReconciliationService.forceCheckTransaction(externalRef);
+
+    if (result.updated) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          found: true,
+          updated: true,
+          status: result.status,
+          message: `Transaction mise à jour : ${result.status}`
+        }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        found: true,
+        updated: false,
+        reason: result.reason || 'En attente de confirmation du fournisseur de paiement',
+        currentStatus: 'PENDING'
+      }
+    });
+  } catch (error: any) {
+    console.error('Force check error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

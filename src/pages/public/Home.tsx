@@ -351,11 +351,14 @@ function HowItWorksSection({ t }) {
                 <h3 className="font-bricolage text-lg font-bold text-textMain mb-3">{t(step.titleKey)}</h3>
                 <p className="text-textMuted text-[13px] leading-relaxed">{t(step.descKey)}</p>
               </div>
-              {i < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-[60px] -right-5 w-9 h-9 border-2 border-dashed border-primary rounded-full flex items-center justify-center z-10 bg-white">
-                  <i className="fa-solid fa-chevron-right text-primary text-xs" />
-                </div>
-              )}
+            {i < steps.length - 1 && (
+  <div className="hidden lg:block absolute top-[60px] -translate-y-1/2 -right-8 w-9 h-7 z-10">
+    <svg width="36" height="28" viewBox="0 0 36 28" className="text-primary">
+      <line x1="0" y1="14" x2="26" y2="14" stroke="currentColor" strokeWidth="2" strokeDasharray="5 5" />
+      <path d="M 22 7 L 33 14 L 22 21" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  </div>
+)}
             </div>
           ))}
         </div>

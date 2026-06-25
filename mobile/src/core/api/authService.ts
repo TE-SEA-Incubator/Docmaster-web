@@ -59,6 +59,23 @@ export const authService = {
     return res.data;
   },
 
+  async updateProfilePhoto(uri: string) {
+    const formData = new FormData();
+    const filename = uri.split('/').pop();
+    const match = /\.(\w+)$/.exec(filename || '');
+    const type = match ? `image/${match[1]}` : `image`;
+
+    // @ts-ignore
+    formData.append('photo_profile', { uri, name: filename, type });
+
+    const res = await apiClient.put<ApiResponse<UserProfile>>('auth/profile', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
+
   async googleLogin(token: string) {
     const res = await apiClient.post<ApiResponse<{ token: string; user: UserProfile }>>('auth/google-oauth', { token });
     return res.data;

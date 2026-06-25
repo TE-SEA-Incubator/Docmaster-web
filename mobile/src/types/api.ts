@@ -156,6 +156,20 @@ export interface Subscription {
   created_at?: string;
 }
 
+export interface SubscriptionUsage {
+  plan_name?: string;
+  percentage?: number;
+  subscription_id?: string;
+  subscription_end?: string;
+  usage?: {
+    objects?: number;
+    docs_per_type?: number;
+  };
+  limits?: {
+    objects?: number | string;
+  };
+}
+
 export interface Referral {
   id: string;
   parrain_id?: string;

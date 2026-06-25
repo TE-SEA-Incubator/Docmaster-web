@@ -145,6 +145,7 @@ router.patch('/read-all', notificationController.markAllRead);
  *         description: Non authentifié
  */
 router.post('/register-push-token', notificationController.registerPushToken);
+router.delete('/unregister-push-token', notificationController.registerPushToken); // reuses same handler with unregister=true
 
 /**
  * @swagger

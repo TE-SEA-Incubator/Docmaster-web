@@ -1,17 +1,15 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Pressable, View, TextInput, Image, Animated, Easing, ActivityIndicator, type TextInputProps } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Pressable, View, TextInput, Image, ActivityIndicator, type TextInputProps } from 'react-native';
 import { Link, useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Path, Circle, Defs, G } from 'react-native-svg';
+import Svg, { Path, Defs, G } from 'react-native-svg';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { useGoogleAuth } from '@/core/api/googleAuthService';
 import { useThemeColors } from '@/hooks/useThemeColors';
-
-const LOGO = require('../../assets/docmaster.png');
 
 const STEP_IMAGES = [
   require('../../assets/onbording/19197294.jpg'),
@@ -53,7 +51,11 @@ function FieldInput({
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: colors.background,
+            backgroundColor: error
+              ? colors.dangerBg
+              : focused
+                ? colors.surface
+                : colors.background,
             borderWidth: 1.5,
             borderRadius: 14,
             height: 52,
@@ -63,11 +65,6 @@ function FieldInput({
               : focused
                 ? colors.tint
                 : colors.border,
-            ...(error
-              ? { backgroundColor: colors.dangerBg }
-              : focused
-                ? { backgroundColor: colors.surface }
-                : {}),
           }}
         >
           {icon && (
@@ -112,83 +109,35 @@ function FieldInput({
 
 function BlobBackground() {
   const colors = useThemeColors();
-  const anim1 = useRef(new Animated.Value(0)).current;
-  const anim2 = useRef(new Animated.Value(0)).current;
-  const anim3 = useRef(new Animated.Value(0)).current;
-
-  React.useEffect(() => {
-    const loop = (anim: Animated.Value, dur: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(anim, { toValue: 1, duration: dur, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0, duration: dur, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        ])
-      );
-    loop(anim1, 5000).start();
-    loop(anim2, 6000).start();
-    loop(anim3, 7000).start();
-  }, []);
-
-  const translateY = (anim: Animated.Value, range: number) =>
-    anim.interpolate({ inputRange: [0, 1], outputRange: [0, -range] });
-
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }} pointerEvents="none">
-      <Animated.View
-        style={{
-          position: 'absolute',
-          top: -40, right: -30,
-          width: 220, height: 200,
-          borderRadius: 9999,
-          backgroundColor: colors.success,
-          opacity: 0.5,
-          transform: [{ translateY: translateY(anim1, 15) }],
-        }}
-      />
-      <Animated.View
-        style={{
-          position: 'absolute',
-          top: 20, right: 170,
-          width: 130, height: 120,
-          borderRadius: 9999,
-          backgroundColor: colors.tint,
-          opacity: 0.5,
-          transform: [{ translateY: translateY(anim2, 10) }],
-        }}
-      />
-      <Animated.View
-        style={{
-          position: 'absolute',
-          bottom: -30, left: -40,
-          width: 170, height: 160,
-          borderRadius: 9999,
-          backgroundColor: colors.success,
-          opacity: 0.5,
-          transform: [{ translateY: translateY(anim3, 12) }],
-        }}
-      />
-      <Animated.View
-        style={{
-          position: 'absolute',
-          bottom: 40, right: 20,
-          width: 100, height: 100,
-          borderRadius: 9999,
-          backgroundColor: colors.tint,
-          opacity: 0.6,
-          transform: [{ translateY: translateY(anim2, 8) }],
-        }}
-      />
-      <Animated.View
-        style={{
-          position: 'absolute',
-          top: '48%', left: 5,
-          width: 90, height: 80,
-          borderRadius: 9999,
-          backgroundColor: colors.tint,
-          opacity: 0.4,
-          transform: [{ translateY: translateY(anim1, 18) }],
-        }}
-      />
+      {/* Top-right accent */}
+      <View style={{
+        position: 'absolute',
+        top: -80, right: -80,
+        width: 260, height: 260,
+        borderRadius: 9999,
+        backgroundColor: colors.tint,
+        opacity: 0.06,
+      }} />
+      {/* Bottom-left accent */}
+      <View style={{
+        position: 'absolute',
+        bottom: -60, left: -60,
+        width: 200, height: 200,
+        borderRadius: 9999,
+        backgroundColor: colors.success,
+        opacity: 0.06,
+      }} />
+      {/* Mid small accent */}
+      <View style={{
+        position: 'absolute',
+        top: '40%', right: -30,
+        width: 120, height: 120,
+        borderRadius: 9999,
+        backgroundColor: colors.tint,
+        opacity: 0.04,
+      }} />
     </View>
   );
 }
@@ -199,29 +148,25 @@ function MotifBackground() {
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }} pointerEvents="none">
       <Svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
         <Defs />
-        <G opacity={0.08}>
+        <G opacity={0.05}>
           <Path
-            d="M0,100 C100,0 200,200 300,100 C400,0 500,150 600,50"
-            stroke={colors.greenDark}
-            strokeWidth={2}
-            fill="none"
-          />
-          <Path
-            d="M0,200 C120,300 250,100 380,250 C510,400 600,200 700,300"
-            stroke={colors.greenDark}
+            d="M0,80 C150,0 300,160 450,80 C600,0 700,120 800,60"
+            stroke={colors.tint}
             strokeWidth={1.5}
             fill="none"
           />
           <Path
-            d="M50,400 C200,300 300,500 450,350 C550,250 650,450 750,300"
-            stroke={colors.greenDark}
+            d="M0,200 C120,280 280,120 430,220 C580,320 680,160 800,240"
+            stroke={colors.tint}
             strokeWidth={1}
             fill="none"
           />
-          <Circle cx={80} cy={80} r={40} fill={colors.greenDark} />
-          <Circle cx={320} cy={420} r={30} fill={colors.greenDark} />
-          <Circle cx={600} cy={120} r={25} fill={colors.greenDark} />
-          <Circle cx={700} cy={380} r={35} fill={colors.greenDark} />
+          <Path
+            d="M0,350 C200,270 350,420 500,320 C650,220 720,380 800,300"
+            stroke={colors.tint}
+            strokeWidth={1}
+            fill="none"
+          />
         </G>
       </Svg>
     </View>
@@ -924,30 +869,35 @@ export default function LoginScreen() {
                 alignItems: 'center',
                 marginBottom: 40,
               }}>
-                <Image
-                  source={LOGO}
-                  style={{
-                    height: 64,
-                    width: undefined,
-                    marginBottom: 24,
-                  }}
-                  resizeMode="contain"
-                />
+                {/* App name */}
                 <ThemedText style={{
                   fontFamily: 'BricolageGrotesque_700Bold',
-                  fontSize: 28,
+                  fontSize: 36,
+                  fontWeight: '800',
+                  letterSpacing: -1,
+                  marginBottom: 4,
+                }}>
+                  <ThemedText style={{ color: colors.tint }}>Doc</ThemedText>
+                  <ThemedText style={{ color: colors.text }}>Master</ThemedText>
+                </ThemedText>
+                <View style={{ width: 28, height: 3, backgroundColor: colors.tint, borderRadius: 2, marginBottom: 28 }} />
+
+                <ThemedText style={{
+                  fontFamily: 'BricolageGrotesque_700Bold',
+                  fontSize: 22,
                   fontWeight: '800',
                   color: colors.text,
                   textAlign: 'center',
-                  marginBottom: 8,
+                  marginBottom: 6,
                 }}>
                   {t('auth:welcomeBack')}
                 </ThemedText>
                 <ThemedText style={{
-                  fontSize: 15,
+                  fontSize: 14,
                   color: colors.textSecondary,
                   textAlign: 'center',
                   fontWeight: '500',
+                  lineHeight: 20,
                 }}>
                   {t('auth:loginToContinue')}
                 </ThemedText>

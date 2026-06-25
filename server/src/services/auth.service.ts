@@ -64,8 +64,9 @@ export class UserService {
       isVerified = await this.userRepository.checkRecentlyVerified(data.email);
     }
 
-    // Hash password
-    const hashedPassword = await argon2.hash(data.mot_de_passe);
+    // Hash password (generate a secure random password if none is provided, e.g. for Google OAuth)
+    const passwordToHash = data.mot_de_passe || crypto.randomBytes(32).toString('hex');
+    const hashedPassword = await argon2.hash(passwordToHash);
     
     // Generate unique referral code
     const codeInvitation = await this.generateUniqueReferralCode();

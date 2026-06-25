@@ -87,16 +87,16 @@ export function useDevices() {
     queryKey: DEVICES_QUERY_KEY,
     queryFn: async () => {
       // Try the user-scoped endpoint first; fall back to the global list.
-      // Any error is swallowed and surfaced as an empty list so the screen
-      // can render its offline/mock fallback without throwing.
+      let lastError: unknown = null;
       try {
         const mine = await devicesService.getMyDevices();
         if (mine?.success && Array.isArray(mine.data)) return mine.data.map(toListItem);
-      } catch {}
+      } catch (e) { lastError = e; }
       try {
         const all = await devicesService.getAll();
         if (all?.success && Array.isArray(all.data)) return all.data.map(toListItem);
-      } catch {}
+      } catch (e) { lastError = e; }
+      if (lastError) throw lastError;
       return [] as DeviceListItem[];
     },
     staleTime: 60_000,

@@ -2,11 +2,11 @@ import React, { useState, useCallback } from 'react';
 import { Tabs } from 'expo-router';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Colors, BottomTabInset } from '@/constants/theme';
+import { BottomTabInset } from '@/constants/theme';
 import { PlusSheet } from '@/components/plus-sheet';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 const HIDDEN_ROUTES = ['declarer', 'trouver', 'recuperer', 'rendre'];
 
@@ -21,21 +21,21 @@ type TabButtonProps = {
   tab: TabDef;
   isFocused: boolean;
   onPress: () => void;
-  colors: (typeof Colors)['light'] | (typeof Colors)['dark'];
+  colors: ReturnType<typeof useThemeColors>;
 };
 
 const TabButton = React.memo(function TabButton({ tab, isFocused, onPress, colors }: TabButtonProps) {
   return (
     <Pressable onPress={onPress} style={styles.tab}>
-      <View style={[styles.indicator, isFocused && { backgroundColor: colors.tabActive }]} />
+      <View style={[styles.indicator, isFocused && { backgroundColor: colors.tint }]} />
       <Ionicons
         name={isFocused ? tab.icon : tab.iconOutline}
         size={24}
-        color={isFocused ? colors.tabActive : colors.textSecondary}
+        color={isFocused ? colors.tint : colors.textSecondary}
       />
       <Text style={{
         fontSize: 10,
-        color: isFocused ? colors.tabActive : colors.textSecondary,
+        color: isFocused ? colors.tint : colors.textSecondary,
         fontWeight: isFocused ? '600' : '400',
       }}>
         {tab.label}
@@ -45,8 +45,7 @@ const TabButton = React.memo(function TabButton({ tab, isFocused, onPress, color
 });
 
 function TabBar({ state, navigation }: any) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation('navbar');
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -124,7 +123,7 @@ function TabBar({ state, navigation }: any) {
         })}
 
         <Pressable onPress={openSheet} style={styles.centerTab}>
-          <View style={[styles.centerButton, { backgroundColor: colors.tabActive, shadowColor: colors.tabActive }]}>
+          <View style={[styles.centerButton, { backgroundColor: colors.tint, shadowColor: colors.tint }]}>
             <Ionicons name="add" size={28} color="#FFFFFF" />
           </View>
         </Pressable>
