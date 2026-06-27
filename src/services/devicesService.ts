@@ -60,8 +60,8 @@ export const devicesService = {
     return res.data;
   },
 
-  async verify(code: string, serial: string) {
-    const res = await apiClient.post<ApiResponse>("devices/verify", { code, serial_number: serial });
+  async verify(identifier: string) {
+    const res = await apiClient.get<ApiResponse>(`devices/verify/${encodeURIComponent(identifier)}`);
     return res.data;
   },
 

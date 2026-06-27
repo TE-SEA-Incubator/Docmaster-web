@@ -5,9 +5,11 @@ import { subscriptionService } from '../services/subscription.service.ts';
 import { activityLogService } from '../services/activity-log.service.ts';
 import { CreateDeclarationDTO, RequestDeleteDeclarationDTO } from '../dtos/declaration.dto.ts';
 import { validateDTO, mapFormDataToObject, formatValidationErrors } from '../utils/validation.utils.ts';
+import { DocumentRepository } from '../repositories/document.repository.ts';
 
 const declarationService = new DeclarationService();
 const pdfService = new PdfService();
+const documentRepository = new DocumentRepository();
 
 export const createLostDeclaration = async (req: Request, res: Response) => {
   try {
@@ -86,6 +88,14 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
     // 2. Consume referral benefit if used
     if ((validation as any).useBenefit) {
       await subscriptionService.consumeBenefit((validation as any).subscriptionId, 'declaration');
+    }
+
+    // 3. If this declaration was created from an existing wallet document, link them
+    const sourceDocumentId = req.body.source_document_id;
+    if (sourceDocumentId && typeof sourceDocumentId === 'string') {
+      documentRepository.updateLostStatus(sourceDocumentId, userId, true, result.id).catch((e: any) => {
+        console.error('⚠️ Could not link declaration to wallet document:', e);
+      });
     }
 
     res.status(201).json({

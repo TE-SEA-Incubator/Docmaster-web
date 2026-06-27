@@ -82,6 +82,26 @@ export const getMyDocuments = async (req: Request, res: Response) => {
   }
 };
 
+export const getMyDocumentById = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const docId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Utilisateur non authentifié' });
+    }
+
+    const doc = await documentService.getDocumentById(docId);
+    if (!doc || doc.user_id !== userId) {
+      return res.status(404).json({ success: false, message: 'Document introuvable ou accès non autorisé' });
+    }
+
+    res.json({ success: true, data: doc });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Erreur lors de la récupération du document' });
+  }
+};
+
 export const deleteDocument = async (req: Request, res: Response) => {
   try {
   const id = req.params.id as string;

@@ -47,7 +47,7 @@ export const devicesService = {
   },
 
   async verifyDevice(imei: string) {
-    const res = await apiClient.post<ApiResponse>('devices/verify', { imei });
+    const res = await apiClient.get<ApiResponse>(`devices/verify/${encodeURIComponent(imei)}`);
     return res.data;
   },
 };

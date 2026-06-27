@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   registerMyDocument,
   getMyDocuments,
+  getMyDocumentById,
   deleteDocument,
   reportDocumentLost,
   archiveDocument,
@@ -109,6 +110,7 @@ router.post('/', authMiddleware, upload.fields([
 ]), registerMyDocument);
 
 router.get('/', authMiddleware, getMyDocuments);
+router.get('/:id', authMiddleware, getMyDocumentById);
 
 /**
  * @swagger
