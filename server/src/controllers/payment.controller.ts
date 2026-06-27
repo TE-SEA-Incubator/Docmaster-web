@@ -140,24 +140,25 @@ export const payRecovery = async (req: Request, res: Response) => {
     }
 
     try {
-      // Optional: check configured/allowed Nokash methods from env (comma-separated)
-      // Accept both long names (ORANGE_MONEY/MTN_MOMO) and short Nokash codes (OM/MOMO)
-      const enabledMethodsEnv = process.env.NOKASH_ENABLED_METHODS || '';
-      const enabledMethodsRaw = enabledMethodsEnv.split(',').map(m => m.trim()).filter(Boolean);
-      if (enabledMethodsRaw.length > 0) {
-        const mapToCanonical = (m?: string) => {
-          if (!m) return '';
-          const u = m.toString().toUpperCase();
-          if (u === 'ORANGE_MONEY' || u === 'OM') return 'OM';
-          if (u === 'MTN_MOMO' || u === 'MOMO') return 'MOMO';
-          return u;
-        };
+      // Points payment bypasses Nokash entirely — skip method availability check
+      if (paymentMethod !== 'POINTS') {
+        const enabledMethodsEnv = process.env.NOKASH_ENABLED_METHODS || '';
+        const enabledMethodsRaw = enabledMethodsEnv.split(',').map(m => m.trim()).filter(Boolean);
+        if (enabledMethodsRaw.length > 0) {
+          const mapToCanonical = (m?: string) => {
+            if (!m) return '';
+            const u = m.toString().toUpperCase();
+            if (u === 'ORANGE_MONEY' || u === 'OM') return 'OM';
+            if (u === 'MTN_MOMO' || u === 'MOMO') return 'MOMO';
+            return u;
+          };
 
-        const enabledCanonical = enabledMethodsRaw.map(mapToCanonical);
-        const requestedCanonical = mapToCanonical(paymentMethod);
-        if (!enabledCanonical.includes(requestedCanonical)) {
-          console.warn('[PayRecovery] Payment method not enabled:', requestedCanonical, 'enabled:', enabledCanonical);
-          return res.status(400).json({ success: false, message: `La méthode de paiement '${paymentMethod}' n'est pas configurée pour cette application.` });
+          const enabledCanonical = enabledMethodsRaw.map(mapToCanonical);
+          const requestedCanonical = mapToCanonical(paymentMethod);
+          if (!enabledCanonical.includes(requestedCanonical)) {
+            console.warn('[PayRecovery] Payment method not enabled:', requestedCanonical, 'enabled:', enabledCanonical);
+            return res.status(400).json({ success: false, message: `La méthode de paiement '${paymentMethod}' n'est pas configurée pour cette application.` });
+          }
         }
       }
         // 1. Check if declaration exists
@@ -231,7 +232,16 @@ export const payRecovery = async (req: Request, res: Response) => {
 
         if (isPoints) {
           await activateRecovery(userId, docId, orderId);
-          return res.status(200).json({ success: true, message: 'Paiement par points réussi.' });
+          const claimRow = await query(
+            'SELECT verification_code FROM claims WHERE doc_id = $1 AND owner_id = $2 ORDER BY created_at DESC LIMIT 1',
+            [docId, userId]
+          );
+          const verificationCode = claimRow.rows[0]?.verification_code ?? null;
+          return res.status(200).json({
+            success: true,
+            message: 'Paiement par points réussi.',
+            data: { paid: true, verification_code: verificationCode }
+          });
         }
 
         startNokashPaymentPolling({
