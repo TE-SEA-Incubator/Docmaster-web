@@ -7,6 +7,7 @@ import {
   ChangePasswordPartenaireDTO,
   ForgotPasswordPartenaireDTO,
   ResetPasswordPartenaireDTO,
+  RefreshTokenPartenaireDTO,
   UpdatePartenaireDTO,
   UpdateProfilPartenaireDTO,
   WalletAdjustDTO,
@@ -56,9 +57,38 @@ export class PartenaireController {
   };
 
   /**
-   * POST /api/partenaires/logout  (PUBLIC) — clear auth cookie
+   * POST /api/partenaires/refresh-token  (PUBLIC) — refresh access token
    */
-  logout = async (_req: Request, res: Response) => {
+  refreshToken = async (req: Request, res: Response) => {
+    try {
+      const errors = await validateDTO(req.body, RefreshTokenPartenaireDTO);
+      if (errors) {
+        return res.status(400).json({ success: false, errors });
+      }
+      const result = await this.service.refreshAccessToken(req.body.refresh_token);
+      res.cookie('docmaster_token', result.token, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'lax',
+      });
+      res.json({ success: true, data: result });
+    } catch (error: any) {
+      res.status(401).json({ success: false, message: error.message });
+    }
+  };
+
+  /**
+   * POST /api/partenaires/logout  (PUBLIC) — clear auth cookie + revoke refresh token
+   */
+  logout = async (req: Request, res: Response) => {
+    try {
+      const refreshToken = req.body?.refresh_token as string | undefined;
+      if (refreshToken) {
+        await this.service.revokeByRefreshToken(refreshToken);
+      }
+    } catch {
+      // Déconnexion locale prioritaire
+    }
     res.clearCookie('docmaster_token', { httpOnly: true, sameSite: 'lax' });
     res.json({ success: true, message: 'Déconnecté' });
   };
@@ -148,6 +178,22 @@ export class PartenaireController {
   };
 
   /**
+   * POST /api/partenaires/profil/logo  (PARTNER) — upload organisation logo
+   */
+  uploadLogo = async (req: Request, res: Response) => {
+    try {
+      const file = (req as any).file as Express.Multer.File | undefined;
+      if (!file?.path) {
+        return res.status(400).json({ success: false, message: 'Fichier logo requis' });
+      }
+      const profile = await this.service.updateLogo((req as any).partenaire.id, file.path);
+      res.json({ success: true, data: profile });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  };
+
+  /**
    * GET /api/partenaires/stats  (PARTNER) — dashboard stats
    */
   getStats = async (req: Request, res: Response) => {
@@ -213,6 +259,81 @@ export class PartenaireController {
     try {
       const wallet = await this.service.getWallet((req as any).partenaire.id, req.query);
       res.json({ success: true, data: wallet });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
+  getEarningsStats = async (req: Request, res: Response) => {
+    try {
+      const stats = await this.service.getEarningsStats((req as any).partenaire.id);
+      res.json({ success: true, data: stats });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
+  getEarnings = async (req: Request, res: Response) => {
+    try {
+      const earnings = await this.service.getEarnings((req as any).partenaire.id, req.query);
+      res.json({ success: true, data: earnings });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
+  convertPoints = async (req: Request, res: Response) => {
+    try {
+      const amountPoints = Number(req.body?.amountPoints);
+      if (!amountPoints || amountPoints <= 0) {
+        return res.status(400).json({ success: false, message: 'Montant de points invalide' });
+      }
+      const result = await this.service.convertPoints((req as any).partenaire.id, amountPoints);
+      res.json({ success: true, data: result });
+    } catch (error: any) {
+      res.status(error.status || 400).json({ success: false, message: error.message });
+    }
+  };
+
+  /**
+   * POST /api/partenaires/withdrawals/request  (PARTNER) — request withdrawal
+   */
+  requestWithdrawal = async (req: Request, res: Response) => {
+    try {
+      const { amount, payment_method, phone } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ success: false, message: 'Montant invalide' });
+      }
+      if (!payment_method || !['MTN_MOMO', 'ORANGE_MONEY'].includes(payment_method)) {
+        return res.status(400).json({ success: false, message: 'Méthode de paiement invalide' });
+      }
+      if (!phone || !/^\d{9,15}$/.test(phone.replace(/\D/g, ''))) {
+        return res.status(400).json({ success: false, message: 'Numéro de téléphone invalide' });
+      }
+
+      const result = await this.service.requestWithdrawal(
+        (req as any).partenaire.id,
+        Number(amount),
+        payment_method,
+        phone
+      );
+      res.status(201).json({ success: true, data: result, message: 'Demande de retrait enregistrée avec succès' });
+    } catch (error: any) {
+      res.status(error.status || 400).json({ success: false, message: error.message });
+    }
+  };
+
+  /**
+   * GET /api/partenaires/withdrawals  (PARTNER) — get withdrawal history
+   */
+  getWithdrawals = async (req: Request, res: Response) => {
+    try {
+      const withdrawals = await this.service.getWithdrawals(
+        (req as any).partenaire.id,
+        req.query
+      );
+      res.json({ success: true, data: withdrawals });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }

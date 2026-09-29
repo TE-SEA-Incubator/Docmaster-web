@@ -1,6 +1,6 @@
 import argon2 from 'argon2';
 import crypto from 'crypto';
-import pool from '../../database/db.js';
+import pool, { getClient } from '../../database/db.js';
 import { PartenaireRepository } from './partenaires.repository.ts';
 import { generateToken } from '../../config/jwt.ts';
 import { MailService } from '../../services/mail.service.ts';
@@ -8,8 +8,7 @@ import { SmsService } from '../../services/sms.service.ts';
 import { NotificationService } from '../../services/notification.service.ts';
 import { walletService } from '../../services/wallet.service.ts';
 import { DeclarationService } from '../../services/declaration.service.ts';
-
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3003';
+import { partnerLinks } from '../../utils/partnerLinks.ts';
 
 export class PartenaireService {
   private repository = new PartenaireRepository();
@@ -55,8 +54,7 @@ export class PartenaireService {
       await this.mailService.sendPartnerInviteEmail(
         profile.email,
         data.nom_organisation,
-        tempPassword,
-        `${FRONTEND_URL}/partenaire/connexion`
+        tempPassword
       );
     } catch (err: any) {
       console.error('❌ [Partenaires] Email invitation échoué:', err.message);
@@ -67,7 +65,7 @@ export class PartenaireService {
       try {
         await this.smsService.sendSms(
           profile.telephone,
-          `Bonjour, votre compte partenaire DocMaster "${data.nom_organisation}" est créé. Connectez-vous sur ${FRONTEND_URL}/partenaire/connexion avec votre mot de passe temporaire.`
+          partnerLinks.inviteSmsText(data.nom_organisation)
         );
       } catch (err: any) {
         console.error('❌ [Partenaires] SMS invitation échoué:', err.message);
@@ -92,7 +90,6 @@ export class PartenaireService {
       email: profile.email,
       telephone: profile.telephone,
       statut: profile.statut,
-      temp_password: tempPassword,
     };
   }
 
@@ -115,11 +112,70 @@ export class PartenaireService {
     }
 
     const token = generateToken(profile.id, profile.email, 'PARTNER');
-    const { mot_de_passe, ...safe } = profile;
+    const refreshToken = crypto.randomBytes(48).toString('hex');
+    const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshExpires = new Date();
+    refreshExpires.setDate(refreshExpires.getDate() + 30);
+    await this.repository.setRefreshToken(profile.id, refreshHash, refreshExpires);
+
+    const { mot_de_passe, refresh_token_hash, refresh_token_expires, ...safe } = profile as any;
     return {
       token,
+      refresh_token: refreshToken,
       partenaire: safe,
     };
+  }
+
+  /**
+   * Refresh access token using a valid refresh token
+   */
+  async refreshAccessToken(refreshToken: string) {
+    if (!refreshToken?.trim()) {
+      throw new Error('Refresh token requis');
+    }
+
+    const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const profile = await this.repository.findByRefreshTokenHash(refreshHash);
+    if (!profile) {
+      throw new Error('Session expirée, veuillez vous reconnecter');
+    }
+
+    if (profile.statut !== 'ACTIF') {
+      throw new Error('Compte partenaire désactivé');
+    }
+
+    const newRefreshToken = crypto.randomBytes(48).toString('hex');
+    const newRefreshHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+    const refreshExpires = new Date();
+    refreshExpires.setDate(refreshExpires.getDate() + 30);
+    await this.repository.setRefreshToken(profile.id, newRefreshHash, refreshExpires);
+
+    const accessToken = generateToken(profile.id, profile.email, 'PARTNER');
+    return {
+      token: accessToken,
+      refresh_token: newRefreshToken,
+      partenaire: profile,
+    };
+  }
+
+  /**
+   * Revoke refresh token on logout
+   */
+  async revokeRefreshToken(partenaireId: string) {
+    await this.repository.clearRefreshToken(partenaireId);
+    return { success: true };
+  }
+
+  async findByRefreshHash(refreshHash: string) {
+    return this.repository.findByRefreshTokenHash(refreshHash);
+  }
+
+  async revokeByRefreshToken(refreshToken: string) {
+    const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const profile = await this.repository.findByRefreshTokenHash(refreshHash);
+    if (profile) {
+      await this.repository.clearRefreshToken(profile.id);
+    }
   }
 
   /**
@@ -204,10 +260,26 @@ export class PartenaireService {
   async findById(id: string) {
     const profile = await this.repository.findById(id);
     if (!profile) return null;
+    const { encodeMediaFields } = await import('../../utils/media.utils.ts');
+    const encoded = await encodeMediaFields({ logo_url: profile.logo_url });
     return {
       ...profile,
+      logo_url: encoded.logo_url ?? profile.logo_url,
       wallet_balance: Number(profile.wallet_balance || 0),
+      points: Number(profile.points || 0),
     };
+  }
+
+  /**
+   * Upload / replace partner organisation logo
+   */
+  async updateLogo(partenaireId: string, logoPath: string) {
+    const profile = await this.repository.findById(partenaireId);
+    if (!profile) {
+      throw new Error('Partenaire introuvable');
+    }
+    await this.repository.update(partenaireId, { logo_url: logoPath });
+    return this.findById(partenaireId);
   }
 
   /**
@@ -230,7 +302,7 @@ export class PartenaireService {
       ),
     ]);
     const balanceRes = await pool.query(
-      `SELECT COALESCE(wallet_balance, 0)::float AS balance FROM partenaires WHERE id = $1`,
+      `SELECT COALESCE(wallet_balance, 0)::float AS balance, COALESCE(points, 0)::int AS points FROM partenaires WHERE id = $1`,
       [partenaireId]
     );
 
@@ -241,6 +313,7 @@ export class PartenaireService {
       returned: returned.rows[0].count,
       available: available.rows[0].count,
       wallet_balance: balanceRes.rows[0]?.balance || 0,
+      total_points: balanceRes.rows[0]?.points || 0,
     };
   }
 
@@ -491,7 +564,204 @@ export class PartenaireService {
     if (!profile) {
       throw new Error('Partenaire introuvable');
     }
+    
+    // TODO: Améliorer la gestion de suppression avec les retraits
+    // Pour l'instant, on bloque simplement la suppression si des données existent
     await this.repository.delete(partenaireId);
     return { success: true, message: 'Partenaire supprimé' };
+  }
+
+  async getEarningsStats(partenaireId: string) {
+    const profile = await this.repository.findById(partenaireId);
+    if (!profile) throw new Error('Partenaire introuvable');
+
+    const stats = await this.getStats(partenaireId);
+    const { partenaireEarningsService } = await import('../../services/partenaire-earnings.service.ts');
+    const rawBreakdown = await partenaireEarningsService.getPointsBreakdown(partenaireId);
+
+    const settingRes = await pool.query(
+      `SELECT value FROM app_settings WHERE key = 'points_per_declaration' LIMIT 1`
+    );
+    const ptsPerUnit = Number(settingRes.rows[0]?.value) || 5;
+
+    return {
+      wallet_balance: Number(profile.wallet_balance || 0),
+      total_points: Number(profile.points || 0),
+      points_breakdown: {
+        declarations: {
+          points: rawBreakdown.declaration_points,
+          count: stats.found,
+          pts_per_unit: ptsPerUnit,
+        },
+        returns: {
+          points: rawBreakdown.return_points,
+          count: stats.returned,
+        },
+        referrals: { points: 0, count: 0 },
+      },
+      stats: {
+        total_found: stats.found,
+        total_returned: stats.returned,
+        total_matched: stats.matched,
+        total_available: stats.available,
+      },
+    };
+  }
+
+  async getEarnings(partenaireId: string, filters: any = {}) {
+    const limit = Math.min(100, Math.max(1, Number(filters.limit) || 50));
+    const offset = Math.max(0, Number(filters.offset) || 0);
+    const { partenaireEarningsService } = await import('../../services/partenaire-earnings.service.ts');
+    return partenaireEarningsService.getPartenaireEarnings(partenaireId, limit, offset);
+  }
+
+  async convertPoints(partenaireId: string, amountPoints: number) {
+    const { partenairePointsService } = await import('../../services/partenaire-points.service.ts');
+    return partenairePointsService.convertPointsToWallet(partenaireId, amountPoints);
+  }
+
+  /**
+   * Partner requests a withdrawal
+   */
+  async requestWithdrawal(partenaireId: string, amount: number, paymentMethod: string, phone: string) {
+    const profile = await this.repository.findById(partenaireId);
+    if (!profile) {
+      throw new Error('Partenaire introuvable');
+    }
+
+    if (profile.statut !== 'ACTIF') {
+      throw new Error('Compte partenaire désactivé. Impossible de demander un retrait.');
+    }
+
+    const balance = Number(profile.wallet_balance || 0);
+    if (balance < amount) {
+      throw new Error(`Solde insuffisant. Solde actuel: ${balance} FCFA`);
+    }
+
+    // Get minimum withdrawal amount from settings (default 1000 FCFA)
+    const settingRes = await pool.query(
+      `SELECT value FROM app_settings WHERE key = 'min_withdrawal_amount' LIMIT 1`
+    );
+    const minAmount = Number(settingRes.rows[0]?.value) || 1000;
+    
+    if (amount < minAmount) {
+      throw new Error(`Le montant minimum de retrait est de ${minAmount} FCFA`);
+    }
+
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
+
+      // Debit wallet immediately
+      await client.query(
+        `UPDATE partenaires SET wallet_balance = wallet_balance - $1, updated_at = NOW()
+         WHERE id = $2 AND wallet_balance >= $1`,
+        [amount, partenaireId]
+      );
+
+      // Create withdrawal request
+      const withdrawalRes = await client.query(
+        `INSERT INTO withdrawals (user_id, amount, currency, payment_method, payment_details, status, source_type)
+         VALUES ($1, $2, 'FCFA', $3, $4, 'PENDING', 'PARTENAIRE')
+         RETURNING *`,
+        [partenaireId, amount, paymentMethod, phone]
+      );
+
+      const withdrawal = withdrawalRes.rows[0];
+
+      // Log in partner wallet transactions
+      const balanceBefore = balance;
+      const balanceAfter = balance - amount;
+      await client.query(
+        `INSERT INTO partenaire_wallet_transactions 
+         (partenaire_id, amount, balance_before, balance_after, type, reason, reference_id, reference_type, metadata)
+         VALUES ($1, $2, $3, $4, 'DEBIT', 'WITHDRAWAL', $5, 'withdrawal', $6)`,
+        [
+          partenaireId,
+          amount,
+          balanceBefore,
+          balanceAfter,
+          withdrawal.id,
+          JSON.stringify({ payment_method: paymentMethod, phone, status: 'PENDING' })
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      // Notify admins of new withdrawal request
+      try {
+        await this.notificationService.notifyAdmins(
+          'Nouvelle demande de retrait partenaire',
+          `${profile.nom_organisation} demande un retrait de ${amount} FCFA`,
+          'INFO',
+          { 
+            withdrawal_id: withdrawal.id,
+            partenaire_id: partenaireId,
+            amount,
+            payment_method: paymentMethod
+          }
+        );
+      } catch (err) {
+        console.error('❌ [Partenaires] Notification admin withdrawal échouée:', (err as any).message);
+      }
+
+      return {
+        id: withdrawal.id,
+        amount: withdrawal.amount,
+        payment_method: withdrawal.payment_method,
+        payment_details: withdrawal.payment_details,
+        status: withdrawal.status,
+        created_at: withdrawal.created_at,
+        new_balance: balanceAfter
+      };
+    } catch (error: any) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get partner withdrawal history
+   */
+  async getWithdrawals(partenaireId: string, filters: any = {}) {
+    const limit = Math.min(100, Math.max(1, Number(filters.limit) || 50));
+    const offset = Math.max(0, Number(filters.offset) || 0);
+
+    const query = `
+      SELECT 
+        w.id, 
+        w.amount, 
+        w.currency,
+        w.payment_method, 
+        w.payment_details, 
+        w.status,
+        w.admin_note,
+        w.created_at,
+        w.updated_at
+      FROM withdrawals w
+      WHERE w.user_id = $1 AND w.source_type = 'PARTENAIRE'
+      ORDER BY w.created_at DESC
+      LIMIT $2 OFFSET $3
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*)::int AS total
+      FROM withdrawals
+      WHERE user_id = $1 AND source_type = 'PARTENAIRE'
+    `;
+
+    const [dataRes, countRes] = await Promise.all([
+      pool.query(query, [partenaireId, limit, offset]),
+      pool.query(countQuery, [partenaireId])
+    ]);
+
+    return {
+      withdrawals: dataRes.rows,
+      total: countRes.rows[0]?.total || 0,
+      limit,
+      offset
+    };
   }
 }

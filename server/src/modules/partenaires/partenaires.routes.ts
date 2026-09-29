@@ -12,6 +12,8 @@ const controller = new PartenaireController();
  */
 // POST /api/partenaires/login — partner login
 router.post('/login', controller.login);
+// POST /api/partenaires/refresh-token — refresh JWT
+router.post('/refresh-token', controller.refreshToken);
 // POST /api/partenaires/logout — partner logout
 router.post('/logout', controller.logout);
 // POST /api/partenaires/forgot-password — send password reset link
@@ -28,6 +30,8 @@ router.post('/change-password', partenaireAuthMiddleware, controller.changePassw
 router.get('/me', partenaireAuthMiddleware, controller.me);
 // PUT /api/partenaires/profil — partner updates its own organisation profile
 router.put('/profil', partenaireAuthMiddleware, controller.updateProfil);
+// POST /api/partenaires/profil/logo — upload organisation logo
+router.post('/profil/logo', partenaireAuthMiddleware, upload.single('logo'), controller.uploadLogo);
 // GET /api/partenaires/stats — partner dashboard stats
 router.get('/stats', partenaireAuthMiddleware, controller.getStats);
 // GET /api/partenaires/declarations — partner's found declarations
@@ -41,6 +45,16 @@ router.post('/declarations', partenaireAuthMiddleware, upload.fields([
 router.delete('/declarations/:id', partenaireAuthMiddleware, controller.deleteDeclaration);
 // GET /api/partenaires/wallet — balance + history
 router.get('/wallet', partenaireAuthMiddleware, controller.getWallet);
+// GET /api/partenaires/earnings-stats — points + wallet stats
+router.get('/earnings-stats', partenaireAuthMiddleware, controller.getEarningsStats);
+// GET /api/partenaires/earnings — points/money earnings history
+router.get('/earnings', partenaireAuthMiddleware, controller.getEarnings);
+// POST /api/partenaires/points/convert — convert points to wallet FCFA
+router.post('/points/convert', partenaireAuthMiddleware, controller.convertPoints);
+// POST /api/partenaires/withdrawals/request — request withdrawal
+router.post('/withdrawals/request', partenaireAuthMiddleware, controller.requestWithdrawal);
+// GET /api/partenaires/withdrawals — get withdrawal history
+router.get('/withdrawals', partenaireAuthMiddleware, controller.getWithdrawals);
 
 /**
  * ── ADMIN (token utilisateur admin) ──

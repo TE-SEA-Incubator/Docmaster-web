@@ -19,6 +19,7 @@ export interface PartenaireProfile {
   ville: string | null;
   region?: string | null;
   wallet_balance: number;
+  points: number;
   is_verified: boolean;
 }
 
@@ -26,7 +27,7 @@ const PUBLIC_COLUMNS = `
   p.id, p.nom_organisation, p.adresse, p.logo_url,
   p.statut, p.must_change_password, p.created_by, p.created_at, p.updated_at,
   p.email, p.telephone, p.nom_contact, p.prenom_contact,
-  p.ville, p.region, p.wallet_balance, p.is_verified
+  p.ville, p.region, p.wallet_balance, p.points, p.is_verified
 `;
 
 const WITH_PASSWORD_COLUMNS = `${PUBLIC_COLUMNS}, p.mot_de_passe`;
@@ -47,6 +48,7 @@ interface PartenaireCreateData {
 interface PartenaireUpdateData {
   nom_organisation?: string;
   adresse?: string;
+  logo_url?: string | null;
   statut?: 'ACTIF' | 'SUSPENDU' | 'INACTIF';
   email?: string;
   telephone?: string | null;
@@ -179,6 +181,7 @@ export class PartenaireRepository {
     const fields: Record<string, any> = {
       nom_organisation: data.nom_organisation,
       adresse: data.adresse,
+      logo_url: data.logo_url,
       statut: data.statut,
       email: data.email,
       telephone: data.telephone,
@@ -248,6 +251,34 @@ export class PartenaireRepository {
     await pool.query(
       `UPDATE partenaires
        SET password_reset_token = NULL, password_reset_expires = NULL, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [id]
+    );
+  }
+
+  async setRefreshToken(id: string, tokenHash: string, expires: Date): Promise<void> {
+    await pool.query(
+      `UPDATE partenaires
+       SET refresh_token_hash = $1, refresh_token_expires = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3`,
+      [tokenHash, expires, id]
+    );
+  }
+
+  async findByRefreshTokenHash(tokenHash: string): Promise<PartenaireProfile | null> {
+    const query = `
+      SELECT ${PUBLIC_COLUMNS}
+      FROM partenaires p
+      WHERE p.refresh_token_hash = $1 AND p.refresh_token_expires > CURRENT_TIMESTAMP
+    `;
+    const { rows } = await pool.query(query, [tokenHash]);
+    return rows[0] || null;
+  }
+
+  async clearRefreshToken(id: string): Promise<void> {
+    await pool.query(
+      `UPDATE partenaires
+       SET refresh_token_hash = NULL, refresh_token_expires = NULL, updated_at = CURRENT_TIMESTAMP
        WHERE id = $1`,
       [id]
     );

@@ -70,6 +70,15 @@ export class LoginPartenaireDTO {
 }
 
 /**
+ * DTO for refreshing access token
+ */
+export class RefreshTokenPartenaireDTO {
+  @IsString()
+  @IsNotEmpty({ message: 'Le refresh token est requis' })
+  refresh_token!: string;
+}
+
+/**
  * DTO for changing password (first login)
  */
 export class ChangePasswordPartenaireDTO {

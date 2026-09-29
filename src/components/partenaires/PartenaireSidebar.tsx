@@ -1,5 +1,6 @@
 import { Menu, Avatar, Typography, Button, Tooltip } from "antd";
 import {
+  ArrowDownOutlined,
   DashboardOutlined,
   FileProtectOutlined,
   LogoutOutlined,
@@ -7,6 +8,7 @@ import {
   ProfileOutlined,
   UserOutlined,
   ShopOutlined,
+  StarOutlined,
   WalletOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -29,6 +31,7 @@ export default function PartenaireSidebar({ collapsed, onCollapse }: PartenaireS
     if (location.pathname.includes("/declarations")) return "declarations";
     if (location.pathname.includes("/declarer")) return "declarer";
     if (location.pathname.includes("/portefeuille")) return "portefeuille";
+    if (location.pathname.includes("/retraits")) return "retraits";
     if (location.pathname.includes("/profil")) return "profil";
     return "dashboard";
   })();
@@ -38,6 +41,7 @@ export default function PartenaireSidebar({ collapsed, onCollapse }: PartenaireS
     { key: "declarer", icon: <PlusCircleOutlined />, label: t("partenaire_sidebar_declare") },
     { key: "declarations", icon: <FileProtectOutlined />, label: t("partenaire_sidebar_declarations") },
     { key: "portefeuille", icon: <WalletOutlined />, label: t("partenaire_sidebar_portefeuille") },
+    { key: "retraits", icon: <ArrowDownOutlined />, label: t("partenaire_sidebar_retraits") },
     { key: "profil", icon: <ProfileOutlined />, label: t("partenaire_sidebar_profil") },
   ];
 
@@ -45,6 +49,7 @@ export default function PartenaireSidebar({ collapsed, onCollapse }: PartenaireS
     if (key === "declarations") navigate("/partenaire/declarations");
     else if (key === "declarer") navigate("/partenaire/declarer");
     else if (key === "portefeuille") navigate("/partenaire/portefeuille");
+    else if (key === "retraits") navigate("/partenaire/retraits");
     else if (key === "profil") navigate("/partenaire/profil");
     else navigate("/partenaire/dashboard");
   };
@@ -147,9 +152,14 @@ export default function PartenaireSidebar({ collapsed, onCollapse }: PartenaireS
           </div>
           <Typography.Text
             strong
-            style={{ color: "#fff", fontSize: 12, display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}
+            style={{ color: "#fff", fontSize: 12, display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}
           >
             <WalletOutlined /> {t("partenaire_sidebar_balance", { amount: Number(partenaire.wallet_balance || 0).toLocaleString(lang === "ar" ? "ar" : lang === "en" ? "en" : "fr-FR") })}
+          </Typography.Text>
+          <Typography.Text
+            style={{ color: "#F5A64B", fontSize: 11, display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}
+          >
+            <StarOutlined /> {t("partenaire_sidebar_points", { amount: Number(partenaire.points || 0).toLocaleString(lang === "ar" ? "ar" : lang === "en" ? "en" : "fr-FR") })}
           </Typography.Text>
           <Button danger block size="small" icon={<LogoutOutlined />} onClick={() => logout()} style={{ fontWeight: 500 }}>
             {t("partenaire_sidebar_logout")}
