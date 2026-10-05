@@ -551,18 +551,16 @@ function DeclCard({ decl, navigate, userName, t }: {
   t: (k: string) => string;
 }) {
   const isPerdu = (decl.declaration_type || (decl as any).type || "").toUpperCase() === "LOST";
-  const typeBadge = isPerdu
-    ? "bg-red-50 text-red-700 border-red-100"
-    : "bg-green-50 text-green-700 border-green-100";
   const typeIcon = isPerdu ? "fa-triangle-exclamation" : "fa-file-circle-check";
   const typeLabel = isPerdu ? t("mesdeclarations_type_loss") : t("mesdeclarations_type_found");
+  const typeBadgeColor = isPerdu ? "red" : "green";
 
-  const statusCls: Record<string, string> = {
-    MATCHED:  "bg-green-100 text-green-700 border-green-200 animate-pulse",
-    RETURNED: "bg-gray-100 text-gray-700 border-gray-200",
-    RESOLVED: "bg-green-50 text-green-700 border-green-100",
-    NEW:      "bg-blue-50 text-blue-700 border-blue-100",
-    EN_COURS: "bg-amber-50 text-amber-700 border-amber-100",
+  const statusBadgeColor: Record<string, string> = {
+    MATCHED:  "green",
+    RETURNED: "gray",
+    RESOLVED: "green",
+    NEW:      "blue",
+    EN_COURS: "orange",
   };
   const statusLabel: Record<string, string> = {
     MATCHED:  t("mesdeclarations_status_match"),
@@ -571,7 +569,8 @@ function DeclCard({ decl, navigate, userName, t }: {
     NEW:      t("mesdeclarations_status_new"),
     EN_COURS: t("mesdeclarations_status_pending"),
   };
-  const sCls = statusCls[decl.status || ""] || "bg-amber-50 text-amber-700 border-amber-100";
+  const sBadgeColor = statusBadgeColor[decl.status || ""] || "orange";
+  const isMatched = decl.status === "MATCHED";
   const sLabel = statusLabel[decl.status || ""] || t("mesdeclarations_status_pending");
   const docName = (decl as any).docTypeInfo?.nom || (decl as any).doc_type || t("dashboard_document");
   const fmtDate = (v?: string | null) =>
@@ -591,9 +590,9 @@ function DeclCard({ decl, navigate, userName, t }: {
             {docName}
           </h3>
         </div>
-        <span className={`shrink-0 px-2 py-1 sm:px-2.5 sm:py-1 rounded-full border text-[10px] sm:text-[11px] font-bold whitespace-nowrap ${typeBadge}`}>
+        <Badge color={typeBadgeColor} variant="light" radius="xl" size="sm" className="shrink-0 whitespace-nowrap">
           <i className={`fa-solid ${typeIcon} mr-0.5 sm:mr-1`} />{typeLabel}
-        </span>
+        </Badge>
       </div>
 
       <div className="space-y-1 text-[12px] sm:text-[12.5px] text-textMuted">
@@ -603,9 +602,9 @@ function DeclCard({ decl, navigate, userName, t }: {
       </div>
 
       <div className="mt-3 sm:mt-4 flex items-center justify-between gap-2">
-        <span className={`px-2 sm:px-2.5 py-1 rounded-full border text-[10px] sm:text-[11px] font-semibold ${sCls}`}>
+        <Badge color={sBadgeColor} variant="light" radius="xl" size="sm" className={isMatched ? "animate-pulse" : ""}>
           {sLabel}
-        </span>
+        </Badge>
         <button
           onClick={(e) => { e.stopPropagation(); navigate("/mes-declarations"); }}
           className="px-2.5 sm:px-3 py-1.5 rounded-[8px] sm:rounded-[9px] bg-surface2 border border-borda text-[11px] sm:text-[12px] font-semibold text-textMuted/70 hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
@@ -657,20 +656,20 @@ const typeImages: Record<string, string> = {
 };
 
 const typeConfigs: Record<string, { icon: string; color: string; label: string }> = {
-  CNI: { icon: "fa-id-card", color: "bg-orange-50 text-orange-600", label: "dashboard_label_cni" },
-  PASSPORT: { icon: "fa-passport", color: "bg-blue-50 text-blue-600", label: "dashboard_label_passeport" },
-  PERMIS: { icon: "fa-car", color: "bg-green-50 text-green-600", label: "dashboard_label_permis" },
-  DIPLOME: { icon: "fa-graduation-cap", color: "bg-purple-50 text-purple-600", label: "dashboard_label_diplome" },
-  CARTE_BLUE: { icon: "fa-credit-card", color: "bg-indigo-50 text-indigo-600", label: "dashboard_label_doc" },
-  CARTE_GRISE: { icon: "fa-file-invoice", color: "bg-red-50 text-red-600", label: "dashboard_label_carte_grise" },
-  CARTE_SEJOUR: { icon: "fa-passport", color: "bg-cyan-50 text-cyan-600", label: "dashboard_label_doc" },
-  CARTE_VOTE: { icon: "fa-check-to-slot", color: "bg-lime-50 text-lime-600", label: "dashboard_label_doc" },
-  ACTE_NAISSANCE: { icon: "fa-file-circle-plus", color: "bg-teal-50 text-teal-600", label: "dashboard_label_acte" },
-  ACTE_MARIAGE: { icon: "fa-ring", color: "bg-pink-50 text-pink-600", label: "dashboard_label_acte" },
-  ACTE_DECES: { icon: "fa-scroll", color: "bg-stone-100 text-stone-600", label: "dashboard_label_acte" },
-  TITRE_FINANCIER: { icon: "fa-house-chimney", color: "bg-amber-50 text-amber-600", label: "dashboard_label_doc" },
-  AUTRES: { icon: "fa-circle-question", color: "bg-gray-50 text-gray-600", label: "dashboard_label_doc" },
-  DEFAULT: { icon: "fa-file-lines", color: "bg-gray-50 text-gray-600", label: "dashboard_label_doc" },
+  CNI: { icon: "fa-id-card", color: "text-orange-600", label: "dashboard_label_cni" },
+  PASSPORT: { icon: "fa-passport", color: "text-blue-600", label: "dashboard_label_passeport" },
+  PERMIS: { icon: "fa-car", color: "text-green-600", label: "dashboard_label_permis" },
+  DIPLOME: { icon: "fa-graduation-cap", color: "text-purple-600", label: "dashboard_label_diplome" },
+  CARTE_BLUE: { icon: "fa-credit-card", color: "text-indigo-600", label: "dashboard_label_doc" },
+  CARTE_GRISE: { icon: "fa-file-invoice", color: "text-red-600", label: "dashboard_label_carte_grise" },
+  CARTE_SEJOUR: { icon: "fa-passport", color: "text-cyan-600", label: "dashboard_label_doc" },
+  CARTE_VOTE: { icon: "fa-check-to-slot", color: "text-lime-600", label: "dashboard_label_doc" },
+  ACTE_NAISSANCE: { icon: "fa-file-circle-plus", color: "text-teal-600", label: "dashboard_label_acte" },
+  ACTE_MARIAGE: { icon: "fa-ring", color: "text-pink-600", label: "dashboard_label_acte" },
+  ACTE_DECES: { icon: "fa-scroll", color: "text-stone-600", label: "dashboard_label_acte" },
+  TITRE_FINANCIER: { icon: "fa-house-chimney", color: "text-amber-600", label: "dashboard_label_doc" },
+  AUTRES: { icon: "fa-circle-question", color: "text-gray-600", label: "dashboard_label_doc" },
+  DEFAULT: { icon: "fa-file-lines", color: "text-gray-600", label: "dashboard_label_doc" },
 };
 
 function PerfCard({ doc, onClick, period }: { doc: any; onClick?: () => void; period?: string }) {
@@ -699,9 +698,7 @@ function PerfCard({ doc, onClick, period }: { doc: any; onClick?: () => void; pe
       </Card.Section>
       <div style={{ padding: 12 }}>
         <Group gap="sm" mb={4}>
-          <div className={`w-6 h-6 rounded-md ${cfg.color} flex items-center justify-center`} style={{ fontSize: 10 }}>
-            <i className={`fa-solid ${cfg.icon}`} />
-          </div>
+          <i className={`fa-solid ${cfg.icon} ${cfg.color}`} style={{ fontSize: 13 }} />
           <Text size="xs" fw={700} truncate>{doc.name || t(cfg.label)}</Text>
         </Group>
         <div>
@@ -710,12 +707,12 @@ function PerfCard({ doc, onClick, period }: { doc: any; onClick?: () => void; pe
             <Text span size="xs" c="dimmed" fs="italic">{t(`dashboard_this_${period || "month"}`)}</Text>
           </Group>
           <Group gap={6} mt={4}>
-            <Paper style={{ fontSize: 8, color: "#d97706", background: "#fef3c7", padding: "2px 6px", borderRadius: 6, width: "fit-content" }}>
+            <Badge size="xs" variant="light" color="orange" style={{ fontSize: 8 }}>
               <i className="fa-solid fa-arrow-down" style={{ fontSize: 7, marginRight: 3 }} /> {lost} {t("dashboard_perf_lost")}
-            </Paper>
-            <Paper style={{ fontSize: 8, color: "#16a34a", background: "#dcfce7", padding: "2px 6px", borderRadius: 6, width: "fit-content" }}>
+            </Badge>
+            <Badge size="xs" variant="light" color="green" style={{ fontSize: 8 }}>
               <i className="fa-solid fa-arrow-up" style={{ fontSize: 7, marginRight: 3 }} /> {found} {t("dashboard_perf_found")}
-            </Paper>
+            </Badge>
           </Group>
           <Paper style={{ fontSize: 8, color: "var(--mantine-color-dimmed)", marginTop: 4, background: "var(--mantine-color-surface2)", padding: "2px 6px", borderRadius: 6, width: "fit-content" }}>
             <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 7, marginRight: 4 }} /> {activityText}
@@ -766,9 +763,7 @@ function PerfModal({ doc, onClose, promo, isDismissed, onPromoSubscribe, onPromo
           <img src={image} alt={doc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0.2), transparent)" }} />
           <Group style={{ position: "absolute", bottom: 12, left: 16 }} gap="sm">
-            <div className={`w-10 h-10 rounded-xl ${cfg.color} flex items-center justify-center`}>
-              <i className={`fa-solid ${cfg.icon} text-lg`} />
-            </div>
+            <i className={`fa-solid ${cfg.icon} ${cfg.color} text-lg`} />
             <div>
               <Text c="white" fz={18} fw={800} className="font-bricolage">{doc.name || t(cfg.label)}</Text>
               <Badge color={isUp ? "green" : "red"} size="sm" variant="light">
@@ -796,11 +791,11 @@ function PerfModal({ doc, onClose, promo, isDismissed, onPromoSubscribe, onPromo
             </Paper>
           </SimpleGrid>
           <SimpleGrid cols={3} spacing="sm">
-            <Paper p="md" ta="center" style={{ background: "#fef3c7" }}>
+            <Paper p="md" ta="center" style={{ background: "var(--mantine-color-surface2)" }}>
               <Text fz={18} fw={800} className="font-bricolage" c="#d97706">{(parseInt(doc.lost) || 0).toLocaleString()}</Text>
               <Text size="xs" c="dimmed" fw={500}>{t("dashboard_perf_lost")}</Text>
             </Paper>
-            <Paper p="md" ta="center" style={{ background: "#dcfce7" }}>
+            <Paper p="md" ta="center" style={{ background: "var(--mantine-color-surface2)" }}>
               <Text fz={18} fw={800} className="font-bricolage" c="#16a34a">{(parseInt(doc.found) || 0).toLocaleString()}</Text>
               <Text size="xs" c="dimmed" fw={500}>{t("dashboard_perf_found")}</Text>
             </Paper>
@@ -822,9 +817,7 @@ function PerfModal({ doc, onClose, promo, isDismissed, onPromoSubscribe, onPromo
                   const dateStr = item.date ? new Date(item.date).toLocaleDateString("fr-FR") : "";
                   return (
                     <Group key={item.id || i} gap="sm" p="sm" style={{ background: "var(--mantine-color-surface2)", borderRadius: 12 }}>
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isLost ? "bg-amber-100" : "bg-green-100"}`}>
-                        <i className={`fa-solid ${isLost ? "fa-arrow-down text-amber-600" : "fa-arrow-up text-green-600"} text-xs`} />
-                      </div>
+                      <i className={`fa-solid ${isLost ? "fa-arrow-down text-amber-600" : "fa-arrow-up text-green-600"} text-xs flex-shrink-0`} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <Text size="sm" fw={600} truncate>
                           {isLost ? t("dashboard_perf_lost") : t("dashboard_perf_found")}
@@ -914,18 +907,10 @@ function CatalogModal({ types, loading, error, onClose }: {
           {types.map((type: any) => {
             const code = type.code || "DEFAULT";
             const cfg = typeConfigs[code] || typeConfigs.DEFAULT;
-            const boxStyle = type.color || type.bg
-              ? { background: type.bg || "#f3f4f6", color: type.color || "#6b7280" }
-              : undefined;
             return (
               <Card key={type.id || code} withBorder radius="md" p="sm">
                 <Group gap="sm" align="flex-start" wrap="nowrap">
-                  <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={boxStyle || { background: "#f3f4f6", color: "#6b7280" }}
-                  >
-                    <i className={`fa-solid ${cfg.icon}`} style={{ fontSize: 13 }} />
-                  </div>
+                  <i className={`fa-solid ${cfg.icon} ${cfg.color}`} style={{ fontSize: 15, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <Group gap={6} wrap="nowrap">
                       <Text fz={13} fw={700} truncate>{type.nom}</Text>

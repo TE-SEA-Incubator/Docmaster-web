@@ -32,6 +32,7 @@ export default function Sidebar() {
       section: t("sidebar_account"),
       items: [
         { to: "/mes-declarations", icon: "fa-solid fa-clock-rotate-left", label: t("sidebar_declarations") },
+        { to: "/messagerie", icon: "fa-solid fa-message", label: "Messagerie" },
         { to: "/mes-gains", icon: "fa-solid fa-wallet", label: t("sidebar_earnings") },
         { to: "/parrainage", icon: "fa-solid fa-gift", label: t("sidebar_referral") },
         { to: "/abonnement", icon: "fa-solid fa-crown", label: t("sidebar_subscription") },
@@ -77,7 +78,8 @@ export default function Sidebar() {
 
       <aside
         id="sidebar"
-        className={`fixed left-0 top-0 bottom-0 w-[260px] bg-[#1E3A2F] z-40 flex flex-col transition-transform duration-300 ease-out ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed left-0 top-0 bottom-0 w-[260px] z-40 flex flex-col transition-transform duration-300 ease-out ${open ? "translate-x-0" : "-translate-x-full"}`}
+        style={{ backgroundColor: "#2D5A42" }}
       >
         {/* Logo */}
         <div className="flex items-center px-5 py-4 border-b border-white/10 flex-shrink-0">
@@ -196,9 +198,7 @@ export default function Sidebar() {
         padding="lg"
       >
         <Stack align="center" gap="md">
-          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
-            <i className="fa-solid fa-right-from-bracket text-red-500 text-xl" />
-          </div>
+          <i className="fa-solid fa-right-from-bracket text-red-500 text-2xl" />
           <Title order={3} size="lg" ta="center">{t("logout_confirm_title")}</Title>
           <Text size="sm" c="dimmed" ta="center">{t("logout_confirm_desc")}</Text>
           <Group gap="sm" className="w-full">
