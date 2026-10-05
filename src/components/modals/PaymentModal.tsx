@@ -6,6 +6,9 @@ import { paymentsService, type SavedPaymentMethod } from "../../services/payment
 import { validatePhone } from "../../utils/phoneValidation";
 import Stepper from "./Stepper";
 import api from "../../services/api";
+import orangeMoneyLogo from "../../assets/images/orange-money.svg";
+import mtnMomoLogo from "../../assets/images/mtn-momo.svg";
+import moovMoneyLogo from "../../assets/images/moov-money.svg";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -183,8 +186,8 @@ export default function PaymentModal({
             onClick={() => setSelectedMethod("orange")}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[10px] border border-borderMain flex items-center justify-center flex-shrink-0">
-                <span className="font-bricolage font-black text-base" style={{ color: "#F97316" }}>O</span>
+              <div className="w-10 h-10 rounded-[10px] flex-shrink-0 overflow-hidden">
+                <img src={orangeMoneyLogo} alt="Orange Money" className="w-full h-full object-contain" />
               </div>
               <div className="flex-1">
                 <p className="text-[13px] font-bold text-textMain">Orange Money</p>
@@ -203,8 +206,8 @@ export default function PaymentModal({
             onClick={() => setSelectedMethod("mtn")}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[10px] border border-borderMain flex items-center justify-center flex-shrink-0">
-                <span className="font-bricolage font-black text-base" style={{ color: "#EAB308" }}>M</span>
+              <div className="w-10 h-10 rounded-[10px] flex-shrink-0 overflow-hidden">
+                <img src={mtnMomoLogo} alt="MTN Mobile Money" className="w-full h-full object-contain" />
               </div>
               <div className="flex-1">
                 <p className="text-[13px] font-bold text-textMain">MTN Mobile Money</p>
@@ -223,8 +226,8 @@ export default function PaymentModal({
             onClick={() => setSelectedMethod("moov")}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[10px] border border-borderMain flex items-center justify-center flex-shrink-0">
-                <span className="font-bricolage font-black text-base" style={{ color: "#0D9488" }}>V</span>
+              <div className="w-10 h-10 rounded-[10px] flex-shrink-0 overflow-hidden">
+                <img src={moovMoneyLogo} alt="Moov Money" className="w-full h-full object-contain" />
               </div>
               <div className="flex-1">
                 <p className="text-[13px] font-bold text-textMain">Moov Money</p>
@@ -321,11 +324,15 @@ export default function PaymentModal({
 
         {/* Selected method indicator */}
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded-[8px] border border-borderMain flex items-center justify-center flex-shrink-0">
-            {selectedMethod === "orange" && <span className="font-bricolage font-black text-sm" style={{ color: "#F97316" }}>O</span>}
-            {selectedMethod === "mtn" && <span className="font-bricolage font-black text-sm" style={{ color: "#EAB308" }}>M</span>}
-            {selectedMethod === "moov" && <span className="font-bricolage font-black text-sm" style={{ color: "#0D9488" }}>V</span>}
-            {selectedMethod === "points" && <i className="fa-solid fa-star text-xs" style={{ color: "#F5A64B" }} />}
+          <div className="w-8 h-8 rounded-[8px] overflow-hidden flex-shrink-0">
+            {selectedMethod === "orange" && <img src={orangeMoneyLogo} alt="Orange Money" className="w-full h-full object-contain" />}
+            {selectedMethod === "mtn" && <img src={mtnMomoLogo} alt="MTN Mobile Money" className="w-full h-full object-contain" />}
+            {selectedMethod === "moov" && <img src={moovMoneyLogo} alt="Moov Money" className="w-full h-full object-contain" />}
+            {selectedMethod === "points" && (
+              <div className="w-full h-full border border-borderMain rounded-[8px] flex items-center justify-center">
+                <i className="fa-solid fa-star text-xs" style={{ color: "#F5A64B" }} />
+              </div>
+            )}
           </div>
           <span className="text-[13px] font-semibold text-textMain">{methodLabel}</span>
         </div>

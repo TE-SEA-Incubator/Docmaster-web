@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Orange Money brand logo representation -->
+  <!-- Background circle in Orange brand color -->
+  <circle cx="24" cy="24" r="24" fill="#FF6600"/>
+  <!-- White text "OM" centered -->
+  <text x="24" y="29" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">OM</text>
+</svg>
