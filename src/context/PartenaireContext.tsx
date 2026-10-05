@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { partenairesService, type PartenaireSession } from "../services/partenairesService";
-import { saveToken, deleteToken } from "../utils/cookie";
+import { saveToken, saveRefreshToken, deleteToken, getRefreshToken } from "../utils/cookie";
+
+const PARTNER_PORTAL = "partenaire" as const;
 
 interface PartenaireContextValue {
   partenaire: PartenaireSession | null;
@@ -46,19 +48,23 @@ export function PartenaireProvider({ children }: { children: React.ReactNode }) 
   const login = useCallback(async (email: string, motDePasse: string) => {
     const res = await partenairesService.login(email, motDePasse);
     if (res.data.data.token) {
-      saveToken(res.data.data.token);
+      saveToken(res.data.data.token, PARTNER_PORTAL);
+    }
+    if (res.data.data.refresh_token) {
+      saveRefreshToken(res.data.data.refresh_token, PARTNER_PORTAL);
     }
     setPartenaire(res.data.data.partenaire);
     return res.data.data.partenaire;
   }, []);
 
   const logout = useCallback(async () => {
+    const refreshToken = getRefreshToken(PARTNER_PORTAL);
     try {
-      await partenairesService.logout();
+      await partenairesService.logout(refreshToken);
     } catch {
       /* ignore */
     }
-    deleteToken();
+    deleteToken(PARTNER_PORTAL);
     setPartenaire(null);
     window.location.href = "/partenaire/connexion";
   }, []);

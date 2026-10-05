@@ -114,7 +114,7 @@ export default function NotificationDropdown({ accentColor, service }: Notificat
               justifyContent: "center",
             }}
           >
-            <i className="fa-solid fa-bell" style={{ color: accentColor || "#D98A30", fontSize: 12 }} />
+            <i className="fa-solid fa-bell" style={{ color: accentColor || "#E8923A", fontSize: 12 }} />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 13, color: "#1A1A1A", lineHeight: 1.1 }}>{t("notification_title")}</div>
@@ -127,7 +127,7 @@ export default function NotificationDropdown({ accentColor, service }: Notificat
             style={{
               background: "transparent",
               border: "none",
-              color: accentColor || "#D98A30",
+              color: accentColor || "#E8923A",
               fontSize: 11,
               fontWeight: 700,
               cursor: "pointer",
@@ -174,7 +174,7 @@ export default function NotificationDropdown({ accentColor, service }: Notificat
                       width: 6,
                       height: 6,
                       borderRadius: "50%",
-                      background: accentColor || "#D98A30",
+                      background: accentColor || "#E8923A",
                     }}
                   />
                 )}

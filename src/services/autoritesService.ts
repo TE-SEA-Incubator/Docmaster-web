@@ -1,6 +1,8 @@
 import axios from "axios";
 import { getToken, deleteToken } from "../utils/cookie";
 
+const AUTORITE_PORTAL = "autorite" as const;
+
 const resolveBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl) {
@@ -16,7 +18,7 @@ const autoritesApi = axios.create({
 });
 
 autoritesApi.interceptors.request.use((config) => {
-  const token = getToken();
+  const token = getToken(AUTORITE_PORTAL);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -32,7 +34,7 @@ autoritesApi.interceptors.response.use(
       "/autorite/reinitialisation",
     ];
     if (error.response?.status === 401) {
-      deleteToken();
+      deleteToken(AUTORITE_PORTAL);
     }
     if (error.response?.status === 401 && !PUBLIC_AUTH_PATHS.some((p) => window.location.pathname.startsWith(p))) {
       window.location.href = "/autorite/connexion";
@@ -50,6 +52,7 @@ export interface AutoriteSession {
   niveau: "HAUTE" | "NORMAL";
   ville: string;
   region?: string | null;
+  bureau?: string | null;
   is_active: boolean;
   must_change_password: boolean;
   created_at: string;
@@ -110,6 +113,7 @@ export interface AutoriteForCreate {
   telephone?: string;
   ville: string;
   region?: string;
+  bureau?: string;
 }
 
 export interface AutoriteActivityLog {

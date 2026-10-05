@@ -28,7 +28,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
     <nav
       id="navbar"
       className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
-        promoBarVisible ? "top-[36px]" : "top-0"
+        promoBarVisible ? "top-[44px]" : "top-0"
       } ${
         isHome && !scrolled
           ? "bg-green-dark/90 backdrop-blur-md"

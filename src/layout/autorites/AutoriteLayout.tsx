@@ -13,6 +13,7 @@ import { autoritePalette } from "../../theme/autorites";
 import AutoriteDesignProvider from "../../components/autorites/AutoriteDesignProvider";
 import AutoriteSidebar from "../../components/autorites/AutoriteSidebar";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
+import LanguageSwitcher from "../../components/ui/LanguageSwitcher";
 import { autoritesService } from "../../services/autoritesService";
 
 const AUTORITE_NOTIF_SERVICE = {
@@ -143,6 +144,7 @@ export default function AutoriteLayout() {
             </Space>
 
             <Space size={12}>
+              <LanguageSwitcher accentColor={autoritePalette.primary} />
               <NotificationDropdown accentColor={autoritePalette.primary} service={AUTORITE_NOTIF_SERVICE} />
 
               <Dropdown menu={userMenu} placement="bottomRight">

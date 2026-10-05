@@ -83,13 +83,13 @@ export default function AdminUsers() {
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Nom, email, téléphone..."
-              className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors placeholder:text-gray-400"
+              className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors placeholder:text-gray-400"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] bg-white text-gray-700"
+            className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] bg-white text-gray-700"
           >
             <option value="">Tous les statuts</option>
             <option value="ACTIVE">Actif</option>
@@ -131,7 +131,7 @@ export default function AdminUsers() {
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded border border-gray-200 bg-[#E8F5EE] flex items-center justify-center text-[11px] font-bold text-[#1E3A2F]">
+                          <div className="w-7 h-7 rounded border border-gray-200 bg-[#E8F5EE] flex items-center justify-center text-[11px] font-bold text-[#2D5A42]">
                             {initial}
                           </div>
                           <div>
@@ -153,7 +153,7 @@ export default function AdminUsers() {
                       </td>
                       <td className="px-4 py-3 text-[13px] text-gray-700">{(u.wallet_balance ?? 0).toLocaleString()} XAF</td>
                       <td className="px-4 py-3">
-                        <span className="text-[13px] font-semibold text-[#D98A30]">{u.points ?? 0}</span>
+                        <span className="text-[13px] font-semibold text-[#E8923A]">{u.points ?? 0}</span>
                       </td>
                       <td className="px-4 py-3">
                         <code className="text-[11px] bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded text-gray-700">
@@ -206,7 +206,7 @@ export default function AdminUsers() {
 
             <div className="p-6">
               <div className="flex items-center gap-4 mb-5 p-4 bg-gray-50 border border-gray-100 rounded">
-                <div className="w-12 h-12 rounded border border-gray-200 bg-[#1E3A2F] flex items-center justify-center text-lg font-bold text-white">
+                <div className="w-12 h-12 rounded border border-gray-200 bg-[#2D5A42] flex items-center justify-center text-lg font-bold text-white">
                   {((selected.prenom?.[0] || "") + (selected.nom?.[0] || "")).toUpperCase() || "?"}
                 </div>
                 <div>
@@ -221,8 +221,8 @@ export default function AdminUsers() {
                   { label: "Rôle", value: selected.role || "USER" },
                   { label: "Vérifié", value: selected.is_verified ? "✓ Oui" : "✗ Non", valueClass: selected.is_verified ? "text-green-700 font-semibold" : "text-red-600 font-semibold" },
                   { label: "Abonnement", value: selected.active_plan || "Gratuit" },
-                  { label: "Portefeuille", value: `${(selected.wallet_balance ?? 0).toLocaleString()} XAF`, valueClass: "font-semibold text-[#D98A30]" },
-                  { label: "Points", value: String(selected.points ?? 0), valueClass: "font-semibold text-[#D98A30]" },
+                  { label: "Portefeuille", value: `${(selected.wallet_balance ?? 0).toLocaleString()} XAF`, valueClass: "font-semibold text-[#E8923A]" },
+                  { label: "Points", value: String(selected.points ?? 0), valueClass: "font-semibold text-[#E8923A]" },
                   { label: "Code parrainage", value: selected.code_invitation || "—", valueClass: "font-mono text-xs" },
                   { label: "Filleuls", value: String(selected.referral_count ?? 0) },
                   { label: "Inscrit le", value: selected.created_at ? new Date(selected.created_at).toLocaleString("fr-FR") : "—", colSpan: true },
@@ -238,7 +238,7 @@ export default function AdminUsers() {
             <div className="flex justify-end px-6 py-4 border-t border-gray-100">
               <button
                 onClick={() => setSelected(null)}
-                className="px-5 py-2 bg-[#1E3A2F] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
+                className="px-5 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
               >
                 Fermer
               </button>

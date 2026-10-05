@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockSocket = vi.hoisted(() => ({ sendToUser: vi.fn() }));
+const mockSocket = vi.hoisted(() => ({ sendToActor: vi.fn() }));
+const mockPool = vi.hoisted(() => ({ query: vi.fn() }));
 const mockNotifRepo = vi.hoisted(() => ({
   create: vi.fn((data) => Promise.resolve({ ...data, id: 'n' })),
   findByUserId: vi.fn(), markAsRead: vi.fn(), markAllAsRead: vi.fn(),
@@ -33,6 +34,8 @@ vi.mock('../services/sms.service.ts', () => ({
 vi.mock('../services/socket.service.ts', () => ({
   SocketService: { getInstance: vi.fn(() => mockSocket) },
 }));
+// findDestinataireContact() interroge les tables via pool : sans ce mock, le test toucherait la base réelle.
+vi.mock('../database/db.ts', () => ({ default: mockPool, pool: mockPool }));
 
 import { NotificationService } from '../services/notification.service.ts';
 
@@ -41,6 +44,8 @@ describe('NotificationService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // findDestinataireContact passe par pool.query, pas par UserRepository.
+    mockPool.query.mockResolvedValue({ rows: [] });
     service = new NotificationService();
   });
 
@@ -73,21 +78,21 @@ describe('NotificationService', () => {
   });
 
   it('should send socket notification', async () => {
-    const saved = { id: 'n3', user_id: 'u1', type: 'T', title: 'T', message: 'M', channels: { in_app: true } };
+    const saved = { id: 'n3', user_id: 'u1', destinataire_type: 'USER', destinataire_id: 'u1', type: 'T', title: 'T', message: 'M', channels: { in_app: true } };
     mockNotifRepo.create.mockResolvedValue(saved);
     mockSubSvc.validateAction.mockResolvedValue({ allowed: false });
     mockUserRepo.findById.mockResolvedValue(null);
 
     await service.createNotification({ user_id: 'u1', type: 'T', title: 'T', message: 'M' });
 
-    expect(mockSocket.sendToUser).toHaveBeenCalledWith('u1', 'NEW_NOTIFICATION', expect.any(Object));
+    expect(mockSocket.sendToActor).toHaveBeenCalledWith('USER', 'u1', 'NEW_NOTIFICATION', expect.any(Object));
   });
 
   it('should send SMS when allowed and user has phone', async () => {
-    const saved = { id: 'n4', user_id: 'u1', type: 'T', title: 'T', message: 'Bonjour', channels: { in_app: true, sms: true, email: false, push: false } };
+    const saved = { id: 'n4', user_id: 'u1', destinataire_type: 'USER', type: 'T', title: 'T', message: 'Bonjour', channels: { in_app: true, sms: true, email: false, push: false } };
     mockNotifRepo.create.mockResolvedValue(saved);
     mockSubSvc.validateAction.mockResolvedValue({ allowed: true });
-    mockUserRepo.findById.mockResolvedValue({ id: 'u1', telephone: '697000000' });
+    mockPool.query.mockResolvedValue({ rows: [{ id: 'u1', email: null, telephone: '697000000', nom: 'D', prenom: 'J' }] });
 
     await service.createNotification({ user_id: 'u1', type: 'T', title: 'T', message: 'Bonjour' });
 
@@ -95,10 +100,10 @@ describe('NotificationService', () => {
   });
 
   it('should send custom SMS for MATCH_FOUND', async () => {
-    const saved = { id: 'n5', user_id: 'u1', type: 'MATCH_FOUND', title: 'T', message: 'M', channels: { in_app: true, sms: true, email: false, push: false }, metadata: { docType: 'CNI' } };
+    const saved = { id: 'n5', user_id: 'u1', destinataire_type: 'USER', type: 'MATCH_FOUND', title: 'T', message: 'M', channels: { in_app: true, sms: true, email: false, push: false }, metadata: { docType: 'CNI' } };
     mockNotifRepo.create.mockResolvedValue(saved);
     mockSubSvc.validateAction.mockResolvedValue({ allowed: true });
-    mockUserRepo.findById.mockResolvedValue({ id: 'u1', telephone: '697000000' });
+    mockPool.query.mockResolvedValue({ rows: [{ id: 'u1', email: null, telephone: '697000000', nom: 'D', prenom: 'J' }] });
 
     await service.createNotification({ user_id: 'u1', type: 'MATCH_FOUND', title: 'T', message: 'M', metadata: { docType: 'CNI' } });
 
@@ -106,10 +111,10 @@ describe('NotificationService', () => {
   });
 
   it('should send email for MATCH_FOUND when email allowed', async () => {
-    const saved = { id: 'n6', user_id: 'u1', type: 'MATCH_FOUND', title: 'T', message: 'M', channels: { in_app: true, sms: false, email: true, push: false }, metadata: { docType: 'PASSPORT', matchType: 'LOST_SIDE' } };
+    const saved = { id: 'n6', user_id: 'u1', destinataire_type: 'USER', type: 'MATCH_FOUND', title: 'T', message: 'M', channels: { in_app: true, sms: false, email: true, push: false }, metadata: { docType: 'PASSPORT', matchType: 'LOST_SIDE' } };
     mockNotifRepo.create.mockResolvedValue(saved);
     mockSubSvc.validateAction.mockResolvedValue({ allowed: true });
-    mockUserRepo.findById.mockResolvedValue({ id: 'u1', email: 'a@b.com', nom: 'D', prenom: 'J' });
+    mockPool.query.mockResolvedValue({ rows: [{ id: 'u1', email: 'a@b.com', telephone: null, nom: 'D', prenom: 'J' }] });
 
     await service.createNotification({ user_id: 'u1', type: 'MATCH_FOUND', title: 'T', message: 'M', metadata: { docType: 'PASSPORT', matchType: 'LOST_SIDE' } });
 
@@ -120,7 +125,7 @@ describe('NotificationService', () => {
     const saved = { id: 'n7', user_id: 'u1', type: 'T', title: 'T', message: 'M', channels: { in_app: true, sms: true, email: false } };
     mockNotifRepo.create.mockResolvedValue(saved);
     mockSubSvc.validateAction.mockResolvedValue({ allowed: true });
-    mockUserRepo.findById.mockResolvedValue({ id: 'u1', telephone: undefined });
+    mockPool.query.mockResolvedValue({ rows: [{ id: 'u1', email: null, telephone: undefined, nom: 'D', prenom: 'J' }] });
 
     await service.createNotification({ user_id: 'u1', type: 'T', title: 'T', message: 'M' });
     expect(mockSmsSvc.sendSms).not.toHaveBeenCalled();

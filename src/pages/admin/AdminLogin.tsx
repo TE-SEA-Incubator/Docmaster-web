@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import apiClient from "../../services/api";
-import { saveToken } from "../../utils/cookie";
+import { saveToken, saveRefreshToken } from "../../utils/cookie";
 import { useI18n } from "../../context/I18nContext";
 import { checkAdminAuth } from "../../utils/adminAuth";
 
@@ -24,7 +24,10 @@ export default function AdminLogin() {
       const res = await apiClient.post("auth/login", form);
       const userRole = res.data.user?.role?.toUpperCase();
       if (userRole === "ADMIN") {
-        saveToken(res.data.token);
+        saveToken(res.data.token, "admin");
+        if (res.data.refresh_token) {
+          saveRefreshToken(res.data.refresh_token, "admin");
+        }
         localStorage.setItem(
           "docmaster_admin_login",
           JSON.stringify({ role: "ADMIN", token: res.data.token, user: res.data.user })
@@ -45,8 +48,8 @@ export default function AdminLogin() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1E3A2F] rounded mb-5">
-            <i className="fa-solid fa-shield-halved text-[#D98A30] text-2xl" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#2D5A42] rounded mb-5">
+            <i className="fa-solid fa-shield-halved text-[#E8923A] text-2xl" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Administration DocMaster</h1>
           <p className="text-[13px] text-gray-500">{t("admin_administration")}</p>
@@ -70,7 +73,7 @@ export default function AdminLogin() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded text-[14px] text-gray-900 outline-none transition-colors focus:border-[#D98A30] focus:ring-2 focus:ring-[#D98A30]/15 bg-white placeholder:text-gray-400"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded text-[14px] text-gray-900 outline-none transition-colors focus:border-[#E8923A] focus:ring-2 focus:ring-[#E8923A]/15 bg-white placeholder:text-gray-400"
                 placeholder="admin@docmaster.com"
                 required
                 autoFocus
@@ -85,7 +88,7 @@ export default function AdminLogin() {
                 type="password"
                 value={form.mot_de_passe}
                 onChange={(e) => setForm({ ...form, mot_de_passe: e.target.value })}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded text-[14px] text-gray-900 outline-none transition-colors focus:border-[#D98A30] focus:ring-2 focus:ring-[#D98A30]/15 bg-white placeholder:text-gray-400"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded text-[14px] text-gray-900 outline-none transition-colors focus:border-[#E8923A] focus:ring-2 focus:ring-[#E8923A]/15 bg-white placeholder:text-gray-400"
                 placeholder="••••••••"
                 required
               />
@@ -93,10 +96,10 @@ export default function AdminLogin() {
 
             <div className="flex items-center justify-between text-[13px] pt-1">
               <label className="flex items-center gap-1.5 cursor-pointer text-gray-600">
-                <input type="checkbox" className="w-4 h-4 accent-[#D98A30]" />
+                <input type="checkbox" className="w-4 h-4 accent-[#E8923A]" />
                 {t("admin_remember")}
               </label>
-              <a href="/forgot-password" className="text-[#D98A30] font-semibold hover:underline text-[13px]">
+              <a href="/forgot-password" className="text-[#E8923A] font-semibold hover:underline text-[13px]">
                 {t("admin_forgot_password")}
               </a>
             </div>
@@ -104,7 +107,7 @@ export default function AdminLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-[#1E3A2F] text-white rounded text-[14px] font-bold hover:bg-[#2D5A42] disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 mt-2"
+              className="w-full py-2.5 bg-[#2D5A42] text-white rounded text-[14px] font-bold hover:bg-[#2D5A42] disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 mt-2"
             >
               {loading ? (
                 <i className="fa-solid fa-spinner fa-spin text-sm" />

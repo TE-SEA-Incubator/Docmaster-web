@@ -192,7 +192,7 @@ export default function AdminDeclarations() {
           <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded text-[12px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
             <i className="fa-solid fa-download text-[10px]" /> CSV
           </button>
-          <button onClick={loadData} className="flex items-center gap-1.5 px-3 py-2 bg-[#1E3A2F] text-white rounded text-[12px] font-semibold hover:bg-[#2D5A42] transition-colors">
+          <button onClick={loadData} className="flex items-center gap-1.5 px-3 py-2 bg-[#2D5A42] text-white rounded text-[12px] font-semibold hover:bg-[#2D5A42] transition-colors">
             <i className="fa-solid fa-rotate-right text-[10px]" /> {t("admin_declarations_refresh")}
           </button>
         </div>
@@ -208,17 +208,17 @@ export default function AdminDeclarations() {
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Nom, réf, numéro doc..."
-              className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors placeholder:text-gray-400"
+              className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors placeholder:text-gray-400"
             />
           </div>
           <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] bg-white text-gray-700">
+            className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] bg-white text-gray-700">
             <option value="">Tous types</option>
             <option value="LOST">Perte</option>
             <option value="FOUND">Trouvaille</option>
           </select>
           <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] bg-white text-gray-700">
+            className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] bg-white text-gray-700">
             <option value="">Tous statuts</option>
             <option value="AVAILABLE">Disponible</option>
             <option value="MATCHED">Correspondance</option>
@@ -264,7 +264,7 @@ export default function AdminDeclarations() {
                         {d.created_at ? new Date(d.created_at).toLocaleDateString("fr-FR") : "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <code className="text-[11px] font-bold text-[#1E3A2F] bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">{ref}</code>
+                        <code className="text-[11px] font-bold text-[#2D5A42] bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">{ref}</code>
                       </td>
                       <td className="px-4 py-3">
                         {photoUrl(d) ? (
@@ -371,7 +371,7 @@ export default function AdminDeclarations() {
                     </h4>
                     <div className="grid grid-cols-2 gap-2 text-[13px]">
                       {[
-                        { label: "Référence", value: <code className="text-[11px] font-bold text-[#1E3A2F]">{selected.identifiant_doc_dm || selected.id?.substring(0, 8) || "—"}</code> },
+                        { label: "Référence", value: <code className="text-[11px] font-bold text-[#2D5A42]">{selected.identifiant_doc_dm || selected.id?.substring(0, 8) || "—"}</code> },
                         { label: "Type de document", value: selected.docTypeInfo?.nom || selected.doc_type || "—" },
                         { label: "Propriétaire", value: selected.owner_name || selected.nom_complet || "—" },
                         { label: "Déclarant", value: selected.reporter_type === "PARTENAIRE"
@@ -427,7 +427,7 @@ export default function AdminDeclarations() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[13px]">
                       <div><span className="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Code validation</span><code className="font-bold">{selected.claim.validation_code || "—"}</code></div>
                       <div><span className="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Statut</span><span>{selected.claim.is_validated ? "Validé" : "En attente"}</span></div>
-                      {selected.reward_amount != null && <div><span className="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Récompense</span><span className="font-semibold text-[#D98A30]">{selected.reward_amount} FCFA</span></div>}
+                      {selected.reward_amount != null && <div><span className="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Récompense</span><span className="font-semibold text-[#E8923A]">{selected.reward_amount} FCFA</span></div>}
                     </div>
                   </div>
                 )}

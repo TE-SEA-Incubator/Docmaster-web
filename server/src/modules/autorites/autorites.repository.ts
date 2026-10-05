@@ -12,6 +12,7 @@ interface AutoriteCreateData {
   region?: string;
   department?: string;
   arrondissement?: string;
+  bureau?: string;
   created_by?: string;
 }
 
@@ -25,11 +26,12 @@ interface AutoriteUpdateData {
   region?: string;
   department?: string;
   arrondissement?: string;
+  bureau?: string;
   is_active?: boolean;
 }
 
 const PUBLIC_COLUMNS = `
-  id, nom, prenom, email, telephone, niveau, ville, region, department, arrondissement,
+  id, nom, prenom, email, telephone, niveau, ville, region, department, arrondissement, bureau,
   is_active, must_change_password, created_by, created_at, updated_at
 `;
 
@@ -39,14 +41,14 @@ export class AutoriteRepository {
    */
   async create(data: AutoriteCreateData): Promise<Autorite> {
     const query = `
-      INSERT INTO autorites (nom, prenom, email, telephone, mot_de_passe, niveau, ville, region, department, arrondissement, created_by)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      INSERT INTO autorites (nom, prenom, email, telephone, mot_de_passe, niveau, ville, region, department, arrondissement, bureau, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING ${PUBLIC_COLUMNS}, mot_de_passe
     `;
     const { rows } = await pool.query(query, [
       data.nom, data.prenom, data.email, data.telephone || null,
       data.mot_de_passe, data.niveau, data.ville, data.region || null,
-      data.department || null, data.arrondissement || null,
+      data.department || null, data.arrondissement || null, data.bureau || null,
       data.created_by || null,
     ]);
     return rows[0];
@@ -118,6 +120,7 @@ export class AutoriteRepository {
       nom: data.nom, prenom: data.prenom, email: data.email,
       telephone: data.telephone, niveau: data.niveau, ville: data.ville,
       region: data.region, department: data.department, arrondissement: data.arrondissement,
+      bureau: data.bureau,
       is_active: data.is_active,
     };
 

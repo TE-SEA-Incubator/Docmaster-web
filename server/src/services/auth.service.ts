@@ -124,28 +124,87 @@ export class UserService {
   /**
    * Login user with email and password
    */
-  async loginUser(email: string, password: string): Promise<{ user: User; token: string }> {
-    // Find user by email
+  async loginUser(email: string, password: string): Promise<{ user: User; token: string; refresh_token: string }> {
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
       throw new Error('Invalid email or password');
     }
 
-    // Verify password
     const isPasswordValid = await this.verifyPassword(user.mot_de_passe, password);
     if (!isPasswordValid) {
       throw new Error('Invalid email or password');
     }
 
-    // Generate JWT token
     const token = generateToken(user.id, user.email, user.role);
+    const refreshToken = crypto.randomBytes(48).toString('hex');
+    const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshExpires = new Date();
+    refreshExpires.setDate(refreshExpires.getDate() + 30);
+    await this.userRepository.setRefreshToken(user.id, refreshHash, refreshExpires);
 
-    // Return user and token (without password hash)
-    const { mot_de_passe, ...userWithoutPassword } = user;
+    const { mot_de_passe, refresh_token_hash, refresh_token_expires, ...userWithoutPassword } = user as any;
     return {
-      user: await encodeMediaFields(userWithoutPassword as any),
+      user: await encodeMediaFields(userWithoutPassword as User),
       token,
+      refresh_token: refreshToken,
     };
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    if (!refreshToken?.trim()) {
+      throw new Error('Refresh token requis');
+    }
+
+    const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const user = await this.userRepository.findByRefreshTokenHash(refreshHash);
+    if (!user) {
+      throw new Error('Session expirée, veuillez vous reconnecter');
+    }
+
+    const newRefreshToken = crypto.randomBytes(48).toString('hex');
+    const newRefreshHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+    const refreshExpires = new Date();
+    refreshExpires.setDate(refreshExpires.getDate() + 30);
+    await this.userRepository.setRefreshToken(user.id, newRefreshHash, refreshExpires);
+
+    const accessToken = generateToken(user.id, user.email, user.role);
+    const { mot_de_passe, refresh_token_hash, refresh_token_expires, ...safe } = user as any;
+    return {
+      token: accessToken,
+      refresh_token: newRefreshToken,
+      user: await encodeMediaFields(safe as User),
+    };
+  }
+
+  /** Issue access + refresh tokens for an authenticated user (register, OAuth, etc.) */
+  async createUserSession(user: User): Promise<{ user: User; token: string; refresh_token: string }> {
+    const token = generateToken(user.id, user.email, user.role);
+    const refreshToken = crypto.randomBytes(48).toString('hex');
+    const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const refreshExpires = new Date();
+    refreshExpires.setDate(refreshExpires.getDate() + 30);
+    await this.userRepository.setRefreshToken(user.id, refreshHash, refreshExpires);
+
+    const { mot_de_passe, refresh_token_hash, refresh_token_expires, ...userWithoutPassword } = user as any;
+    return {
+      user: await encodeMediaFields(userWithoutPassword as User),
+      token,
+      refresh_token: refreshToken,
+    };
+  }
+
+  async revokeRefreshToken(userId: string) {
+    await this.userRepository.clearRefreshToken(userId);
+    return { success: true };
+  }
+
+  async revokeByRefreshToken(refreshToken: string) {
+    const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const user = await this.userRepository.findByRefreshTokenHash(refreshHash);
+    if (user) {
+      await this.userRepository.clearRefreshToken(user.id);
+    }
+    return { success: true };
   }
 
   /**
@@ -159,14 +218,24 @@ export class UserService {
 
       await client.query('DELETE FROM push_tokens WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM devices WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM declarations WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM documents WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM claims WHERE user_id = $1 OR owner_id = $1', [userId]);
-      await client.query('DELETE FROM referrals WHERE user_id = $1 OR parrain_id = $1', [userId]);
-      await client.query('DELETE FROM shares WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM payment_transactions WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM subscriptions WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM my_devices WHERE user_id = $1', [userId]);
+
+      // Delete notifications from OTHER users that reference this user's declarations
+      await client.query(`
+        DELETE FROM notifications
+        WHERE type = 'VAULT_MATCH_PENDING'
+          AND (metadata->>'declaration_id')::uuid IN (
+            SELECT id FROM declarations WHERE reporter_id = $1
+          )
+      `, [userId]);
+
+      await client.query('DELETE FROM declarations WHERE reporter_id = $1', [userId]);
+      await client.query('DELETE FROM my_documents WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM claims WHERE owner_id = $1 OR finder_id = $1', [userId]);
+      await client.query('DELETE FROM referrals WHERE parrain_id = $1 OR filleul_id = $1', [userId]);
+      await client.query('DELETE FROM document_shares WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM transactions WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM user_subscriptions WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM withdrawal_requests WHERE user_id = $1', [userId]);
       await client.query('DELETE FROM verification_codes WHERE email = (SELECT email FROM users WHERE id = $1)', [userId]);
       await client.query('DELETE FROM password_reset_tokens WHERE user_id = $1', [userId]);
@@ -230,7 +299,8 @@ export class UserService {
     ville?: string,
     date_naissance?: string | null,
     lieu_naissance?: string,
-    currency?: string
+    currency?: string,
+    genre?: string | null
   }): Promise<User> {
     const user = await this.userRepository.updateProfile(userId, data);
     if (!user) {

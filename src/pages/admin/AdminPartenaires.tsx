@@ -92,7 +92,7 @@ export default function AdminPartenaires() {
     arrondissement: "",
   });
   const [saving, setSaving] = useState(false);
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [showCreationSuccess, setShowCreationSuccess] = useState(false);
 
   // Portefeuille
   const [walletOpen, setWalletOpen] = useState(false);
@@ -162,14 +162,14 @@ export default function AdminPartenaires() {
     if (!form.nom_organisation.trim() || !form.email.trim()) return;
     setSaving(true);
     setError("");
-    setTempPassword(null);
+    setShowCreationSuccess(false);
     try {
       if (editing) {
         await adminService.updatePartenaire(editing.id, form);
         setModalOpen(false);
       } else {
-        const result = await adminService.createPartenaire(form);
-        setTempPassword(result.temp_password || null);
+        await adminService.createPartenaire(form);
+        setShowCreationSuccess(true);
         setModalOpen(false);
       }
       fetchPartenaires();
@@ -241,7 +241,7 @@ export default function AdminPartenaires() {
   if (loading && page === 1 && partenaires.length === 0) return <LoadingSpinner />;
 
   const inputCls =
-    "w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors";
+    "w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors";
 
   return (
     <div>
@@ -260,7 +260,7 @@ export default function AdminPartenaires() {
         </div>
         <button
           onClick={openNew}
-          className="inline-flex items-center gap-2 bg-[#1E3A2F] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
+          className="inline-flex items-center gap-2 bg-[#2D5A42] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
         >
           <i className="fa-solid fa-plus text-xs" />
           Nouveau partenaire
@@ -278,7 +278,7 @@ export default function AdminPartenaires() {
               setPage(1);
             }}
             placeholder="Rechercher (organisation, email, tél)"
-            className="w-72 pl-9 pr-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors"
+            className="w-72 pl-9 pr-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors"
           />
         </div>
         <select
@@ -287,7 +287,7 @@ export default function AdminPartenaires() {
             setStatut(e.target.value);
             setPage(1);
           }}
-          className="px-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30]"
+          className="px-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A]"
         >
           <option value="">Tous les statuts</option>
           <option value="ACTIF">Actif</option>
@@ -352,14 +352,14 @@ export default function AdminPartenaires() {
                       <button
                         onClick={() => openDetails(p)}
                         title="Détails et historique"
-                        className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1E3A2F] hover:border-[#1E3A2F]/40 transition-colors"
+                        className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#2D5A42] hover:border-[#2D5A42]/40 transition-colors"
                       >
                         <i className="fa-solid fa-eye text-[10px]" />
                       </button>
                       <button
                         onClick={() => openWallet(p)}
                         title="Ajuster le portefeuille"
-                        className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#D98A30] hover:border-[#D98A30]/40 transition-colors"
+                        className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#E8923A] hover:border-[#E8923A]/40 transition-colors"
                       >
                         <i className="fa-solid fa-wallet text-[10px]" />
                       </button>
@@ -517,7 +517,7 @@ export default function AdminPartenaires() {
                   Annuler
                 </button>
                 <button type="submit" disabled={saving || !form.nom_organisation.trim() || !form.email.trim()}
-                  className="px-5 py-2 bg-[#1E3A2F] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
+                  className="px-5 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
                   {saving && <i className="fa-solid fa-spinner fa-spin text-xs" />}
                   {editing ? "Enregistrer les modifications" : "Créer le partenaire"}
                 </button>
@@ -528,8 +528,8 @@ export default function AdminPartenaires() {
       )}
 
       {/* Modal mot de passe temporaire */}
-      {tempPassword !== null && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]" onClick={() => setTempPassword(null)}>
+      {showCreationSuccess && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]" onClick={() => setShowCreationSuccess(false)}>
           <div className="bg-white rounded-lg w-full max-w-md border border-gray-200 shadow-xl mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-5">
               <div className="w-12 h-12 rounded-full bg-green-50 border border-green-100 flex items-center justify-center mx-auto mb-4">
@@ -537,17 +537,14 @@ export default function AdminPartenaires() {
               </div>
               <h3 className="font-bold text-base text-gray-900 text-center mb-1">Partenaire créé</h3>
               <p className="text-[13px] text-gray-500 text-center mb-4">
-                Le mot de passe temporaire a été envoyé par e-mail. Conservez-en une copie :
+                Le mot de passe temporaire a été envoyé par e-mail et SMS au partenaire. Il ne s&apos;affiche plus ici pour des raisons de sécurité.
               </p>
-              <div className="bg-gray-900 text-green-400 font-mono rounded p-3 text-center text-lg font-bold tracking-widest">
-                {tempPassword}
-              </div>
               <p className="text-[12px] text-gray-400 text-center mt-3">
                 Le partenaire devra le changer à sa première connexion sur /partenaire.
               </p>
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-center">
-              <button onClick={() => setTempPassword(null)} className="px-6 py-2 bg-[#1E3A2F] text-white rounded text-[13px] font-semibold">
+              <button onClick={() => setShowCreationSuccess(false)} className="px-6 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold">
                 Fermer
               </button>
             </div>
@@ -567,11 +564,11 @@ export default function AdminPartenaires() {
             </div>
             <form onSubmit={handleWallet} className="p-6 space-y-4">
               <div className="p-3 bg-gray-50 border border-gray-200 rounded text-[13px] text-gray-700">
-                Solde actuel : <b className="text-[#1E3A2F]">{money(walletTarget.wallet_balance)}</b>
+                Solde actuel : <b className="text-[#2D5A42]">{money(walletTarget.wallet_balance)}</b>
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Type d'opération</label>
-                <select value={walletType} onChange={(e) => setWalletType(e.target.value as any)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30]">
+                <select value={walletType} onChange={(e) => setWalletType(e.target.value as any)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A]">
                   <option value="CREDIT">Crédit (ajouter)</option>
                   <option value="DEBIT">Débit (retirer)</option>
                 </select>
@@ -579,12 +576,12 @@ export default function AdminPartenaires() {
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Montant (FCFA)</label>
                 <input type="number" min="1" step="0.01" value={walletAmount} onChange={(e) => setWalletAmount(e.target.value)}
-                  placeholder="ex: 5000" required className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30]" />
+                  placeholder="ex: 5000" required className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A]" />
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Motif (optionnel)</label>
                 <input value={walletMotif} onChange={(e) => setWalletMotif(e.target.value)}
-                  placeholder="ex: Bonus partenaire" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30]" />
+                  placeholder="ex: Bonus partenaire" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A]" />
               </div>
               <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
                 <button type="button" onClick={() => setWalletOpen(false)}
@@ -651,7 +648,7 @@ export default function AdminPartenaires() {
                 </div>
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Solde</div>
-                  <div className="text-[13px] font-bold text-[#1E3A2F]">{money(detailTarget.wallet_balance)}</div>
+                  <div className="text-[13px] font-bold text-[#2D5A42]">{money(detailTarget.wallet_balance)}</div>
                 </div>
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Créé le</div>

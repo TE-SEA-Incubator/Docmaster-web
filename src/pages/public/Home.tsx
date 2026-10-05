@@ -156,7 +156,7 @@ function HeroSection({ t }) {
               {t("hero_title_1")}<br />
               {t("hero_title_2")}<br />
               <span className="gradient-text" style={{
-                background: "linear-gradient(90deg, #D98A30, #FFD580, #D98A30)",
+                background: "linear-gradient(90deg, #E8923A, #FFD580, #E8923A)",
                 backgroundSize: "200% auto",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
@@ -451,20 +451,20 @@ function WhyDocmasterSection({ t }) {
 function VaultIllustration() {
   return (
     <svg viewBox="0 0 480 420" className="w-full h-auto">
-      <ellipse cx="240" cy="215" rx="190" ry="150" fill="#D98A30" opacity="0.08" />
+      <ellipse cx="240" cy="215" rx="190" ry="150" fill="#E8923A" opacity="0.08" />
 
       <g transform="translate(40,40) rotate(-8)">
-        <rect x="0" y="0" width="86" height="110" rx="10" fill="#FFFFFF" stroke="#D98A30" strokeWidth="2" />
-        <rect x="14" y="20" width="58" height="8" rx="4" fill="#D98A30" opacity="0.5" />
+        <rect x="0" y="0" width="86" height="110" rx="10" fill="#FFFFFF" stroke="#E8923A" strokeWidth="2" />
+        <rect x="14" y="20" width="58" height="8" rx="4" fill="#E8923A" opacity="0.5" />
         <rect x="14" y="38" width="42" height="6" rx="3" fill="#E5E7EB" />
         <rect x="14" y="52" width="50" height="6" rx="3" fill="#E5E7EB" />
-        <circle cx="43" cy="82" r="14" fill="#FFF3E4" stroke="#D98A30" strokeWidth="2" />
-        <path d="M37 82 l4 5 l8 -10" fill="none" stroke="#D98A30" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="43" cy="82" r="14" fill="#FFF3E4" stroke="#E8923A" strokeWidth="2" />
+        <path d="M37 82 l4 5 l8 -10" fill="none" stroke="#E8923A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       </g>
 
       <g transform="translate(350,30) rotate(10)">
-        <rect x="0" y="0" width="80" height="102" rx="10" fill="#FFFFFF" stroke="#D98A30" strokeWidth="2" />
-        <rect x="12" y="18" width="50" height="7" rx="3.5" fill="#D98A30" opacity="0.45" />
+        <rect x="0" y="0" width="80" height="102" rx="10" fill="#FFFFFF" stroke="#E8923A" strokeWidth="2" />
+        <rect x="12" y="18" width="50" height="7" rx="3.5" fill="#E8923A" opacity="0.45" />
         <rect x="12" y="47" width="44" height="6" rx="3" fill="#E5E7EB" />
         <rect x="12" y="70" width="56" height="18" rx="6" fill="#FFF3E4" />
       </g>
@@ -478,13 +478,13 @@ function VaultIllustration() {
       <rect x="140" y="150" width="200" height="160" rx="14" fill="#1A1A1A" />
       <rect x="152" y="162" width="176" height="136" rx="8" fill="#FFFFFF" />
 
-      <circle cx="240" cy="230" r="52" fill="#D98A30" opacity="0.12" />
-      <circle cx="240" cy="230" r="40" fill="none" stroke="#D98A30" strokeWidth="6" />
-      <circle cx="240" cy="230" r="8" fill="#D98A30" />
-      <rect x="236" y="230" width="18" height="4" rx="2" fill="#D98A30" transform="rotate(35 240 230)" />
+      <circle cx="240" cy="230" r="52" fill="#E8923A" opacity="0.12" />
+      <circle cx="240" cy="230" r="40" fill="none" stroke="#E8923A" strokeWidth="6" />
+      <circle cx="240" cy="230" r="8" fill="#E8923A" />
+      <rect x="236" y="230" width="18" height="4" rx="2" fill="#E8923A" transform="rotate(35 240 230)" />
 
       <g transform="translate(295,268)">
-        <circle cx="0" cy="0" r="16" fill="#D98A30" />
+        <circle cx="0" cy="0" r="16" fill="#E8923A" />
         <path d="M-4 -2 v-3 a4 4 0 0 1 8 0 v3" fill="none" stroke="#FFFFFF" strokeWidth="2" />
       </g>
     </svg>
@@ -694,7 +694,7 @@ function StatsSection({ t, statCounters }) {
 
   return (
     <section ref={secRef} className="py-24 px-5 bg-[#FAF7F2] relative overflow-hidden" id="stats-section">
-      <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: "linear-gradient(#D98A30 1px,transparent 1px),linear-gradient(90deg,#D98A30 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
+      <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: "linear-gradient(#E8923A 1px,transparent 1px),linear-gradient(90deg,#E8923A 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
 
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="text-center mb-16">
@@ -716,7 +716,7 @@ function StatsSection({ t, statCounters }) {
             <div className="absolute bottom-1/2 left-1/2 -translate-x-1/2 z-30" style={{ height: "42%" }}>
               <div id="radar-needle" className="w-[2px] h-full origin-bottom">
                 <div className="w-full h-full bg-gradient-to-t from-primary to-transparent" />
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-primary rounded-full shadow-[0_0_20px_#D98A30]" style={{ animation: "pulse-dot 1.5s ease-in-out infinite" }} />
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-primary rounded-full shadow-[0_0_20px_#E8923A]" style={{ animation: "pulse-dot 1.5s ease-in-out infinite" }} />
               </div>
             </div>
 
@@ -756,7 +756,7 @@ function StatsSection({ t, statCounters }) {
               <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">{t("stat_declared")}</p>
             </div>
             <div className="bg-white border border-[#EAE3D8] rounded-[20px] p-5 text-center shadow-sm hover:border-primary transition-all hover:-translate-y-1 duration-200">
-              <div className="font-bricolage text-3xl font-black text-[#1E3A2F] mb-1"><span ref={counterRefs[1]} data-target="2156" className="counter">2 156</span></div>
+              <div className="font-bricolage text-3xl font-black text-[#2D5A42] mb-1"><span ref={counterRefs[1]} data-target="2156" className="counter">2 156</span></div>
               <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">{t("stat_recovered_label")}</p>
             </div>
             <div className="bg-white border border-[#EAE3D8] rounded-[20px] p-5 text-center shadow-sm hover:border-primary transition-all hover:-translate-y-1 duration-200">
@@ -764,7 +764,7 @@ function StatsSection({ t, statCounters }) {
               <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">{t("stat_members")}</p>
             </div>
             <div className="bg-white border border-[#EAE3D8] rounded-[20px] p-5 text-center shadow-sm hover:border-primary transition-all hover:-translate-y-1 duration-200">
-              <div className="font-bricolage text-3xl font-black text-[#1E3A2F] mb-1">4.8★</div>
+              <div className="font-bricolage text-3xl font-black text-[#2D5A42] mb-1">4.8★</div>
               <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">{t("stat_average_rating")}</p>
             </div>
             <div className="col-span-2 bg-primary rounded-[20px] p-5 text-center shadow-lg shadow-primary/20">
@@ -895,7 +895,7 @@ function ReferralSection({ t }) {
 function SubscriptionsTeaser({ t, plans }: { t: any; plans: Plan[] }) {
   return (
     <section className="py-24 px-5 bg-green-dark relative overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(#D98A30 1px, transparent 1px), linear-gradient(90deg, #D98A30 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
+      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(#E8923A 1px, transparent 1px), linear-gradient(90deg, #E8923A 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
       <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
       <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-white/5 rounded-full blur-[80px]" />
 
@@ -1222,7 +1222,7 @@ function StickyAppBar({ t }) {
         </button>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
-            <i className="fa-solid fa-mobile-screen text-[#1E3A2F] text-lg" />
+            <i className="fa-solid fa-mobile-screen text-[#2D5A42] text-lg" />
           </div>
           <p className="text-[13px] md:text-[15px] font-semibold text-white/90">
             {t("home_sticky_download")}
@@ -1230,7 +1230,7 @@ function StickyAppBar({ t }) {
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <a href="https://play.google.com/store/apps/details?id=com.tesea.docmaster" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-primary text-[#1E3A2F] px-5 py-2.5 rounded-[14px] font-black text-[12px] md:text-[13px] hover:bg-primary-dark transition-all whitespace-nowrap active:scale-95"
+            className="flex items-center gap-2 bg-primary text-[#2D5A42] px-5 py-2.5 rounded-[14px] font-black text-[12px] md:text-[13px] hover:bg-primary-dark transition-all whitespace-nowrap active:scale-95"
           >
             <img src="/src/assets/images/Playstore.png" className="w-4 h-4 object-contain" alt="" /> {t("home_app_playstore")}
           </a>

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { WithdrawalController } from '../controllers/withdrawal.controller.ts';
-import { authMiddleware } from '../middleware/auth.middleware.ts';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.middleware.ts';
 
 const router = Router();
 const controller = new WithdrawalController();
@@ -50,6 +50,31 @@ const controller = new WithdrawalController();
  *         description: Erreur serveur
  */
 router.post('/request', authMiddleware, controller.requestWithdrawal);
+
+/**
+ * @swagger
+ * /withdrawals/nokash/callback:
+ *   post:
+ *     summary: Callback Webhook de Nokash pour les retraits (Payout)
+ *     tags: [Withdrawals]
+ *     description: Endpoint public appelé par Nokash pour confirmer ou rejeter un virement Mobile Money / Banque.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id: { type: string, example: "nokash_payout_123" }
+ *               status: { type: string, example: "SUCCESS" }
+ *               amount: { type: number, example: 5000 }
+ *               orderId: { type: string, example: "uuid-du-retrait" }
+ *               phone: { type: string, example: "237677000000" }
+ *     responses:
+ *       200:
+ *         description: Callback traité avec succès
+ */
+router.post('/nokash/callback', controller.nokashPayoutCallback);
 
 /**
  * @swagger
@@ -105,7 +130,7 @@ router.get('/my-requests', authMiddleware, controller.getMyWithdrawals);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/admin/pending', authMiddleware, controller.getAllPendingWithdrawals);
+router.get('/admin/pending', authMiddleware, adminMiddleware, controller.getAllPendingWithdrawals);
 
 /**
  * @swagger
@@ -147,7 +172,7 @@ router.get('/admin/pending', authMiddleware, controller.getAllPendingWithdrawals
  *       500:
  *         description: Erreur serveur
  */
-router.post('/admin/approve/:id', authMiddleware, controller.approveWithdrawal);
+router.post('/admin/approve/:id', authMiddleware, adminMiddleware, controller.approveWithdrawal);
 
 /**
  * @swagger
@@ -189,6 +214,6 @@ router.post('/admin/approve/:id', authMiddleware, controller.approveWithdrawal);
  *       500:
  *         description: Erreur serveur
  */
-router.post('/admin/reject/:id', authMiddleware, controller.rejectWithdrawal);
+router.post('/admin/reject/:id', authMiddleware, adminMiddleware, controller.rejectWithdrawal);
 
 export default router;

@@ -190,11 +190,11 @@ select:focus {
 ═════════════════════════════════════════════ */
 
 .bg-gradient-green {
-  background: linear-gradient(135deg, #1E3A2F, #2D5A42);
+  background: linear-gradient(135deg, #2D5A42, #2D5A42);
 }
 
 .bg-gradient-warm {
-  background: linear-gradient(135deg, #D98A30, #D98A30);
+  background: linear-gradient(135deg, #E8923A, #E8923A);
 }
 
 /* ════════════════════════════════════════════
@@ -342,7 +342,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #D98A30;
+  outline: 2px solid #E8923A;
   outline-offset: 2px;
 }
 

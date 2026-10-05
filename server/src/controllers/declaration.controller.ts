@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { DeclarationService } from '../services/declaration.service.ts';
 import { PdfService } from '../services/pdf.service.ts';
-import { subscriptionService } from '../services/subscription.service.ts';
 import { activityLogService } from '../services/activity-log.service.ts';
 import { CreateDeclarationDTO, RequestDeleteDeclarationDTO } from '../dtos/declaration.dto.ts';
 import { validateDTO, mapFormDataToObject, formatValidationErrors } from '../utils/validation.utils.ts';
@@ -64,20 +63,6 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
     const photo_recto = files?.photo_recto?.[0]?.path;
     const photo_verso = files?.photo_verso?.[0]?.path;
 
-    // 1. Validate subscription limits
-    const validation = await subscriptionService.validateAction(userId, 'CREATE_DECLARATION', { 
-      docTypeId: req.body.doc_type 
-    });
-
-    if (!(validation as any).allowed) {
-      return res.status(403).json({
-        success: false,
-        message: (validation as any).reason,
-        limit: (validation as any).limit,
-        current: (validation as any).current
-      });
-    }
-
     const result = await declarationService.createDeclaration({
       ...req.body,
       declaration_type: 'LOST',
@@ -86,12 +71,7 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
       photo_verso
     });
 
-    // 2. Consume referral benefit if used
-    if ((validation as any).useBenefit) {
-      await subscriptionService.consumeBenefit((validation as any).subscriptionId, 'declaration');
-    }
-
-    // 3. If this declaration was created from an existing wallet document, link them
+    // Link wallet document if provided
     const sourceDocumentId = req.body.source_document_id;
     if (sourceDocumentId && typeof sourceDocumentId === 'string') {
       documentRepository.updateLostStatus(sourceDocumentId, userId, true, result.id).catch((e: any) => {
@@ -117,7 +97,9 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
     }).catch(() => {});
   } catch (error: any) {
     console.error('❌ Erreur création déclaration perte:', error);
-    res.status(500).json({ success: false, message: error.message });
+    const msg = error.message || '';
+    const status = msg.includes('Limite') || msg.includes('plan') ? 403 : 500;
+    res.status(status).json({ success: false, message: msg });
   }
 };
 
@@ -199,30 +181,6 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
     const photo_verso = files?.photo_verso?.[0]?.path;
     console.log('🟢 [Controller] Photos:', { photo_recto, photo_verso });
 
-    // 1. Validate subscription limits
-    console.log('🔵 [Controller] Vérification abonnement...');
-    console.log('🔵 [Controller] Paramètres:', { userId, docTypeId: req.body.doc_type });
-    
-    const validation = await subscriptionService.validateAction(userId, 'CREATE_DECLARATION', { 
-      docTypeId: req.body.doc_type 
-    });
-    
-    console.log('🟢 [Controller] Résultat validation abonnement:', JSON.stringify(validation, null, 2));
-
-    if (!(validation as any).allowed) {
-      console.log('🔴 [Controller] Abonnement: action non autorisée -', (validation as any).reason);
-      return res.status(403).json({
-        success: false,
-        message: (validation as any).reason,
-        limit: (validation as any).limit,
-        current: (validation as any).current
-      });
-    }
-    console.log('🟢 [Controller] Abonnement validé');
-
-    // Appel au service
-    console.log('🔵 [Controller] Appel declarationService.createDeclaration...');
-    
     const result = await declarationService.createDeclaration({
       ...req.body,
       declaration_type: 'FOUND',
@@ -230,17 +188,6 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
       photo_recto,
       photo_verso
     });
-
-    console.log('🟢 [Controller] Déclaration créée avec succès, ID:', result.id);
-
-    // 2. Consume referral benefit if used
-    if ((validation as any).useBenefit) {
-      console.log('🔵 [Controller] Consommation bénéfice...');
-      await subscriptionService.consumeBenefit((validation as any).subscriptionId, 'declaration');
-      console.log('🟢 [Controller] Bénéfice consommé');
-    }
-
-    console.log('✅ [Controller] === FIN SUCCÈS ===');
     res.status(201).json({
       success: true,
       message: 'Déclaration de document trouvé enregistrée',
@@ -260,7 +207,9 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('🔴 [Controller] === ERREUR ===');
     console.error('🔴 [Controller] Message:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    const msg = error.message || '';
+    const status = msg.includes('Limite') || msg.includes('plan') ? 403 : 500;
+    res.status(status).json({ success: false, message: msg });
   }
 };
 export const getMyDeclarations = async (req: Request, res: Response) => {
@@ -349,10 +298,19 @@ export const getDeclarationById = async (req: Request, res: Response) => {
       return res.json({ success: true, data: result });
     }
     if (userId) {
-      // Fetch user's declarations and check for an active LOST
-      const myDecls = await declarationService.getUserDeclarations(userId);
-      const hasActiveLost = Array.isArray(myDecls) && myDecls.some((d: any) => d.declaration_type === 'LOST' && !['RETURNED','CANCELLED','CLAIMED'].includes(d.status));
-      if (hasActiveLost) {
+      const isReporter = result.reporter_id === userId;
+      const isCounterPart =
+        result.counterPart?.id === userId ||
+        result.counterPartDeclaration?.reporter_id === userId;
+      const matches = result.matches || [];
+      const isInMatch = matches.some(
+        (m: any) =>
+          m.lost_declaration_id === id ||
+          m.found_declaration_id === id ||
+          m.lost_declaration_id === result.id ||
+          m.found_declaration_id === result.id
+      );
+      if (isReporter || isCounterPart || isInMatch) {
         return res.json({ success: true, data: result });
       }
     }
@@ -368,7 +326,10 @@ export const getDeclarationById = async (req: Request, res: Response) => {
       doc_type: result.doc_type,
       owner_name: maskName(result.owner_name),
       // prefer specific date fields used by frontend
-      date: result.date_trouvaille || result.date_perte || result.created_at || null
+      date: result.date_trouvaille || result.date_perte || result.created_at || null,
+      ville: result.ville,
+      photo_recto: result.photo_recto || null,
+      has_photo: Boolean(result.photo_recto),
     };
 
     res.json({ success: true, data: minimal });
@@ -380,23 +341,25 @@ export const getDeclarationById = async (req: Request, res: Response) => {
 export const getRenderContext = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const preferredFoundId = typeof req.query.found === 'string' ? req.query.found : undefined;
     const userId = (req as any).user?.id;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Non authentifié' });
     }
 
-    const result = await declarationService.getDeclarationById(id as string);
+    const result = await declarationService.getDeclarationById(id as string, { preferredMatchFoundId: preferredFoundId });
     if (!result) {
       return res.status(404).json({ success: false, message: 'Déclaration introuvable' });
     }
 
-    // Security check: User must be either the reporter of this declaration 
-    // OR the reporter of the matched counterpart declaration.
     const isReporter = result.reporter_id === userId;
     const isCounterPartReporter = result.counterPart?.id === userId;
+    const canAccess = isReporter
+      || isCounterPartReporter
+      || await declarationService.userCanAccessRenderContext(userId, result);
 
-    if (!isReporter && !isCounterPartReporter && (req as any).user?.role !== 'ADMIN') {
+    if (!canAccess && (req as any).user?.role !== 'ADMIN') {
       return res.status(403).json({ success: false, message: 'Action non autorisée' });
     }
 
@@ -454,10 +417,19 @@ export const initiateRecovery = async (req: Request, res: Response) => {
 export const generatePdf = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
+
     const declaration = await declarationService.getDeclarationById(id as string);
     
     if (!declaration) {
       return res.status(404).json({ success: false, message: 'Déclaration introuvable' });
+    }
+
+    const isReporter = declaration.reporter_id === userId;
+    const isCounterPart = declaration.counterPart?.id === userId;
+    if (!isReporter && !isCounterPart && userRole !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Action non autorisée' });
     }
 
     // Enrichir avec le nom de l'autorité certificateur (pour le cachet de certification)

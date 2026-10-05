@@ -55,7 +55,7 @@ export default function SharedDocument() {
           </p>
           <Link
             to="/"
-            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#1E3A2F] text-white rounded-2xl font-bold text-sm hover:bg-[#2D5A42] transition-all"
+            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#2D5A42] text-white rounded-2xl font-bold text-sm hover:bg-[#2D5A42] transition-all"
           >
             <i className="fa-solid fa-house text-xs" />
             {t("shared_back_home")}

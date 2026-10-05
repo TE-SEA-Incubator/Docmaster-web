@@ -44,6 +44,29 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
+function imageToDataUrl(img: HTMLImageElement, quality = 0.92): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return img.src;
+  ctx.drawImage(img, 0, 0);
+  return canvas.toDataURL("image/jpeg", quality);
+}
+
+function fitImageToArea(
+  naturalW: number,
+  naturalH: number,
+  maxW: number,
+  maxH: number
+): { w: number; h: number } {
+  const ratio = naturalW / naturalH;
+  if (ratio > maxW / maxH) {
+    return { w: maxW, h: maxW / ratio };
+  }
+  return { w: maxH * ratio, h: maxH };
+}
+
 export async function generateDocumentPDF(
   doc: DocumentPDFData,
   isFreePlan = true
@@ -56,30 +79,41 @@ export async function generateDocumentPDF(
     const pageW = 210;
     const pageH = 297;
     const margin = 10;
-    const imgW = pageW - margin * 2;
-    const imgH = 90;
-    const centerX = margin;
+    const maxImgW = pageW - margin * 2;
+    const maxImgH = doc.photo_verso ? 100 : 160;
 
     let yOffset = 75;
 
     if (doc.photo_recto) {
       try {
         const imgRecto = await loadImage(doc.photo_recto);
-        docPdf.addImage(imgRecto, "JPEG", centerX, yOffset, imgW, imgH);
+        const { w, h } = fitImageToArea(
+          imgRecto.naturalWidth,
+          imgRecto.naturalHeight,
+          maxImgW,
+          maxImgH
+        );
+        const imgX = margin + (maxImgW - w) / 2;
+        const dataUrl = imageToDataUrl(imgRecto);
+        docPdf.addImage(dataUrl, "JPEG", imgX, yOffset, w, h);
+        yOffset += h + 8;
       } catch {
         console.error("Error loading recto image");
       }
     }
 
     if (doc.photo_verso) {
-      yOffset += imgH + 8;
-      if (yOffset + imgH > pageH - margin) {
-        docPdf.addPage();
-        yOffset = margin;
-      }
       try {
         const imgVerso = await loadImage(doc.photo_verso);
-        docPdf.addImage(imgVerso, "JPEG", centerX, yOffset, imgW, imgH);
+        const { w, h } = fitImageToArea(
+          imgVerso.naturalWidth,
+          imgVerso.naturalHeight,
+          maxImgW,
+          maxImgH
+        );
+        const imgX = margin + (maxImgW - w) / 2;
+        const dataUrl = imageToDataUrl(imgVerso);
+        docPdf.addImage(dataUrl, "JPEG", imgX, yOffset, w, h);
       } catch {
         console.error("Error loading verso image");
       }

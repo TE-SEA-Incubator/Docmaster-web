@@ -93,7 +93,7 @@ export default function AdminReferrals() {
                       {!isRewarded(r) && (
                         <button
                           onClick={() => reward(r.id)}
-                          className="text-[12px] px-3 py-1.5 rounded border border-[#D98A30] bg-[#D98A30]/10 text-[#D98A30] hover:bg-[#D98A30]/20 font-semibold transition-colors"
+                          className="text-[12px] px-3 py-1.5 rounded border border-[#E8923A] bg-[#E8923A]/10 text-[#E8923A] hover:bg-[#E8923A]/20 font-semibold transition-colors"
                         >
                           <i className="fa-solid fa-gift mr-1.5 text-[10px]" />
                           {t("admin_reward_btn")}

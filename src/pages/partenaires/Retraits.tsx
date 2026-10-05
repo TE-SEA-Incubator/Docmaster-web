@@ -100,8 +100,9 @@ export default function Retraits() {
       setBalance(walletRes.data.data.balance);
       setWithdrawals(withdrawalsRes.data.data.withdrawals || []);
       
-      if (settingsRes?.data?.min_withdrawal_amount) {
-        setMinAmount(Number(settingsRes.data.min_withdrawal_amount));
+      const settings = settingsRes?.data?.data;
+      if (settings?.min_withdrawal_amount) {
+        setMinAmount(Number(settings.min_withdrawal_amount));
       }
     } catch (err: any) {
       message.error(err?.response?.data?.message || t("partenaire_retrait_error_fetch"));

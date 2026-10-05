@@ -2,16 +2,24 @@ import { pool } from "../database/db.js";
 
 export class ClaimRepository {
   /**
-   * Find a claim by document ID and ensure it's still active (PENDING or PAID)
+   * Find a paid claim ready for code validation (doc_id = LOST declaration id)
    */
-  async findActiveByDocId(docId: string) {
-    const query = `
-      SELECT * FROM claims 
-      WHERE doc_id = $1 AND status IN ('PENDING', 'PAID')
+  async findPaidByDocId(docId: string) {
+    const q = `
+      SELECT * FROM claims
+      WHERE doc_id = $1 AND status = 'PAID'
+      ORDER BY created_at DESC
       LIMIT 1
     `;
-    const { rows } = await pool.query(query, [docId]);
+    const { rows } = await pool.query(q, [docId]);
     return rows[0];
+  }
+
+  /**
+   * @deprecated Use findPaidByDocId for validation; PENDING claims are not validatable
+   */
+  async findActiveByDocId(docId: string) {
+    return this.findPaidByDocId(docId);
   }
 
   /**
@@ -68,7 +76,7 @@ export class ClaimRepository {
     owner_id: string;
     finder_id: string;
     verification_code: string;
-    status?: 'PENDING' | 'VALIDATED' | 'FAILED';
+    status?: 'PENDING' | 'PAID' | 'VALIDATED' | 'FAILED';
   }) {
     const query = `
       INSERT INTO claims (doc_id, owner_id, finder_id, verification_code, status, attempts)
@@ -85,9 +93,6 @@ export class ClaimRepository {
     return rows[0];
   }
 
-  /**
-   * Find a claim by document ID and owner ID
-   */
   async findByDocIdAndOwner(docId: string, ownerId: string) {
     const query = `
       SELECT * FROM claims 
@@ -96,5 +101,9 @@ export class ClaimRepository {
     `;
     const { rows } = await pool.query(query, [docId, ownerId]);
     return rows[0];
+  }
+
+  async findByLostAndOwner(lostDocId: string, ownerId: string) {
+    return this.findByDocIdAndOwner(lostDocId, ownerId);
   }
 }

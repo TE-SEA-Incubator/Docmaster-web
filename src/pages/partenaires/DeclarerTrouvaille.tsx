@@ -127,6 +127,15 @@ export default function DeclarerTrouvaille() {
 
   const removeDoc = (key: string) => setDocs((prev) => prev.filter((doc) => doc.key !== key));
 
+  const minusDoc = (typeId: string) => {
+    setDocs((prev) => {
+      const sameType = prev.filter((doc) => doc.typeId === typeId);
+      if (sameType.length === 0) return prev;
+      const toRemove = sameType[sameType.length - 1].key;
+      return prev.filter((doc) => doc.key !== toRemove);
+    });
+  };
+
   const updateDoc = (key: string, patch: Partial<DocEntry>) =>
     setDocs((prev) => prev.map((doc) => (doc.key === key ? { ...doc, ...patch } : doc)));
 
@@ -406,24 +415,39 @@ export default function DeclarerTrouvaille() {
                         </Tag>
                       )}
                       {selected && (
-                        <Button
-                          size="small"
-                          shape="circle"
-                          type="primary"
-                          disabled={addDisabled}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (addDisabled) {
-                              message.info(t("partenaire_declarer_type_max"));
-                              return;
-                            }
-                            addDoc(d.id);
-                          }}
-                          title={t("partenaire_declarer_add_another")}
-                          style={{ position: "absolute", bottom: 8, right: 8, width: 22, height: 22, fontSize: 11, lineHeight: 1, padding: 0 }}
-                        >
-                          +
-                        </Button>
+                        <Space style={{ position: "absolute", bottom: 8, right: 8 }}>
+                          <Button
+                            size="small"
+                            shape="circle"
+                            danger
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              minusDoc(d.id);
+                            }}
+                            title={t("partenaire_declarer_remove_another")}
+                            style={{ width: 22, height: 22, fontSize: 11, lineHeight: 1, padding: 0 }}
+                          >
+                            -
+                          </Button>
+                          <Button
+                            size="small"
+                            shape="circle"
+                            type="primary"
+                            disabled={addDisabled}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (addDisabled) {
+                                message.info(t("partenaire_declarer_type_max"));
+                                return;
+                              }
+                              addDoc(d.id);
+                            }}
+                            title={t("partenaire_declarer_add_another")}
+                            style={{ width: 22, height: 22, fontSize: 11, lineHeight: 1, padding: 0 }}
+                          >
+                            +
+                          </Button>
+                        </Space>
                       )}
                       <div
                         style={{

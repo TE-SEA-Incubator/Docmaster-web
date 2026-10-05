@@ -42,7 +42,7 @@ export default function TopProgressBar() {
     <div className="fixed top-0 left-0 right-0 z-[99999] h-[3px]">
       <div
         ref={barRef}
-        className="h-full bg-[#D98A30] rounded-r-full shadow-[0_0_8px_#D98A30]"
+        className="h-full bg-[#E8923A] rounded-r-full shadow-[0_0_8px_#E8923A]"
         style={{ width: "0%", transition: "none" }}
       />
     </div>

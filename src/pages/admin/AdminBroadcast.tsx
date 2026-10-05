@@ -38,7 +38,7 @@ export default function AdminBroadcast() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white border border-gray-200 rounded p-5">
           <h3 className="font-bold text-sm text-gray-800 mb-4 flex items-center gap-2">
-            <i className="fa-solid fa-bullhorn text-[#D98A30]" />
+            <i className="fa-solid fa-bullhorn text-[#E8923A]" />
             Nouveau broadcast
             <InfoTooltip text="Le message sera envoyé à tous les utilisateurs possédant un token push valide." />
           </h3>
@@ -52,7 +52,7 @@ export default function AdminBroadcast() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ex: Nouvelle fonctionnalité disponible"
-                className="w-full px-3 py-2.5 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors"
+                className="w-full px-3 py-2.5 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors"
                 required
               />
             </div>
@@ -66,7 +66,7 @@ export default function AdminBroadcast() {
                 rows={5}
                 placeholder="Contenu de la notification..."
                 required
-                className="w-full px-3 py-2.5 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors resize-none"
+                className="w-full px-3 py-2.5 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors resize-none"
               />
             </div>
             {result && (
@@ -79,7 +79,7 @@ export default function AdminBroadcast() {
               <button
                 type="submit"
                 disabled={!title.trim() || !message.trim() || sending}
-                className="flex items-center gap-1.5 bg-[#1E3A2F] text-white px-5 py-2.5 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 bg-[#2D5A42] text-white px-5 py-2.5 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-50"
               >
                 {sending ? (
                   <><i className="fa-solid fa-spinner fa-spin text-xs" /> Envoi en cours...</>

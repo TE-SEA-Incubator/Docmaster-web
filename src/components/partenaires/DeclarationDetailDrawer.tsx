@@ -1,5 +1,6 @@
-import { Drawer, Popconfirm, Tag, Typography } from "antd";
+import { Button, Drawer, Popconfirm, Tag, Typography } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import { partenairePalette } from "../../theme/partenaires";
 import type { PartenaireDeclaration } from "../../services/partenairesService";
@@ -24,6 +25,7 @@ export default function DeclarationDetailDrawer({
   deleting?: boolean;
 }) {
   const { t, lang } = useI18n();
+  const navigate = useNavigate();
   const localeTag = lang === "ar" ? "ar" : lang === "en" ? "en" : "fr-FR";
 
   const statusTag = (s?: string | null) => {
@@ -160,6 +162,22 @@ export default function DeclarationDetailDrawer({
           </div>
 
           {/* Actions */}
+          {declaration.status === "MATCHED" && (
+            <Button
+              type="primary"
+              block
+              size="large"
+              icon={<i className="fa-solid fa-hand-holding-dollar" />}
+              onClick={() => {
+                onClose();
+                navigate(`/partenaire/rendre?id=${declaration.id}`);
+              }}
+              style={{ borderRadius: 10, fontWeight: 700, height: 46 }}
+            >
+              {t("partenaire_rendre_btn")}
+            </Button>
+          )}
+
           {onDelete && (
             <div style={{ borderTop: `1px solid ${partenairePalette.border}`, paddingTop: 16 }}>
               <Popconfirm

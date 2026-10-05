@@ -4,6 +4,7 @@ import {
   DashboardOutlined,
   FileProtectOutlined,
   LogoutOutlined,
+  MessageOutlined,
   PlusCircleOutlined,
   ProfileOutlined,
   UserOutlined,
@@ -32,6 +33,7 @@ export default function PartenaireSidebar({ collapsed, onCollapse }: PartenaireS
     if (location.pathname.includes("/declarer")) return "declarer";
     if (location.pathname.includes("/portefeuille")) return "portefeuille";
     if (location.pathname.includes("/retraits")) return "retraits";
+    if (location.pathname.includes("/messagerie")) return "messagerie";
     if (location.pathname.includes("/profil")) return "profil";
     return "dashboard";
   })();
@@ -40,6 +42,7 @@ export default function PartenaireSidebar({ collapsed, onCollapse }: PartenaireS
     { key: "dashboard", icon: <DashboardOutlined />, label: t("partenaire_sidebar_dashboard") },
     { key: "declarer", icon: <PlusCircleOutlined />, label: t("partenaire_sidebar_declare") },
     { key: "declarations", icon: <FileProtectOutlined />, label: t("partenaire_sidebar_declarations") },
+    { key: "messagerie", icon: <MessageOutlined />, label: t("partenaire_sidebar_messagerie") },
     { key: "portefeuille", icon: <WalletOutlined />, label: t("partenaire_sidebar_portefeuille") },
     { key: "retraits", icon: <ArrowDownOutlined />, label: t("partenaire_sidebar_retraits") },
     { key: "profil", icon: <ProfileOutlined />, label: t("partenaire_sidebar_profil") },
@@ -48,6 +51,7 @@ export default function PartenaireSidebar({ collapsed, onCollapse }: PartenaireS
   const goTo = (key: string) => {
     if (key === "declarations") navigate("/partenaire/declarations");
     else if (key === "declarer") navigate("/partenaire/declarer");
+    else if (key === "messagerie") navigate("/partenaire/messagerie");
     else if (key === "portefeuille") navigate("/partenaire/portefeuille");
     else if (key === "retraits") navigate("/partenaire/retraits");
     else if (key === "profil") navigate("/partenaire/profil");

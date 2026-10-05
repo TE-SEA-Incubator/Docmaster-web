@@ -120,7 +120,7 @@ export default function AdminDocumentTypes() {
         </div>
         <button
           onClick={openNew}
-          className="inline-flex items-center gap-2 bg-[#1E3A2F] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
+          className="inline-flex items-center gap-2 bg-[#2D5A42] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
         >
           <i className="fa-solid fa-plus text-xs" />
           {t("admin_add_type")}
@@ -137,13 +137,13 @@ export default function AdminDocumentTypes() {
               className={`bg-white border border-gray-200 rounded p-5 ${doc.is_active === false ? "opacity-60" : ""}`}
             >
               <div className="flex justify-between items-start mb-3">
-                <div className="w-10 h-10 rounded border border-gray-200 bg-gray-50 flex items-center justify-center text-[#1E3A2F]">
+                <div className="w-10 h-10 rounded border border-gray-200 bg-gray-50 flex items-center justify-center text-[#2D5A42]">
                   <i className={`fa-solid fa-${doc.icone || "file"} text-base`} />
                 </div>
                 <div className="flex gap-1.5">
                   <button
                     onClick={() => openEdit(doc)}
-                    className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#D98A30] hover:border-[#D98A30]/40 transition-colors"
+                    className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#E8923A] hover:border-[#E8923A]/40 transition-colors"
                   >
                     <i className="fa-solid fa-pen text-[10px]" />
                   </button>
@@ -188,7 +188,7 @@ export default function AdminDocumentTypes() {
 
               <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t("admin_reward")}</span>
-                <span className="font-bold text-[#D98A30]">{(doc.prix_retrouvaille ?? 0).toLocaleString("fr-FR")} XAF</span>
+                <span className="font-bold text-[#E8923A]">{(doc.prix_retrouvaille ?? 0).toLocaleString("fr-FR")} XAF</span>
               </div>
             </div>
           ))}
@@ -214,20 +214,20 @@ export default function AdminDocumentTypes() {
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">{t("admin_name")}</label>
                   <input value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })}
                     placeholder="ex: Passeport" required
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors" />
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Code</label>
                   <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
                     placeholder="ex: PASSPORT" required
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors" />
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
                 </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">{t("reportlost_description")}</label>
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  rows={2} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors resize-none" />
+                  rows={2} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors resize-none" />
               </div>
 
               <div className="grid grid-cols-3 gap-3 p-3 bg-gray-50 border border-gray-200 rounded">
@@ -240,7 +240,7 @@ export default function AdminDocumentTypes() {
                     <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">{label}</label>
                     <input type="number" value={form[key]}
                       onChange={(e) => setForm({ ...form, [key]: Number(e.target.value) })}
-                      className="w-full px-2.5 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30]" />
+                      className="w-full px-2.5 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A]" />
                   </div>
                 ))}
               </div>
@@ -250,12 +250,12 @@ export default function AdminDocumentTypes() {
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">{t("admin_certificate")} (+pts)</label>
                   <input type="number" value={form.points_recompense}
                     onChange={(e) => setForm({ ...form, points_recompense: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30]" />
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A]" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">{t("admin_icon")}</label>
                   <select value={form.icone} onChange={(e) => setForm({ ...form, icone: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30]">
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A]">
                     <option value="file">📄 Document</option>
                     <option value="passport">🛂 Passeport</option>
                     <option value="id-card">🆔 Carte identité</option>
@@ -276,7 +276,7 @@ export default function AdminDocumentTypes() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">A une date d'expiration ?</label>
                   <button type="button" onClick={() => setForm({ ...form, hasExpiration: !form.hasExpiration })}
-                    className={`w-10 h-5 rounded-full transition-colors relative ${form.hasExpiration ? "bg-[#1E3A2F]" : "bg-gray-300"}`}>
+                    className={`w-10 h-5 rounded-full transition-colors relative ${form.hasExpiration ? "bg-[#2D5A42]" : "bg-gray-300"}`}>
                     <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${form.hasExpiration ? "translate-x-[22px]" : "translate-x-[2px]"}`} />
                   </button>
                 </div>
@@ -285,7 +285,7 @@ export default function AdminDocumentTypes() {
                     <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Durée (mois)</label>
                     <input type="number" min={1} value={form.delai_expiration_mois}
                       onChange={(e) => setForm({ ...form, delai_expiration_mois: Math.max(1, Number(e.target.value)) })}
-                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30]" />
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A]" />
                   </div>
                 )}
               </div>
@@ -296,7 +296,7 @@ export default function AdminDocumentTypes() {
                   {t("confirm_cancel")}
                 </button>
                 <button type="submit" disabled={saving || !form.nom.trim()}
-                  className="px-5 py-2 bg-[#1E3A2F] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
+                  className="px-5 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
                   {saving && <i className="fa-solid fa-spinner fa-spin text-xs" />}
                   {t("admin_add")}
                 </button>

@@ -36,8 +36,10 @@ export const declarationsService = {
     return res.data;
   },
 
-  async getRenderContext(id: string) {
-    const res = await apiClient.get<ApiResponse<Declaration>>(`declarations/${id}/render-context`);
+  async getRenderContext(id: string, foundId?: string) {
+    const res = await apiClient.get<ApiResponse<Declaration>>(`declarations/${id}/render-context`, {
+      params: foundId ? { found: foundId } : undefined,
+    });
     return res.data;
   },
 
@@ -58,18 +60,23 @@ export const declarationsService = {
     return res.data;
   },
 
-  async payRecoveryFee(data: { docId: string; paymentMethod: string; phone: string }) {
+  async payRecoveryFee(data: { docId: string; paymentMethod: string; phone: string; amount?: number }) {
     const res = await apiClient.post<ApiResponse>("payments/pay-recovery", data);
     return res.data;
   },
 
-  async checkPaymentStatus(declarationId: string) {
-    const res = await apiClient.get<ApiResponse>(`declarations/payment-status/${declarationId}`);
-    return res.data;
+  async checkPaymentStatus(docId: string) {
+    const res = await apiClient.get<ApiResponse>("payments/transactions");
+    const transactions = (res.data as any)?.transactions ?? (res.data as any)?.data ?? [];
+    const match = transactions.find((tx: any) => {
+      const metadata = typeof tx.metadata === "string" ? JSON.parse(tx.metadata || "{}") : tx.metadata || {};
+      return metadata.docId === docId || metadata.doc_id === docId;
+    });
+    return { success: true, data: match ?? null };
   },
 
   async validateRecoveryCode(data: { docId: string; code: string }) {
-    const res = await apiClient.post<ApiResponse>("declarations/validate-code", data);
+    const res = await apiClient.post<ApiResponse>("claims/validate", data);
     return res.data;
   },
 
@@ -79,12 +86,15 @@ export const declarationsService = {
   },
 
   async getDeletionRequests() {
-    const res = await apiClient.get<ApiResponse>("declarations/deletion-requests");
+    const res = await apiClient.get<ApiResponse>("deletion-requests/me");
     return res.data;
   },
 
   async requestDeletion(data: { declaration_id: string; reason: string }) {
-    const res = await apiClient.post<ApiResponse>("declarations/deletion-requests", data);
+    const res = await apiClient.post<ApiResponse>(
+      `deletion-requests/declarations/${data.declaration_id}/request-deletion`,
+      { reason: data.reason }
+    );
     return res.data;
   },
 

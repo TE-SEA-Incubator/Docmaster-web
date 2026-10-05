@@ -142,6 +142,15 @@ router.post('/logout', (req, res) => authController.logout(req, res));
 
 /**
  * @swagger
+ * /auth/refresh-token:
+ *   post:
+ *     summary: Rafraîchir le token d'accès utilisateur
+ *     tags: [Auth]
+ */
+router.post('/refresh-token', (req, res) => authController.refreshToken(req, res));
+
+/**
+ * @swagger
  * /auth/profile:
  *   get:
  *     summary: Récupérer le profil de l'utilisateur connecté

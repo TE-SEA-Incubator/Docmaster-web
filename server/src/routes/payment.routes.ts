@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { nokashCallback, getMyTransactions, getAllTransactions, payRecovery, forceCheckTransaction } from '../controllers/payment.controller.ts';
-import { authMiddleware } from '../middleware/auth.middleware.ts';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.middleware.ts';
 
 const router = Router();
 
@@ -180,7 +180,7 @@ router.get('/transactions', authMiddleware, getMyTransactions);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/admin/all', authMiddleware, getAllTransactions);
+router.get('/admin/all', authMiddleware, adminMiddleware, getAllTransactions);
 
 /**
  * @swagger

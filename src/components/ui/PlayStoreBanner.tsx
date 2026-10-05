@@ -18,7 +18,7 @@ const PlayStoreBanner = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 text-white p-3 md:p-4 md:bottom-4 md:left-auto md:right-4 md:max-w-md md:rounded-xl shadow-xl">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-gray-900 text-white p-3 md:p-4 md:bottom-4 md:left-auto md:right-4 md:max-w-md md:rounded-xl shadow-xl">
       <div className="flex items-center justify-between gap-2 md:gap-4">
         <div className="flex items-center gap-2 md:gap-3 min-w-0">
           <i className="fa-solid fa-mobile-screen text-lg md:text-xl shrink-0" />

@@ -231,9 +231,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
 
-      <div className="p-4 sm:p-6 flex flex-col gap-3 sm:gap-4 h-full overflow-hidden">
+      <div className="p-4 sm:p-6 flex flex-col gap-3 sm:gap-4">
 
         {/* Greeting */}
         <Group justify="space-between" wrap="wrap" gap="sm">
@@ -321,9 +321,13 @@ export default function Dashboard() {
                 </Paper>
               ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                  {activeDecls.map((decl: Declaration) => (
-                    <DeclCard key={decl.id} decl={decl} navigate={navigate} userName={user?.prenom} t={t} />
-                  ))}
+                  {activeDecls.map((decl: Declaration) =>
+                    decl.declaration_type === "LOST" ? (
+                      <TrackingLostCard key={decl.id} decl={decl} navigate={navigate} userName={user?.prenom} />
+                    ) : (
+                      <TrackingFoundCard key={decl.id} decl={decl} navigate={navigate} />
+                    )
+                  )}
                 </div>
               )}
             </div>
@@ -545,87 +549,160 @@ export default function Dashboard() {
 
 /* ── Sub-components ── */
 
-function DeclCard({ decl, navigate, userName, t }: {
-  decl: Declaration;
-  navigate: (path: string, opts?: any) => void;
-  userName?: string;
-  t: (k: string) => string;
-}) {
-  const isPerdu = (decl.declaration_type || (decl as any).type || "").toUpperCase() === "LOST";
-  const typeIcon = isPerdu ? "fa-triangle-exclamation" : "fa-file-circle-check";
-  const typeLabel = isPerdu ? t("mesdeclarations_type_loss") : t("mesdeclarations_type_found");
-  const typeBadgeColor = isPerdu ? "red" : "green";
+const stepColors: Record<string, { dot: string; text: string; faded: string; line: string; fill: string }> = {
+  red:    { dot: "#EF4444", text: "#DC2626", faded: "#FCA5A5", line: "var(--mantine-color-default-border)", fill: "#EF4444" },
+  blue:   { dot: "#3B82F6", text: "#2563EB", faded: "#93C5FD", line: "var(--mantine-color-default-border)", fill: "#3B82F6" },
+  green:  { dot: "#22C55E", text: "#16A34A", faded: "#86EFAC", line: "var(--mantine-color-default-border)", fill: "#22C55E" },
+  orange: { dot: "#F97316", text: "#EA580C", faded: "#FDBA74", line: "var(--mantine-color-default-border)", fill: "#F97316" },
+};
 
-  const statusBadgeColor: Record<string, string> = {
-    MATCHED:  "green",
-    RETURNED: "gray",
-    RESOLVED: "green",
-    NEW:      "blue",
-    EN_COURS: "orange",
-  };
-  const statusLabel: Record<string, string> = {
-    MATCHED:  t("mesdeclarations_status_match"),
-    RETURNED: t("mesdeclarations_status_closed"),
-    RESOLVED: t("mesdeclarations_status_resolved"),
-    NEW:      t("mesdeclarations_status_new"),
-    EN_COURS: t("mesdeclarations_status_pending"),
-  };
-  const sBadgeColor = statusBadgeColor[decl.status || ""] || "orange";
-  const isMatched = decl.status === "MATCHED";
-  const sLabel = statusLabel[decl.status || ""] || t("mesdeclarations_status_pending");
-  const docName = (decl as any).docTypeInfo?.nom || (decl as any).doc_type || t("dashboard_document");
-  const fmtDate = (v?: string | null) =>
-    v ? new Date(v).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—";
-
+function StepIndicator({ steps, current, color: theme }: { steps: string[]; current: number; color: "red" | "blue" | "green" | "orange" }) {
+  const c = stepColors[theme] || stepColors.red;
   return (
-    <article
-      onClick={() => navigate("/mes-declarations")}
-      className="bg-white border border-borda rounded-[18px] p-4 sm:p-5 hover:shadow-md transition-all cursor-pointer"
-    >
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] sm:text-[11px] font-bold text-textMuted/60 uppercase tracking-wide truncate">
-            {(decl as any).identifiant_doc_dm || "DOC-DM"}
-          </p>
-          <h3 className="font-bricolage text-[16px] sm:text-[18px] font-bold text-gray-800 leading-tight mt-0.5 truncate">
-            {docName}
-          </h3>
-        </div>
-        <Badge color={typeBadgeColor} variant="light" radius="xl" size="sm" className="shrink-0 whitespace-nowrap">
-          <i className={`fa-solid ${typeIcon} mr-0.5 sm:mr-1`} />{typeLabel}
-        </Badge>
-      </div>
-
-      <div className="space-y-1 text-[12px] sm:text-[12.5px] text-textMuted">
-        <p className="truncate"><i className="fa-regular fa-user mr-1.5 w-4 shrink-0" /> {(decl as any).nom_complet || (decl as any).owner_name || userName || t("dashboard_user")}</p>
-        <p><i className="fa-regular fa-calendar mr-1.5 w-4 shrink-0" /> {fmtDate(decl.created_at)}</p>
-        <p className="truncate"><i className="fa-solid fa-location-dot mr-1.5 w-4 shrink-0" /> {(decl as any).ville || (decl as any).lieu_perte || (decl as any).lieu_trouvee || "—"}</p>
-      </div>
-
-      <div className="mt-3 sm:mt-4 flex items-center justify-between gap-2">
-        <Badge color={sBadgeColor} variant="light" radius="xl" size="sm" className={isMatched ? "animate-pulse" : ""}>
-          {sLabel}
-        </Badge>
-        <button
-          onClick={(e) => { e.stopPropagation(); navigate("/mes-declarations"); }}
-          className="px-2.5 sm:px-3 py-1.5 rounded-[8px] sm:rounded-[9px] bg-surface2 border border-borda text-[11px] sm:text-[12px] font-semibold text-textMuted/70 hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
-        >
-          {t("mesdeclarations_view_details")}
-        </button>
-      </div>
-
-      {decl.status === "MATCHED" && isPerdu && (
-        <button
-          onClick={(e) => { e.stopPropagation(); navigate(`/recuperer?id=${decl.id}`); }}
-          className={`mt-2 w-full py-2 rounded-xl bg-green-dark text-white font-bold text-xs flex items-center justify-center gap-2${decl.status === "MATCHED" ? " animate-vibrate" : ""}`}
-        >
-          <i className="fa-solid fa-handshake" />
-          {t("dashboard_recover_document")}
-        </button>
-      )}
-    </article>
+    <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingLeft: 8, paddingRight: 8, marginTop: 16 }}>
+      <div style={{ position: "absolute", top: 12, left: 40, right: 40, height: 2, backgroundColor: c.line }} />
+      <div style={{ position: "absolute", top: 12, left: 40, height: 2, width: `${(current - 1) / (steps.length - 1) * 100}%`, backgroundColor: c.fill }} />
+      {steps.map((step, i) => {
+        const done = i < current - 1;
+        const active = i === current - 1;
+        return (
+          <div key={i} style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 60 }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              background: done ? c.dot : "white",
+              border: `2px solid ${done ? "transparent" : active ? c.dot : c.line}`,
+              color: done ? "white" : active ? c.text : c.faded,
+            }}>
+              {done ? <i className="fa-solid fa-check" /> : <i className={`fa-solid ${i === 0 ? "fa-check" : i === 1 ? "fa-search" : i === 2 ? "fa-handshake" : "fa-check-double"}`} />}
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: -0.3, color: done || active ? c.text : c.faded }}>{step}</span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
+
+type CardTheme = "red" | "orange" | "green" | "blue";
+
+function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; navigate: (path: string, opts?: any) => void; userName?: string }) {
+  const { t } = useI18n();
+  const hasMatch = decl.status === "MATCHED" || decl.status === "RETURNED";
+  const allMatches = (decl.matches as unknown as Array<{ status: string; found_declaration_id: string }> | undefined) || [];
+  const hasPotential = !hasMatch && allMatches.some((m) => m.status === "PENDING");
+  const colorKey: CardTheme = hasMatch ? "green" : hasPotential ? "orange" : "red";
+  const c = stepColors[colorKey];
+
+  let step = 1;
+  if (decl.status === "SEARCHING") step = 2;
+  if (decl.status === "MATCHED") step = 3;
+  if (decl.status === "RETURNED") step = 4;
+
+  const viewPotentialMatches = () => {
+    const ids = allMatches.filter((m) => m.status === "PENDING").map((m) => m.found_declaration_id);
+    navigate("/rechercher", { state: { potentialIds: ids } });
+  };
+
+  return (
+    <Card withBorder padding={0} radius="lg" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
+      <Group justify="space-between" px="md" py="sm" style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}>
+        <Group gap="xs">
+          <i className={`fa-solid ${hasMatch ? "fa-check-double" : hasPotential ? "fa-magnifying-glass-chart" : "fa-triangle-exclamation"}`} style={{ color: c.text }} />
+          <Text size="sm" fw={700} style={{ color: c.text, fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+            {hasMatch ? t("dashboard_card_lost_matched") : hasPotential ? t("dashboard_card_lost_potential") : t("dashboard_card_lost_reported")}
+          </Text>
+        </Group>
+        <Badge color={colorKey === "green" ? "green" : colorKey === "orange" ? "orange" : "red"} size="sm" variant="light">
+          {decl.status === "MATCHED" ? t("dashboard_badge_matched") : decl.status === "RETURNED" ? t("dashboard_badge_returned") : hasPotential ? t("dashboard_badge_potential") : t("dashboard_badge_lost")}
+        </Badge>
+      </Group>
+      <div style={{ padding: "16px 20px" }}>
+        <Group gap="sm" mb="md" align="flex-start">
+          <i className={`fa-solid ${getIconForType(decl.doc_type)}`} style={{ fontSize: 18, color: c.text, marginTop: 2 }} />
+          <div style={{ minWidth: 0 }}>
+            <Text fz={13.5} fw={700}>{(decl as any).docTypeInfo?.nom || decl.doc_type || t("dashboard_document")} — {decl.nom_complet || decl.owner_name || userName || t("dashboard_user")}</Text>
+            <Text size="xs" c="dimmed" fs="italic">{t("dashboard_ref")}: {decl.identifiant_doc_dm || decl.reference || "---"} · {t(statusText(decl.status))}</Text>
+          </div>
+        </Group>
+        <StepIndicator steps={[t("dashboard_step_submission"), t("dashboard_step_search"), t("dashboard_step_matching"), t("dashboard_step_recovered")]} current={step} color={colorKey} />
+        {hasPotential && (
+          <Group justify="flex-end" mt="lg">
+            <Button onClick={viewPotentialMatches} color="orange" variant="light" size="sm" leftSection={<i className="fa-solid fa-magnifying-glass-chart" />}>
+              {t("dashboard_view_matches")}
+            </Button>
+          </Group>
+        )}
+        {decl.status === "MATCHED" && (
+          <Group justify="flex-end" mt="lg">
+            <Button
+              className="animate-vibrate"
+              onClick={() => navigate(`/recuperer?id=${decl.id}`)}
+              color="green"
+              size="sm"
+              leftSection={<i className="fa-solid fa-handshake" />}
+            >
+              {t("dashboard_recover_document")}
+            </Button>
+          </Group>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function TrackingFoundCard({ decl, navigate }: { decl: Declaration; navigate: (path: string, opts?: any) => void }) {
+  const { t } = useI18n();
+  const colorKey: CardTheme = decl.status === "RETURNED" || decl.status === "MATCHED" ? "green" : "blue";
+  const c = stepColors[colorKey];
+
+  let step = 1;
+  if (decl.status === "AVAILABLE") step = 2;
+  if (decl.status === "MATCHED") step = 3;
+  if (decl.status === "RETURNED") step = 4;
+
+  const headerLabel = decl.status === "RETURNED" ? t("dashboard_card_found_returned") : decl.status === "MATCHED" ? t("dashboard_card_found_matched") : t("dashboard_card_found_reported");
+  const headerIcon = decl.status === "RETURNED" ? "fa-circle-check" : decl.status === "MATCHED" ? "fa-handshake" : "fa-hand-holding-heart";
+  const badgeLabel = decl.status === "RETURNED" ? t("dashboard_badge_returned") : decl.status === "MATCHED" ? t("dashboard_badge_to_return") : t("dashboard_badge_reported");
+
+  return (
+    <Card withBorder padding={0} radius="lg" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
+      <Group justify="space-between" px="md" py="sm" style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}>
+        <Group gap="xs">
+          <i className={`fa-solid ${headerIcon}`} style={{ color: c.text }} />
+          <Text size="sm" fw={700} style={{ color: c.text, fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+            {headerLabel}
+          </Text>
+        </Group>
+        <Badge color={colorKey === "green" ? "green" : "blue"} size="sm" variant="light">{badgeLabel}</Badge>
+      </Group>
+      <div style={{ padding: "16px 20px" }}>
+        <Group gap="sm" mb="md" align="flex-start">
+          <i className={`fa-solid ${getIconForType(decl.doc_type)}`} style={{ fontSize: 18, color: c.text, marginTop: 2 }} />
+          <div style={{ minWidth: 0 }}>
+            <Text fz={13.5} fw={700}>{(decl as any).docTypeInfo?.nom || decl.doc_type || t("dashboard_document")} — {decl.owner_name || t("dashboard_unknown")}</Text>
+            <Text size="xs" c="dimmed" fs="italic">{t("dashboard_ref")}: {decl.identifiant_doc_dm || decl.reference || "---"} · {t(statusText(decl.status))}</Text>
+          </div>
+        </Group>
+        <StepIndicator steps={[t("dashboard_found_step_found"), t("dashboard_found_step_reported"), t("dashboard_found_step_owner"), t("dashboard_found_step_returned")]} current={step} color={colorKey} />
+        {decl.status === "MATCHED" && (
+          <Group justify="flex-end" mt="lg">
+            <Button onClick={() => navigate(`/rendre?id=${decl.id}`)} color="green" size="sm" leftSection={<i className="fa-solid fa-hand-holding-heart" />}>
+              {t("dashboard_return_document")}
+            </Button>
+          </Group>
+        )}
+        {decl.status !== "MATCHED" && decl.status !== "RETURNED" && (
+          <Text mt="lg" size="xs" c="dimmed" fs="italic" ta="center">
+            <i className="fa-solid fa-clock-rotate-left" style={{ marginRight: 4 }} />
+            {t("dashboard_waiting_confirmation")}
+          </Text>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 
 function DonutRow({ color, label, value }: any) {
   return (

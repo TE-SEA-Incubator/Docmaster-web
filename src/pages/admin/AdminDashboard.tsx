@@ -77,7 +77,7 @@ export default function AdminDashboard() {
       {
         label: t("admin_dashboard_chart_revenue"),
         data: stats?.graphs.monthly.map((m) => m.revenue) || [],
-        backgroundColor: "#D98A30",
+        backgroundColor: "#E8923A",
         borderRadius: 2,
         yAxisID: "y",
       },
@@ -85,8 +85,8 @@ export default function AdminDashboard() {
         label: t("admin_dashboard_chart_subscriptions"),
         data: stats?.graphs.monthly.map((m) => m.subscriptions) || [],
         type: "line" as const,
-        borderColor: "#1E3A2F",
-        backgroundColor: "#1E3A2F",
+        borderColor: "#2D5A42",
+        backgroundColor: "#2D5A42",
         borderWidth: 2,
         yAxisID: "y1",
       },
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
     labels: stats?.graphs.plans.map((p) => p.label) || [],
     datasets: [{
       data: stats?.graphs.plans.map((p) => p.count) || [],
-      backgroundColor: ["#1E3A2F", "#D98A30", "#639922", "#e5e7eb"],
+      backgroundColor: ["#2D5A42", "#E8923A", "#639922", "#e5e7eb"],
       borderWidth: 0,
     }],
   };
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
       <div className="bg-white border border-gray-200 rounded">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
           <h3 className="text-sm font-bold text-gray-800">{t("admin_dashboard_recent_tx")}</h3>
-          <button className="text-[12px] font-semibold text-[#D98A30] hover:underline">{t("admin_dashboard_see_all")}</button>
+          <button className="text-[12px] font-semibold text-[#E8923A] hover:underline">{t("admin_dashboard_see_all")}</button>
         </div>
         <table className="w-full text-sm">
           <thead>

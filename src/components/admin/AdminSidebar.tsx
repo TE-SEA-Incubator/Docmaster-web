@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { deleteToken } from "../../utils/cookie";
 import { useI18n } from "../../context/I18nContext";
 
 interface AdminSidebarProps {
@@ -38,6 +39,7 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
 
   const confirmLogout = () => {
     setShowLogoutConfirm(false);
+    deleteToken("admin");
     localStorage.removeItem("docmaster_admin_login");
     navigate("/admin/login");
   };
@@ -53,7 +55,7 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 w-[260px] bg-[#1E3A2F] z-40 flex flex-col transition-transform duration-200 ease-out ${
+        className={`fixed inset-y-0 left-0 w-[260px] bg-[#2D5A42] z-40 flex flex-col transition-transform duration-200 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -81,13 +83,13 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
                   onClick={() => { if (window.innerWidth < 1024) onClose(); }}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded text-[13px] font-medium transition-colors ${
                     active
-                      ? "bg-[#D98A30]/20 text-[#D98A30] font-semibold"
+                      ? "bg-[#E8923A]/20 text-[#E8923A] font-semibold"
                       : "text-white/60 hover:bg-white/8 hover:text-white/90"
                   }`}
                 >
-                  <i className={`${item.icon} w-4 text-center text-sm shrink-0 ${active ? "text-[#D98A30]" : "text-white/50"}`} />
+                  <i className={`${item.icon} w-4 text-center text-sm shrink-0 ${active ? "text-[#E8923A]" : "text-white/50"}`} />
                   <span className="truncate">{item.label}</span>
-                  {active && <span className="ml-auto w-1 h-4 rounded-full bg-[#D98A30] shrink-0" />}
+                  {active && <span className="ml-auto w-1 h-4 rounded-full bg-[#E8923A] shrink-0" />}
                 </Link>
               );
             })}

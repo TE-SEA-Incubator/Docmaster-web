@@ -88,14 +88,15 @@ export class NotificationController {
   };
 
   /**
-   * Register a push notification token (USER uniquement). Pour PARTNER/AUTORITE,
-   * on retourne un no-op propre (push FCM hors scope pour l'instant).
+   * Register a push notification token (USER, PARTENAIRE, AUTORITE).
    */
   registerPushToken = async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
-      const userId = user?.id;
       const destinataire = this.resolveDestinataire(req);
+      if (!destinataire) {
+        return res.status(401).json({ success: false, message: 'Non authentifié' });
+      }
+
       const { token, platform, device_name, unregister } = req.body;
 
       if (!token) {
@@ -103,26 +104,25 @@ export class NotificationController {
         return;
       }
 
-      // Partenaires/autorités : pas de push FCM pour l'instant
-      if (destinataire && destinataire.type !== 'USER') {
-        return res.json({ success: true, message: 'Push non activé pour ce type de compte.' });
-      }
-
       if (unregister === true) {
-        await this.pushTokenRepository.delete(userId, token);
+        await this.pushTokenRepository.delete(destinataire.id, token);
+        console.log(`🔕 [Push FCM] Token désenregistré pour ${destinataire.type} (${destinataire.id})`);
         res.json({ success: true, message: 'Push token unregistered' });
         return;
       }
 
       await this.pushTokenRepository.upsert({
-        user_id: userId,
+        user_id: destinataire.id,
+        destinataire_type: destinataire.type,
         token,
         platform: platform || 'android',
         device_name: device_name || null,
       });
 
+      console.log(`🔔 [Push FCM] Token enregistré avec succès pour ${destinataire.type} (${destinataire.id}) sur ${platform || 'android'}`);
       res.json({ success: true, message: 'Push token registered' });
     } catch (error: any) {
+      console.error('❌ [Push FCM] Erreur enregistrement token:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   };

@@ -105,7 +105,10 @@ class NokashService {
       }
     };
 
-    console.log('📡 [Nokash Request Body]', JSON.stringify(body, null, 2));
+    console.log(
+      '📡 [Nokash Request Body]',
+      JSON.stringify({ ...body, i_space_key: '***', app_space_key: '***' }, null, 2)
+    );
 
     try {
       const response = await fetch(`${this.baseUrl}/api-payin-request/407`, {
@@ -130,18 +133,20 @@ class NokashService {
    */
   async checkStatus(transactionId: string) {
     try {
-      const url = `${this.baseUrl}/api-payin-request/407/status-request/${transactionId}`;
-      const body = {
-        i_space_key: this.i_space_key?.trim(),
-        app_space_key: this.app_space_key?.trim(),
-      };
+      // Endpoint documenté par Nokash (POST /310/status-request) — attendu en
+      // form url-encoded, le JSON renvoie "transaction_id parameter is missing".
+      const url = `${this.baseUrl}/310/status-request`;
+      const params = new URLSearchParams();
+      params.set('transaction_id', transactionId);
+      if (this.i_space_key?.trim()) params.set('i_space_key', this.i_space_key.trim());
+      if (this.app_space_key?.trim()) params.set('app_space_key', this.app_space_key.trim());
 
-      console.log('📡 [Nokash Status Request]', JSON.stringify({ url, body }, null, 2));
+      console.log('📡 [Nokash Status Request]', JSON.stringify({ url, transaction_id: transactionId }, null, 2));
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
       });
 
       const result = await response.json();

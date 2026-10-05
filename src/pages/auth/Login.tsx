@@ -411,7 +411,7 @@ export default function Login() {
         .blob-1 { width: 260px; height: 240px; background: #A8CBAF; top: -60px; right: -40px; opacity: 0.7; border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%; }
         .blob-2 { width: 130px; height: 120px; background: #E8B89A; top: 10px; right: 200px; opacity: 0.6; border-radius: 50% 60% 40% 55% / 55% 45% 60% 40%; }
         .blob-3 { width: 200px; height: 190px; background: #A8CBAF; bottom: -40px; left: -50px; opacity: 0.6; border-radius: 45% 55% 60% 40% / 60% 40% 55% 45%; }
-        .blob-4 { width: 130px; height: 130px; background: #D98A30; bottom: 30px; right: 20px; border-radius: 50%; opacity: 0.75; }
+        .blob-4 { width: 130px; height: 130px; background: #E8923A; bottom: 30px; right: 20px; border-radius: 50%; opacity: 0.75; }
         .blob-5 { width: 100px; height: 90px; background: #E8B89A; top: 50%; left: 10px; transform: translateY(-50%); opacity: 0.45; border-radius: 55% 45% 50% 50%; }
         @keyframes fadeOut { to { opacity: 0; pointer-events: none; } }
         .modal::backdrop { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }

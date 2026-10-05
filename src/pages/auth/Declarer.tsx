@@ -4,9 +4,10 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
 import DatePicker from "../../components/ui/DatePicker";
-import Topbar from "../../layout/Topbar";
+
 import apiClient from "../../services/api";
 import { useI18n } from "../../context/I18nContext";
+import { useTopbar } from "../../hooks/useTopbar";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -63,6 +64,7 @@ interface DocInstance {
 
 export default function Declarer() {
   const { t } = useI18n();
+  useTopbar(t("declarer_title"), [{ label: t("nav_home"), href: "/dashboard" }, { label: t("declarer_breadcrumb") }]);
   const { user } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -86,6 +88,8 @@ export default function Declarer() {
   const [selectedDocs, setSelectedDocs] = useState<DocInstance[]>([]);
   const instanceCounterRef = useRef(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
+
+  const MAX_DOCS = 5;
 
   // Custom states matching the HTML inputs
   const [lossDate, setLossDate] = useState("");
@@ -208,6 +212,10 @@ export default function Declarer() {
   };
 
   const addDocInstance = (docId: string) => {
+    if (selectedDocs.length >= MAX_DOCS) {
+      toast.warning(t("declarer_alert_max_docs"));
+      return;
+    }
     const key = createInstanceKey(docId);
     fillOwnerName(docId, key);
     setSelectedDocs((prev) => [...prev, { key, docId }]);
@@ -228,6 +236,15 @@ export default function Declarer() {
         if (k.endsWith(`_${instanceKey}`)) delete next[k];
       });
       return next;
+    });
+  };
+
+  const removeLastDocInstance = (docId: string) => {
+    setSelectedDocs((prev) => {
+      const instances = prev.filter((s) => s.docId === docId);
+      if (instances.length === 0) return prev;
+      const lastKey = instances[instances.length - 1].key;
+      return prev.filter((s) => s.key !== lastKey);
     });
   };
 
@@ -515,13 +532,6 @@ export default function Declarer() {
 
   return (
     <Box style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--color-bgMain)" }}>
-      <Topbar
-        title={t("declarer_title")}
-        breadcrumbs={[
-          { label: t("nav_home"), href: "/dashboard" },
-          { label: t("declarer_breadcrumb") },
-        ]}
-      />
 
       <Box
         style={{
@@ -637,14 +647,15 @@ export default function Declarer() {
                   {docTypes.map((doc) => {
                     const count = selectedDocs.filter((s) => s.docId === doc.id).length;
                     return (
-                      <DocTypeCard
-                        key={doc.id}
-                        doc={doc}
-                        selected={count > 0}
-                        count={count}
-                        onToggle={toggleDocType}
-                        onAddMore={addDocInstance}
-                      />
+                        <DocTypeCard
+                          key={doc.id}
+                          doc={doc}
+                          selected={count > 0}
+                          count={count}
+                          onToggle={toggleDocType}
+                          onAddMore={addDocInstance}
+                          onRemoveMore={removeLastDocInstance}
+                        />
                     );
                   })}
                 </SimpleGrid>
@@ -719,45 +730,45 @@ export default function Declarer() {
 
                     return (
                       <Card key={inst.key} padding={0} radius="lg" withBorder style={{ borderColor: hexColor + "30" }}>
-                        <Box
-                          p="md"
+                        <Box p={isMobile ? "xs" : "md"}
                           style={{ background: hexColor + "0D", borderBottom: `1px solid ${hexColor}20`, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
                         >
-                          <Group gap="sm" wrap="nowrap">
-                            <ThemeIcon size={40} radius="md" color="orange" style={{ background: hexColor, color: "white" }}>
-                              <i className={`fa-solid ${meta.icon}`} style={{ fontSize: 16 }} />
+                          <Group gap={isMobile ? "xs" : "sm"} wrap="nowrap">
+                            <ThemeIcon size={isMobile ? 32 : 40} radius="md" color="orange" style={{ background: hexColor, color: "white" }}>
+                              <i className={`fa-solid ${meta.icon}`} style={{ fontSize: isMobile ? 14 : 16 }} />
                             </ThemeIcon>
                             <Box style={{ flex: 1, minWidth: 0 }}>
-                              <Text size="sm" fw={700} style={{ color: hexColor }}>
+                              <Text size={isMobile ? "xs" : "sm"} fw={700} style={{ color: hexColor, wordBreak: "break-word" }}>
                                 {doc?.nom || t("declarer_document")}
                                 {sameTypeCount > 1 ? ` n°${sameTypeIndex}` : ""}
                               </Text>
-                              <Text size="xs" c="dimmed">
+                              <Text size={isMobile ? "10px" : "xs"} c="dimmed">
                                 {t("declarer_document")} {idx + 1} {t("declarer_of")} {selectedDocs.length}
                               </Text>
                             </Box>
-                            <ActionIcon
-                              variant="subtle"
-                              color="red"
-                              onClick={() => removeDocInstance(inst.key)}
-                              aria-label={t("declarer_remove_document")}
-                              title={t("declarer_remove_document")}
-                            >
-                              <i className="fa-solid fa-trash-can" style={{ fontSize: 13 }} />
-                            </ActionIcon>
-                            <Badge
-                              size="sm"
-                              radius="xl"
-                              variant="light"
-                              color={isComplete ? "green" : "gray"}
-                              leftSection={<i className={`fa-solid ${isComplete ? "fa-circle-check" : "fa-circle"}`} style={{ fontSize: 9 }} />}
-                            >
-                              {isComplete ? t("declarer_completed") : t("declarer_pending")}
-                            </Badge>
-                          </Group>
-                        </Box>
-                        <Box p="md">
-                          <Stack gap="md">
+                              <ActionIcon
+                                variant="subtle"
+                                color="red"
+                                onClick={() => removeDocInstance(inst.key)}
+                                aria-label={t("declarer_remove_document")}
+                                title={t("declarer_remove_document")}
+                                size={isMobile ? "sm" : "md"}
+                              >
+                                <i className="fa-solid fa-trash-can" style={{ fontSize: isMobile ? 12 : 13 }} />
+                              </ActionIcon>
+                              <Badge
+                                size={isMobile ? "xs" : "sm"}
+                                radius="xl"
+                                variant="light"
+                                color={isComplete ? "green" : "gray"}
+                                leftSection={<i className={`fa-solid ${isComplete ? "fa-circle-check" : "fa-circle"}`} style={{ fontSize: isMobile ? 8 : 9 }} />}
+                              >
+                                {isComplete ? t("declarer_completed") : t("declarer_pending")}
+                              </Badge>
+                            </Group>
+                          </Box>
+                        <Box p={isMobile ? "xs" : "md"}>
+                          <Stack gap={isMobile ? "xs" : "md"}>
                             {meta.fields.filter((f) => !(hasExp && f.id === "date_expiration")).map((field) => (
                               <Box key={field.id}>
                                 <FieldLabel

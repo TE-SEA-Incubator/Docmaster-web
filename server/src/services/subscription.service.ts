@@ -7,9 +7,68 @@ import { v4 as uuidv4 } from 'uuid';
 
 class SubscriptionService {
   private resolveObjectsLimit(features: any) {
-    const rawLimit = features?.objects ?? features?.objects_limit ?? 0;
+    const normalized = this.normalizePlanFeatures(features);
+    const rawLimit = normalized.objects_limit ?? 0;
     const parsed = Number(rawLimit);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }
+
+  /**
+   * Normalize plan.features JSON (legacy keys + current seed format)
+   */
+  normalizePlanFeatures(raw: any) {
+    if (!raw) {
+      return {
+        docs_per_type: 1,
+        objects_limit: 2,
+        sms_alerts: false,
+        email_alerts: true,
+        push_alerts: true,
+        geo_tracking: false,
+        expiration_management: true,
+        expiration_reminders: false,
+        auto_archive: true,
+        export_data: false,
+        history_days: 30,
+      };
+    }
+    const f = typeof raw === 'string' ? JSON.parse(raw) : { ...raw };
+    const alerts: string[] = Array.isArray(f.alerts) ? f.alerts : [];
+
+    return {
+      ...f,
+      docs_per_type: Number(f.docs_per_type ?? f.max_declarations ?? 1),
+      objects_limit: Number(f.objects_limit ?? f.objects ?? 2),
+      sms_alerts:
+        f.sms_alerts === true || alerts.includes('sms') || alerts.includes('all'),
+      email_alerts:
+        f.email_alerts === true ||
+        alerts.includes('email') ||
+        alerts.includes('all') ||
+        (f.email_alerts !== false && f.email_alerts === undefined && alerts.length === 0),
+      push_alerts:
+        f.push_alerts !== false &&
+        (f.push_alerts === true || alerts.includes('push') || alerts.includes('all') || f.push_alerts === undefined),
+      geo_tracking:
+        f.geo_tracking === true || (f.geo && f.geo !== 'none' && f.geo !== false),
+      expiration_management: f.expiration_management === true,
+      expiration_reminders: f.expiration_reminders === true,
+      auto_archive: f.auto_archive !== false,
+      export_data: f.export_data === true,
+      priority_support: f.priority_support === true,
+      verified_badge: f.verified_badge === true,
+      ads_free: f.ads_free === true,
+      history_days: Number(f.history_days ?? 30),
+    };
+  }
+
+  private async resolveFeaturesForUser(userId: string) {
+    const activeSub = await this.getActiveSubscription(userId);
+    if (activeSub?.features) {
+      return this.normalizePlanFeatures(activeSub.features);
+    }
+    const freePlan = await query("SELECT features FROM plans WHERE id = 'free'");
+    return this.normalizePlanFeatures(freePlan.rows[0]?.features);
   }
 
   async getAllSubscriptions() {
@@ -135,6 +194,9 @@ class SubscriptionService {
   async activateSubscription(userId: string, planId: string, months: number = 1) {
     const planRes = await query('SELECT * FROM plans WHERE id = $1', [planId]);
     const plan = planRes.rows[0];
+    if (!plan) {
+      throw new Error(`Plan introuvable: ${planId}`);
+    }
 
     // Determine start date (Stacking logic)
     const latestSubRes = await query(
@@ -200,17 +262,50 @@ class SubscriptionService {
   }
 
   async getUserUsage(userId: string) {
-    const activeSub = await this.getActiveSubscription(userId);
+    let activeSub = await this.getActiveSubscription(userId);
+
+    // Auto-create free subscription if user has none
+    if (!activeSub) {
+      const existingFree = await query(
+        "SELECT id FROM user_subscriptions WHERE user_id = $1 AND plan_id = 'free' AND status = 'ACTIVE' LIMIT 1",
+        [userId]
+      );
+      if (existingFree.rows.length === 0) {
+        // Get user creation date for date_debut
+        const userRes = await query("SELECT created_at FROM users WHERE id = $1", [userId]);
+        const userCreatedAt = userRes.rows[0]?.created_at || new Date();
+
+        const newSub = await subscriptionRepository.create({
+          user_id: userId,
+          plan_id: 'free',
+          date_debut: userCreatedAt,
+          date_fin: null,
+          status: 'ACTIVE',
+          avantages_restants: { declarations: 0 }
+        });
+        activeSub = newSub;
+        // Enrich with plan data
+        const planRes = await query("SELECT name, features FROM plans WHERE id = 'free'");
+        if (planRes.rows[0]) {
+          activeSub.plan_name = planRes.rows[0].name;
+          activeSub.features = planRes.rows[0].features;
+        }
+      } else {
+        // Re-fetch with plan data
+        activeSub = await this.getActiveSubscription(userId);
+      }
+    }
+
     let planData;
     let features;
 
     if (!activeSub) {
       const freePlan = await query("SELECT * FROM plans WHERE id = 'free'");
-      planData = freePlan.rows[0] || { name: 'Gratuit', features: { docs_per_type: 1, objects: 2, alerts: ['email'] } };
-      features = planData.features || { docs_per_type: 1, objects: 2, alerts: ['email'] };
+      planData = freePlan.rows[0] || { name: 'Gratuit', features: {} };
+      features = this.normalizePlanFeatures(planData.features);
     } else {
-      planData = activeSub; // Contains plan_name, etc.
-      features = activeSub.features;
+      planData = activeSub;
+      features = this.normalizePlanFeatures(activeSub.features);
     }
 
     // 1. Objects Usage (Docs + Devices)
@@ -219,8 +314,14 @@ class SubscriptionService {
     const currentObjects = parseInt(docsCountRes.rows[0].count) + parseInt(devicesCountRes.rows[0].count);
     const objectsLimit = this.resolveObjectsLimit(features) || 2;
 
-    // 2. Declarations Usage (Current active declarations)
-    const declCountRes = await query(`SELECT COUNT(*) FROM declarations WHERE reporter_id = $1 AND status != 'RECOVERED'`, [userId]);
+    // 2. Declarations Usage (active LOST declarations only)
+    const declCountRes = await query(
+      `SELECT COUNT(*) FROM declarations
+       WHERE reporter_id = $1
+         AND declaration_type = 'LOST'
+         AND status NOT IN ('RETURNED', 'CANCELLED', 'CLAIMED')`,
+      [userId]
+    );
     const currentDeclarations = parseInt(declCountRes.rows[0].count);
     // Since docs_per_type is per type, we might want an overall limit or just show the max.
     // For simplicity, let's use the sum of docs_per_type * estimated common types (e.g. 5) 
@@ -232,10 +333,41 @@ class SubscriptionService {
     // Calculate percentage based on objects (most tangible limit)
     const percentage = objectsLimit > 0 ? Math.min(Math.round((currentObjects / objectsLimit) * 100), 100) : 100;
 
+    let daysRemaining: number | null = null;
+    let daysTotal: number | null = null;
+    let daysUsed = 0;
+    let subscriptionEnd: string | null = null;
+    let subscriptionStart: string | null = null;
+
+    if (activeSub?.date_fin) {
+      subscriptionEnd = activeSub.date_fin;
+      subscriptionStart = activeSub.date_debut;
+      const end = new Date(activeSub.date_fin).getTime();
+      const start = new Date(activeSub.date_debut).getTime();
+      const now = Date.now();
+      daysTotal = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+      daysRemaining = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
+      daysUsed = Math.min(daysTotal, Math.max(0, daysTotal - daysRemaining));
+    } else if (activeSub?.date_debut) {
+      // Free plan (date_fin is NULL = permanent) → cycle mensuel
+      subscriptionStart = activeSub.date_debut;
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      daysTotal = lastDay.getDate();
+      daysUsed = now.getDate();
+      daysRemaining = daysTotal - daysUsed;
+    }
+
     return {
       plan_name: planData.plan_name || planData.name,
       subscription_id: activeSub?.id,
       expires_at: activeSub?.date_fin,
+      subscription_end: activeSub?.date_fin,
+      subscription_start: activeSub?.date_debut,
+      days_remaining: daysRemaining,
+      days_total: daysTotal,
+      days_used: daysUsed,
       usage: {
         objects: currentObjects,
         declarations: currentDeclarations,
@@ -244,9 +376,20 @@ class SubscriptionService {
       limits: {
         objects: objectsLimit,
         docs_per_type: features.docs_per_type,
-        alerts: features.alerts || [],
-        geo: features.geo || 'none'
+        sms_alerts: features.sms_alerts,
+        email_alerts: features.email_alerts,
+        push_alerts: features.push_alerts,
+        geo_tracking: features.geo_tracking,
+        expiration_management: features.expiration_management,
+        expiration_reminders: features.expiration_reminders,
+        auto_archive: features.auto_archive,
+        export_data: features.export_data,
+        history_days: features.history_days,
+        priority_support: features.priority_support,
+        verified_badge: features.verified_badge,
+        ads_free: features.ads_free,
       },
+      features,
       percentage,
       // Legacy fields for backward compatibility (e.g. Dashboard)
       doc_limit: objectsLimit,
@@ -262,37 +405,52 @@ class SubscriptionService {
    */
   async validateAction(userId: string, action: string, metadata: any = {}) {
     const activeSub = await this.getActiveSubscription(userId);
-    
-    // Default to FREE plan if no active subscription (or if we want to force active sub)
-    // For DocMaster, every user might have a default FREE plan entry, but if not, we handle it.
+    const features = await this.resolveFeaturesForUser(userId);
+
     if (!activeSub) {
-      // If no subscription, we might want to fetch the FREE plan features from the DB
-      const freePlan = await query("SELECT * FROM plans WHERE id = 'free'");
-      const features = freePlan.rows[0]?.features || { docs_per_type: 1, objects: 2, alerts: ['email'] };
       return this.checkLimits(userId, action, features, null, metadata);
     }
 
-    // Check if user has "free declarations" from referral
     if (action === 'CREATE_DECLARATION' && activeSub.avantages_restants?.declarations > 0) {
       return { allowed: true, useBenefit: true, subscriptionId: activeSub.id };
     }
 
-    return this.checkLimits(userId, action, activeSub.features, activeSub, metadata);
+    return this.checkLimits(userId, action, features, activeSub, metadata);
   }
 
-  private async checkLimits(userId: string, action: string, features: any, subscription: any, metadata: any) {
+  private async checkLimits(userId: string, action: string, rawFeatures: any, subscription: any, metadata: any) {
+    const features = this.normalizePlanFeatures(rawFeatures);
     switch (action) {
       case 'CREATE_DECLARATION': {
         const docTypeId = metadata.docTypeId;
-        if (!docTypeId) throw new Error("docTypeId requis pour valider la déclaration");
+        const docTypeCode = metadata.docTypeCode;
+        if (!docTypeId && !docTypeCode) {
+          throw new Error('docTypeId requis pour valider la déclaration');
+        }
 
-        // Get count of existing declarations for this type in the current period
-        // For simplicity, let's count active declarations
-        const sql = `SELECT COUNT(*) FROM declarations WHERE reporter_id = $1 AND doc_type = $2 AND status != 'RECOVERED'`;
-        const countRes = await query(sql, [userId, docTypeId]);
+        const sql = `
+          SELECT COUNT(*) FROM declarations
+          WHERE reporter_id = $1
+            AND declaration_type = 'LOST'
+            AND status NOT IN ('RETURNED', 'CANCELLED', 'CLAIMED')
+            AND (
+              doc_type = $2
+              OR ($3::text IS NOT NULL AND doc_type = $3)
+              OR doc_type::text = $2::text
+            )
+        `;
+        const countRes = await query(sql, [userId, docTypeId, docTypeCode || null]);
         const currentCount = parseInt(countRes.rows[0].count);
 
-        const limit = features.docs_per_type || 0;
+        const limit = features.docs_per_type ?? 1;
+        if (limit <= 0) {
+          return {
+            allowed: false,
+            reason: 'Votre plan ne permet pas de créer de déclarations de perte.',
+            current: currentCount,
+            limit: 0,
+          };
+        }
         if (currentCount >= limit) {
           return { 
             allowed: false, 
@@ -305,35 +463,70 @@ class SubscriptionService {
       }
 
       case 'ADD_ALERT': {
-        const alertType = metadata.alertType; // 'email', 'sms', 'push'
-        const key = alertType === 'sms' ? 'sms_alerts' : alertType === 'email' ? 'email_alerts' : alertType;
-        const allowed = features[key] === true || features.alerts?.includes(alertType) || features.alerts?.includes('all');
-        if (!allowed) {
-          return { 
-            allowed: false, 
-            reason: `Votre plan ne supporte pas les alertes par ${alertType}.`
-          };
+        const alertType = metadata.alertType as string;
+        if (alertType === 'push') {
+          return features.push_alerts
+            ? { allowed: true }
+            : { allowed: false, reason: 'Les notifications push ne sont pas incluses dans votre plan.' };
         }
-        return { allowed: true };
+        if (alertType === 'sms') {
+          return features.sms_alerts
+            ? { allowed: true }
+            : { allowed: false, reason: 'Votre plan ne supporte pas les alertes par SMS.' };
+        }
+        if (alertType === 'email') {
+          return features.email_alerts
+            ? { allowed: true }
+            : { allowed: false, reason: 'Votre plan ne supporte pas les alertes par email.' };
+        }
+        return { allowed: false, reason: `Type d'alerte inconnu: ${alertType}` };
       }
 
       case 'GEO_TRACK': {
-        const level = features.geo; // 'basic', 'advanced'
-        if (!level || (metadata.required === 'advanced' && level === 'basic')) {
-          return { 
-            allowed: false, 
-            reason: "Géolocalisation avancée non incluse dans votre plan."
+        if (!features.geo_tracking) {
+          return {
+            allowed: false,
+            reason: 'La géolocalisation avancée n\'est pas incluse dans votre plan.',
           };
         }
         return { allowed: true };
       }
 
       case 'EXPIRATION_MGMT': {
-        const allowed = features.expiration_management === true;
-        if (!allowed) {
+        if (!features.expiration_management) {
           return {
             allowed: false,
-            reason: "Votre plan ne permet pas de définir une date d'expiration sur les documents. Passez à une offre supérieure."
+            reason: "Votre plan ne permet pas de définir une date d'expiration sur les documents.",
+          };
+        }
+        return { allowed: true };
+      }
+
+      case 'EXPIRATION_REMINDERS': {
+        if (!features.expiration_reminders) {
+          return {
+            allowed: false,
+            reason: 'Les rappels d\'expiration par email ne sont pas inclus dans votre plan.',
+          };
+        }
+        return { allowed: true };
+      }
+
+      case 'AUTO_ARCHIVE': {
+        if (!features.auto_archive) {
+          return {
+            allowed: false,
+            reason: 'L\'archivage automatique n\'est pas inclus dans votre plan.',
+          };
+        }
+        return { allowed: true };
+      }
+
+      case 'EXPORT_DATA': {
+        if (!features.export_data) {
+          return {
+            allowed: false,
+            reason: 'L\'export de données n\'est pas inclus dans votre plan.',
           };
         }
         return { allowed: true };
@@ -371,17 +564,19 @@ class SubscriptionService {
    */
   async consumeBenefit(subscriptionId: string, benefitType: string) {
     if (benefitType === 'declaration') {
-      const sub = await subscriptionRepository.findById(subscriptionId);
-      if (sub && sub.avantages_restants?.declarations > 0) {
-        const newAvantages = { ...sub.avantages_restants };
-        newAvantages.declarations -= 1;
-        
-        await query(
-          'UPDATE user_subscriptions SET avantages_restants = $1 WHERE id = $2',
-          [JSON.stringify(newAvantages), subscriptionId]
-        );
-        return true;
-      }
+      const result = await query(
+        `UPDATE user_subscriptions
+         SET avantages_restants = jsonb_set(
+           COALESCE(avantages_restants, '{}'::jsonb),
+           '{declarations}',
+           to_jsonb(GREATEST(0, COALESCE((avantages_restants->>'declarations')::int, 0) - 1))
+         )
+         WHERE id = $1
+           AND COALESCE((avantages_restants->>'declarations')::int, 0) > 0
+         RETURNING id`,
+        [subscriptionId]
+      );
+      return result.rows.length > 0;
     }
     return false;
   }

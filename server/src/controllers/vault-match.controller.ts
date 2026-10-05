@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { DeclarationRepository } from '../repositories/declaration.repository.ts';
 import { MatchRepository } from '../repositories/match.repository.ts';
-import { ClaimRepository } from '../repositories/claim.repository.ts';
 import { DocumentRepository } from '../repositories/document.repository.ts';
 import { DocumentTypeRepository } from '../repositories/document-type.repository.ts';
 import { NotificationService } from '../services/notification.service.ts';
@@ -9,14 +8,9 @@ import { pool } from '../database/db.js';
 
 const declarationRepository = new DeclarationRepository();
 const matchRepository = new MatchRepository();
-const claimRepository = new ClaimRepository();
 const documentRepository = new DocumentRepository();
 const docTypeRepository = new DocumentTypeRepository();
 const notificationService = new NotificationService();
-
-function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
 
 async function generateLostIdentifiant(): Promise<string> {
   const now = new Date();
@@ -39,36 +33,45 @@ export async function respondVaultMatch(req: Request, res: Response) {
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
+      console.warn('[VaultMatch] Requête sans userId');
       return res.status(401).json({ success: false, message: 'Non authentifié' });
     }
 
     const { declaration_id, vault_doc_id, response } = req.body;
+    console.log(`[VaultMatch] Requête reçue — userId=${userId}, declaration_id=${declaration_id}, vault_doc_id=${vault_doc_id}, response=${response}`);
 
     if (!declaration_id || !response || !['yes', 'no'].includes(response)) {
+      console.warn(`[VaultMatch] Paramètres invalides — declaration_id=${declaration_id}, response=${response}`);
       return res.status(400).json({
         success: false,
         message: 'Paramètres invalides. declaration_id et response (yes/no) requis.',
       });
     }
 
+    console.log(`[VaultMatch] Recherche déclaration ${declaration_id}...`);
     const foundDecl = await declarationRepository.findById(declaration_id);
     if (!foundDecl) {
+      console.warn(`[VaultMatch] ❌ Déclaration ${declaration_id} introuvable en base`);
       return res.status(404).json({ success: false, message: 'Déclaration introuvable' });
     }
+    console.log(`[VaultMatch] Déclaration trouvée — type=${foundDecl.declaration_type}, status=${foundDecl.status}, doc_type=${foundDecl.doc_type}`);
 
     if (foundDecl.declaration_type !== 'FOUND') {
+      console.warn(`[VaultMatch] Mauvais type de déclaration — attendu FOUND, reçu ${foundDecl.declaration_type}`);
       return res.status(400).json({ success: false, message: 'La déclaration doit être de type FOUND' });
     }
 
     if (response === 'yes') {
-      // Get the vault document info for the lost declaration
+      console.log(`[VaultMatch] Confirmation positive — vault_doc_id=${vault_doc_id}`);
       let vaultDoc = null;
       if (vault_doc_id) {
+        console.log(`[VaultMatch] Recherche document vault ${vault_doc_id}...`);
         vaultDoc = await documentRepository.findById(vault_doc_id);
+        console.log(`[VaultMatch] Document vault ${vaultDoc ? 'trouvé' : 'introuvable'}`);
       }
 
-      // Create a LOST declaration for the vault owner
       const lostIdentifiant = await generateLostIdentifiant();
+      console.log(`[VaultMatch] Création déclaration LOST identifiant=${lostIdentifiant}`);
       const lostDecl = await declarationRepository.create({
         identifiant_doc_dm: lostIdentifiant,
         doc_type: foundDecl.doc_type,
@@ -85,12 +88,12 @@ export async function respondVaultMatch(req: Request, res: Response) {
         mode_contact: 'APP_CHAT',
         metadata: { source: 'vault_confirmation', vault_doc_id },
       });
+      console.log(`[VaultMatch] Déclaration LOST créée — id=${lostDecl.id}`);
 
-      // Now mark it as MATCHED since it's confirmed
       await declarationRepository.updateStatus(lostDecl.id, 'MATCHED');
       await declarationRepository.updateStatus(foundDecl.id, 'MATCHED');
+      console.log(`[VaultMatch] Statuts mis à jour — LOST=${lostDecl.id}, FOUND=${foundDecl.id}`);
 
-      // Create the match between the new LOST and existing FOUND
       const match = await matchRepository.create(
         lostDecl.id,
         foundDecl.id,
@@ -98,43 +101,44 @@ export async function respondVaultMatch(req: Request, res: Response) {
         'CONFIRMED',
         { source: 'vault_confirmation', vault_doc_id },
       );
+      console.log(`[VaultMatch] Match créé — id=${match?.id}`);
 
-      // Update vault doc's lost status
       if (vault_doc_id) {
         await documentRepository.updateLostStatus(vault_doc_id, userId, true, lostDecl.id);
+        console.log(`[VaultMatch] Document vault marqué comme perdu`);
       }
 
-      // Create a claim
-      const verificationCode = generateVerificationCode();
-      await claimRepository.create({
-        doc_id: foundDecl.id,
-        owner_id: userId,
-        finder_id: foundDecl.reporter_id!,
-        verification_code: verificationCode,
-        status: 'PENDING',
-      });
-
-      // Resolve doc type name
       const meta = await docTypeRepository.findById(foundDecl.doc_type)
-                || await docTypeRepository.findByCode(foundDecl.doc_type);
+        || await docTypeRepository.findByCode(foundDecl.doc_type);
       const docTypeLabel = meta?.nom || foundDecl.doc_type;
 
-      await notificationService.notifyMatchFound(
-        userId,
-        foundDecl.reporter_id!,
-        lostDecl.id,
-        docTypeLabel,
-      );
+      const finderId =
+        foundDecl.reporter_type === 'PARTENAIRE' ? null : foundDecl.reporter_id;
 
+      try {
+        await notificationService.notifyMatchFound(
+          userId,
+          finderId,
+          lostDecl.id,
+          docTypeLabel,
+        );
+        console.log(`[VaultMatch] Notification MATCH_FOUND envoyée`);
+      } catch (notifyErr) {
+        console.error('[VaultMatch] notifyMatchFound failed (non-blocking):', notifyErr);
+      }
+
+      console.log(`[VaultMatch] ✅ Match confirmé avec succès — lost=${lostDecl.id}, found=${foundDecl.id}`);
       return res.json({
         success: true,
-        message: 'Match confirmé. Le findeur a été notifié.',
+        message: 'Match confirmé. Vous pouvez procéder à la récupération.',
         match,
+        lost_declaration_id: lostDecl.id,
+        found_declaration_id: foundDecl.id,
       });
     }
 
     if (response === 'no') {
-      console.log(`[VaultMatch] User ${userId} rejected vault match for declaration ${declaration_id}`);
+      console.log(`[VaultMatch] ❌ Rejet — userId=${userId}, declaration_id=${declaration_id}`);
       return res.json({
         success: true,
         message: 'Merci de nous avoir informé. Aucune action supplémentaire ne sera prise.',

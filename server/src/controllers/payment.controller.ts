@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { subscriptionService } from '../services/subscription.service.ts';
 import { notificationService } from '../services/notification.service.ts';
 import { nokashService } from '../services/nokash.service.ts';
+import { resolveLostFoundPair } from '../utils/recovery.utils.ts';
 
 const NOKASH_POLL_INTERVAL_MS = 5000;
 const NOKASH_POLL_TIMEOUT_MS = 5 * 60 * 1000;
@@ -15,6 +16,18 @@ const nokashPollTimers = new Map<string, ReturnType<typeof setInterval>>();
  */
 export const nokashCallback = async (req: Request, res: Response) => {
   console.log('Nokash Callback Received:', req.body);
+
+  const webhookSecret = process.env.NOKASH_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const provided =
+      (req.headers['x-nokash-secret'] as string | undefined) ||
+      (req.headers['x-webhook-secret'] as string | undefined) ||
+      (req.body?.webhook_secret as string | undefined);
+    if (provided !== webhookSecret) {
+      console.warn('[Nokash Callback] Rejected: invalid webhook secret');
+      return res.status(401).json({ success: false, message: 'Unauthorized callback' });
+    }
+  }
   
   const { id, status, orderId } = req.body;
 
@@ -28,8 +41,13 @@ export const nokashCallback = async (req: Request, res: Response) => {
 
     const transaction = transRes.rows[0];
 
-    // 2. Normalize status (accept SUCCESS, SUCCEEDED, SUCCESSFUL, PAID, COMPLETED, etc.)
     const normalized = normalizeNokashStatus({ status });
+
+    if (transaction.status === 'SUCCESS' && normalized.success) {
+      return res.status(200).json({ success: true, message: 'Transaction déjà traitée' });
+    }
+
+    // 2. Normalize status (accept SUCCESS, SUCCEEDED, SUCCESSFUL, PAID, COMPLETED, etc.)
 
     if (normalized.success && transaction.status === 'PENDING') {
       let metadata = transaction.metadata;
@@ -41,10 +59,13 @@ export const nokashCallback = async (req: Request, res: Response) => {
         }
       }
 
-      const { planId, months } = metadata || {};
-
-      // Update transaction status
-      await query('UPDATE transactions SET status = $1 WHERE id = $2', ['SUCCESS', transaction.id]);
+      const locked = await query(
+        'UPDATE transactions SET status = $1 WHERE id = $2 AND status = $3 RETURNING *',
+        ['SUCCESS', transaction.id, 'PENDING']
+      );
+      if (locked.rows.length === 0) {
+        return res.status(200).json({ success: true, message: 'Transaction déjà traitée' });
+      }
 
       // Handle based on transaction type
       if (transaction.type === 'subscription') {
@@ -176,12 +197,29 @@ export const payRecovery = async (req: Request, res: Response) => {
           }
         }
       }
-        // 1. Check if declaration exists
-        const declRes = await query('SELECT * FROM declarations WHERE id = $1', [docId]);
-        if (declRes.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Déclaration non trouvée' });
+        // 1. Resolve LOST declaration and verify ownership
+        let pair;
+        try {
+          const { assertOwnerCanPayRecovery } = await import('../utils/recovery.utils.ts');
+          pair = await assertOwnerCanPayRecovery(userId, docId);
+        } catch (authErr: any) {
+          return res.status(403).json({ success: false, message: authErr.message });
         }
-        const declaration = declRes.rows[0];
+
+        const lostId = pair.lostId;
+        const declaration = pair.lostDecl;
+
+        if (declaration.payment_status === 'PAID') {
+            const claimRow = await query(
+              'SELECT verification_code FROM claims WHERE doc_id = $1 AND owner_id = $2 AND status = $3 ORDER BY created_at DESC LIMIT 1',
+              [lostId, userId, 'PAID']
+            );
+            return res.status(200).json({
+              success: true,
+              message: 'Paiement déjà effectué pour ce document.',
+              data: { paid: true, verification_code: claimRow.rows[0]?.verification_code ?? null },
+            });
+        }
 
         // 2. Fetch document type to get pricing/commission
         const docTypeRes = await query('SELECT * FROM document_types WHERE code = $1 OR id::text = $1', [declaration.doc_type]);
@@ -226,13 +264,13 @@ export const payRecovery = async (req: Request, res: Response) => {
           // If points, validate points balance
           const { pointsService } = await import('../services/points.service.ts');
           const pointsNeeded = await pointsService.calculatePointsNeeded(finalAmount);
-          await pointsService.redeemPoints(userId, pointsNeeded, 'POINTS_REDEMPTION', `Paiement récupération doc ${docId}`, { docId });
+          await pointsService.redeemPoints(userId, pointsNeeded, 'POINTS_REDEMPTION', `Paiement récupération doc ${lostId}`, { docId: lostId });
         }
 
         // 4. Create PENDING transaction (or SUCCESS if points)
-        await query(
+        const txInsert = await query(
             `INSERT INTO transactions (user_id, amount, currency, status, payment_method, type, external_ref, metadata) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
             [
                 userId, 
                 finalAmount, 
@@ -241,15 +279,16 @@ export const payRecovery = async (req: Request, res: Response) => {
                 paymentMethod,
                 'recovery_fee', 
                 isPoints ? orderId : nokashRes.data.id,
-                JSON.stringify({ docId })
+                JSON.stringify({ docId: lostId })
             ]
         );
+        const recoveryTxId = txInsert.rows[0].id;
 
         if (isPoints) {
-          await activateRecovery(userId, docId, orderId);
+          await activateRecovery(userId, lostId, recoveryTxId);
           const claimRow = await query(
-            'SELECT verification_code FROM claims WHERE doc_id = $1 AND owner_id = $2 ORDER BY created_at DESC LIMIT 1',
-            [docId, userId]
+            'SELECT verification_code FROM claims WHERE doc_id = $1 AND owner_id = $2 AND status = $3 ORDER BY created_at DESC LIMIT 1',
+            [lostId, userId, 'PAID']
           );
           const verificationCode = claimRow.rows[0]?.verification_code ?? null;
           return res.status(200).json({
@@ -286,69 +325,132 @@ export const payRecovery = async (req: Request, res: Response) => {
  */
 export async function activateRecovery(userId: string, docId: string, transactionId: string) {
     try {
-        // 1. Fetch data
-        const declRes = await query('SELECT * FROM declarations WHERE id = $1', [docId]);
-        const declaration = declRes.rows[0];
+        const pair = await resolveLostFoundPair(docId);
+        if (!pair) {
+          console.warn(`[activateRecovery] Cannot resolve LOST declaration for ${docId}`);
+          return;
+        }
+
+        const lostId = pair.lostId;
+        const declaration = pair.lostDecl;
+
+        if (declaration.reporter_id !== userId) {
+          console.warn(`[activateRecovery] User ${userId} is not owner of LOST ${lostId}`);
+          return;
+        }
+
+        if (declaration.payment_status === 'PAID') {
+          console.log(`[activateRecovery] Already paid for doc ${lostId}, skipping`);
+          return;
+        }
+
         const docTypeRes = await query('SELECT * FROM document_types WHERE code = $1 OR id::text = $1', [declaration.doc_type]);
         const docType = docTypeRes.rows[0];
 
-        // 2. Generate verification code
+        // Le fait d'encaissement est copié sur le claim : la récompense du trouveur se calcule
+        // sur ce qui a réellement été payé, pas sur le tarif en vigueur au moment de la validation.
+        let payment: { id: string; amount: number } | null = null;
+        if (transactionId) {
+          const txRes = await query(
+            `SELECT id, amount, status FROM transactions
+             WHERE id::text = $1 OR external_ref = $1
+             ORDER BY created_at DESC LIMIT 1`,
+            [transactionId]
+          );
+          const tx = txRes.rows[0];
+          if (tx && tx.status === 'SUCCESS') {
+            // transactions.amount est toujours exprimé en XAF, y compris pour un règlement en
+            // points : la colonne currency du paiement désigne le moyen, pas l'unité du montant.
+            payment = { id: tx.id, amount: Number(tx.amount) };
+          } else {
+            console.warn(`[activateRecovery] No SUCCESS transaction found for ref ${transactionId}`);
+          }
+        }
+
         const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // 3. Identify finder
-        const matchRes = await query(
-            `SELECT * FROM matches 
-             WHERE (lost_declaration_id = $1 OR found_declaration_id = $1) 
+        let finderId: string | null = null;
+        if (pair.foundDecl?.reporter_id) {
+          finderId = pair.foundDecl.reporter_id;
+        } else {
+          const matchRes = await query(
+            `SELECT * FROM matches
+             WHERE lost_declaration_id = $1 OR found_declaration_id = $1
              ORDER BY created_at DESC LIMIT 1`,
-            [docId]
-        );
-
-        let finderId = null;
-        if (matchRes.rows.length > 0) {
+            [lostId]
+          );
+          if (matchRes.rows.length > 0) {
             const match = matchRes.rows[0];
-            const otherId = match.lost_declaration_id === docId ? match.found_declaration_id : match.lost_declaration_id;
+            const otherId =
+              match.lost_declaration_id === lostId ? match.found_declaration_id : match.lost_declaration_id;
             const otherDeclRes = await query('SELECT reporter_id FROM declarations WHERE id = $1', [otherId]);
             if (otherDeclRes.rows.length > 0) {
-                finderId = otherDeclRes.rows[0].reporter_id;
+              finderId = otherDeclRes.rows[0].reporter_id;
             }
+          }
         }
 
-        // 4. Create or update claim
-        const claimRes = await query('SELECT id FROM claims WHERE doc_id = $1 AND owner_id = $2', [docId, userId]);
+        const claimRes = await query(
+          'SELECT id FROM claims WHERE doc_id = $1 AND owner_id = $2 ORDER BY created_at DESC LIMIT 1',
+          [lostId, userId]
+        );
+        let claimId: string;
         if (claimRes.rows.length > 0) {
+            claimId = claimRes.rows[0].id;
             await query(
-                'UPDATE claims SET status = $1, verification_code = $2, finder_id = $3 WHERE id = $4',
-                ['PAID', verificationCode, finderId, claimRes.rows[0].id]
+                'UPDATE claims SET status = $1, verification_code = $2, finder_id = $3, amount = $4, transaction_id = $5 WHERE id = $6',
+                ['PAID', verificationCode, finderId, payment?.amount ?? null, payment?.id ?? null, claimId]
             );
         } else {
-            await query(
-                'INSERT INTO claims (doc_id, owner_id, finder_id, verification_code, status) VALUES ($1, $2, $3, $4, $5)',
-                [docId, userId, finderId, verificationCode, 'PAID']
+            const inserted = await query(
+                'INSERT INTO claims (doc_id, owner_id, finder_id, verification_code, status, amount, transaction_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+                [lostId, userId, finderId, verificationCode, 'PAID', payment?.amount ?? null, payment?.id ?? null]
             );
+            claimId = inserted.rows[0].id;
         }
 
-        // 5. Update declaration status
-        await query('UPDATE declarations SET payment_status = $1, status = $2 WHERE id = $3', ['PAID', 'MATCHED', docId]);
+        await query(
+          'UPDATE declarations SET payment_status = $1, status = $2 WHERE id = $3',
+          ['PAID', 'MATCHED', lostId]
+        );
+        if (pair.foundId) {
+          await query(
+            `UPDATE declarations SET status = 'MATCHED' WHERE id = $1 AND status NOT IN ('RETURNED', 'CANCELLED')`,
+            [pair.foundId]
+          );
+        }
 
         const { activityLogService } = await import('../services/activity-log.service.ts');
         activityLogService.log({
           user_id: userId,
           action_type: 'RECOVERY_PAYMENT',
           entity_type: 'declaration',
-          entity_id: docId,
-          description: `Paiement des frais de récupération pour le document ${docId}`,
-          metadata: { docId, finderId, verificationCode },
+          entity_id: lostId,
+          description: `Paiement des frais de récupération pour le document ${lostId}`,
+          metadata: { docId: lostId, finderId, verificationCode, transactionId },
         });
 
-        // 6. Notify finder
         if (finderId) {
             await notificationService.createNotification({
                 user_id: finderId,
                 type: 'PAYMENT_PENDING',
                 title: 'Paiement effectué par le propriétaire',
-                message: `Le propriétaire a payé les frais. Vous recevrez votre récompense une fois le code de vérification validé lors de la remise.`,
-                metadata: { docId }
+                message: `Le propriétaire a payé les frais. Validez le code lors de la remise pour recevoir votre récompense.`,
+                metadata: { docId: lostId }
             });
+        }
+
+        // activateRecovery() est le point de convergence des 4 voies de paiement (NoKash, points,
+        // webhook, cron) : ouvrir le fil ici garantit qu'un document payé a toujours une conversation.
+        try {
+            const { messagingService } = await import('../services/messaging.service.ts');
+            await messagingService.openConversationForPair({
+                claimId,
+                lostDeclaration: { ...declaration, id: lostId },
+                foundDeclaration: pair.foundId && pair.foundDecl ? { ...pair.foundDecl, id: pair.foundId } : null,
+            });
+        } catch (conversationErr) {
+            console.error('[activateRecovery] Échec d’ouverture de la conversation:', conversationErr);
         }
     } catch (err) {
         console.error('Error activating recovery:', err);
@@ -409,7 +511,14 @@ export function startNokashPaymentPolling(params: {
       console.log(`[Nokash Poll] ${externalRef} -> ${normalized.status}`);
 
       if (normalized.success) {
-        await query('UPDATE transactions SET status = $1 WHERE id = $2', ['SUCCESS', transaction.id]);
+        const locked = await query(
+          'UPDATE transactions SET status = $1 WHERE id = $2 AND status = $3 RETURNING *',
+          ['SUCCESS', transaction.id, 'PENDING']
+        );
+        if (locked.rows.length === 0) {
+          stopNokashPolling(externalRef);
+          return;
+        }
         await onSuccess(transaction);
         stopNokashPolling(externalRef);
         return;

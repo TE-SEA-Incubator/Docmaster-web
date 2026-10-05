@@ -6,7 +6,7 @@ interface StatCardProps {
   bgColor?: string;
 }
 
-export default function StatCard({ icon, label, value, color = "#D98A30", bgColor = "#FEF0DC" }: StatCardProps) {
+export default function StatCard({ icon, label, value, color = "#E8923A", bgColor = "#FEF0DC" }: StatCardProps) {
   return (
     <div className="bg-white border border-gray-200/60 rounded-2xl p-5 shadow-sm">
       <div className="flex items-center gap-4">

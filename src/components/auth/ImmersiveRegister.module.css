@@ -110,7 +110,7 @@
 
 .step1Brand {
   flex: 1;
-  background: linear-gradient(145deg, #1E3A2F 0%, #2D5A42 50%, #1E3A2F 100%);
+  background: linear-gradient(145deg, #2D5A42 0%, #2D5A42 50%, #2D5A42 100%);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -201,7 +201,7 @@
 }
 .step1ProofItem i {
   font-size: 13px;
-  color: #D98A30;
+  color: #E8923A;
   width: 14px;
   text-align: center;
 }
@@ -210,7 +210,7 @@
   font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 800;
   font-size: 24px;
-  color: #1E3A2F;
+  color: #2D5A42;
   line-height: 1.2;
   letter-spacing: -0.02em;
   margin-bottom: 2px;
@@ -254,12 +254,12 @@
 }
 
 .btnPrimaryGold {
-  background: #D98A30;
+  background: #E8923A;
   color: #fff;
   box-shadow: 0 8px 24px rgba(217,138,48,0.30);
 }
 .btnPrimaryGold:hover:not(:disabled) {
-  background: #D98A30;
+  background: #E8923A;
   box-shadow: 0 8px 32px rgba(217,138,48,0.40);
 }
 
@@ -305,7 +305,7 @@
 .socialBtn:hover {
   background: #fff;
   border-color: rgba(30,58,47,0.15);
-  color: #1E3A2F;
+  color: #2D5A42;
 }
 
 .loginLink {
@@ -316,7 +316,7 @@
   margin-top: 16px;
 }
 .loginLink a {
-  color: #D98A30;
+  color: #E8923A;
   font-weight: 700;
   text-decoration: none;
 }
@@ -336,8 +336,8 @@
 }
 
 /* ── Step-specific backgrounds ── */
-.step1 { background: linear-gradient(145deg, #1E3A2F 0%, #2D5A42 50%, #1E3A2F 100%); }
-.step2 { background: linear-gradient(145deg, #D98A30 0%, #D98A30 50%, #C47A28 100%); }
+.step1 { background: linear-gradient(145deg, #2D5A42 0%, #2D5A42 50%, #2D5A42 100%); }
+.step2 { background: linear-gradient(145deg, #E8923A 0%, #E8923A 50%, #C47A28 100%); }
 .step3 { background: linear-gradient(145deg, #FAF8F5 0%, #F4EFE6 50%, #FAF8F5 100%); }
 .step4 {
   background:
@@ -346,8 +346,8 @@
   background-size: cover;
   background-position: center;
 }
-.step5 { background: linear-gradient(145deg, #C47A28 0%, #D98A30 45%, #1E3A2F 100%); }
-.step6 { background: linear-gradient(145deg, #1E3A2F 0%, #2D5A42 50%, #3B7A58 100%); }
+.step5 { background: linear-gradient(145deg, #C47A28 0%, #E8923A 45%, #2D5A42 100%); }
+.step6 { background: linear-gradient(145deg, #2D5A42 0%, #2D5A42 50%, #3B7A58 100%); }
 
 /* ── Decorative elements per step ── */
 .decor {
@@ -438,7 +438,7 @@
   letter-spacing: -0.02em;
 }
 .titleLight { color: #fff; }
-.titleDark { color: #1E3A2F; }
+.titleDark { color: #2D5A42; }
 
 .subtitle {
   font-size: 14px;
@@ -540,7 +540,7 @@
 }
 .strengthBarActive1 { background: #ef4444; }
 .strengthBarActive2 { background: #f59e0b; }
-.strengthBarActive3 { background: #D98A30; }
+.strengthBarActive3 { background: #E8923A; }
 .strengthBarActive4 { background: #2f9e44; }
 .strengthBarInactive { background: rgba(255,255,255,0.10); }
 
@@ -552,7 +552,7 @@
   align-items: center;
   gap: 6px;
 }
-.pwMatchOk { color: #D98A30; }
+.pwMatchOk { color: #E8923A; }
 .pwMatchError { color: #ef4444; }
 
 /* ── PIN ── */
@@ -780,11 +780,11 @@
 }
 .btnBackDark:hover {
   background: rgba(30,58,47,0.10);
-  color: #1E3A2F;
+  color: #2D5A42;
 }
 
 .btnPrimaryGreen {
-  background: #1E3A2F;
+  background: #2D5A42;
   color: #fff;
   box-shadow: 0 8px 24px rgba(30,58,47,0.30);
 }
@@ -794,7 +794,7 @@
 }
 .btnPrimaryWhite {
   background: #fff;
-  color: #1E3A2F;
+  color: #2D5A42;
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 .btnPrimaryWhite:hover:not(:disabled) {
@@ -818,7 +818,7 @@
   transition: all 0.4s ease;
 }
 .dotInactive { background: rgba(255,255,255,0.18); }
-.dotActive { background: #D98A30; box-shadow: 0 0 8px rgba(217,138,48,0.50); width: 24px; border-radius: 4px; }
+.dotActive { background: #E8923A; box-shadow: 0 0 8px rgba(217,138,48,0.50); width: 24px; border-radius: 4px; }
 .dotActiveWhite { background: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.30); width: 24px; border-radius: 4px; }
 .dotDone { background: rgba(34,197,94,0.60); }
 
@@ -945,6 +945,6 @@
 }
 
 :global(.phone-input) :global(input:focus) {
-  border-color: #D98A30 !important;
+  border-color: #E8923A !important;
   box-shadow: 0 0 0 3px rgba(217, 138, 48, 0.15) !important;
 }

@@ -448,3 +448,44 @@ h1, h2, h3, h4, .brand {
   }
 }
 
+
+/* ────── Flux récupération / remise ────── */
+
+/* Itinéraire en plein écran : la carte occupe toute la surface utile */
+.map-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  border-radius: 0 !important;
+  background: var(--color-surface);
+}
+.map-fullscreen .map-shell {
+  height: calc(100vh - 112px) !important;
+}
+
+/* Marqueur « votre position » */
+.owner-marker-pulse { animation: marker-pulse 2.4s ease-out infinite; }
+@keyframes marker-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(45, 90, 66, 0)); }
+  50% { filter: drop-shadow(0 0 6px rgba(45, 90, 66, 0.55)); }
+}
+
+/* Carte de suivi qui signale une correspondance */
+.animate-vibrate { animation: vibrate 0.45s ease-in-out; }
+@keyframes vibrate {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -1px); }
+  60% { transform: translate(-1px, 2px); }
+  80% { transform: translate(1px, -2px); }
+}
+
+/* Accessibilité : respect de prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

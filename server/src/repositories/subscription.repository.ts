@@ -5,7 +5,7 @@ export interface Subscription {
   user_id: string;
   plan_id: string;
   date_debut: Date;
-  date_fin: Date;
+  date_fin: Date | null;
   status: string;
   auto_renew: boolean;
   avantages_restants: any;
@@ -225,19 +225,16 @@ class SubscriptionRepository {
   /**
    * Find active subscription for a user
    */
-  async findActiveByUserId(userId: string) {
+    async findActiveByUserId(userId: string) {
     const sql = `
       SELECT us.*, p.name as plan_name, p.features
       FROM user_subscriptions us
       JOIN plans p ON us.plan_id = p.id
-      WHERE us.user_id = $1 AND us.status = 'ACTIVE'
-      ORDER BY 
-        CASE 
-          WHEN NOW() BETWEEN us.date_debut AND us.date_fin THEN 0
-          WHEN us.date_debut > NOW() THEN 1
-          ELSE 2
-        END ASC,
-        us.date_debut ASC
+      WHERE us.user_id = $1
+        AND us.status = 'ACTIVE'
+        AND us.date_debut <= NOW()
+        AND (us.date_fin IS NULL OR us.date_fin > NOW())
+      ORDER BY us.date_fin DESC NULLS LAST
       LIMIT 1
     `;
     const result = await query(sql, [userId]);

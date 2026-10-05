@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
-import Topbar from "../../layout/Topbar";
+
 import { useI18n } from "../../context/I18nContext";
+import { useTopbar } from "../../hooks/useTopbar";
 import InfoAlert from "../../components/ui/InfoAlert";
 import DatePicker from "../../components/ui/DatePicker";
 import LocationSelect from "../../components/ui/LocationSelect";
@@ -27,6 +28,7 @@ const STEP_LABELS = ["trouver_step_type", "trouver_step_infos", "trouver_step_lo
 
 export default function Trouver() {
   const { t } = useI18n();
+  useTopbar(t("trouver_title"), [{ label: t("trouver_breadcrumb_found") }, { label: t("trouver_success") }]);
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -389,10 +391,6 @@ export default function Trouver() {
   if (success) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar
-          title={t("trouver_title")}
-          breadcrumbs={[{ label: t("trouver_breadcrumb_found"), to: "/trouver" }, { label: t("trouver_success") }]}
-        />
         <div
           className="p-4 sm:p-6 lg:p-8 custom-scrollbar max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto pb-24 md:pb-0"
         >
@@ -445,10 +443,6 @@ export default function Trouver() {
 
   return (
     <div className="flex flex-col h-full">
-      <Topbar
-        title={t("trouver_title")}
-        breadcrumbs={[{ label: t("trouver_breadcrumb_found"), to: "/trouver" }, { label: t("trouver_breadcrumb_current") }]}
-      />
       {alertMsg && <InfoAlert message={alertMsg} onClose={() => setAlertMsg(null)} />}
       <div
         className="p-4 sm:p-6 lg:p-8 custom-scrollbar max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto pb-24 md:pb-0"

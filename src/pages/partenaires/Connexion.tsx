@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Button, Card, Form, Input, Typography, Alert, Space } from "antd";
-import { LockOutlined, MailOutlined, ShopOutlined } from "@ant-design/icons";
+import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { useNavigate, Link } from "react-router-dom";
 import { usePartenaire } from "../../context/PartenaireContext";
 import { useI18n } from "../../context/I18nContext";
 import { partenairePalette } from "../../theme/partenaires";
 import PartenaireDesignProvider from "../../components/partenaires/PartenaireDesignProvider";
+import PartenaireBrandLogo from "../../components/partenaires/PartenaireBrandLogo";
 import LanguageSwitcher from "../../components/ui/LanguageSwitcher";
 
 export default function PartenaireConnexion() {
@@ -100,28 +101,22 @@ export default function PartenaireConnexion() {
         </div>
 
         <Card
-          style={{ width: 420, maxWidth: "100%", boxShadow: "0 12px 40px rgba(18,18,18,0.25)", position: "relative", zIndex: 1 }}
+          style={{
+            width: 420,
+            maxWidth: "100%",
+            boxShadow: "0 12px 40px rgba(18, 52, 60, 0.22)",
+            position: "relative",
+            zIndex: 1,
+            borderRadius: 10,
+            border: `1px solid ${partenairePalette.border}`,
+          }}
           styles={{ body: { padding: 36 } }}
         >
           <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 16,
-                background: partenairePalette.greenDark,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 14,
-              }}
-            >
-              <ShopOutlined style={{ color: partenairePalette.primary, fontSize: 30 }} />
+            <div style={{ marginBottom: 16 }}>
+              <PartenaireBrandLogo />
             </div>
-            <Typography.Title level={3} style={{ margin: 0, color: partenairePalette.greenDark }}>
-              DocMaster
-            </Typography.Title>
-            <Typography.Text style={{ color: partenairePalette.textMuted }}>
+            <Typography.Text style={{ color: partenairePalette.textMuted, fontSize: 13 }}>
               {t("partenaire_login_title")}
             </Typography.Text>
           </div>

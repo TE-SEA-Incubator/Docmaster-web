@@ -333,17 +333,18 @@ router.get('/global-search', async (req, res) => {
   try {
     const [usersRes, declRes] = await Promise.all([
       query(
-        `SELECT id, name, email, phone, role, created_at FROM users
-         WHERE name ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1
+        `SELECT id, nom, prenom, email, telephone, role, created_at FROM users
+         WHERE nom ILIKE $1 OR prenom ILIKE $1 OR email ILIKE $1 OR telephone ILIKE $1
          ORDER BY created_at DESC LIMIT 5`,
         [like]
       ),
       query(
-        `SELECT d.id, d.doc_master_id, d.declaration_type, d.status, d.created_at,
-                u.name as user_name
+        `SELECT d.id, d.identifiant_doc_dm, d.declaration_type, d.status, d.created_at,
+                COALESCE(u.prenom || ' ' || u.nom, p.nom_organisation) as user_name
          FROM declarations d
-         LEFT JOIN users u ON d.user_id = u.id
-         WHERE d.doc_master_id ILIKE $1 OR d.declaration_type ILIKE $1 OR u.name ILIKE $1
+         LEFT JOIN users u ON d.reporter_id = u.id AND COALESCE(d.reporter_type, 'USER') = 'USER'
+         LEFT JOIN partenaires p ON d.reporter_id = p.id AND d.reporter_type = 'PARTENAIRE'
+         WHERE d.identifiant_doc_dm ILIKE $1 OR d.declaration_type ILIKE $1
          ORDER BY d.created_at DESC LIMIT 5`,
         [like]
       ),

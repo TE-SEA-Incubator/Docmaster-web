@@ -37,6 +37,7 @@ const Parrainage = lazy(() => import("./pages/auth/Parrainage"));
 const MesGains = lazy(() => import("./pages/auth/MesGains"));
 const AcheterPoints = lazy(() => import("./pages/auth/AcheterPoints"));
 const InfosProfil = lazy(() => import("./pages/auth/InfosProfil"));
+const Messagerie = lazy(() => import("./pages/auth/Messagerie"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
@@ -73,7 +74,10 @@ const PartenaireDashboard = lazy(() => import("./pages/partenaires/Dashboard"));
 const PartenaireDeclarations = lazy(() => import("./pages/partenaires/Declarations"));
 const PartenaireDeclarerTrouvaille = lazy(() => import("./pages/partenaires/DeclarerTrouvaille"));
 const PartenairePortefeuille = lazy(() => import("./pages/partenaires/Portefeuille"));
+const PartenaireRetraits = lazy(() => import("./pages/partenaires/Retraits"));
 const PartenaireProfil = lazy(() => import("./pages/partenaires/Profil"));
+const PartenaireMessagerie = lazy(() => import("./pages/partenaires/Messagerie"));
+const PartenaireRendre = lazy(() => import("./pages/partenaires/Rendre"));
 
 export default function App() {
   useAutoriteShortcut();
@@ -116,6 +120,7 @@ export default function App() {
           <Route path="/mes-gains" element={<ProtectedRoute><LazyPage Component={MesGains} /></ProtectedRoute>} />
           <Route path="/acheter-points" element={<ProtectedRoute><LazyPage Component={AcheterPoints} /></ProtectedRoute>} />
           <Route path="/infos-profil" element={<ProtectedRoute><LazyPage Component={InfosProfil} /></ProtectedRoute>} />
+          <Route path="/messagerie" element={<ProtectedRoute><LazyPage Component={Messagerie} /></ProtectedRoute>} />
         </Route>
 
         <Route path="/admin/login" element={<LazyPage Component={AdminLogin} />} />
@@ -187,7 +192,10 @@ export default function App() {
             <Route path="dashboard" element={<LazyPage Component={PartenaireDashboard} />} />
             <Route path="declarations" element={<LazyPage Component={PartenaireDeclarations} />} />
             <Route path="declarer" element={<LazyPage Component={PartenaireDeclarerTrouvaille} />} />
+            <Route path="rendre" element={<LazyPage Component={PartenaireRendre} />} />
             <Route path="portefeuille" element={<LazyPage Component={PartenairePortefeuille} />} />
+            <Route path="retraits" element={<LazyPage Component={PartenaireRetraits} />} />
+            <Route path="messagerie" element={<LazyPage Component={PartenaireMessagerie} />} />
             <Route path="profil" element={<LazyPage Component={PartenaireProfil} />} />
           </Route>
         </Route>

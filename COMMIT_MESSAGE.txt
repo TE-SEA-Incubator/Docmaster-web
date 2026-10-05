@@ -1,0 +1,41 @@
+feat: Add partner withdrawal system with Mobile Money support
+
+FEATURES:
+- Partner withdrawal request interface (web portal)
+- MTN MoMo and Orange Money payment methods
+- Withdrawal history with real-time status tracking
+- Minimum amount validation (configurable via app_settings)
+- Immediate wallet debit with atomic SQL transactions
+- Admin notifications for new withdrawal requests
+- Full audit trail (partenaire_wallet_transactions)
+
+BACKEND:
+- New API endpoints:
+  * POST /api/partenaires/withdrawals/request
+  * GET /api/partenaires/withdrawals
+- Migration 67: Add source_type column to withdrawals table
+- Support for USER and PARTENAIRE withdrawal types
+- Integration with existing NoKash Payout system
+
+FRONTEND:
+- New page: /partenaire/retraits
+- "Retraits" menu item in partner sidebar
+- Withdrawal request modal with validation
+- Withdrawal history table with status badges
+- 40+ French translations
+- Responsive design with Ant Design components
+
+DATABASE:
+- Migration script: 67_add_source_type_to_withdrawals.sql
+- Automatic deployment script: deploy-withdrawals.sh
+- Comprehensive documentation
+
+DOCUMENTATION:
+- PARTNER_WITHDRAWALS.md - Technical guide
+- DEPLOY_WITHDRAWALS.md - VPS deployment guide
+- QUICKSTART_WITHDRAWALS.md - Quick start
+- COMMANDES_VPS.txt - Copy-paste commands
+
+FIXES:
+- Removed antd-mask-input dependency (use native Input)
+- Simplified partner deletion (TODO: improve with withdrawal checks)

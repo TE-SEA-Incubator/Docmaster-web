@@ -34,48 +34,14 @@ class DeviceTransferService {
     const recipient = userRes.rows[0];
     const acceptUrl = `${process.env.FRONTEND_URL || 'http://localhost:3003'}/transfert-appareil?token=${transfer.token}`;
 
-    await mailService.sendNotificationEmail(
+    await mailService.sendDeviceTransferEmail(
       toEmail,
-      `${recipient.prenom} ${recipient.nom}`,
-      'Transfert d\'appareil',
-      `Un utilisateur DocMaster vous a transféré un appareil (${device.brand} ${device.model}). Cliquez sur le bouton ci-dessous pour accepter ou refuser le transfert.`
+      recipient.prenom,
+      device.brand,
+      device.model,
+      device.category || 'Appareil',
+      acceptUrl
     );
-
-    try {
-      const transporter = (mailService as any).transporter;
-      await transporter.sendMail({
-        from: `"incubateur" <${process.env.MAIL_FROM || 'notifications@dm.cm'}>`,
-        to: toEmail,
-        subject: 'Transfert d\'appareil | DocMaster',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
-            <div style="text-align: center; margin-bottom: 20px;">
-              <div style="width: 60px; height: 60px; background-color: #FEF0DC; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
-                <span style="font-size: 30px;">📱</span>
-              </div>
-            </div>
-            <h2 style="color: #f5a64b; text-align: center;">Transfert d'appareil</h2>
-            <p>Bonjour ${recipient.prenom},</p>
-            <p>Un utilisateur DocMaster souhaite vous transférer son appareil :</p>
-            <div style="background-color: #faf8f5; border-radius: 10px; padding: 15px; margin: 15px 0;">
-              <p style="margin: 0; font-weight: bold; font-size: 16px;">${device.brand} ${device.model}</p>
-              <p style="margin: 5px 0 0; color: #64748b;">${device.category || 'Appareil'}</p>
-            </div>
-            <p>En acceptant, vous deviendrez le nouveau propriétaire de cet appareil sur DocMaster.</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${acceptUrl}" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Voir et répondre</a>
-            </div>
-            <p style="font-size: 12px; color: #8e8e8e;">Ce lien expirera dans 7 jours.</p>
-            <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
-            <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
-              &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
-            </p>
-          </div>
-        `
-      });
-    } catch (err: any) {
-      console.error('❌ Erreur envoi email transfert:', err.message);
-    }
 
     return { success: true, message: 'Demande de transfert envoyée', token: transfer.token };
   }

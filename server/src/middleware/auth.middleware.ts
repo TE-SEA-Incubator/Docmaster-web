@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'votre_secret_tres_long_et_securise';
+import { jwtConfig } from '../config/jwt.ts';
+
+const JWT_SECRET = jwtConfig.secret;
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {

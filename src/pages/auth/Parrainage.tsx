@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../context/I18nContext";
+import { useTopbar } from "../../hooks/useTopbar";
 import { useReferrals } from "../../hooks/useReferrals";
 import { useToast } from "../../context/ToastContext";
 import type { Referral } from "../../types/api";
-import Topbar from "../../layout/Topbar";
+
 import {
   Paper,
   Title,
@@ -59,6 +60,7 @@ function relativeDate(d: string): string {
 
 export default function Parrainage() {
   const { t } = useI18n();
+  useTopbar(t("parrainage_title"), [{ label: t("parrainage_breadcrumb_home"), href: "/dashboard" }, { label: t("parrainage_breadcrumb_referral") }]);
   const { user } = useAuth();
   const { referrals: rawReferrals, stats, loading } = useReferrals();
   const toast = useToast();
@@ -172,7 +174,6 @@ export default function Parrainage() {
   if (loading) {
     return (
       <div className="flex flex-col h-screen">
-        <Topbar title={t("parrainage_title")} breadcrumbs={[{ label: t("parrainage_breadcrumb_home"), href: "/dashboard" }, { label: t("parrainage_breadcrumb_referral") }]} />
         <div className="flex-1 flex items-center justify-center">
           <Loader color="gold" size="lg" />
         </div>
@@ -182,13 +183,6 @@ export default function Parrainage() {
 
   return (
     <div className="flex flex-col h-screen">
-      <Topbar
-        title={t("parrainage_title")}
-        breadcrumbs={[
-          { label: t("parrainage_breadcrumb_home"), href: "/dashboard" },
-          { label: t("parrainage_breadcrumb_referral") },
-        ]}
-      />
       <div className="flex-1 overflow-hidden p-4 md:p-6">
         <div className="h-full overflow-y-auto w-full space-y-5">
 

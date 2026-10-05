@@ -1,10 +1,10 @@
 import type { ThemeConfig } from "antd";
 
 export const autoritePalette = {
-  primary: "#D98A30",
+  primary: "#E8923A",
   primaryDark: "#B06E1F",
   primaryLight: "#FEF0DC",
-  greenDark: "#1E3A2F",
+  greenDark: "#2D5A42",
   greenMid: "#2D5A42",
   greenLight: "#E8F5EE",
   bgMain: "#F4EFE6",

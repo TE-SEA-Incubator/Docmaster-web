@@ -6,12 +6,14 @@ import { MailService } from '../../services/mail.service.ts';
 import { SmsService } from '../../services/sms.service.ts';
 import { NotificationService } from '../../services/notification.service.ts';
 import { SocketService } from '../../services/socket.service.ts';
+import { LocationService } from '../../services/location.service.ts';
 import pool from '../../database/db.js';
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3003';
 
 export class AutoriteService {
   private repository = new AutoriteRepository();
+  private locationService = new LocationService();
   private mailService = new MailService();
   private smsService = new SmsService();
   private notificationService = new NotificationService();
@@ -44,6 +46,7 @@ export class AutoriteService {
       niveau: data.niveau || 'NORMAL',
       ville: data.ville,
       region: data.region,
+      bureau: data.bureau,
       created_by: createdBy,
     });
 
@@ -84,7 +87,7 @@ export class AutoriteService {
     }
 
     const { mot_de_passe, ...safe } = autorite;
-    return { ...safe, temp_password: tempPassword };
+    return safe;
   }
 
   /**
@@ -234,6 +237,7 @@ export class AutoriteService {
       niveau: data.niveau,
       ville: data.ville,
       region: data.region,
+      bureau: data.bureau,
       is_active: data.is_active === undefined ? undefined : data.is_active === 'true' || data.is_active === true,
     });
   }
@@ -262,8 +266,10 @@ export class AutoriteService {
     let idx = 1;
 
     if (autorite.niveau === 'NORMAL' && autorite.ville) {
-      conditions.push(`d.ville ILIKE $${idx++}`);
-      params.push(`%${autorite.ville}%`);
+      const locations = this.locationService.getRelatedLocations(autorite.ville);
+      conditions.push(`(d.ville = ANY($${idx}::text[]) OR d.arrondissement = ANY($${idx}::text[]))`);
+      params.push(locations);
+      idx++;
     }
 
     // Autorités : accès uniquement aux déclarations de perte
@@ -275,8 +281,17 @@ export class AutoriteService {
     }
 
     if (filters?.region) {
-      conditions.push(`d.region ILIKE $${idx++}`);
-      params.push(`%${String(filters.region)}%`);
+      const regionName = String(filters.region);
+      const arrondissements = this.locationService.getArrondissementsByRegion(regionName);
+      
+      if (arrondissements.length > 0) {
+        conditions.push(`(d.region ILIKE $${idx} OR d.arrondissement = ANY($${idx + 1}::text[]) OR d.ville = ANY($${idx + 1}::text[]))`);
+        params.push(`%${regionName}%`, arrondissements);
+        idx += 2;
+      } else {
+        conditions.push(`d.region ILIKE $${idx++}`);
+        params.push(`%${regionName}%`);
+      }
     }
 
     if (filters?.date_from) {
@@ -370,8 +385,10 @@ export class AutoriteService {
     let idx = 1;
 
     if (autorite.niveau === 'NORMAL' && autorite.ville) {
-      conditions.push(`ville ILIKE $${idx++}`);
-      params.push(`%${autorite.ville}%`);
+      const locations = this.locationService.getRelatedLocations(autorite.ville);
+      conditions.push(`(ville = ANY($${idx}::text[]) OR arrondissement = ANY($${idx}::text[]))`);
+      params.push(locations);
+      idx++;
     }
 
     const where = conditions.join(' AND ');

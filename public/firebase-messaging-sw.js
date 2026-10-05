@@ -16,8 +16,8 @@ messaging.onBackgroundMessage(function (payload) {
   const notificationTitle = payload.notification.title || "DocMaster";
   const notificationOptions = {
     body: payload.notification.body || "",
-    icon: "/src/assets/images/docmaster-icon.png",
-    badge: "/src/assets/images/docmaster-icon.png",
+    icon: "/docmaster-icon.png",
+    badge: "/docmaster-icon.png",
     vibrate: [200, 100, 200],
     requireInteraction: true,
   };

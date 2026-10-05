@@ -149,9 +149,18 @@ export default function Declarations() {
     {
       title: "",
       key: "actions",
-      width: 110,
+      width: 180,
       render: (_: any, row: PartenaireDeclaration) => (
         <Space size={4}>
+          {row.status === "MATCHED" && (
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => navigate(`/partenaire/rendre?id=${row.id}`)}
+            >
+              {t("partenaire_rendre_btn")}
+            </Button>
+          )}
           <Button type="text" size="small" onClick={() => setDetail(row)}>
             {t("partenaire_decl_details")}
           </Button>

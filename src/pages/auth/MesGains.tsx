@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../context/I18nContext";
+import { useTopbar } from "../../hooks/useTopbar";
 import { useNavigate } from "react-router-dom";
 import { paymentsService, type SavedPaymentMethod } from "../../services/paymentsService";
 import { settingsService } from "../../services/settingsService";
@@ -8,7 +9,7 @@ import { authService } from "../../services/authService";
 import { earningsService } from "../../services/earningsService";
 import { declarationsService } from "../../services/declarationsService";
 import { useToast } from "../../context/ToastContext";
-import Topbar from "../../layout/Topbar";
+
 import type { Transaction, EarningsRecord, Declaration } from "../../types/api";
 import {
   Paper, Title, Text, Group, Stack, SimpleGrid,
@@ -33,13 +34,14 @@ function fmtDate(v?: string | null) {
 
 export default function MesGains() {
   const { t } = useI18n();
-  const { user, updateUser } = useAuth();
+  useTopbar(t("mesgains_title"), [{ label: t("mesgains_breadcrumb_home"), href: "/dashboard" }, { label: t("mesgains_breadcrumb_earnings") }]);
+  const { user, updateUser, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [txLoading, setTxLoading] = useState(true);
   const [statsData, setStatsData] = useState<Record<string, unknown> | null>(null);
-  const [minWithdrawal, setMinWithdrawal] = useState(500);
+  const [minWithdrawal, setMinWithdrawal] = useState(25);
   const [earningsHistory, setEarningsHistory] = useState<EarningsRecord[]>([]);
   const [earningsLoading, setEarningsLoading] = useState(true);
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
@@ -69,7 +71,7 @@ export default function MesGains() {
       }
 
       if (settingsRes.success && settingsRes.data) {
-        const m = Number(settingsRes.data.min_withdrawal_amount) || 500;
+        const m = Number(settingsRes.data.min_withdrawal_amount) || 25;
         setMinWithdrawal(m);
       }
 
@@ -153,17 +155,10 @@ export default function MesGains() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full">
-      <Topbar
-        title={t("mesgains_title")}
-        breadcrumbs={[
-          { label: t("mesgains_breadcrumb_home"), href: "/dashboard" },
-          { label: t("mesgains_breadcrumb_earnings") },
-        ]}
-      />
+    <div className="flex flex-col">
 
-      <div className="custom-scroll flex-1 p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-8 overflow-y-auto">
-        <Stack gap="lg" className="max-w-7xl mx-auto w-full">
+      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-8">
+        <Stack gap="lg">
           <WalletCard
             balance={balance}
             points={points}
@@ -300,6 +295,7 @@ export default function MesGains() {
           onClose={() => setShowWithdrawModal(false)}
           onDone={() => {
             setShowWithdrawModal(false);
+            if (refreshProfile) refreshProfile();
             fetchData();
             fetchMethods();
           }}
@@ -359,7 +355,7 @@ function WalletCard({ balance, points, minWithdrawal, progressPct, onWithdraw, o
       p="lg"
       className="text-white relative z-0"
       style={{
-        background: "linear-gradient(135deg, #1E3A2F 0%, #2D5A42 55%, #3B7A58 100%)",
+        background: "linear-gradient(135deg, #2D5A42 0%, #2D5A42 55%, #3B7A58 100%)",
         borderRadius: 20,
       }}
     >
@@ -859,7 +855,7 @@ function WithdrawModal({ balance, minWithdrawal, savedMethods, onClose, onDone, 
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="500"
+                placeholder="25"
                 className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
               />
               <p className="text-[11px] text-textMuted mt-1">

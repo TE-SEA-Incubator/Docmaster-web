@@ -265,7 +265,7 @@ export default function AdminMatchingMonitor() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon="fa-handshake" label="Correspondances" value={stats.totalMatches.toLocaleString()} color="#1E3A2F" bgColor="#E8F5EE" />
+        <StatCard icon="fa-handshake" label="Correspondances" value={stats.totalMatches.toLocaleString()} color="#2D5A42" bgColor="#E8F5EE" />
         <StatCard icon="fa-circle-check" label="Haute confiance" value={stats.highConfidence.toLocaleString()} color="#059669" bgColor="#ECFDF5" />
         <StatCard icon="fa-clock" label="Potentielles" value={stats.potential.toLocaleString()} color="#D97706" bgColor="#FFFBEB" />
         <StatCard icon="fa-star" label="Score moyen" value={`${stats.averageScore}/100`} color="#7C3AED" bgColor="#F5F3FF" />

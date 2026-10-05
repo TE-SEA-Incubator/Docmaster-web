@@ -1,0 +1,153 @@
+═══════════════════════════════════════════════════════════════════
+🚀 COMMANDES À EXÉCUTER SUR VOTRE VPS
+═══════════════════════════════════════════════════════════════════
+
+📝 ÉTAPE 1 : POUSSER LE CODE (sur votre machine locale)
+─────────────────────────────────────────────────────────
+
+cd /home/ruxel/Docmaster/Docmaster-web
+
+git add .
+
+git commit -m "feat: Add partner withdrawal system - MTN MoMo & Orange Money support"
+
+git push origin main
+
+
+📡 ÉTAPE 2 : SE CONNECTER AU VPS
+─────────────────────────────────────────────────────────
+
+ssh votre_user@votre_ip_vps
+
+
+📥 ÉTAPE 3 : RÉCUPÉRER LE CODE
+─────────────────────────────────────────────────────────
+
+cd /chemin/vers/Docmaster-web
+
+git pull origin main
+
+
+⚡ ÉTAPE 4 : DÉPLOIEMENT AUTOMATIQUE (RECOMMANDÉ)
+─────────────────────────────────────────────────────────
+
+./deploy-withdrawals.sh
+
+# Le script vous demandera :
+# - Utilisateur PostgreSQL (défaut: postgres)
+# - Nom de la base (défaut: docmaster)
+# - Montant minimum (défaut: 1000 FCFA)
+
+
+OU 📋 ÉTAPE 4 BIS : DÉPLOIEMENT MANUEL
+─────────────────────────────────────────────────────────
+
+# 4.1 - Appliquer la migration SQL
+cd server
+npx tsx apply_withdrawal_migration.ts
+
+# 4.2 - Configurer le montant minimum (optionnel)
+psql -U postgres -d docmaster -c "
+INSERT INTO app_settings (key, value, description)
+VALUES ('min_withdrawal_amount', '1000', 'Montant minimum de retrait en FCFA')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+"
+
+# 4.3 - Compiler le backend
+npm run build
+
+# 4.4 - Redémarrer le backend
+pm2 restart all
+# OU
+sudo systemctl restart docmaster-api
+
+# 4.5 - Compiler le frontend
+cd ..
+npm run build
+
+# 4.6 - Recharger nginx
+sudo systemctl reload nginx
+
+
+✅ ÉTAPE 5 : VÉRIFICATION
+─────────────────────────────────────────────────────────
+
+# Vérifier la migration
+psql -U postgres -d docmaster -c "\d withdrawals"
+
+# Vérifier que le serveur tourne
+pm2 status
+# OU
+sudo systemctl status docmaster-api
+
+# Vérifier les logs
+pm2 logs --lines 50
+# OU
+sudo journalctl -u docmaster-api -n 50
+
+# Tester dans le navigateur
+# https://votre-domaine.com/partenaire/retraits
+
+
+🎯 COMMANDES UTILES
+─────────────────────────────────────────────────────────
+
+# Voir les retraits partenaires dans la DB
+psql -U postgres -d docmaster -c "
+SELECT id, user_id, amount, payment_method, status, source_type, created_at 
+FROM withdrawals 
+WHERE source_type = 'PARTENAIRE' 
+ORDER BY created_at DESC 
+LIMIT 10;
+"
+
+# Voir le solde d'un partenaire
+psql -U postgres -d docmaster -c "
+SELECT nom_organisation, email, wallet_balance, statut 
+FROM partenaires 
+WHERE email = 'email@partenaire.com';
+"
+
+# Redémarrer uniquement le backend
+pm2 restart docmaster-api
+
+# Recharger nginx sans downtime
+sudo nginx -t && sudo systemctl reload nginx
+
+# Voir les logs en temps réel
+pm2 logs docmaster-api --lines 100
+
+
+🆘 EN CAS DE PROBLÈME
+─────────────────────────────────────────────────────────
+
+# Vérifier la connexion DB
+psql -U postgres -d docmaster -c "SELECT NOW();"
+
+# Voir les erreurs TypeScript
+cd server
+npx tsc --noEmit
+
+# Rollback de la migration (si nécessaire)
+psql -U postgres -d docmaster -c "
+ALTER TABLE withdrawals DROP COLUMN IF EXISTS source_type;
+DROP INDEX IF EXISTS idx_withdrawals_source_type;
+DROP INDEX IF EXISTS idx_withdrawals_user_source;
+"
+
+# Rollback Git (si nécessaire)
+git log --oneline -5
+git reset --hard HEAD~1
+npm run build && pm2 restart all
+
+
+═══════════════════════════════════════════════════════════════════
+✨ DÉPLOIEMENT TERMINÉ !
+═══════════════════════════════════════════════════════════════════
+
+Les partenaires peuvent maintenant :
+✅ Accéder à "Retraits" dans leur portail
+✅ Demander des retraits vers Mobile Money
+✅ Voir l'historique de leurs retraits
+
+Documentation complète : voir DEPLOY_WITHDRAWALS.md

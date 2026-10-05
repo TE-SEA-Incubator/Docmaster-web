@@ -1,6 +1,7 @@
 import { query } from '../database/db.ts';
 import { nokashService } from './nokash.service.ts';
 import { subscriptionService } from './subscription.service.ts';
+import { activateRecovery } from '../controllers/payment.controller.ts';
 
 function normalizeNokashStatus(payload: any) {
   const status = (payload?.status || payload?.data?.status || payload?.result?.status || '').toString().toUpperCase();
@@ -11,65 +12,21 @@ function normalizeNokashStatus(payload: any) {
   };
 }
 
-async function activateRecovery(userId: string, docId: string, transactionId: string) {
-  try {
-    const matchRes = await query(
-      `SELECT * FROM matches 
-       WHERE (lost_declaration_id = $1 OR found_declaration_id = $1) 
-       ORDER BY created_at DESC LIMIT 1`,
-      [docId]
-    );
-
-    let finderId = null;
-    if (matchRes.rows.length > 0) {
-      const match = matchRes.rows[0];
-      const otherId = match.lost_declaration_id === docId ? match.found_declaration_id : match.lost_declaration_id;
-      const otherDeclRes = await query('SELECT reporter_id FROM declarations WHERE id = $1', [otherId]);
-      if (otherDeclRes.rows.length > 0) {
-        finderId = otherDeclRes.rows[0].reporter_id;
-      }
-    }
-
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    const claimRes = await query('SELECT id FROM claims WHERE doc_id = $1 AND owner_id = $2', [docId, userId]);
-    if (claimRes.rows.length > 0) {
-      await query(
-        'UPDATE claims SET status = $1, verification_code = $2, finder_id = $3 WHERE id = $4',
-        ['PAID', verificationCode, finderId, claimRes.rows[0].id]
-      );
-    } else {
-      await query(
-        'INSERT INTO claims (doc_id, owner_id, finder_id, verification_code, status) VALUES ($1, $2, $3, $4, $5)',
-        [docId, userId, finderId, verificationCode, 'PAID']
-      );
-    }
-
-    await query('UPDATE declarations SET payment_status = $1, status = $2 WHERE id = $3', ['PAID', 'MATCHED', docId]);
-
-    console.log(`[Reconciliation] Recovery activated for doc ${docId}`);
-  } catch (err) {
-    console.error('[Reconciliation] Error activating recovery:', err);
-  }
-}
-
 class PaymentReconciliationService {
   /**
-   * Clean up PENDING transactions older than 2 days
+   * Mark stale PENDING transactions as EXPIRED instead of deleting (preserves audit trail)
    */
   async cleanupStaleTransactions() {
     try {
       const result = await query(
-        `DELETE FROM transactions
+        `UPDATE transactions
+         SET status = 'EXPIRED'
          WHERE status = 'PENDING'
            AND created_at < NOW() - INTERVAL '2 days'
          RETURNING id, type, amount, user_id`
       );
       if (result.rows.length > 0) {
-        console.log(`[Reconciliation] Nettoyé ${result.rows.length} transaction(s) PENDING de +2 jours :`);
-        result.rows.forEach(tx => {
-          console.log(`  - ${tx.id} | ${tx.type} | ${tx.amount} XAF | user: ${tx.user_id}`);
-        });
+        console.log(`[Reconciliation] Expiré ${result.rows.length} transaction(s) PENDING de +2 jours`);
       }
       return result.rows.length;
     } catch (err) {
@@ -114,7 +71,11 @@ class PaymentReconciliationService {
           console.log(`[Reconciliation] Transaction ${transaction.id} (${externalRef}) -> ${normalized.status}`);
 
           if (normalized.success) {
-            await query('UPDATE transactions SET status = $1 WHERE id = $2', ['SUCCESS', transaction.id]);
+            const locked = await query(
+              'UPDATE transactions SET status = $1 WHERE id = $2 AND status = $3 RETURNING *',
+              ['SUCCESS', transaction.id, 'PENDING']
+            );
+            if (locked.rows.length === 0) continue;
 
             let metadata = transaction.metadata;
             if (typeof metadata === 'string') {
@@ -180,7 +141,13 @@ class PaymentReconciliationService {
     const normalized = normalizeNokashStatus(statusRes);
 
     if (normalized.success) {
-      await query('UPDATE transactions SET status = $1 WHERE id = $2', ['SUCCESS', transaction.id]);
+      const locked = await query(
+        'UPDATE transactions SET status = $1 WHERE id = $2 AND status = $3 RETURNING *',
+        ['SUCCESS', transaction.id, 'PENDING']
+      );
+      if (locked.rows.length === 0) {
+        return { found: true, updated: false, reason: 'Transaction déjà traitée' };
+      }
 
       let metadata = transaction.metadata;
       if (typeof metadata === 'string') {

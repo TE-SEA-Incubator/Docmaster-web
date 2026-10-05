@@ -258,6 +258,7 @@ export interface UserProfile {
   photo_url?: string;
   date_naissance?: string;
   lieu_naissance?: string;
+  genre?: string;
   code_invitation?: string;
   currency?: string;
   subscription?: Subscription;

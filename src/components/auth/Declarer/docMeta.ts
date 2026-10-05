@@ -24,7 +24,7 @@ export const DOC_META: Record<string, DocumentMetadata> = {
   cni: {
     label: "declarer_doc_type_cni",
     icon: "fa-id-card",
-    color: "#D98A30",
+    color: "#E8923A",
     fields: [
       { id: "titulaire", label: "declarer_field_titulaire_cni", type: "text", icon: "fa-user", placeholder: "declarer_placeholder_nom" },
       { id: "numero", label: "declarer_field_numero_cni", type: "text", icon: "fa-barcode", placeholder: "declarer_placeholder_numero_cni" },

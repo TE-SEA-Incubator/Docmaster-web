@@ -6,6 +6,7 @@ import {
   deleteDocument,
   reportDocumentLost,
   archiveDocument,
+  updateMyDocument,
 } from '../controllers/document.controller.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
 import { upload } from '../utils/upload.utils.ts';
@@ -111,6 +112,11 @@ router.post('/', authMiddleware, upload.fields([
 
 router.get('/', authMiddleware, getMyDocuments);
 router.get('/:id', authMiddleware, getMyDocumentById);
+
+router.put('/:id', authMiddleware, upload.fields([
+  { name: 'photo_recto', maxCount: 1 },
+  { name: 'photo_verso', maxCount: 1 }
+]), updateMyDocument);
 
 /**
  * @swagger

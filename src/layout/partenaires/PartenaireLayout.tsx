@@ -13,6 +13,7 @@ import { partenairePalette } from "../../theme/partenaires";
 import PartenaireDesignProvider from "../../components/partenaires/PartenaireDesignProvider";
 import PartenaireSidebar from "../../components/partenaires/PartenaireSidebar";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
+import LanguageSwitcher from "../../components/ui/LanguageSwitcher";
 
 export default function PartenaireLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -21,18 +22,24 @@ export default function PartenaireLayout() {
   const location = useLocation();
 
   const selectedKey = (() => {
+    if (location.pathname.includes("/rendre")) return "declarations";
     if (location.pathname.includes("/declarations")) return "declarations";
     if (location.pathname.includes("/declarer")) return "declarer";
+    if (location.pathname.includes("/messagerie")) return "messagerie";
     if (location.pathname.includes("/portefeuille")) return "portefeuille";
+    if (location.pathname.includes("/retraits")) return "retraits";
     if (location.pathname.includes("/profil")) return "profil";
     return "dashboard";
   })();
 
   const pageTitle = (() => {
+    if (location.pathname.includes("/rendre")) return t("partenaire_layout_title_rendre");
     switch (selectedKey) {
       case "declarer": return t("partenaire_layout_title_declarer");
       case "declarations": return t("partenaire_layout_title_declarations");
+      case "messagerie": return t("partenaire_layout_title_messagerie");
       case "portefeuille": return t("partenaire_layout_title_portefeuille");
+      case "retraits": return t("partenaire_layout_title_retraits");
       case "profil": return t("partenaire_layout_title_profil");
       default: return t("partenaire_layout_title_dashboard");
     }
@@ -138,6 +145,7 @@ export default function PartenaireLayout() {
             </Space>
 
             <Space size={12}>
+              <LanguageSwitcher accentColor={partenairePalette.primary} />
               <NotificationDropdown accentColor={partenairePalette.primary} />
 
               <Dropdown menu={userMenu} placement="bottomRight">

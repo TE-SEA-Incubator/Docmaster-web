@@ -135,7 +135,7 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
                 setSearchOpen(true);
             }}
             placeholder={t("admin_search_placeholder") || "Rechercher..."}
-            className="w-full pl-8 pr-8 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] text-gray-700 outline-none focus:border-[#D98A30] focus:bg-white transition-colors placeholder:text-gray-400"
+            className="w-full pl-8 pr-8 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] text-gray-700 outline-none focus:border-[#E8923A] focus:bg-white transition-colors placeholder:text-gray-400"
           />
           {searching ? (
             <i className="fa-solid fa-spinner fa-spin absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
@@ -208,10 +208,10 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
                 <button
                   key={l.code}
                   onClick={() => { setLanguage(l.code as any); setLangOpen(false); }}
-                  className={`flex items-center gap-2 w-full px-3 py-2.5 hover:bg-gray-50 transition-colors text-[13px] text-gray-700 ${lang === l.code ? "font-bold text-[#1E3A2F]" : "font-medium"}`}
+                  className={`flex items-center gap-2 w-full px-3 py-2.5 hover:bg-gray-50 transition-colors text-[13px] text-gray-700 ${lang === l.code ? "font-bold text-[#2D5A42]" : "font-medium"}`}
                 >
                   {l.label}
-                  {lang === l.code && <i className="fa-solid fa-check ml-auto text-[#D98A30] text-xs" />}
+                  {lang === l.code && <i className="fa-solid fa-check ml-auto text-[#E8923A] text-xs" />}
                 </button>
               ))}
             </div>
@@ -231,7 +231,7 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
         </button>
 
         {/* Admin avatar */}
-        <div className="w-9 h-9 rounded border border-[#D98A30]/40 bg-[#1E3A2F] flex items-center justify-center text-white font-bold text-sm uppercase">
+        <div className="w-9 h-9 rounded border border-[#E8923A]/40 bg-[#2D5A42] flex items-center justify-center text-white font-bold text-sm uppercase">
           {adminInitial[0]}
         </div>
       </div>

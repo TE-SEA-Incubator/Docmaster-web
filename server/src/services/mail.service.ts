@@ -1,5 +1,18 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import { partnerLinks } from '../utils/partnerLinks.ts';
+import {
+  buildEmailLayout,
+  emailButton,
+  emailButtonsRow,
+  emailInfoBox,
+  emailMuted,
+  emailParagraph,
+  emailPasswordBox,
+  emailPinCode,
+  partnerDualButtons,
+  escapeHtml,
+} from '../utils/emailTemplates.ts';
 
 dotenv.config();
 
@@ -11,20 +24,16 @@ export class MailService {
     this.transporter = nodemailer.createTransport({
       host: process.env.MAIL_HOST || 'smtp.gmail.com',
       port: port,
-      secure: port === 465, // true for 465, false for other ports
+      secure: port === 465,
       auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
       },
     });
 
-    // Verify connection on startup
-    this.verifyConnection().catch(err => console.error('❌ SMTP verify connection failed:', err));
+    this.verifyConnection().catch((err) => console.error('❌ SMTP verify connection failed:', err));
   }
 
-  /**
-   * Verify SMTP connection
-   */
   async verifyConnection(): Promise<void> {
     try {
       await this.transporter.verify();
@@ -34,455 +43,316 @@ export class MailService {
     }
   }
 
-  /**
-   * Send a password reset email
-   */
+  private fromEmail(): string {
+    return process.env.MAIL_FROM || process.env.MAIL_USER || 'assistance@dm.cm';
+  }
+
+  private async sendMail(
+    to: string,
+    subject: string,
+    html: string,
+    options?: { throwOnFail?: boolean; logLabel?: string }
+  ): Promise<void> {
+    const fromEmail = this.fromEmail();
+    const mailOptions = { from: fromEmail, to, subject, html };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`📧 ${options?.logLabel || 'Email'} envoyé à : ${to}`);
+    } catch (error: any) {
+      console.error(`❌ Erreur envoi email à ${to}:`, error.message);
+      if (error.message.includes('550')) {
+        try {
+          await this.transporter.sendMail({ ...mailOptions, from: fromEmail });
+          console.log(`📧 ${options?.logLabel || 'Email'} envoyé (fallback) à : ${to}`);
+          return;
+        } catch (e: any) {
+          console.error('❌ Échec définitif (fallback):', e.message);
+        }
+      }
+      if (options?.throwOnFail !== false) {
+        throw new Error(`Impossible d'envoyer l'email à ${to}`);
+      }
+    }
+  }
+
   async sendPasswordResetEmail(to: string, token: string): Promise<void> {
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3003'}/reset-password?token=${token}`;
-    const fromName = "incubateur";
-    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'assistance@dm.cm';
 
-    const mailOptions = {
-      from: `${fromEmail}`,
-      to,
-      subject: 'Réinitialisation de votre mot de passe | DocMaster',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
-          <h2 style="color: #f5a64b; text-align: center;">Réinitialisation de mot de passe</h2>
-          <p>Bonjour,</p>
-          <p>Vous avez demandé la réinitialisation de votre mot de passe DocMaster. Veuillez cliquer sur le bouton ci-dessous pour procéder :</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Réinitialiser mon mot de passe</a>
-          </div>
-          <p>Ce lien expirera dans 24 heures.</p>
-          <p>Si vous n'avez pas demandé cette action, vous pouvez ignorer cet email en toute sécurité.</p>
-          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
-          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
-            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
-          </p>
-        </div>
+    const html = buildEmailLayout({
+      context: 'security',
+      preheader: 'Réinitialisez votre mot de passe DocMaster',
+      title: 'Réinitialisation de mot de passe',
+      subtitle: 'Sécurisez l\'accès à votre compte',
+      bodyHtml: `
+        ${emailParagraph('Bonjour,')}
+        ${emailParagraph('Vous avez demandé la réinitialisation de votre mot de passe DocMaster. Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.')}
       `,
-    };
+      actionsHtml: emailButtonsRow(emailButton(resetUrl, 'Réinitialiser mon mot de passe')),
+      footerNote: 'Ce lien expire dans 24 heures. Si vous n\'êtes pas à l\'origine de cette demande, ignorez cet email.',
+    });
 
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`📧 Email de réinitialisation envoyé à : ${to}`);
-    } catch (error: any) {
-      console.error(`❌ Erreur lors de l'envoi de l'email à ${to}:`, error.message);
-      // Fallback: try sending with just the email address if formatted from fails
-      if (error.message.includes('550')) {
-        console.log('🔄 Tentative d\'envoi avec l\'adresse email brute...');
-        try {
-          mailOptions.from = fromEmail;
-          await this.transporter.sendMail(mailOptions);
-          console.log(`📧 Email envoyé avec succès (fallback brut) à : ${to}`);
-          return;
-        } catch (e: any) {
-          console.error('❌ Échec définitif de l\'envoi (fallback compris):', e.message);
-        }
-      }
-      throw new Error('Impossible d\'envoyer l\'email de réinitialisation.');
-    }
+    await this.sendMail(to, 'Réinitialisation de votre mot de passe | DocMaster', html, {
+      logLabel: 'Email de réinitialisation',
+    });
   }
 
-  /**
-   * Send a password reset email for an authority or partner portal
-   */
-  async sendPortalPasswordResetEmail(to: string, token: string, portal: "autorite" | "partenaire"): Promise<void> {
+  async sendPortalPasswordResetEmail(to: string, token: string, portal: 'autorite' | 'partenaire'): Promise<void> {
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3003';
     const resetUrl = `${baseUrl}/${portal}/reinitialisation?token=${token}`;
-    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'assistance@dm.cm';
     const portalLabel = portal === 'autorite' ? 'espace autorité' : 'espace partenaire';
+    const context = portal === 'partenaire' ? 'partner' : 'authority';
 
-    const mailOptions = {
-      from: `${fromEmail}`,
-      to,
-      subject: 'Réinitialisation de votre mot de passe | DocMaster',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
-          <h2 style="color: #f5a64b; text-align: center;">Réinitialisation de mot de passe</h2>
-          <p>Bonjour,</p>
-          <p>Vous avez demandé la réinitialisation du mot de passe de votre <strong>${portalLabel}</strong> DocMaster. Veuillez cliquer sur le bouton ci-dessous pour procéder :</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Réinitialiser mon mot de passe</a>
-          </div>
-          <p>Ce lien expirera dans 24 heures.</p>
-          <p>Si vous n'avez pas demandé cette action, vous pouvez ignorer cet email en toute sécurité.</p>
-          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
-          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
-            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
-          </p>
-        </div>
+    const actionsHtml =
+      portal === 'partenaire'
+        ? partnerDualButtons(
+            partnerLinks.resetPassword(token).web,
+            partnerLinks.resetPassword(token).app,
+            { web: 'Réinitialiser (web)', app: 'Réinitialiser (app)' }
+          )
+        : emailButtonsRow(emailButton(resetUrl, 'Réinitialiser mon mot de passe'));
+
+    const html = buildEmailLayout({
+      context,
+      preheader: `Réinitialisation mot de passe — ${portalLabel}`,
+      title: 'Réinitialisation de mot de passe',
+      subtitle: portalLabel,
+      bodyHtml: `
+        ${emailParagraph('Bonjour,')}
+        ${emailParagraph(`Vous avez demandé la réinitialisation du mot de passe de votre <strong>${portalLabel}</strong> DocMaster.`)}
       `,
-    };
+      actionsHtml,
+      footerNote: 'Ce lien expire dans 24 heures. Si vous n\'êtes pas à l\'origine de cette demande, ignorez cet email.',
+    });
 
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`📧 Email de réinitialisation (${portal}) envoyé à : ${to}`);
-    } catch (error: any) {
-      console.error(`❌ Erreur lors de l'envoi de l'email à ${to}:`, error.message);
-      if (error.message.includes('550')) {
-        console.log('🔄 Tentative d\'envoi avec l\'adresse email brute...');
-        try {
-          mailOptions.from = fromEmail;
-          await this.transporter.sendMail(mailOptions);
-          console.log(`📧 Email envoyé avec succès (fallback brut) à : ${to}`);
-          return;
-        } catch (e: any) {
-          console.error('❌ Échec définitif de l\'envoi (fallback compris):', e.message);
-        }
-      }
-      throw new Error('Impossible d\'envoyer l\'email de réinitialisation.');
-    }
+    await this.sendMail(to, 'Réinitialisation de votre mot de passe | DocMaster', html, {
+      logLabel: `Email de réinitialisation (${portal})`,
+    });
   }
 
-  /**
-   * Send a welcome email
-   */
   async sendWelcomeEmail(to: string, name: string): Promise<void> {
-    const fromName = "incubateur";
-    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'assistance@dm.cm';
+    const safeName = escapeHtml(name);
+    const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3003'}/dashboard`;
 
-    const mailOptions = {
-      from: `${fromEmail}`,
-      to,
-      subject: 'Bienvenue sur DocMaster !',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
-          <h2 style="color: #f5a64b; text-align: center;">Bienvenue, ${name} !</h2>
-          <p>Nous sommes ravis de vous compter parmi nos utilisateurs.</p>
-          <p>DocMaster vous aide à sécuriser et retrouver vos documents importants en toute simplicité.</p>
-          <p>Vous pouvez dès maintenant commencer à déclarer vos documents ou rechercher des objets perdus.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3003'}/dashboard.html" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Accéder à mon tableau de bord</a>
-          </div>
-          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
-          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
-            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
+    const html = buildEmailLayout({
+      context: 'default',
+      preheader: `Bienvenue sur DocMaster, ${name}`,
+      title: `Bienvenue, ${safeName} !`,
+      subtitle: 'Votre compte est prêt',
+      bodyHtml: `
+        ${emailParagraph('Nous sommes ravis de vous compter parmi nos utilisateurs.')}
+        ${emailParagraph('DocMaster vous aide à <strong>sécuriser</strong>, <strong>retrouver</strong> et <strong>gérer</strong> vos documents importants en toute simplicité.')}
+        ${emailInfoBox(`
+          <p style="margin:0;font-size:14px;color:#334155;line-height:1.6;">
+            ✓ Déclarez vos documents perdus ou trouvés<br />
+            ✓ Recevez des alertes en cas de correspondance<br />
+            ✓ Gagnez des récompenses en aidant la communauté
           </p>
-        </div>
+        `)}
       `,
-    };
+      actionsHtml: emailButtonsRow(emailButton(dashboardUrl, 'Accéder à mon tableau de bord')),
+    });
 
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`📧 Email de bienvenue envoyé à : ${to}`);
-    } catch (error: any) {
-      console.error(`❌ Erreur lors de l'envoi de l'email de bienvenue à ${to}:`, error.message);
-      // Fallback : essayer sans le nom d'affichage
-      if (error.message.includes('550')) {
-        try {
-          mailOptions.from = fromEmail;
-          await this.transporter.sendMail(mailOptions);
-          console.log(`📧 Email de bienvenue envoyé avec succès (fallback) à : ${to}`);
-          return;
-        } catch (e: any) {
-          console.error('❌ Échec définitif de l\'envoi (fallback compris):', e.message);
-        }
-      }
-      throw new Error(`Impossible d'envoyer l'email de bienvenue à ${to}: ${error.message}`);
-    }
+    await this.sendMail(to, 'Bienvenue sur DocMaster !', html, { logLabel: 'Email de bienvenue' });
   }
 
-  /**
-   * Send a verification email with a PIN code
-   */
   async sendVerificationEmail(to: string, pin: string): Promise<void> {
-    const fromName = "incubateur";
-    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'assistance@dm.cm';
-
-    const mailOptions = {
-      from: `${fromEmail}`,
-      to,
-      subject: 'Code de vérification | DocMaster',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
-          <h2 style="color: #f5a64b; text-align: center;">Vérification de votre compte</h2>
-          <p>Bonjour,</p>
-          <p>Merci de vous être inscrit sur DocMaster. Pour finaliser la création de votre compte, veuillez utiliser le code de vérification suivant :</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <span style="font-size: 32px; font-weight: bold; color: #f5a64b; letter-spacing: 5px; background-color: #faf8f5; padding: 15px 30px; border-radius: 10px; border: 1px dashed #f5a64b;">${pin}</span>
-          </div>
-          <p>Ce code expirera dans 10 minutes.</p>
-          <p>Si vous n'avez pas tenté de créer un compte DocMaster, vous pouvez ignorer cet email.</p>
-          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
-          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
-            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
-          </p>
-        </div>
+    const html = buildEmailLayout({
+      context: 'security',
+      preheader: 'Votre code de vérification DocMaster',
+      title: 'Vérification de votre compte',
+      subtitle: 'Entrez ce code pour finaliser votre inscription',
+      bodyHtml: `
+        ${emailParagraph('Bonjour,')}
+        ${emailParagraph('Merci de vous être inscrit sur DocMaster. Utilisez le code ci-dessous pour activer votre compte :')}
+        ${emailPinCode(pin)}
       `,
-    };
+      footerNote: 'Ce code expire dans 10 minutes. Si vous n\'avez pas créé de compte, ignorez cet email.',
+    });
 
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`📧 Code de vérification envoyé à : ${to}`);
-    } catch (error: any) {
-      console.error(`❌ Erreur lors de l'envoi de l'email de vérification à ${to}:`, error.message);
-      // Fallback
-      if (error.message.includes('550')) {
-        try {
-          mailOptions.from = fromEmail;
-          await this.transporter.sendMail(mailOptions);
-          console.log(`📧 Code de vérification envoyé avec succès (fallback) à : ${to}`);
-          return;
-        } catch (e: any) {
-          console.error('❌ Échec définitif (fallback compris):', e.message);
-        }
-      }
-      throw new Error('Impossible d\'envoyer l\'email de vérification.');
-    }
+    await this.sendMail(to, 'Code de vérification | DocMaster', html, { logLabel: 'Code de vérification' });
   }
 
-  /**
-   * Send an expiration reminder email
-   */
-  async sendExpirationReminderEmail(to: string, userName: string, docType: string, daysLeft: number, expiresAt?: Date): Promise<void> {
-    const fromName = "incubateur";
-    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'notifications@dm.cm';
+  async sendExpirationReminderEmail(
+    to: string,
+    userName: string,
+    docType: string,
+    daysLeft: number,
+    expiresAt?: Date
+  ): Promise<void> {
     const dateStr = expiresAt ? new Date(expiresAt).toLocaleDateString('fr-FR') : 'bientôt';
+    const docsUrl = `${process.env.FRONTEND_URL || 'https://docmaster.net'}/mes-documents`;
+    const daysLabel = `${daysLeft} jour${daysLeft > 1 ? 's' : ''}`;
+    const safeName = escapeHtml(userName);
+    const safeDocType = escapeHtml(docType);
 
-    const subject = `Rappel : Votre ${docType} expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`;
-
-    const mailOptions = {
-      from: `${fromEmail}`,
-      to,
-      subject,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="width: 60px; height: 60px; background-color: #FEF0DC; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
-              <span style="font-size: 30px;">⏰</span>
-            </div>
-          </div>
-          <h2 style="color: #f5a64b; text-align: center;">Document bientôt expiré</h2>
-          <p>Bonjour ${userName},</p>
-          <p>Votre document <strong>${docType}</strong> expire dans <strong>${daysLeft} jour${daysLeft > 1 ? 's' : ''}</strong> (le ${dateStr}).</p>
-          <p>Pensez à le renouveler auprès de l'autorité compétente pour éviter tout désagrément.</p>
-          <p style="font-size: 13px; color: #64748b;">Si votre document est déjà renouvelé, mettez à jour sa date d'expiration dans votre coffre-fort DocMaster.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL || 'https://docmaster.net'}/mes-documents" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Voir mes documents</a>
-          </div>
-          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
-          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
-            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
-          </p>
-        </div>
+    const html = buildEmailLayout({
+      context: 'warning',
+      preheader: `Votre ${docType} expire dans ${daysLabel}`,
+      title: 'Document bientôt expiré',
+      subtitle: safeDocType,
+      bodyHtml: `
+        ${emailParagraph(`Bonjour <strong>${safeName}</strong>,`)}
+        ${emailParagraph(`Votre document <strong>${safeDocType}</strong> expire dans <strong>${daysLabel}</strong> (le ${dateStr}).`)}
+        ${emailParagraph('Pensez à le renouveler auprès de l\'autorité compétente pour éviter tout désagrément.')}
+        ${emailInfoBox(`<p style="margin:0;font-size:13px;color:#64748B;">Si votre document est déjà renouvelé, mettez à jour sa date d'expiration dans votre coffre-fort DocMaster.</p>`)}
       `,
-    };
+      actionsHtml: emailButtonsRow(emailButton(docsUrl, 'Voir mes documents')),
+    });
 
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`📧 Rappel d'expiration envoyé à : ${to}`);
-    } catch (error: any) {
-      console.error(`❌ Erreur lors de l'envoi du rappel d'expiration à ${to}:`, error.message);
-    }
+    await this.sendMail(
+      to,
+      `Rappel : Votre ${docType} expire dans ${daysLabel}`,
+      html,
+      { throwOnFail: false, logLabel: 'Rappel d\'expiration' }
+    );
   }
 
-  /**
-   * Send a generic notification email (for any notification type)
-   */
   async sendNotificationEmail(to: string, userName: string, title: string, message: string): Promise<void> {
-    const fromName = "incubateur";
-    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'notifications@dm.cm';
+    const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3003'}/dashboard`;
+    const safeName = escapeHtml(userName);
+    const safeTitle = escapeHtml(title);
+    const safeMessage = escapeHtml(message);
 
-    const mailOptions = {
-      from: `${fromEmail}`,
-      to,
-      subject: `${title} | incubateur`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="width: 60px; height: 60px; background-color: #FEF0DC; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
-              <span style="font-size: 30px;">🔔</span>
-            </div>
-          </div>
-          <h2 style="color: #f5a64b; text-align: center;">${title}</h2>
-          <p>Bonjour ${userName},</p>
-          <p>${message}</p>
-          <p>Connectez-vous à votre tableau de bord DocMaster pour plus de détails.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3003'}/dashboard" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Voir mon tableau de bord</a>
-          </div>
-          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
-          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
-            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
-          </p>
-        </div>
+    const html = buildEmailLayout({
+      context: 'notification',
+      preheader: title,
+      title: safeTitle,
+      subtitle: 'Nouvelle activité sur votre compte',
+      bodyHtml: `
+        ${emailParagraph(`Bonjour <strong>${safeName}</strong>,`)}
+        ${emailParagraph(safeMessage)}
+        ${emailParagraph('Connectez-vous à votre tableau de bord pour plus de détails.')}
       `,
-    };
+      actionsHtml: emailButtonsRow(emailButton(dashboardUrl, 'Voir mon tableau de bord')),
+    });
 
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`📧 Email de notification envoyé à : ${to}`);
-    } catch (error: any) {
-      console.error(`❌ Erreur lors de l'envoi de l'email de notification à ${to}:`, error.message);
-    }
+    await this.sendMail(to, `${title} | DocMaster`, html, {
+      throwOnFail: false,
+      logLabel: 'Email de notification',
+    });
   }
 
-  /**
-   * Send a notification when a document match is found
-   */
-  async sendMatchNotificationEmail(to: string, userName: string, docType: string, matchType: 'LOST_SIDE' | 'FOUND_SIDE'): Promise<void> {
-    const fromName = "incubateur";
-    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'notifications@dm.cm';
-
+  async sendMatchNotificationEmail(
+    to: string,
+    userName: string,
+    docType: string,
+    matchType: 'LOST_SIDE' | 'FOUND_SIDE'
+  ): Promise<void> {
     const isLostSide = matchType === 'LOST_SIDE';
-    const subject = isLostSide ? `Bonne nouvelle ! Votre ${docType} a été retrouvé` : `Correspondance trouvée pour le document : ${docType}`;
-    
-    const title = isLostSide ? "Document Retrouvé !" : "Propriétaire Identifié !";
-    const message = isLostSide 
-      ? `Bonne nouvelle ${userName}, quelqu'un a signalé avoir trouvé votre <strong>${docType}</strong>.`
-      : `Le propriétaire du document <strong>${docType}</strong> que vous avez signalé a été identifié.`;
-    
-    const actionText = isLostSide ? "Voir les détails et récupérer" : "Voir les détails";
-    const actionUrl = `${process.env.FRONTEND_URL || 'http://localhost:3003'}/dashboard.html`;
+    const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:3003'}/dashboard`;
+    const safeName = escapeHtml(userName);
+    const safeDocType = escapeHtml(docType);
+    const subject = isLostSide
+      ? `Bonne nouvelle ! Votre ${docType} a été retrouvé`
+      : `Correspondance trouvée pour le document : ${docType}`;
 
-    const mailOptions = {
-      from: `${fromEmail}`,
-      to,
-      subject,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="width: 60px; height: 60px; background-color: #FEF0DC; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
-              <span style="font-size: 30px;">🎉</span>
-            </div>
-          </div>
-          <h2 style="color: #f5a64b; text-align: center;">${title}</h2>
-          <p>Bonjour ${userName},</p>
-          <p>${message}</p>
-          <p>Connectez-vous à votre tableau de bord DocMaster pour voir les prochaines étapes.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${actionUrl}" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">${actionText}</a>
-          </div>
-          <p style="font-size: 13px; color: #64748b;">Merci d'utiliser DocMaster pour la sécurité de vos documents.</p>
-          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
-          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
-            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
-          </p>
-        </div>
+    const html = buildEmailLayout({
+      context: 'success',
+      preheader: isLostSide ? 'Votre document a été retrouvé' : 'Propriétaire identifié',
+      title: isLostSide ? 'Document retrouvé !' : 'Propriétaire identifié !',
+      subtitle: safeDocType,
+      bodyHtml: `
+        ${emailParagraph(`Bonjour <strong>${safeName}</strong>,`)}
+        ${emailParagraph(
+          isLostSide
+            ? `Bonne nouvelle ! Quelqu'un a signalé avoir trouvé votre <strong>${safeDocType}</strong>.`
+            : `Le propriétaire du document <strong>${safeDocType}</strong> que vous avez signalé a été identifié.`
+        )}
+        ${emailParagraph('Connectez-vous à DocMaster pour voir les prochaines étapes.')}
       `,
-    };
+      actionsHtml: emailButtonsRow(
+        emailButton(dashboardUrl, isLostSide ? 'Voir les détails et récupérer' : 'Voir les détails', 'primary')
+      ),
+      footerNote: 'Merci d\'utiliser DocMaster pour la sécurité de vos documents.',
+    });
 
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`📧 Notification de match envoyée à : ${to}`);
-    } catch (error: any) {
-      console.error(`❌ Erreur lors de l'envoi de l'email de match à ${to}:`, error.message);
-    }
+    await this.sendMail(to, subject, html, { throwOnFail: false, logLabel: 'Notification de match' });
   }
 
-  /**
-   * Send an invitation email to a new authority
-   */
   async sendAuthorityInviteEmail(to: string, name: string, tempPassword: string, loginUrl: string): Promise<void> {
-    const fromName = "incubateur";
-    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'assistance@dm.cm';
-
-    const mailOptions = {
-      from: `${fromEmail}`,
-      to,
-      subject: 'Vous avez été nommé(e) autorité DocMaster',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="width: 60px; height: 60px; background-color: #FEF0DC; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
-              <span style="font-size: 30px;">🛡️</span>
-            </div>
-          </div>
-          <h2 style="color: #f5a64b; text-align: center;">Nomination Autorité</h2>
-          <p>Bonjour <strong>${name}</strong>,</p>
-          <p>Vous avez été nommé(e) <strong>autorité DocMaster</strong>. Vous pouvez désormais certifier les déclarations de documents.</p>
-          <p style="background-color: #F8FAFC; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
-            <strong>Votre mot de passe temporaire :</strong>
-            <span style="display: block; font-size: 20px; font-weight: 800; color: #1e293b; text-align: center; letter-spacing: 2px; margin-top: 6px;">${tempPassword}</span>
-          </p>
-          <p style="font-size: 13px; color: #64748b;">À votre première connexion, vous devrez changer ce mot de passe.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${loginUrl}" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Se connecter à l'espace autorité</a>
-          </div>
-          <p style="font-size: 13px; color: #64748b;">Merci de contribuer à la sécurité des documents.</p>
-          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
-          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
-            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
-          </p>
-        </div>
+    const safeName = escapeHtml(name);
+    const html = buildEmailLayout({
+      context: 'authority',
+      preheader: 'Votre accès autorité DocMaster est prêt',
+      title: 'Nomination Autorité',
+      subtitle: `Bonjour ${safeName}`,
+      bodyHtml: `
+        ${emailParagraph(`Vous avez été nommé(e) <strong>autorité DocMaster</strong>. Vous pouvez désormais certifier les déclarations de documents.`)}
+        ${emailPasswordBox(tempPassword)}
+        ${emailMuted('À votre première connexion, vous devrez changer ce mot de passe.')}
       `,
-    };
+      actionsHtml: emailButtonsRow(emailButton(loginUrl, 'Se connecter à l\'espace autorité', 'primary')),
+      footerNote: 'Merci de contribuer à la sécurité des documents au Cameroun.',
+    });
 
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`📧 Email d'invitation autorité envoyé à : ${to}`);
-    } catch (error: any) {
-      console.error(`❌ Erreur lors de l'envoi de l'email d'invitation à ${to}:`, error.message);
-      if (error.message.includes('550')) {
-        try {
-          mailOptions.from = fromEmail;
-          await this.transporter.sendMail(mailOptions);
-          console.log(`📧 Email d'invitation envoyé avec succès (fallback) à : ${to}`);
-          return;
-        } catch (e: any) {
-          console.error('❌ Échec définitif de l\'envoi (fallback compris):', e.message);
-        }
-      }
-      throw new Error(`Impossible d'envoyer l'email d'invitation à ${to}: ${error.message}`);
-    }
+    await this.sendMail(to, 'Vous avez été nommé(e) autorité DocMaster', html, {
+      logLabel: 'Email d\'invitation autorité',
+    });
   }
 
-  /**
-   * Send an invitation email to a new partner (organisation account)
-   */
-  async sendPartnerInviteEmail(to: string, organisationName: string, tempPassword: string, loginUrl: string): Promise<void> {
-    const fromEmail = process.env.MAIL_FROM || process.env.MAIL_USER || 'assistance@dm.cm';
+  async sendPartnerInviteEmail(to: string, organisationName: string, tempPassword: string): Promise<void> {
+    const loginLinks = partnerLinks.login();
+    const safeOrg = escapeHtml(organisationName);
 
-    const mailOptions = {
-      from: `${fromEmail}`,
-      to,
-      subject: 'Votre compte partenaire DocMaster est prêt',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e0d8; border-radius: 14px;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="width: 60px; height: 60px; background-color: #FEF0DC; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;">
-              <span style="font-size: 30px;">🏢</span>
-            </div>
-          </div>
-          <h2 style="color: #f5a64b; text-align: center;">Compte Partenaire</h2>
-          <p>Bonjour,</p>
-          <p>Un compte <strong>partenaire DocMaster</strong> a été créé pour <strong>${organisationName}</strong>. Ce compte vous permet de déclarer des documents trouvés en illimité.</p>
-          <p style="background-color: #F8FAFC; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
-            <strong>Votre mot de passe temporaire :</strong>
-            <span style="display: block; font-size: 20px; font-weight: 800; color: #1e293b; text-align: center; letter-spacing: 2px; margin-top: 6px;">${tempPassword}</span>
-          </p>
-          <p style="font-size: 13px; color: #64748b;">À votre première connexion, vous devrez changer ce mot de passe.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${loginUrl}" style="background-color: #f5a64b; color: white; padding: 14px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">Se connecter à l'espace partenaire</a>
-          </div>
-          <p style="font-size: 13px; color: #64748b;">Merci de contribuer à la sécurité des documents.</p>
-          <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 20px 0;">
-          <p style="font-size: 12px; color: #8e8e8e; text-align: center;">
-            &copy; ${new Date().getFullYear()} DocMaster. Tous droits réservés.
-          </p>
-        </div>
+    const html = buildEmailLayout({
+      context: 'partner',
+      preheader: `Compte partenaire créé pour ${organisationName}`,
+      title: 'Compte Partenaire',
+      subtitle: safeOrg,
+      bodyHtml: `
+        ${emailParagraph('Bonjour,')}
+        ${emailParagraph(`Un compte <strong>partenaire DocMaster</strong> a été créé pour <strong>${safeOrg}</strong>. Vous pouvez déclarer des documents trouvés en illimité et être récompensé.`)}
+        ${emailPasswordBox(tempPassword)}
+        ${emailMuted('À votre première connexion, vous devrez changer ce mot de passe.')}
       `,
-    };
+      actionsHtml: partnerDualButtons(loginLinks.web, loginLinks.app, {
+        web: 'Se connecter (web)',
+        app: 'Ouvrir l\'application',
+      }),
+      footerNote: 'Merci de contribuer à la sécurité des documents.',
+    });
 
-    try {
-      await this.transporter.sendMail(mailOptions);
-      console.log(`📧 Email d'invitation partenaire envoyé à : ${to}`);
-    } catch (error: any) {
-      console.error(`❌ Erreur lors de l'envoi de l'email d'invitation partenaire à ${to}:`, error.message);
-      if (error.message.includes('550')) {
-        try {
-          mailOptions.from = fromEmail;
-          await this.transporter.sendMail(mailOptions);
-          console.log(`📧 Email d'invitation partenaire envoyé avec succès (fallback) à : ${to}`);
-          return;
-        } catch (e: any) {
-          console.error('❌ Échec définitif de l\'envoi (fallback compris):', e.message);
-        }
-      }
-      throw new Error(`Impossible d'envoyer l'email d'invitation à ${to}: ${error.message}`);
-    }
+    await this.sendMail(to, 'Votre compte partenaire DocMaster est prêt', html, {
+      logLabel: 'Email d\'invitation partenaire',
+    });
+  }
+
+  async sendDeviceTransferEmail(
+    to: string,
+    recipientName: string,
+    deviceBrand: string,
+    deviceModel: string,
+    deviceCategory: string,
+    acceptUrl: string
+  ): Promise<void> {
+    const safeName = escapeHtml(recipientName);
+    const safeBrand = escapeHtml(deviceBrand);
+    const safeModel = escapeHtml(deviceModel);
+    const safeCategory = escapeHtml(deviceCategory);
+
+    const html = buildEmailLayout({
+      context: 'device',
+      preheader: 'Un appareil vous a été transféré sur DocMaster',
+      title: 'Transfert d\'appareil',
+      subtitle: `${safeBrand} ${safeModel}`,
+      bodyHtml: `
+        ${emailParagraph(`Bonjour <strong>${safeName}</strong>,`)}
+        ${emailParagraph('Un utilisateur DocMaster souhaite vous transférer la propriété de son appareil :')}
+        ${emailInfoBox(`
+          <p style="margin:0;font-size:16px;font-weight:700;color:#1E3A2F;">${safeBrand} ${safeModel}</p>
+          <p style="margin:6px 0 0;font-size:13px;color:#64748B;">${safeCategory || 'Appareil mobile'}</p>
+        `)}
+        ${emailParagraph('En acceptant, vous deviendrez le nouveau propriétaire de cet appareil sur DocMaster.')}
+      `,
+      actionsHtml: emailButtonsRow(emailButton(acceptUrl, 'Voir et répondre')),
+      footerNote: 'Ce lien expire dans 7 jours.',
+    });
+
+    await this.sendMail(to, 'Transfert d\'appareil | DocMaster', html, {
+      throwOnFail: false,
+      logLabel: 'Email transfert appareil',
+    });
   }
 }
 

@@ -110,7 +110,7 @@ export default function AdminWithdrawals() {
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                             placeholder="Note (obligatoire pour rejet)..."
-                            className="w-full max-w-[200px] px-2.5 py-1.5 border border-gray-200 rounded text-[12px] outline-none focus:border-[#D98A30]"
+                            className="w-full max-w-[200px] px-2.5 py-1.5 border border-gray-200 rounded text-[12px] outline-none focus:border-[#E8923A]"
                           />
                           <div className="flex items-center gap-1.5">
                             <button

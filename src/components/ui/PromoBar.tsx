@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Group, Text, Badge } from "@mantine/core";
 import { useI18n } from "../../context/I18nContext";
 import { promoService, type PromoPlan } from "../../services/promoService";
 
@@ -30,33 +29,33 @@ export default function PromoBar({ onVisibilityChange }: PromoBarProps) {
   return (
     <div
       style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 99998 }}
-      className="bg-sky-600 cursor-pointer group"
+      className="bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer group shadow-sm"
       onClick={() => navigate("/abonnement")}
     >
-      <Group justify="space-between" gap={3} px="md" h={36} maw="80rem" mx="auto">
-        <Group gap={8} style={{ minWidth: 0, flex: 1 }}>
-          <Badge
-            color="red"
-            variant="filled"
-            size="sm"
-            radius="xl"
-            p={0}
-            className="flex-shrink-0 uppercase"
-            styles={{ label: { fontSize: 10, fontWeight: 800, letterSpacing: "0.05em" } }}
-          >
-            <Group gap={4}>
-              <i className="fa-solid fa-tag text-[8px]" />
-              -{discountPct}%
-            </Group>
-          </Badge>
-          <Text c="white" fw={700} size="xs" truncate style={{ fontSize: 11 }}>
-            {t("promo_bar_limited")} · VIP {promo.duration_months} {t("promo_bar_months")} · {promo.price.toLocaleString("fr-FR")} XAF
-          </Text>
-          <Text c="white.6" fw={600} visibleFrom="sm" size="xs" className="group-hover:!text-white transition-colors flex-shrink-0" style={{ fontSize: 11 }}>
-            {t("promo_bar_cta")} <i className="fa-solid fa-arrow-right text-[9px]" />
-          </Text>
-        </Group>
-      </Group>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-11 flex items-center justify-between gap-3 text-white font-sans">
+        {/* Gauche : badge + message promo */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="inline-flex items-center gap-1 bg-white/20 text-white rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide flex-shrink-0">
+            <i className="fa-solid fa-tag text-[9px]" />
+            -{discountPct}%
+          </span>
+          <span className="text-white text-xs sm:text-sm font-normal truncate">
+            {t("promo_bar_limited")} · VIP {promo.duration_months} {t("promo_bar_months")}
+          </span>
+        </div>
+
+        {/* Centre : prix */}
+        <span className="hidden md:inline-flex items-center gap-1.5 text-blue-100 text-xs sm:text-sm font-normal flex-shrink-0">
+          <i className="fa-solid fa-circle-check text-blue-200 text-xs" />
+          {promo.price.toLocaleString("fr-FR")} XAF
+        </span>
+
+        {/* Droite : CTA */}
+        <span className="inline-flex items-center gap-1.5 text-white text-xs sm:text-sm font-medium flex-shrink-0 group-hover:translate-x-0.5 transition-transform">
+          {t("promo_bar_cta")}
+          <i className="fa-solid fa-arrow-right text-[10px]" />
+        </span>
+      </div>
     </div>
   );
 }

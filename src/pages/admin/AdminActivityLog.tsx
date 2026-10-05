@@ -108,7 +108,7 @@ export default function AdminActivityLog() {
         <select
           value={filterAction}
           onChange={(e) => { setFilterAction(e.target.value); setPage(1); }}
-          className="px-3 py-2 bg-white border border-gray-200 rounded text-[13px] text-gray-700 outline-none focus:border-[#D98A30]"
+          className="px-3 py-2 bg-white border border-gray-200 rounded text-[13px] text-gray-700 outline-none focus:border-[#E8923A]"
         >
           <option value="">Toutes les actions</option>
           {actionTypes.map((a) => (
@@ -120,7 +120,7 @@ export default function AdminActivityLog() {
           value={filterUser}
           onChange={(e) => { setFilterUser(e.target.value); setPage(1); }}
           placeholder="Filtrer par ID utilisateur..."
-          className="px-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] w-56"
+          className="px-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] w-56"
         />
         {(filterAction || filterUser) && (
           <button

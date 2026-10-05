@@ -335,3 +335,4 @@ export const partenairesService = {
 };
 
 export default partenairesApi;
+export { partnerGeneralApi };

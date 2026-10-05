@@ -39,6 +39,9 @@ export default function MobileNav() {
 
   const current = location.pathname;
 
+  // Cacher la bottom nav sur la page messagerie (expérience fullscreen)
+  if (current.startsWith("/messagerie")) return null;
+
   const items = [
     { to: "/dashboard", Icon: IconHome, label: t("nav_home") },
     { to: "#decl", Icon: IconCirclePlus, label: t("mobile_declaration"), isPlus: true },

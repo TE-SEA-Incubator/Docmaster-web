@@ -12,7 +12,10 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { partenairesService, type PartenaireStats, type PartenaireDeclaration } from "../../services/partenairesService";
+import { documentTypesService } from "../../services/declarationsService";
 import { statsService } from "../../services/statsService";
+import { computePartnerPotentialEarnings } from "../../utils/partnerPotentialEarnings";
+import type { DocTypeCatalog } from "../../types/api";
 import { useStatsByType } from "../../hooks/useStats";
 import { usePartenaire } from "../../context/PartenaireContext";
 import { useI18n } from "../../context/I18nContext";
@@ -49,6 +52,9 @@ export default function Dashboard() {
   const [globalStats, setGlobalStats] = useState<{ total_lost: number; total_recovered: number } | null>(null);
   const [perfPeriod, setPerfPeriod] = useState("month");
   const [detail, setDetail] = useState<PartenaireDeclaration | null>(null);
+  const [potential, setPotential] = useState(0);
+  const [potentialPts, setPotentialPts] = useState(0);
+  const [potentialCount, setPotentialCount] = useState(0);
   const { stats: perfStats, loading: perfLoading } = useStatsByType(perfPeriod);
 
   const today = new Intl.DateTimeFormat(localeTag, {
@@ -108,13 +114,29 @@ export default function Dashboard() {
   useEffect(() => {
     let cancelled = false;
     setRecentLoading(true);
-    partenairesService
-      .getDeclarations({ limit: 6 })
-      .then((res) => {
-        if (!cancelled) setRecent(res.data.rows);
+    Promise.all([
+      partenairesService.getDeclarations({ limit: 6 }),
+      partenairesService.getDeclarations({ limit: 200 }),
+      documentTypesService.getActive(),
+    ])
+      .then(([recentRes, allRes, typesRes]) => {
+        if (cancelled) return;
+        setRecent(recentRes.data.rows);
+        const declarations = allRes.data.rows ?? [];
+        const docTypes =
+          typesRes.success && Array.isArray(typesRes.data) ? (typesRes.data as DocTypeCatalog[]) : [];
+        const potentialData = computePartnerPotentialEarnings(declarations, docTypes);
+        setPotential(potentialData.total);
+        setPotentialPts(potentialData.totalPts);
+        setPotentialCount(potentialData.count);
       })
       .catch(() => {
-        if (!cancelled) setRecent([]);
+        if (!cancelled) {
+          setRecent([]);
+          setPotential(0);
+          setPotentialPts(0);
+          setPotentialCount(0);
+        }
       })
       .finally(() => {
         if (!cancelled) setRecentLoading(false);
@@ -390,7 +412,12 @@ export default function Dashboard() {
                   }}
                 >
                   {recent.slice(0, 6).map((decl) => (
-                    <FoundCard key={decl.id} decl={decl} onOpen={() => setDetail(decl)} />
+                    <FoundCard
+                      key={decl.id}
+                      decl={decl}
+                      onOpen={() => setDetail(decl)}
+                      onRendre={(id) => navigate(`/partenaire/rendre?id=${id}`)}
+                    />
                   ))}
                 </div>
               )}
@@ -448,8 +475,33 @@ export default function Dashboard() {
               {t("partenaire_dashboard_balance")}
             </Typography.Text>
             <Typography.Title level={3} style={{ margin: 0, color: partenairePalette.success, fontWeight: 800 }}>
-              {Number(partenaire?.wallet_balance ?? 0).toLocaleString(localeTag)} FCFA
+              {Number(partenaire?.wallet_balance ?? stats?.wallet_balance ?? 0).toLocaleString(localeTag)} FCFA
             </Typography.Title>
+            <Typography.Text style={{ display: "block", marginTop: 6, color: "#D97706", fontWeight: 600 }}>
+              <i className="fa-solid fa-star" style={{ marginRight: 6, fontSize: 11 }} />
+              {Number(stats?.total_points ?? partenaire?.points ?? 0).toLocaleString(localeTag)} pts
+            </Typography.Text>
+            {potentialCount > 0 && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  background: "#FFFBEB",
+                  border: `1px solid ${partenairePalette.border}`,
+                }}
+              >
+                <Typography.Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+                  {t("mesgains_potential_title")} ({potentialCount})
+                </Typography.Text>
+                <Typography.Text strong style={{ color: "#D97706", fontSize: 16, display: "block" }}>
+                  {potential.toLocaleString(localeTag)} FCFA
+                </Typography.Text>
+                <Typography.Text style={{ color: partenairePalette.primary, fontSize: 13 }}>
+                  +{potentialPts.toLocaleString(localeTag)} pts
+                </Typography.Text>
+              </div>
+            )}
             <Button
               block
               style={{ marginTop: 14, height: 36 }}
@@ -614,7 +666,7 @@ function FoundStepIndicator({ steps, current, color }: { steps: string[]; curren
   );
 }
 
-function FoundCard({ decl, onOpen }: { decl: PartenaireDeclaration; onOpen: () => void }) {
+function FoundCard({ decl, onOpen, onRendre }: { decl: PartenaireDeclaration; onOpen: () => void; onRendre: (id: string) => void }) {
   const { t } = useI18n();
   const isDone = decl.status === "RETURNED" || decl.status === "MATCHED";
   const c = FOUND_STEP_COLORS[isDone ? "green" : "blue"];
@@ -706,6 +758,19 @@ function FoundCard({ decl, onOpen }: { decl: PartenaireDeclaration; onOpen: () =
           current={step}
           color={isDone ? "green" : "blue"}
         />
+        {decl.status === "MATCHED" && (
+          <Button
+            type="primary"
+            block
+            style={{ marginTop: 16, height: 38, borderRadius: 10, fontWeight: 700 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRendre(decl.id);
+            }}
+          >
+            {t("partenaire_rendre_btn")}
+          </Button>
+        )}
         {decl.status !== "MATCHED" && decl.status !== "RETURNED" && (
           <div
             style={{

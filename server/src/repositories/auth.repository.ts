@@ -44,8 +44,8 @@ export class UserRepository {
    */
   async createUser(userData: Partial<User>): Promise<User> {
     const query = `
-      INSERT INTO users (nom, prenom, email, mot_de_passe, telephone, pays, ville, date_naissance, code_invitation, parrain_id, is_verified) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+      INSERT INTO users (nom, prenom, email, mot_de_passe, telephone, pays, ville, date_naissance, code_invitation, parrain_id, is_verified, genre) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
       RETURNING *`;
     
     const { rows } = await pool.query(query, [
@@ -60,6 +60,7 @@ export class UserRepository {
       userData.code_invitation || null,
       userData.parrain_id || null,
       userData.is_verified || false,
+      userData.genre || null,
     ]);
     
     return rows[0];
@@ -135,7 +136,8 @@ export class UserRepository {
     ville?: string,
     date_naissance?: string | null,
     lieu_naissance?: string,
-    currency?: string
+    currency?: string,
+    genre?: string | null
   }): Promise<User | null> {
     const fields: string[] = [];
     const values: any[] = [];
@@ -174,6 +176,11 @@ export class UserRepository {
     if (data.currency !== undefined) {
       fields.push(`currency = $${idx++}`);
       values.push(data.currency);
+    }
+    if (data.genre !== undefined) {
+      fields.push(`genre = $${idx++}`);
+      const genreVal = data.genre === "" ? null : data.genre;
+      values.push(genreVal);
     }
 
     if (fields.length === 0) return this.findById(userId);
@@ -355,5 +362,27 @@ export class UserRepository {
     const query = 'DELETE FROM users WHERE id = $1';
     const { rowCount } = await pool.query(query, [userId]);
     return (rowCount ?? 0) > 0;
+  }
+
+  async setRefreshToken(userId: string, refreshHash: string, expiresAt: Date): Promise<void> {
+    await pool.query(
+      `UPDATE users SET refresh_token_hash = $1, refresh_token_expires = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3`,
+      [refreshHash, expiresAt, userId]
+    );
+  }
+
+  async findByRefreshTokenHash(refreshHash: string): Promise<User | null> {
+    const { rows } = await pool.query(
+      `SELECT * FROM users WHERE refresh_token_hash = $1 AND refresh_token_expires > CURRENT_TIMESTAMP LIMIT 1`,
+      [refreshHash]
+    );
+    return rows[0] || null;
+  }
+
+  async clearRefreshToken(userId: string): Promise<void> {
+    await pool.query(
+      `UPDATE users SET refresh_token_hash = NULL, refresh_token_expires = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+      [userId]
+    );
   }
 }

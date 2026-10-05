@@ -89,10 +89,10 @@ export class NotificationService {
       const pushVal = await subscriptionService.validateAction(destinataireId, 'ADD_ALERT', { alertType: 'push' });
       channels.push = pushVal.allowed;
     } else {
-      // Partenaires & autorités : on envoie email + sms si coordonnées dispo, pas de push pour l'instant
+      // Partenaires & autorités : email + sms + push
       channels.sms = true;
       channels.email = true;
-      channels.push = false;
+      channels.push = true;
     }
 
     const enrichedData = {
@@ -117,7 +117,7 @@ export class NotificationService {
     // 1. Socket toujours (in-app temps réel)
     const socketTargetId = destinataire_id || user_id;
     if (destinataire_type && socketTargetId) {
-      this.socketService.sendToUser(socketTargetId, 'NEW_NOTIFICATION', notification);
+      this.socketService.sendToActor(destinataire_type, socketTargetId, 'NEW_NOTIFICATION', notification);
     }
 
     // 2. Lookup contact pour email/sms
@@ -168,19 +168,60 @@ export class NotificationService {
       }
     }
 
-    // 5. Push FCM (USER uniquement pour l'instant)
-    if (channels.push && destinataire_type === 'USER' && user_id) {
+    // 5. Push FCM (USER, PARTENAIRE, AUTORITE)
+    if (channels.push && socketTargetId) {
       try {
-        const tokens = await this.pushTokenRepository.findByUserId(user_id);
+        const tokens = await this.pushTokenRepository.findByDestinataire(
+          socketTargetId,
+          destinataire_type
+        );
         const fcmTokens = tokens.map(t => t.token).filter(Boolean);
         if (fcmTokens.length > 0) {
+          // Format data values as string for FCM payload compatibility
+          const stringifiedData: Record<string, string> = {
+            notification_id: String(notification.id || ''),
+            type: String(type || ''),
+            title: String(title || ''),
+            message: String(message || ''),
+            destinataire_type: String(destinataire_type || 'USER'),
+          };
+
+          if (metadata && typeof metadata === 'object') {
+            for (const [k, v] of Object.entries(metadata)) {
+              if (v !== undefined && v !== null) {
+                stringifiedData[k] = typeof v === 'object' ? JSON.stringify(v) : String(v);
+              }
+            }
+          }
+
           const response = await admin.messaging().sendEachForMulticast({
             notification: { title, body: message },
+            data: stringifiedData,
             tokens: fcmTokens,
+            android: {
+              priority: 'high',
+              notification: {
+                channelId: 'docmaster_high_importance_channel',
+                priority: 'max',
+                sound: 'default',
+              },
+            },
+            apns: {
+              payload: {
+                aps: {
+                  sound: 'default',
+                  badge: 1,
+                },
+              },
+            },
           });
+
+          console.log(`📱 [Push FCM] Notification envoyée à ${fcmTokens.length} appareil(s) pour ${destinataire_type} (${socketTargetId}) - Titre: "${title}" | Succès: ${response.successCount}/${fcmTokens.length}`);
+
           const invalidTokens: string[] = [];
           response.responses.forEach((r, idx) => {
             if (!r.success) {
+              console.warn(`⚠️ [Push FCM] Échec sur token [${idx}]:`, r.error?.message);
               const code = r.error?.code || '';
               if (
                 code.includes('unregistered') ||
@@ -194,11 +235,14 @@ export class NotificationService {
             }
           });
           if (invalidTokens.length > 0) {
+            console.log(`🧹 [Push FCM] Nettoyage de ${invalidTokens.length} token(s) FCM invalide(s)`);
             await this.pushTokenRepository.deleteInvalidTokens(invalidTokens);
           }
+        } else {
+          console.log(`ℹ️ [Push FCM] Aucun token FCM actif pour ${destinataire_type} (${socketTargetId})`);
         }
       } catch (err) {
-        console.error('Error sending push notification:', err);
+        console.error('❌ [Push FCM] Erreur critique lors de l\'envoi:', err);
       }
     }
   }
@@ -289,7 +333,7 @@ export class NotificationService {
     });
   }
 
-  async notifyMatchFound(lostUserId: string, foundUserId: string, docId: string, docType: string) {
+  async notifyMatchFound(lostUserId: string, foundUserId: string | null | undefined, docId: string, docType: string) {
     await this.createNotification({
       user_id: lostUserId,
       destinataire_type: 'USER',
@@ -299,18 +343,21 @@ export class NotificationService {
       message: `Quelqu'un a signalé avoir trouvé votre ${docType}.`,
       metadata: { docId, docType, matchType: 'LOST_SIDE' }
     });
-    await this.createNotification({
-      user_id: foundUserId,
-      destinataire_type: 'USER',
-      destinataire_id: foundUserId,
-      type: 'MATCH_FOUND',
-      title: 'Correspondance trouvée !',
-      message: `Le propriétaire du document ${docType} que vous avez trouvé a été identifié.`,
-      metadata: { docId, docType, matchType: 'FOUND_SIDE' }
-    });
+    if (foundUserId) {
+      await this.createNotification({
+        user_id: foundUserId,
+        destinataire_type: 'USER',
+        destinataire_id: foundUserId,
+        type: 'MATCH_FOUND',
+        title: 'Correspondance trouvée !',
+        message: `Le propriétaire du document ${docType} que vous avez trouvé a été identifié.`,
+        metadata: { docId, docType, matchType: 'FOUND_SIDE' }
+      });
+    }
   }
 
   async notifyVaultMatch(vaultOwnerId: string, foundDeclId: string, vaultDocId: string, docType: string) {
+    console.log(`📨 [Notification] Creating VAULT_MATCH_PENDING — userId=${vaultOwnerId}, foundDeclId=${foundDeclId}, vaultDocId=${vaultDocId}, docType=${docType}`);
     await this.createNotification({
       user_id: vaultOwnerId,
       destinataire_type: 'USER',
@@ -320,6 +367,7 @@ export class NotificationService {
       message: `Un ${docType} trouvé pourrait être le vôtre. Confirmez-vous qu'il s'agit de votre document ?`,
       metadata: { declaration_id: foundDeclId, vault_doc_id: vaultDocId, docType, action: 'CONFIRM_VAULT_MATCH' }
     });
+    console.log(`✅ [Notification] VAULT_MATCH_PENDING créée — metadata.declaration_id=${foundDeclId}`);
   }
 
   async notifyPaymentReceived(finderId: string, docType: string, docId: string) {

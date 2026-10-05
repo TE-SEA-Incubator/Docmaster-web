@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as SettingController from '../controllers/setting.controller.ts';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.middleware.ts';
 
 const router = Router();
 
@@ -84,6 +85,6 @@ router.get('/:key', SettingController.getSettingByKey);
  *       500:
  *         description: Erreur serveur
  */
-router.post('/:key', SettingController.updateSetting);
+router.post('/:key', authMiddleware, adminMiddleware, SettingController.updateSetting);
 
 export default router;

@@ -85,9 +85,14 @@ export class WalletService {
     const balanceBefore = parseFloat(client.rows[0]?.wallet_balance || 0);
 
     const res = await query(
-      'UPDATE users SET wallet_balance = COALESCE(wallet_balance, 0) - $1, updated_at = NOW() WHERE id = $2 RETURNING wallet_balance',
+      `UPDATE users SET wallet_balance = COALESCE(wallet_balance, 0) - $1, updated_at = NOW()
+       WHERE id = $2 AND COALESCE(wallet_balance, 0) >= $1
+       RETURNING wallet_balance`,
       [amount, userId]
     );
+    if (res.rows.length === 0) {
+      throw new Error('Solde insuffisant pour effectuer cette opération.');
+    }
     const balanceAfter = parseFloat(res.rows[0]?.wallet_balance || 0);
 
     await query(

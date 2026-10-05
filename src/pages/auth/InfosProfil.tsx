@@ -31,7 +31,7 @@ function resolvePhotoUrl(p: string | undefined | null): string {
   return "/" + p.replace(/^\//, "");
 }
 
-type NavKey = "profile" | "security" | "billing" | "terms" | "notifications" | "delete";
+type NavKey = "profile" | "security";
 
 export default function InfosProfil() {
   const { t, lang, setLanguage } = useI18n();
@@ -146,12 +146,8 @@ export default function InfosProfil() {
   const initials = user?.initial || "DM";
 
   const navItems: { key: NavKey; label: string; danger?: boolean }[] = [
-    { key: "profile", label: "Profile" },
+    { key: "profile", label: "Profil" },
     { key: "security", label: "Sécurité" },
-    { key: "billing", label: "Facturation" },
-    { key: "terms", label: "Conditions" },
-    { key: "notifications", label: "Notifications" },
-    { key: "delete", label: "Supprimer le compte", danger: true },
   ];
 
   // Edit button
@@ -481,54 +477,13 @@ export default function InfosProfil() {
                 color="red" variant="light"
                 leftSection={<i className="fa-solid fa-trash-can" />}
                 radius="xl" size="sm"
-                onClick={() => setActiveNav("delete")}
-              >
-                {t("profil_delete_account")}
-              </Button>
-            </div>
-          )}
-
-          {/* ═══ ONGLET FACTURATION ═══ */}
-          {activeNav === "billing" && (
-            <div>
-              <h2 className="text-lg font-bold text-textMain mb-1">Facturation</h2>
-              <p className="text-sm text-textMuted">Cette section arrive bientôt.</p>
-            </div>
-          )}
-
-          {/* ═══ ONGLET CONDITIONS ═══ */}
-          {activeNav === "terms" && (
-            <div>
-              <h2 className="text-lg font-bold text-textMain mb-4">Conditions d'utilisation</h2>
-              <Text size="sm" c="dimmed">
-                En utilisant Docmaster, vous acceptez nos conditions générales d'utilisation et notre politique de confidentialité.
-              </Text>
-            </div>
-          )}
-
-          {/* ═══ ONGLET NOTIFICATIONS ═══ */}
-          {activeNav === "notifications" && (
-            <div>
-              <h2 className="text-lg font-bold text-textMain mb-1">Notifications</h2>
-              <p className="text-sm text-textMuted">Cette section arrive bientôt.</p>
-            </div>
-          )}
-
-          {/* ═══ ONGLET SUPPRIMER LE COMPTE ═══ */}
-          {activeNav === "delete" && (
-            <div>
-              <h2 className="text-lg font-bold text-red-500 mb-2">Supprimer le compte</h2>
-              <Text size="sm" c="dimmed" mb="lg">
-                Cette action est irréversible. Toutes vos données seront définitivement supprimées.
-              </Text>
-              <Button
-                color="red" variant="light"
-                leftSection={<i className="fa-solid fa-trash-can" />}
-                radius="xl" size="sm"
                 onClick={() => setShowDeleteConfirm(true)}
               >
                 {t("profil_delete_account")}
               </Button>
+              <Text size="xs" c="dimmed" mt="sm">
+                Cette action est irréversible. Toutes vos données seront définitivement supprimées.
+              </Text>
             </div>
           )}
 

@@ -137,6 +137,9 @@ export class DeclarationRepository {
    * Search declarations with filters
    */
   async search(filters: any): Promise<{ rows: DocumentDeclaration[]; total: number }> {
+    if (filters.type && !filters.declaration_type) {
+      filters.declaration_type = filters.type;
+    }
     let query = "SELECT * FROM declarations WHERE 1=1";
     const values: any[] = [];
     let paramIndex = 1;
@@ -222,7 +225,7 @@ export class DeclarationRepository {
         OR (doc_type ILIKE 'passeport' AND $2 ILIKE 'passport')
       )
       AND declaration_type = $3
-      AND status NOT IN ('RETURNED', 'CLAIMED', 'CANCELLED')
+      AND status NOT IN ('RETURNED', 'CLAIMED', 'CANCELLED', 'MATCHED')
     `;
     const { rows } = await pool.query(query, [docTypeId, docTypeCode, oppositeType]);
     return rows;

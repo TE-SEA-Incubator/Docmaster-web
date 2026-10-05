@@ -30,7 +30,7 @@ export class AuthController {
    */
   async register(req: Request, res: Response): Promise<void> {
     try {
-      const { nom, prenom, email, mot_de_passe, telephone, pays, ville, date_naissance, code_parrainage } = req.body;
+      const { nom, prenom, email, mot_de_passe, telephone, pays, ville, date_naissance, genre, code_parrainage } = req.body;
 
       // Validate required fields
       if (!nom || !prenom || !email || !mot_de_passe) {
@@ -56,17 +56,15 @@ export class AuthController {
         pays,
         ville,
         date_naissance,
+        genre,
         parrain_id,
       });
 
       // Return user without password
       const { mot_de_passe: _, ...userWithoutPassword } = user;
-      
-      // Generate token for auto-login
-      const token = generateToken(user.id, user.email, user.role);
+      const session = await this.userService.createUserSession(user);
 
-      // Set cookie
-      res.cookie('docmaster_token', token, {
+      res.cookie('docmaster_token', session.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -86,7 +84,8 @@ export class AuthController {
       res.status(201).json({
         message: 'User registered successfully',
         user: userWithoutPassword,
-        token,
+        token: session.token,
+        refresh_token: session.refresh_token,
         code_invitation: user.code_invitation,
       });
     } catch (error: any) {
@@ -118,7 +117,7 @@ export class AuthController {
       }
 
       // Login user
-      const { user, token } = await this.userService.loginUser(email, mot_de_passe);
+      const { user, token, refresh_token } = await this.userService.loginUser(email, mot_de_passe);
 
       // Set cookie
       res.cookie('docmaster_token', token, {
@@ -155,6 +154,7 @@ export class AuthController {
         message: 'Login successful',
         user: { ...user, subscription },
         token,
+        refresh_token,
       });
     } catch (error: any) {
       if (error.message.includes('Invalid email or password')) {
@@ -169,8 +169,43 @@ export class AuthController {
    * Logout user
    */
   async logout(req: Request, res: Response): Promise<void> {
+    const refreshToken = req.body?.refresh_token as string | undefined;
+    const userId = (req as any).user?.id;
+    if (refreshToken) {
+      await this.userService.revokeByRefreshToken(refreshToken);
+    } else if (userId) {
+      await this.userService.revokeRefreshToken(userId);
+    }
     res.clearCookie('docmaster_token');
     res.status(200).json({ message: 'Logout successful', success: true });
+  }
+
+  /**
+   * Refresh access token
+   */
+  async refreshToken(req: Request, res: Response): Promise<void> {
+    try {
+      const refreshToken = req.body?.refresh_token as string | undefined;
+      if (!refreshToken) {
+        res.status(400).json({ success: false, error: 'Refresh token requis' });
+        return;
+      }
+      const result = await this.userService.refreshAccessToken(refreshToken);
+      res.cookie('docmaster_token', result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+      res.status(200).json({
+        success: true,
+        token: result.token,
+        refresh_token: result.refresh_token,
+        user: result.user,
+      });
+    } catch (error: any) {
+      res.status(401).json({ success: false, error: error.message || 'Session expirée' });
+    }
   }
 
   /**
@@ -214,12 +249,11 @@ export class AuthController {
         return;
       }
 
-      const token = await this.userService.requestPasswordReset(email);
+      await this.userService.requestPasswordReset(email);
 
       res.status(200).json({
         success: true,
-        message: 'Password reset email sent',
-        token, // In production, send this via email, not in response
+        message: 'If this email exists, a password reset link has been sent',
       });
     } catch (error: any) {
       if (error.message.includes('not found')) {
@@ -264,7 +298,7 @@ export class AuthController {
   async updateProfile(req: Request, res: Response): Promise<void> {
     try {
       const userId = (req as any).user.id;
-      const { nom, prenom, telephone, ville, date_naissance, lieu_naissance, currency } = req.body;
+      const { nom, prenom, telephone, ville, date_naissance, lieu_naissance, currency, genre } = req.body;
       let photo_url: string | undefined = undefined;
 
       // Handle photo upload if present
@@ -280,7 +314,8 @@ export class AuthController {
         photo_url,
         date_naissance,
         lieu_naissance,
-        currency
+        currency,
+        genre
       });
 
       if (!updatedUser) {
@@ -531,24 +566,22 @@ export class AuthController {
           console.log('✓ Existing Google OAuth user logged in:', email);
         }
 
-        // Generate JWT token
-        const jwtToken = generateToken(user.id, user.email, user.role);
+        const session = await this.userService.createUserSession(user);
 
-        // Set cookie
-        res.cookie('docmaster_token', jwtToken, {
+        res.cookie('docmaster_token', session.token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'strict',
           maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
         });
 
-        // Return user without password
         const { mot_de_passe: _, ...userWithoutPassword } = user;
 
         res.status(200).json({
           message: 'Google OAuth login successful',
           user: userWithoutPassword,
-          token: jwtToken,
+          token: session.token,
+          refresh_token: session.refresh_token,
         });
       } catch (error: any) {
         if (error.message.includes('duplicate key')) {

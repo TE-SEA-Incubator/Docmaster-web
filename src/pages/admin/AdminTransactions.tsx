@@ -99,10 +99,10 @@ export default function AdminTransactions() {
             <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
             <input type="search" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Rechercher par utilisateur..."
-              className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors placeholder:text-gray-400" />
+              className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors placeholder:text-gray-400" />
           </div>
           <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] bg-white text-gray-700">
+            className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] bg-white text-gray-700">
             <option value="">Tous statuts</option>
             <option value="SUCCESS">Réussi</option>
             <option value="PENDING">En attente</option>

@@ -83,7 +83,7 @@ export default function AdminSettings() {
         <div className="bg-white border border-gray-200 rounded p-5">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-8 h-8 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
-              <i className="fa-solid fa-star text-[#D98A30] text-sm" />
+              <i className="fa-solid fa-star text-[#E8923A] text-sm" />
             </div>
             <h2 className="font-bold text-base text-gray-900">Points &amp; Récompenses</h2>
           </div>
@@ -100,14 +100,14 @@ export default function AdminSettings() {
                   type="number" min="1"
                   value={pointsRatePreview}
                   onChange={(e) => setPointsRatePreview(Number(e.target.value) || 1)}
-                  className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] font-bold text-gray-800"
+                  className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] font-bold text-gray-800"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-gray-400">pts / 1 XAF</span>
               </div>
               <button
                 onClick={savePointsRate}
                 disabled={saving === "points_to_xaf_rate" || pointsRatePreview === pointsRate}
-                className="px-4 py-2.5 bg-[#1E3A2F] text-white text-[12px] font-semibold rounded hover:bg-[#2D5A42] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-[#2D5A42] text-white text-[12px] font-semibold rounded hover:bg-[#2D5A42] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
               >
                 {saving === "points_to_xaf_rate" ? <i className="fa-solid fa-spinner fa-spin text-xs" /> : <><i className="fa-solid fa-check text-xs" /> Appliquer</>}
               </button>
@@ -120,7 +120,7 @@ export default function AdminSettings() {
               {[100, 500, 1000, 10000].map((pts) => (
                 <div key={pts} className="flex justify-between text-[13px]">
                   <span className="text-gray-500">{pts.toLocaleString()} pts =</span>
-                  <span className={`font-bold ${pts === 10000 ? "text-[#D98A30]" : "text-gray-800"}`}>
+                  <span className={`font-bold ${pts === 10000 ? "text-[#E8923A]" : "text-gray-800"}`}>
                     {Math.round(pts / pointsRatePreview).toLocaleString()} XAF
                   </span>
                 </div>
@@ -193,13 +193,13 @@ function SettingRow({ k, value, update, saving, t }: { k: string; value: string;
           value={local}
           onChange={(e) => setLocal(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
-          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors"
+          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors"
         />
       </div>
       <button
         onClick={handleSave}
         disabled={!changed || saving === k}
-        className="px-3 py-2 bg-[#1E3A2F] text-white text-[12px] font-semibold rounded hover:bg-[#2D5A42] disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 flex-shrink-0"
+        className="px-3 py-2 bg-[#2D5A42] text-white text-[12px] font-semibold rounded hover:bg-[#2D5A42] disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 flex-shrink-0"
       >
         {saving === k ? (
           <i className="fa-solid fa-spinner fa-spin text-xs" />

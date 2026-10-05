@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.docmaster.docmasterPartner",
+        "paths": [
+          "/partenaire/connexion",
+          "/partenaire/reinitialisation",
+          "/partenaire/mot-de-passe-oublie",
+          "/partenaire/changement-mot-de-passe",
+          "/partenaire/rendre"
+        ]
+      }
+    ]
+  }
+}

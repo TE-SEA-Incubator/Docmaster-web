@@ -88,6 +88,8 @@ compress_assets() {
     fi
 }
 
+SSH_OPTS="-o ServerAliveInterval=15 -o ServerAliveCountMax=6 -o TCPKeepAlive=yes -o IPQoS=throughput -o ConnectTimeout=15"
+
 transfer_assets() {
     log_info "Transfert des archives vers le dossier temporaire du VPS..."
     FILES_TO_TRANSFER=""
@@ -98,7 +100,7 @@ transfer_assets() {
         FILES_TO_TRANSFER="$FILES_TO_TRANSFER ../$ARCHIVE_BACK"
     fi
     
-    scp -P "$REMOTE_PORT" $FILES_TO_TRANSFER "$REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH/"
+    scp $SSH_OPTS -P "$REMOTE_PORT" $FILES_TO_TRANSFER "$REMOTE_USER@$REMOTE_HOST:$REMOTE_PATH/"
     if [ $? -ne 0 ]; then
         log_error "Échec du transfert SSH / SCP."
         exit 1
@@ -112,7 +114,7 @@ transfer_assets() {
 execute_remote_deployment() {
     log_info "Exécution du déploiement V2 sur le VPS..."
     
-    ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" -t << REMOTE_SCRIPT
+    ssh $SSH_OPTS -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" -t << REMOTE_SCRIPT
     set -e
     
     # 1. Préparation et nettoyage des dossiers applicatifs distants
@@ -177,10 +179,18 @@ REMOTE_SCRIPT
 
 post_deployment() {
     log_info "Phase finale : Redémarrage des nouveaux processus PM2 v2..."
-    read -p "Voulez-vous redémarrer vos processus PM2 v2 maintenant ? (y/n) " -n 1 -r
-    echo
+    # En mode non-interactif (pipe/CI), on ne bloque pas sur la question.
+    if [ -t 0 ]; then
+        read -p "Voulez-vous redémarrer vos processus PM2 v2 maintenant ? (y/n) " -n 1 -r
+        echo
+    else
+        REPLY="y"
+        echo "Mode non-interactif : redémarrage PM2 automatique."
+    fi
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" << 'REMOTE_SCRIPT'
+        # DEPLOY_MODE doit être transmis explicitement : le heredoc est protégé
+        # par des quotes, les variables locales ne sont pas expandées à distance.
+        ssh $SSH_OPTS -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" "DEPLOY_MODE='$DEPLOY_MODE' bash -s" << 'REMOTE_SCRIPT'
         
         # 1. Sécurité environnement & isolation des ports pour le Backend V2
         if [ ! -f "/var/www/vhosts/docmaster.net/app/Docmaster_Backend_V2/.env" ]; then
@@ -220,7 +230,7 @@ REMOTE_SCRIPT
 
 switch_to_production() {
     log_info "Bascule du frontend Vite (dev) vers server.js (production avec dist/)..."
-    ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" << 'REMOTE_SCRIPT'
+    ssh $SSH_OPTS -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" << 'REMOTE_SCRIPT'
         cd /var/www/vhosts/docmaster.net/app/Docmaster
         pm2 restart docmaster-web-v2 --update-env || pm2 start server.js --name "docmaster-web-v2"
         pm2 save

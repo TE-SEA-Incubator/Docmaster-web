@@ -54,7 +54,7 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
     else navigate("/rechercher");
   };
 
-  const languageLabel = lang === "fr" ? "Français" : lang === "ar" ? "العربية" : "English";
+  const languageLabel = lang === "fr" ? "FR" : lang === "ar" ? "AR" : "EN";
 
   return (
     <Paper
@@ -113,14 +113,22 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
           onChange={(e) => setSearchQ(e.currentTarget.value)}
           onKeyDown={(e) => e.key === "Enter" && doSearch()}
           placeholder={t("topbar_search")}
-          radius="md"
+          radius="xl"
           size="sm"
           w="100%"
           maw={340}
           leftSection={<i className="fa-solid fa-magnifying-glass" style={{ fontSize: 13, color: "var(--mantine-color-gray-5)" }} />}
+          rightSectionWidth={36}
           rightSection={
-            <ActionIcon variant="subtle" color="yellow" onClick={doSearch} size="sm" aria-label="Rechercher">
-              <i className="fa-solid fa-arrow-right" />
+            <ActionIcon
+              size={28}
+              radius="xl"
+              color="yellow"
+              variant="filled"
+              onClick={doSearch}
+              aria-label="Rechercher"
+            >
+              <i className="fa-solid fa-arrow-right" style={{ fontSize: 11 }} />
             </ActionIcon>
           }
           styles={{
@@ -165,20 +173,20 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
               variant="default"
               size="xs"
               radius="md"
-              leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #D98A30)", fontSize: 11 }} />}
+              leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #E8923A)", fontSize: 11 }} />}
               rightSection={<i className="fa-solid fa-chevron-down" style={{ fontSize: 9, color: "var(--mantine-color-gray-5)" }} />}
             >
               {languageLabel}
             </Button>
           </Menu.Target>
           <Menu.Dropdown>
-            <Menu.Item onClick={() => setLanguage("fr")} leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #D98A30)" }} />}>
+            <Menu.Item onClick={() => setLanguage("fr")} leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #E8923A)" }} />}>
               Français
             </Menu.Item>
-            <Menu.Item onClick={() => setLanguage("en")} leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #D98A30)" }} />}>
+            <Menu.Item onClick={() => setLanguage("en")} leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #E8923A)" }} />}>
               English
             </Menu.Item>
-            <Menu.Item onClick={() => setLanguage("ar")} leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #D98A30)" }} />}>
+            <Menu.Item onClick={() => setLanguage("ar")} leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #E8923A)" }} />}>
               العربية
             </Menu.Item>
           </Menu.Dropdown>
@@ -193,7 +201,7 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
         >
           <ActionIcon
             onClick={() => (window as any).__openNotifModal?.()}
-            variant="default"
+            variant="transparent"
             size="lg"
             radius="md"
             aria-label="Notifications"
@@ -202,33 +210,43 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
           </ActionIcon>
         </Indicator>
 
-        <Button
-          component={Link}
-          to="/infos-profil"
-          variant="default"
-          size="xs"
-          radius="md"
-          h={40}
-          pl={4}
-          pr="xs"
-          leftSection={
-            <VipAvatar isVip={isVipUser(user)}>
-              {user?.photo_url ? (
-                <Avatar src={getPhotoUrl(user.photo_url)} radius="sm" size={28} />
-              ) : (
-                <Avatar radius="sm" size={28} color="green" variant="gradient" gradient={{ from: "green.9", to: "green.6" }}>
-                  {user?.initial || "DM"}
-                </Avatar>
-              )}
-            </VipAvatar>
-          }
-        >
-          {user?.prenom ? (
-            <Text size="xs" fw={600} c="dark.6" visibleFrom="sm">
-              {user.prenom}
-            </Text>
-          ) : null}
-        </Button>
+        <Menu radius="md" width={200} shadow="md" withArrow position="bottom-end">
+          <Menu.Target>
+            <ActionIcon
+              variant="transparent"
+              size="lg"
+              radius="md"
+              aria-label="Mon profil"
+              style={{ cursor: "pointer" }}
+            >
+              <Avatar
+                radius="sm"
+                size={32}
+                color="green"
+                variant="gradient"
+                gradient={{ from: "green.9", to: "green.6" }}
+              >
+                <i className="fa-solid fa-user" style={{ fontSize: 14 }} />
+              </Avatar>
+            </ActionIcon>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              component={Link}
+              to="/messagerie"
+              leftSection={<i className="fa-solid fa-message" style={{ fontSize: 13, color: "#2D5A42" }} />}
+            >
+              <Text size="sm">Messagerie</Text>
+            </Menu.Item>
+            <Menu.Item
+              component={Link}
+              to="/infos-profil"
+              leftSection={<i className="fa-solid fa-user" style={{ fontSize: 13, color: "#2D5A42" }} />}
+            >
+              <Text size="sm">Profil</Text>
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       </Group>
     </Paper>
   );

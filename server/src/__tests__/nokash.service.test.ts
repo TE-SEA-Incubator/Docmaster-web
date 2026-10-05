@@ -158,10 +158,29 @@ describe('NokashService', () => {
     it('should check transaction status', async () => {
       mockFetch.mockResolvedValue({ json: () => Promise.resolve({ status: 'SUCCESS' }) });
       await nokashService.checkStatus('txn-123');
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.nokash.test/310/status-request',
-        expect.objectContaining({ method: 'POST', body: JSON.stringify({ transaction_id: 'txn-123' }) })
-      );
+
+      const [url, init] = mockFetch.mock.calls[0];
+      expect(url).toBe('https://api.nokash.test/310/status-request');
+      expect(init.method).toBe('POST');
+      expect(init.headers['Content-Type']).toBe('application/x-www-form-urlencoded');
+      expect(new URLSearchParams(String(init.body)).get('transaction_id')).toBe('txn-123');
+    });
+
+    it('should send payin requests as JSON', async () => {
+      mockFetch.mockResolvedValue({ json: () => Promise.resolve({ status: 'REQUEST_OK' }) });
+
+      await nokashService.initiatePayment({
+        payment_method: 'ORANGE_MONEY',
+        amount: 500,
+        order_id: 'SUB-json',
+        user_phone: '697407380',
+        country: 'CM',
+      });
+
+      const [url, init] = mockFetch.mock.calls[0];
+      expect(url).toBe('https://api.nokash.test/api-payin-request/407');
+      expect(init.headers['Content-Type']).toBe('application/json');
+      expect(JSON.parse(init.body).payment_type).toBe('CM_MOBILEMONEY');
     });
 
     it('should throw on network error', async () => {

@@ -3,6 +3,7 @@ import { pool } from '../database/db.ts';
 export interface PushToken {
   id?: string;
   user_id: string;
+  destinataire_type?: string;
   token: string;
   platform: string;
   device_name?: string | null;
@@ -11,15 +12,16 @@ export interface PushToken {
 }
 
 export class PushTokenRepository {
-  async upsert(data: { user_id: string; token: string; platform: string; device_name?: string | null }): Promise<PushToken> {
+  async upsert(data: { user_id: string; destinataire_type?: string; token: string; platform: string; device_name?: string | null }): Promise<PushToken> {
+    const destinataireType = data.destinataire_type || 'USER';
     const query = `
-      INSERT INTO push_tokens (user_id, token, platform, device_name)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO push_tokens (user_id, destinataire_type, token, platform, device_name)
+      VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (user_id, token)
-      DO UPDATE SET platform = EXCLUDED.platform, device_name = EXCLUDED.device_name, updated_at = NOW()
+      DO UPDATE SET destinataire_type = EXCLUDED.destinataire_type, platform = EXCLUDED.platform, device_name = EXCLUDED.device_name, updated_at = NOW()
       RETURNING *
     `;
-    const { rows } = await pool.query(query, [data.user_id, data.token, data.platform, data.device_name ?? null]);
+    const { rows } = await pool.query(query, [data.user_id, destinataireType, data.token, data.platform, data.device_name ?? null]);
     return rows[0];
   }
 
@@ -27,6 +29,15 @@ export class PushTokenRepository {
     const query = 'SELECT * FROM push_tokens WHERE user_id = $1';
     const { rows } = await pool.query(query, [userId]);
     return rows;
+  }
+
+  async findByDestinataire(destinataireId: string, destinataireType?: string): Promise<PushToken[]> {
+    if (destinataireType) {
+      const query = 'SELECT * FROM push_tokens WHERE user_id = $1 AND destinataire_type = $2';
+      const { rows } = await pool.query(query, [destinataireId, destinataireType]);
+      return rows;
+    }
+    return this.findByUserId(destinataireId);
   }
 
   async findAllTokens(): Promise<PushToken[]> {

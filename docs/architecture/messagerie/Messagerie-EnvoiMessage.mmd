@@ -1,0 +1,38 @@
+%% V3 — Envoi d'un message dans une conversation ouverte après paiement
+%% Question : que traverse un message, et où est refusé un non-participant ?
+%% Audience : ingénierie. Preuves : messagerie.evidence.md. Hypothèses H1/H3 non validées = blocs « Note ».
+sequenceDiagram
+    autonumber
+    participant C as Client (portail user)<br/>Messagerie.tsx + socket.ts
+    participant RW as resolve-actor.ts<br/>(auth.middleware.ts:8-33 / partenaire:11-47)
+    participant CR as routes/conversation.routes.ts
+    participant MS as messaging.service.ts
+    participant DB as PostgreSQL<br/>conversations · participants · messages
+    participant SK as socket.service.ts<br/>(Map userId→socketIds, l.13)
+    participant P as Trouveur PARTENAIRE<br/>(portail partenaire)
+
+    Note over C,SK : Le portail partenaire n'initialise aucun socket aujourd'hui (H4) :<br/>l'étape de joint et la réception temps réel n'existent pas côté partenaire.
+
+    C->>SK : conversation:join {conversationId}
+    SK->>DB : SELECT 1 FROM conversation_participants<br/>WHERE conversation_id=$1 AND actor_type=$2 AND actor_id=$3
+    alt participant
+        SK-->>C : joined room conv-{id}
+    else non participant
+        SK-->>C : error NOT_PARTICIPANT (refus, pas de fuite d'existence du fil)
+    end
+
+    C->>CR : POST /api/conversations/:id/messages {body}
+    CR->>RW : qui parle ? (users.id OU partenaires.id)
+    RW-->>CR : {actor_type:'USER', actor_id}
+    CR->>MS : appendMessage(actor, conversationId, body)
+    MS->>DB : garde 1 : actor dans participants
+    MS->>DB : garde 2 : conversations.status='OPEN'<br/>et claims/declarations payment_status='PAID'
+    MS->>DB : INSERT messages (kind='TEXT', created_at)
+    Note over MS,DB : H3 inconnue : faut-il filtrer téléphone/email/URL dans body ?<br/>Aucun code existant ne tranche → à décider avant d'écrire le moquer.
+    MS-->>CR : 201 {message}
+    MS->>SK : sendToUser(otherActorId, 'MESSAGE_NEW', msg)<br/>ou io.to('conv-{id}').emit (à ajouter)
+    SK-->>C : MESSAGE_NEW (autre onglet du client)
+    SK-->>P : MESSAGE_NEW — exige le handshake partenaire
+    C->>CR : PATCH /api/conversations/:id/read
+    CR->>DB : UPDATE participants SET last_read_at=now()
+    Note over C,P : Un fil ne peut exister qu'à la sortie de activateRecovery() (payment.controller.ts:325-422) ;<br/>le matching seul (matching.service.ts:500-549) ne crée toujours AUCUNE conversation.

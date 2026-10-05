@@ -43,6 +43,11 @@ import vaultMatchRoutes from "./src/routes/vault-match.routes.js";
 import { autoriteRoutes } from "./src/modules/autorites/autorites.module.js";
 import { partenaireRoutes } from "./src/modules/partenaires/partenaires.module.js";
 import { locationRoutes } from "./src/routes/locations.routes.js";
+import chatRoutes from "./src/routes/chat.routes.js";
+import recoveryRoutes from "./src/routes/recovery.routes.js";
+import conversationRoutes from "./src/routes/conversation.routes.js";
+import { authMiddleware } from "./src/middleware/auth.middleware.js";
+import { partenaireAuthMiddleware } from "./src/modules/partenaires/partenaires.middleware.js";
 
 // Load environment variables
 dotenv.config();
@@ -272,9 +277,15 @@ export function createApp(): Application {
   app.use("/api/device-transfers", deviceTransferRoutes);
   app.use("/api/admin", adminRoutes);
   app.use("/api/vault-match", vaultMatchRoutes);
+  app.use("/api/conversations", authMiddleware, conversationRoutes);
   app.use("/api/autorites", autoriteRoutes);
+  // Enregistré avant le module partenaires : /api/partenaires/conversations ne doit pas
+  // être absorbé par les routes paramétrées du module.
+  app.use("/api/partenaires/conversations", partenaireAuthMiddleware, conversationRoutes);
   app.use("/api/partenaires", partenaireRoutes);
   app.use("/api/locations", locationRoutes);
+  app.use("/api/chat", chatRoutes);
+  app.use("/api/recovery", recoveryRoutes);
 
   // ═════════════════════════════════════════════════════════════════
   // CHILLER SUB-APPLICATION

@@ -25,6 +25,7 @@ import {
   ShopOutlined,
   UserOutlined,
   WalletOutlined,
+  StarOutlined,
 } from "@ant-design/icons";
 import { usePartenaire } from "../../context/PartenaireContext";
 import { useI18n } from "../../context/I18nContext";
@@ -203,6 +204,17 @@ export default function Profil() {
                   </Typography.Text>
                   <Typography.Text strong style={{ color: partenairePalette.success }}>
                     {Number(partenaire.wallet_balance || 0).toLocaleString(localeTag)} FCFA
+                  </Typography.Text>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <StarOutlined style={{ color: "#D97706", marginTop: 3 }} />
+                <div>
+                  <Typography.Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+                    {t("partenaire_profil_points")}
+                  </Typography.Text>
+                  <Typography.Text strong style={{ color: "#D97706" }}>
+                    {Number(partenaire.points || 0).toLocaleString(localeTag)} pts
                   </Typography.Text>
                 </div>
               </div>

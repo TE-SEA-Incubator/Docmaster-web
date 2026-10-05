@@ -2,13 +2,19 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'votre_secret_tres_long_et_securise';
+import { jwtConfig } from '../config/jwt.ts';
+import { Actor, actorFromJwt, actorKey } from '../utils/actor.utils.ts';
+import { conversationRepository } from '../repositories/conversation.repository.ts';
+
+const JWT_SECRET = jwtConfig.secret;
 const AUTORITE_JWT_SECRET = process.env.AUTORITE_JWT_SECRET || 'autorite-secret-change-in-production';
+
+const conversationRoom = (conversationId: string) => `conv-${conversationId}`;
 
 export class SocketService {
   private static instance: SocketService;
   private io: Server | null = null;
-  private userSockets: Map<string, string[]> = new Map(); // userId -> socketIds[]
+  private actorSockets: Map<string, Set<string>> = new Map(); // actorKey(type:id) -> socketIds
 
   private constructor() {}
 
@@ -64,8 +70,10 @@ export class SocketService {
           // Tokens AUTORITE utilisent leur propre secret
           decoded = jwt.verify(token, AUTORITE_JWT_SECRET);
         }
-        (socket as any).userId = decoded.id;
+        const actor = actorFromJwt(decoded);
+        (socket as any).userId = actor.id;
         (socket as any).userRole = decoded.role || decoded.type || 'USER';
+        (socket as any).actor = actor;
         next();
       } catch (err) {
         next(new Error('Authentication error: Invalid token'));
@@ -73,29 +81,56 @@ export class SocketService {
     });
 
     this.io.on('connection', (socket: Socket) => {
-      const userId = (socket as any).userId;
+      const actor: Actor = (socket as any).actor;
       const userRole = (socket as any).userRole;
-      console.log(`🔌 User connected to socket: ${userId} (${socket.id}) role=${userRole}`);
+      const key = actorKey(actor.type, actor.id);
+      console.log(`🔌 ${actor.type} connected to socket: ${actor.id} (${socket.id}) role=${userRole}`);
 
       // Join admin room if admin
       if (userRole === 'ADMIN') {
         socket.join('admin');
-        console.log(`👑 Admin ${userId} joined admin room`);
+        console.log(`👑 Admin ${actor.id} joined admin room`);
       }
 
       // Add socket to user's list
-      const sockets = this.userSockets.get(userId) || [];
-      sockets.push(socket.id);
-      this.userSockets.set(userId, sockets);
+      const sockets = this.actorSockets.get(key) || new Set<string>();
+      sockets.add(socket.id);
+      this.actorSockets.set(key, sockets);
+
+      socket.on('conversation:join', async (payload: { conversationId?: string }, ack?: (r: any) => void) => {
+        const conversationId = payload?.conversationId;
+        if (!conversationId) {
+          ack?.({ success: false, message: 'conversationId requis' });
+          return;
+        }
+        try {
+          const membership = await conversationRepository.findMembership(conversationId, actor);
+          if (!membership) {
+            ack?.({ success: false, message: 'Non participant' });
+            return;
+          }
+          socket.join(conversationRoom(conversationId));
+          ack?.({ success: true });
+        } catch (err) {
+          console.error('[Socket] conversation:join failed:', err);
+          ack?.({ success: false, message: 'Erreur serveur' });
+        }
+      });
+
+      socket.on('conversation:leave', (payload: { conversationId?: string }) => {
+        if (payload?.conversationId) {
+          socket.leave(conversationRoom(payload.conversationId));
+        }
+      });
 
       socket.on('disconnect', () => {
         console.log(`🔌 User disconnected from socket: ${socket.id}`);
-        const userSockets = this.userSockets.get(userId) || [];
-        const filtered = userSockets.filter(id => id !== socket.id);
-        if (filtered.length > 0) {
-          this.userSockets.set(userId, filtered);
-        } else {
-          this.userSockets.delete(userId);
+        const userSockets = this.actorSockets.get(key);
+        if (userSockets) {
+          userSockets.delete(socket.id);
+          if (userSockets.size === 0) {
+            this.actorSockets.delete(key);
+          }
         }
       });
     });
@@ -104,20 +139,26 @@ export class SocketService {
   }
 
   /**
-   * Send notification to a specific user
+   * Les ids `users` et `partenaires` ne partagent pas le même espace : le type de l'acteur
+   * fait partie de la clé, sinon un message partirait vers un homonyme de l'autre table.
    */
-  public sendToUser(userId: string, event: string, data: any): void {
+  public sendToActor(type: Actor['type'], id: string, event: string, data: any): void {
     if (!this.io) return;
-    
-    const socketIds = this.userSockets.get(userId);
-    if (socketIds && socketIds.length > 0) {
-      socketIds.forEach(id => {
-        this.io?.to(id).emit(event, data);
+
+    const socketIds = this.actorSockets.get(actorKey(type, id));
+    if (socketIds && socketIds.size > 0) {
+      socketIds.forEach((socketId) => {
+        this.io?.to(socketId).emit(event, data);
       });
-      console.log(`📤 Emitted ${event} to user ${userId}`);
+      console.log(`📤 Emitted ${event} to ${type} ${id}`);
     } else {
-      console.log(`📭 User ${userId} is not connected via socket`);
+      console.log(`📭 ${type} ${id} is not connected via socket`);
     }
+  }
+
+  /** Diffusion vers tous les socket joins d'un fil. */
+  public emitToConversation(conversationId: string, event: string, data: any): void {
+    this.io?.to(conversationRoom(conversationId)).emit(event, data);
   }
 
   /**

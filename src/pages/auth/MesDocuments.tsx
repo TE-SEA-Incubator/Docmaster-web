@@ -4,9 +4,10 @@ import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { documentTypesService } from "../../services/declarationsService";
 import { useDocuments } from "../../hooks/useDocuments";
 import { useI18n } from "../../context/I18nContext";
+import { useTopbar } from "../../hooks/useTopbar";
 import { useAuth } from "../../context/AuthContext";
 import apiClient from "../../services/api";
-import Topbar from "../../layout/Topbar";
+
 import DocumentCard from "../../components/cards/DocumentCard";
 import DocumentDetailModal from "../../components/ui/DocumentDetailModal";
 import ShareModal from "../../components/modals/Sharemodal";
@@ -25,6 +26,7 @@ function addMonths(dateStr: string, months: number): string {
 
 export default function MesDocuments() {
   const { t } = useI18n();
+  useTopbar(t("mesdocuments_title"), [{ label: t("mesdocuments_breadcrumb_home"), href: "/dashboard" }, { label: t("mesdocuments_breadcrumb_documents") }]);
   const { user } = useAuth();
   const { documents: docs, loading, fetch: fetchDocs, register, remove, reportLost } = useDocuments();
   const [docTypes, setDocTypes] = useState<DocTypeCatalog[]>([]);
@@ -189,13 +191,6 @@ export default function MesDocuments() {
 
   return (
     <div className="flex flex-col h-full">
-      <Topbar
-        title={t("mesdocuments_title")}
-        breadcrumbs={[
-          { label: t("mesdocuments_breadcrumb_home"), href: "/dashboard" },
-          { label: t("mesdocuments_breadcrumb_documents") },
-        ]}
-      />
       <div className="main-content custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-[calc(6rem+max(env(safe-area-inset-bottom),0.75rem))] md:pb-[calc(2rem+max(env(safe-area-inset-bottom),0.75rem))] max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
 
         {/* Info banner */}
@@ -330,7 +325,7 @@ export default function MesDocuments() {
               <Card
                 withBorder p="lg" radius="md"
                 style={{
-                  borderColor: validityOption === 'EXPIRING' ? "#D98A30" : undefined,
+                  borderColor: validityOption === 'EXPIRING' ? "#E8923A" : undefined,
                   background: validityOption === 'EXPIRING' ? 'rgba(254,240,220,0.4)' : undefined,
                   cursor: "pointer",
                   transform: validityOption === 'EXPIRING' ? 'scale(1.01)' : undefined,
@@ -339,7 +334,7 @@ export default function MesDocuments() {
                 onClick={() => { setValidityOption('EXPIRING'); setSelectedType(null); }}
               >
                 <Group gap="md">
-                  <Paper style={{ width: 48, height: 48, borderRadius: 14, background: validityOption === 'EXPIRING' ? '#D98A30' : '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: validityOption === 'EXPIRING' ? 'white' : '#d97706' }}>
+                  <Paper style={{ width: 48, height: 48, borderRadius: 14, background: validityOption === 'EXPIRING' ? '#E8923A' : '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: validityOption === 'EXPIRING' ? 'white' : '#d97706' }}>
                     <i className="fa-solid fa-calendar-clock text-xl" />
                   </Paper>
                   <div style={{ flex: 1 }}>
@@ -355,7 +350,7 @@ export default function MesDocuments() {
               <Card
                 withBorder p="lg" radius="md"
                 style={{
-                  borderColor: validityOption === 'PERMANENT' ? "#D98A30" : undefined,
+                  borderColor: validityOption === 'PERMANENT' ? "#E8923A" : undefined,
                   background: validityOption === 'PERMANENT' ? 'rgba(254,240,220,0.4)' : undefined,
                   cursor: "pointer",
                   transform: validityOption === 'PERMANENT' ? 'scale(1.01)' : undefined,
@@ -364,7 +359,7 @@ export default function MesDocuments() {
                 onClick={() => { setValidityOption('PERMANENT'); setSelectedType(null); }}
               >
                 <Group gap="md">
-                  <Paper style={{ width: 48, height: 48, borderRadius: 14, background: validityOption === 'PERMANENT' ? '#D98A30' : '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: validityOption === 'PERMANENT' ? 'white' : '#2563eb' }}>
+                  <Paper style={{ width: 48, height: 48, borderRadius: 14, background: validityOption === 'PERMANENT' ? '#E8923A' : '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: validityOption === 'PERMANENT' ? 'white' : '#2563eb' }}>
                     <i className="fa-solid fa-infinity text-xl" />
                   </Paper>
                   <div style={{ flex: 1 }}>

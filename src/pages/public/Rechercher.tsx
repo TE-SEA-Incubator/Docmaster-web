@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import Footer from "../../layout/Footer";
 import DatePicker from "../../components/ui/DatePicker";
+import { ProtectedDocumentImage } from "../../components/ui/ProtectedDocumentImage";
 
 interface DocResult {
   id: string | number;
@@ -210,14 +211,14 @@ export default function Rechercher() {
       <section
         className="relative overflow-hidden pt-[68px]"
         style={{
-          background: "linear-gradient(135deg,#1E3A2F 0%,#2D5A42 50%,#1E3A2F 100%)",
+          background: "linear-gradient(135deg,#2D5A42 0%,#2D5A42 50%,#2D5A42 100%)",
         }}
       >
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage:
-              "linear-gradient(#D98A30 1px,transparent 1px),linear-gradient(90deg,#D98A30 1px,transparent 1px)",
+              "linear-gradient(#E8923A 1px,transparent 1px),linear-gradient(90deg,#E8923A 1px,transparent 1px)",
             backgroundSize: "48px 48px",
           }}
         />
@@ -399,17 +400,15 @@ export default function Rechercher() {
                       style={{ animationDelay: `${i * 50}ms` }}
                     >
                       <div className="relative h-40 bg-surface2 flex items-center justify-center overflow-hidden">
-                        {photo ? (
-                          <img
-                            src={getFullImageUrl(photo)}
-                            alt=""
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                            <i className="fa-solid fa-file-lines text-primary text-3xl" />
-                          </div>
-                        )}
+                        <ProtectedDocumentImage
+                          src={photo ? getFullImageUrl(photo) : undefined}
+                          revealed={false}
+                          className="relative w-full h-full overflow-hidden"
+                          imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          loginUrl="/connexion"
+                          lockLabelKey="rechercher_public_locked"
+                          lockHintKey="rechercher_public_locked_hint"
+                        />
                         <div className="absolute top-3 left-3">
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase border border-borda text-textMain">
                             <i className="fa-solid fa-shield-halved text-primary" />{" "}
@@ -451,17 +450,13 @@ export default function Rechercher() {
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
                     <div className="relative h-48 bg-surface2 flex items-center justify-center overflow-hidden">
-                      {photo ? (
-                        <img
-                          src={getFullImageUrl(photo)}
-                          alt=""
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 blur-[5px]"
-                        />
-                      ) : (
-                        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                          <i className="fa-solid fa-file-lines text-primary text-3xl" />
-                        </div>
-                      )}
+                      <ProtectedDocumentImage
+                        src={photo ? getFullImageUrl(photo) : undefined}
+                        revealed={false}
+                        className="relative w-full h-full overflow-hidden"
+                        imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        loginUrl="/connexion"
+                      />
                       <div className="absolute top-3 left-3">
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase border border-borda text-textMain">
                           <i className="fa-solid fa-shield-halved text-primary" />{" "}
@@ -571,7 +566,7 @@ export default function Rechercher() {
       {/* Flatpickr styles */}
        <style>{`
          .filter-chip { cursor: pointer; transition: all 0.2s ease; }
-         .filter-chip:hover:not(.bg-primary\\/80) { border-color: #D98A30; color: #D98A30; }
+         .filter-chip:hover:not(.bg-primary\\/80) { border-color: #E8923A; color: #E8923A; }
          .doc-card { transition: transform 0.25s, box-shadow 0.25s; }
          .doc-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -12px rgba(30,58,47,0.15); }
          .skeleton { background: linear-gradient(90deg, #EAE3D8 25%, #F4EFE6 50%, #EAE3D8 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s infinite; }

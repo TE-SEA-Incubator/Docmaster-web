@@ -14,6 +14,7 @@ interface Autorite {
   niveau: "HAUTE" | "NORMAL";
   ville: string;
   region?: string | null;
+  bureau?: string | null;
   is_active: boolean;
   must_change_password: boolean;
   created_at: string;
@@ -29,6 +30,7 @@ const defaultForm = {
   region: "",
   department: "",
   arrondissement: "",
+  bureau: "",
 };
 
 export default function AdminAutorites() {
@@ -38,7 +40,7 @@ export default function AdminAutorites() {
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [showCreationSuccess, setShowCreationSuccess] = useState(false);
 
   const fetchAutorites = () => {
     adminService
@@ -53,7 +55,7 @@ export default function AdminAutorites() {
   const openNew = () => {
     setForm({ ...defaultForm });
     setError("");
-    setTempPassword(null);
+    setShowCreationSuccess(false);
     setModalOpen(true);
   };
 
@@ -62,10 +64,10 @@ export default function AdminAutorites() {
     if (!form.nom.trim() || !form.prenom.trim() || !form.email.trim() || !form.department.trim()) return;
     setSaving(true);
     setError("");
-    setTempPassword(null);
+    setShowCreationSuccess(false);
     try {
-      const result = await adminService.createAutorite(form);
-      setTempPassword(result.temp_password || null);
+      await adminService.createAutorite(form);
+      setShowCreationSuccess(true);
       setModalOpen(false);
       fetchAutorites();
     } catch (err: any) {
@@ -121,7 +123,7 @@ export default function AdminAutorites() {
         </div>
         <button
           onClick={openNew}
-          className="inline-flex items-center gap-2 bg-[#1E3A2F] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
+          className="inline-flex items-center gap-2 bg-[#2D5A42] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
         >
           <i className="fa-solid fa-plus text-xs" />
           Nouvelle autorité
@@ -138,6 +140,7 @@ export default function AdminAutorites() {
                 <th className="px-5 py-3">Autorité</th>
                 <th className="px-5 py-3">Contact</th>
                 <th className="px-5 py-3">Niveau</th>
+                <th className="px-5 py-3">Bureau</th>
                 <th className="px-5 py-3">Ville</th>
                 <th className="px-5 py-3">Statut</th>
                 <th className="px-5 py-3 text-right">Actions</th>
@@ -159,6 +162,7 @@ export default function AdminAutorites() {
                     )}
                   </td>
                   <td className="px-5 py-3">{niveauBadge(a.niveau)}</td>
+                  <td className="px-5 py-3 text-[12px] text-gray-600">{a.bureau || "—"}</td>
                   <td className="px-5 py-3 text-[12px] text-gray-600">
                     {a.ville}
                     {a.region ? `, ${a.region}` : ""}
@@ -179,7 +183,7 @@ export default function AdminAutorites() {
                       <button
                         onClick={() => handleToggle(a.id)}
                         title={a.is_active ? "Désactiver" : "Activer"}
-                        className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#D98A30] hover:border-[#D98A30]/40 transition-colors"
+                        className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#E8923A] hover:border-[#E8923A]/40 transition-colors"
                       >
                         <i className="fa-solid fa-power-off text-[10px]" />
                       </button>
@@ -216,13 +220,13 @@ export default function AdminAutorites() {
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Prénom</label>
                   <input value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })}
                     placeholder="ex: Marie" required
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors" />
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Nom</label>
                   <input value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })}
                     placeholder="ex: Ngono" required
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors" />
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
                 </div>
               </div>
 
@@ -230,7 +234,7 @@ export default function AdminAutorites() {
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Email institutionnel</label>
                 <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="ex: marie.ngono@pndp.cm" required
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors" />
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -238,16 +242,23 @@ export default function AdminAutorites() {
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Téléphone</label>
                   <input value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })}
                     placeholder="ex: 671000000"
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors" />
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Niveau</label>
                   <select value={form.niveau} onChange={(e) => setForm({ ...form, niveau: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30]">
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A]">
                     <option value="NORMAL">Niveau (ville)</option>
                     <option value="HAUTE">Autorité Haute (territoire)</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Bureau</label>
+                <input value={form.bureau} onChange={(e) => setForm({ ...form, bureau: e.target.value })}
+                  placeholder="ex: Bureau n°102"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
               </div>
 
               <AntdLocationSelect
@@ -276,7 +287,7 @@ export default function AdminAutorites() {
                   Annuler
                 </button>
                 <button type="submit" disabled={saving || !form.nom.trim() || !form.prenom.trim() || !form.email.trim() || !form.department.trim()}
-                  className="px-5 py-2 bg-[#1E3A2F] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
+                  className="px-5 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
                   {saving && <i className="fa-solid fa-spinner fa-spin text-xs" />}
                   Créer l'autorité
                 </button>
@@ -287,8 +298,8 @@ export default function AdminAutorites() {
       )}
 
       {/* Temp password modal */}
-      {tempPassword !== null && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]" onClick={() => setTempPassword(null)}>
+      {showCreationSuccess && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]" onClick={() => setShowCreationSuccess(false)}>
           <div className="bg-white rounded-lg w-full max-w-md border border-gray-200 shadow-xl mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-5">
               <div className="w-12 h-12 rounded-full bg-green-50 border border-green-100 flex items-center justify-center mx-auto mb-4">
@@ -296,17 +307,14 @@ export default function AdminAutorites() {
               </div>
               <h3 className="font-bold text-base text-gray-900 text-center mb-1">Autorité créée</h3>
               <p className="text-[13px] text-gray-500 text-center mb-4">
-                Le mot de passe temporaire a été envoyé par e-mail. Conservez-en une copie :
+                Le mot de passe temporaire a été envoyé par e-mail et SMS à l&apos;autorité. Il ne s&apos;affiche plus ici pour des raisons de sécurité.
               </p>
-              <div className="bg-gray-900 text-green-400 font-mono rounded p-3 text-center text-lg font-bold tracking-widest">
-                {tempPassword}
-              </div>
               <p className="text-[12px] text-gray-400 text-center mt-3">
-                L'autorité devra le changer à sa première connexion sur /autorite.
+                L&apos;autorité devra le changer à sa première connexion sur /autorite.
               </p>
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-center">
-              <button onClick={() => setTempPassword(null)} className="px-6 py-2 bg-[#1E3A2F] text-white rounded text-[13px] font-semibold">
+              <button onClick={() => setShowCreationSuccess(false)} className="px-6 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold">
                 Fermer
               </button>
             </div>

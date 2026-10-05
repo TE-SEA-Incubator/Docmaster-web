@@ -1,4 +1,4 @@
-import { Card, Text, Badge, ThemeIcon, ActionIcon } from "@mantine/core";
+import { Card, Text, Badge, ThemeIcon, ActionIcon, Group } from "@mantine/core";
 import { useI18n } from "../../../context/I18nContext";
 
 interface DocTypeCatalog {
@@ -16,6 +16,7 @@ interface DocTypeCardProps {
   count: number;
   onToggle: (id: string) => void;
   onAddMore: (id: string) => void;
+  onRemoveMore: (id: string) => void;
 }
 
 /**
@@ -25,9 +26,9 @@ interface DocTypeCardProps {
  *
  * A dedicated "+" button appears once the type is selected: it adds
  * another instance of the same type (e.g. a second CNI) without
- * triggering the toggle.
+ * triggering the toggle. A "-" button appears if count > 1.
  */
-export default function DocTypeCard({ doc, selected, count, onToggle, onAddMore }: DocTypeCardProps) {
+export default function DocTypeCard({ doc, selected, count, onToggle, onAddMore, onRemoveMore }: DocTypeCardProps) {
   const { t } = useI18n();
   const hasExp = (doc.delai_expiration_mois ?? 0) > 0;
 
@@ -72,21 +73,38 @@ export default function DocTypeCard({ doc, selected, count, onToggle, onAddMore 
               ×{count}
             </Badge>
           )}
-          <ActionIcon
-            size="sm"
-            radius="xl"
-            variant="filled"
-            color="green.9"
-            style={{ position: "absolute", bottom: 8, right: 8 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddMore(doc.id);
-            }}
-            aria-label={t("declarer_add_another")}
-            title={t("declarer_add_another")}
-          >
-            <i className="fa-solid fa-plus" style={{ fontSize: 10 }} />
-          </ActionIcon>
+          <Group gap={4} style={{ position: "absolute", bottom: 8, right: 8 }}>
+            {count > 1 && (
+              <ActionIcon
+                size="sm"
+                radius="xl"
+                variant="filled"
+                color="red.6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemoveMore(doc.id);
+                }}
+                aria-label={t("declarer_remove_another")}
+                title={t("declarer_remove_another")}
+              >
+                <i className="fa-solid fa-minus" style={{ fontSize: 10 }} />
+              </ActionIcon>
+            )}
+            <ActionIcon
+              size="sm"
+              radius="xl"
+              variant="filled"
+              color="green.9"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddMore(doc.id);
+              }}
+              aria-label={t("declarer_add_another")}
+              title={t("declarer_add_another")}
+            >
+              <i className="fa-solid fa-plus" style={{ fontSize: 10 }} />
+            </ActionIcon>
+          </Group>
         </>
       )}
       <ThemeIcon

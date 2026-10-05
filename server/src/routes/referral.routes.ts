@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ReferralController } from '../controllers/referral.controller.ts';
-import { authMiddleware } from '../middleware/auth.middleware.ts';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.middleware.ts';
 
 const router = Router();
 const referralController = new ReferralController();
@@ -62,7 +62,7 @@ router.get('/', authMiddleware, (req, res) => referralController.getMyReferrals(
  *       500:
  *         description: Erreur serveur
  */
-router.get('/admin', authMiddleware, (req, res) => referralController.getAllReferrals(req, res));
+router.get('/admin', authMiddleware, adminMiddleware, (req, res) => referralController.getAllReferrals(req, res));
 
 /**
  * @swagger
@@ -105,6 +105,6 @@ router.get('/admin', authMiddleware, (req, res) => referralController.getAllRefe
  *       500:
  *         description: Erreur serveur
  */
-router.patch('/admin/:id/reward', authMiddleware, (req, res) => referralController.rewardReferral(req, res));
+router.patch('/admin/:id/reward', authMiddleware, adminMiddleware, (req, res) => referralController.rewardReferral(req, res));
 
 export default router;

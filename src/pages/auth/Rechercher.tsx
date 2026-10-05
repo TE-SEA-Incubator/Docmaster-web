@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
+import { useTopbar } from "../../hooks/useTopbar";
 import { useAuth } from "../../context/AuthContext";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
 import { API_BASE_URL } from "../../services/api";
-import Topbar from "../../layout/Topbar";
+
 import type { Declaration, DocTypeCatalog } from "../../types/api";
+import { ProtectedDocumentImage } from "../../components/ui/ProtectedDocumentImage";
 import {
   TextInput,
   Button,
@@ -38,6 +40,14 @@ function formatDate(d: string | undefined): string {
   return dt.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
 
+/** Recovery always uses the LOST declaration id, not the FOUND document id. */
+function resolveLostDeclarationId(doc: ResultDoc, explicitLostId?: string): string {
+  if (explicitLostId) return explicitLostId;
+  const matches = (doc.matches as Array<{ lost_declaration_id?: string; status?: string }> | undefined) || [];
+  const active = matches.find((m) => m.status && ["PENDING", "CONFIRMED", "MATCHED"].includes(m.status));
+  return active?.lost_declaration_id || doc.id;
+}
+
 interface ResultDoc {
   id: string;
   owner_name?: string;
@@ -54,6 +64,7 @@ interface ResultDoc {
 
 export default function Rechercher() {
   const { t } = useI18n();
+  useTopbar(t("rechercher_search_page"), [{ label: t("rechercher_search_page") }]);
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -62,7 +73,6 @@ export default function Rechercher() {
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [results, setResults] = useState<ResultDoc[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hasLost, setHasLost] = useState(false);
   const [docTypes, setDocTypes] = useState<DocTypeCatalog[]>([]);
 
   const docTypeMap = useMemo(() => {
@@ -71,32 +81,17 @@ export default function Rechercher() {
     return map;
   }, [docTypes]);
 
-  const potentialIds = (location.state as { potentialIds?: string[] } | null)?.potentialIds;
+  const potentialIds = (location.state as { potentialIds?: string[]; lostDeclarationId?: string } | null)?.potentialIds;
+  const lostDeclarationId = (location.state as { lostDeclarationId?: string } | null)?.lostDeclarationId;
   const isMatchView = !!potentialIds && potentialIds.length > 0;
 
-  const checkUserHasLost = useCallback(async () => {
-    try {
-      const res = await declarationsService.getMyDeclarations();
-      if (res.success && res.data) {
-        const has = res.data.some(
-          (d) => d.type === "lost" && !["RETURNED", "CANCELLED", "CLAIMED"].includes(d.status)
-        );
-        setHasLost(has);
-      }
-    } catch (e: any) {
-      console.error("[Rechercher] checkUserHasLost error:", e?.response?.data || e);
-      setHasLost(false);
-    }
-  }, []);
-
   useEffect(() => {
-    checkUserHasLost();
     documentTypesService.getActive().then((res) => {
       if (res.success && res.data) setDocTypes(res.data);
     }).catch((e: any) => {
       console.error("[Rechercher] Failed to load doc types:", e);
     });
-  }, [checkUserHasLost]);
+  }, []);
 
   useEffect(() => {
     if (potentialIds && potentialIds.length > 0) {
@@ -130,14 +125,14 @@ export default function Rechercher() {
     }
   }, []);
 
+  // Charger toutes les déclarations FOUND par défaut
   useEffect(() => {
-    if (potentialIds && potentialIds.length > 0) return;
-    const q = searchParams.get("q");
-    if (q) {
-      performSearch(q);
-    } else {
-      setLoading(false);
-    }
+    setLoading(true);
+    declarationsService.searchPublic("") // On charge tout
+      .then((res) => {
+        if (res.data) setResults(res.data as ResultDoc[]);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const handleSearch = () => performSearch(query.trim());
@@ -146,12 +141,6 @@ export default function Rechercher() {
 
   return (
     <div className="flex flex-col h-full">
-      <Topbar
-        title={isMatchView ? t("rechercher_potential_matches") : t("rechercher_search_page")}
-        breadcrumbs={[
-          { label: isMatchView ? t("rechercher_matches") : t("rechercher_search_page") },
-        ]}
-      />
 
       <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         <div className="max-w-5xl mx-auto w-full space-y-6">
@@ -226,7 +215,7 @@ export default function Rechercher() {
                   size="md"
                   fw={700}
                   ff="Bricolage Grotesque"
-                  style={{ backgroundColor: "#D98A30" }}
+                  style={{ backgroundColor: "#E8923A" }}
                 >
                   {t("rechercher_search_btn")}
                 </Button>
@@ -298,7 +287,7 @@ export default function Rechercher() {
                   to="/declarer"
                   radius="xl"
                   leftSection={<i className="fa-solid fa-file-circle-plus" />}
-                  style={{ backgroundColor: "#D98A30" }}
+                  style={{ backgroundColor: "#E8923A" }}
                 >
                   {t("rechercher_declare_loss")}
                 </Button>
@@ -318,23 +307,16 @@ export default function Rechercher() {
                   if (doc.document_type && docTypeMap[doc.document_type]) return docTypeMap[doc.document_type];
                   return doc.document_type || doc.doc_type || t("rechercher_document");
                 })();
-                const showFull = isMatchView || hasLost;
+                const showFull = isMatchView;
 
                 return (
                   <Card key={doc.id} radius="xl" withBorder overflow="hidden" p={0}>
                     <div className="relative h-44 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
-                      {photoUrl && showFull ? (
-                        <img src={photoUrl} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center px-4">
-                          <Text size="10px" fw={800} tt="uppercase" c="dimmed" ta="center" tracking="widest">
-                            {t("rechercher_photo_protected")}
-                          </Text>
-                          <Text size="xs" c="dimmed.6" ta="center" mt={4}>
-                            {t("rechercher_visible_after_declaration")}
-                          </Text>
-                        </div>
-                      )}
+                      <ProtectedDocumentImage
+                        src={photoUrl || undefined}
+                        revealed={showFull}
+                        className="relative w-full h-full overflow-hidden"
+                      />
                       <Badge
                         pos="absolute"
                         top={12}
@@ -369,12 +351,12 @@ export default function Rechercher() {
                         {showFull ? (
                           <Button
                             component={Link}
-                            to={`/recuperer?id=${doc.id}`}
+                            to={`/recuperer?id=${resolveLostDeclarationId(doc, lostDeclarationId)}${isMatchView ? `&found=${doc.id}` : ""}`}
                             fullWidth
                             radius="xl"
                             size="sm"
                             leftSection={<i className="fa-solid fa-hand-holding-heart" />}
-                            style={{ backgroundColor: "#D98A30" }}
+                            style={{ backgroundColor: "#E8923A" }}
                           >
                             {t("rechercher_its_mine")}
                           </Button>

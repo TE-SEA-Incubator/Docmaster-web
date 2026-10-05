@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from "react";
+import { useTopbar } from "../../hooks/useTopbar";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { declarationsService } from "../../services/declarationsService";
 import { claimsService } from "../../services/claimsService";
 import type { Declaration } from "../../types/api";
-import Topbar from "../../layout/Topbar";
+import { ProtectedDocumentImage } from "../../components/ui/ProtectedDocumentImage";
+
 import { useI18n } from "../../context/I18nContext";
 
 const CODE_LENGTH = 6;
 
 export default function ValidationRemise() {
   const { t } = useI18n();
+  useTopbar("Validation de remise", [{ label: "Validation" }]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const docId = searchParams.get("id");
@@ -205,7 +208,6 @@ export default function ValidationRemise() {
   if (!docId) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar title="Validation de remise" breadcrumbs={[{ label: "Validation" }]} />
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] border border-borderMain p-8 max-w-md w-full text-center shadow-sm">
             <div className="w-16 h-16 bg-bgMain rounded-full flex items-center justify-center mx-auto mb-4">
@@ -226,7 +228,6 @@ export default function ValidationRemise() {
   if (loading) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar title="Validation de remise" breadcrumbs={[{ label: "Validation" }]} />
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <div className="w-11 h-11 rounded-full border-[3px] border-black/10 border-t-primary animate-spin" />
@@ -241,7 +242,6 @@ export default function ValidationRemise() {
   if (error || !doc) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar title="Validation de remise" breadcrumbs={[{ label: "Validation" }]} />
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] border border-borderMain p-8 max-w-md w-full text-center shadow-sm">
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -262,13 +262,6 @@ export default function ValidationRemise() {
   if (validated) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar
-          title="Validation réussie"
-          breadcrumbs={[
-            { label: "Mes déclarations", href: "/mes-declarations" },
-            { label: "Validation" },
-          ]}
-        />
         <div className="custom-scroll flex-1 p-4 sm:p-6 space-y-5 pb-28 lg:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
           <div className="max-w-lg mx-auto pt-12">
             <div className="bg-white rounded-[32px] border border-green-200 shadow-xl p-10 text-center">
@@ -317,13 +310,6 @@ export default function ValidationRemise() {
   // ── Main View ────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full">
-      <Topbar
-        title={`Remise : ${getDocTypeName()}`}
-        breadcrumbs={[
-          { label: "Mes déclarations", href: "/mes-declarations" },
-          { label: "Validation" },
-        ]}
-      />
 
       <div className="custom-scroll flex-1 p-4 sm:p-6 space-y-5 pb-28 lg:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -495,20 +481,12 @@ export default function ValidationRemise() {
 
                 <div className="space-y-4">
                   <div className="aspect-video rounded-2xl bg-surface2 border border-borderMain overflow-hidden relative group">
-                    {doc.photo_recto ? (
-                      <img
-                        src={getImageUrl(doc.photo_recto)}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        alt="Document"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-textMuted/40">
-                        <i className="fa-solid fa-image text-3xl mb-2" />
-                        <span className="text-[10px] font-bold uppercase tracking-tighter">
-                          Aperçu indisponible
-                        </span>
-                      </div>
-                    )}
+                    <ProtectedDocumentImage
+                      src={doc.photo_recto ? getImageUrl(doc.photo_recto) : undefined}
+                      revealed={true}
+                      className="relative w-full h-full overflow-hidden"
+                      imgClassName="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
                   </div>
 
                   <div className="flex items-center gap-4 p-4 bg-surface2 rounded-2xl border border-borderMain/50">

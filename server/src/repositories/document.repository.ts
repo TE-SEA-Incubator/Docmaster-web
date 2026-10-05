@@ -185,7 +185,40 @@ export class DocumentRepository {
   }
 
   /**
+   * Find expired documents eligible for archiving (not yet archived)
+   */
+  async findExpiredDocuments(): Promise<UserDocument[]> {
+    const query = `
+      SELECT * FROM my_documents
+      WHERE validity_option = 'EXPIRING'
+        AND is_archived = false
+        AND date_expiration IS NOT NULL
+        AND date_expiration < CURRENT_DATE
+    `;
+    const { rows } = await pool.query(query);
+    return rows;
+  }
+
+  /**
+   * Archive specific documents by id list
+   */
+  async archiveDocumentsByIds(ids: string[]): Promise<number> {
+    if (!ids.length) return 0;
+    const query = `
+      UPDATE my_documents
+      SET is_archived = true,
+          archived_at = NOW()
+      WHERE id = ANY($1::uuid[])
+        AND is_archived = false
+      RETURNING id
+    `;
+    const { rows } = await pool.query(query, [ids]);
+    return rows.length;
+  }
+
+  /**
    * Archive all expired documents (validity_option = 'EXPIRING', date_expiration < NOW())
+   * @deprecated Prefer findExpiredDocuments + per-user plan check in ExpirationService
    */
   async archiveExpiredDocuments(): Promise<number> {
     const query = `

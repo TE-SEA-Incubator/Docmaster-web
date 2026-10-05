@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { matchingService } from '../services/matching.service.ts';
 import { expirationService } from '../services/expiration.service.ts';
 import { paymentReconciliationService } from '../services/payment-reconciliation.service.ts';
+import { payoutPollerService } from './payout-poller.ts';
 
 /**
  * Initialize all background cron jobs
@@ -30,11 +31,18 @@ export const initCronJobs = () => {
     expirationService.checkAndArchive();
   });
 
-  // 4. Payment Reconciliation - Runs every 15 minutes
+  // 4. Payment Reconciliation (payin) - Runs every 15 minutes
   cron.schedule('*/15 * * * *', () => {
     console.log('🔄 Running payment reconciliation...');
     paymentReconciliationService.reconcileStuckTransactions();
   });
 
-  console.log('✅ Background Cron Jobs scheduled (matching: 30s, reconciliation: 15min, expiration: daily).');
+  // 5. Payout Poller (retrait) - Runs every 2 minutes
+  //    Vérifie les retraits PROCESSING avec un nokash_id et les finalise
+  //    sans dépendre du callback Nokash.
+  cron.schedule('*/2 * * * *', () => {
+    payoutPollerService.pollPendingPayouts();
+  });
+
+  console.log('✅ Background Cron Jobs scheduled (matching: 30s, payout-poll: 2min, reconciliation: 15min, expiration: daily).');
 };

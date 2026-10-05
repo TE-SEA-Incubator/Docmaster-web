@@ -205,9 +205,9 @@ export default function AdminSubscriptions() {
         <div className="flex items-center gap-2">
           <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder={t("admin_subscriptions_search")}
-            className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] bg-white w-56" />
+            className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] bg-white w-56" />
           <button onClick={openNew}
-            className="flex items-center gap-1.5 bg-[#1E3A2F] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors">
+            className="flex items-center gap-1.5 bg-[#2D5A42] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors">
             <i className="fa-solid fa-plus text-xs" />{t("admin_subscriptions_create")}
           </button>
         </div>
@@ -240,9 +240,9 @@ export default function AdminSubscriptions() {
           ) : plans.map((plan) => {
               const featureEntries = Object.entries(plan.features || {});
               return (
-                <div key={plan.id} className={`bg-white border rounded relative flex flex-col ${plan.is_featured ? "border-[#D98A30] border-2" : "border-gray-200"}`}>
+                <div key={plan.id} className={`bg-white border rounded relative flex flex-col ${plan.is_featured ? "border-[#E8923A] border-2" : "border-gray-200"}`}>
                   {plan.is_featured && (
-                    <div className="absolute -top-2.5 right-4 bg-[#D98A30] text-white text-[10px] font-bold px-2.5 py-0.5 rounded">
+                    <div className="absolute -top-2.5 right-4 bg-[#E8923A] text-white text-[10px] font-bold px-2.5 py-0.5 rounded">
                       {t("admin_subscriptions_recommended")}
                     </div>
                   )}
@@ -250,12 +250,12 @@ export default function AdminSubscriptions() {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h3 className="font-bold text-gray-900">{plan.name}</h3>
-                        <div className="text-xl font-bold text-[#D98A30] mt-0.5">
+                        <div className="text-xl font-bold text-[#E8923A] mt-0.5">
                           {plan.price === 0 ? "Gratuit" : `${plan.price?.toLocaleString()} XAF`}
                           {plan.price > 0 && <span className="text-[11px] text-gray-400 font-normal ml-1">/ {plan.duration_months || 1} mois</span>}
                         </div>
                       </div>
-                      <button onClick={() => openEdit(plan.id)} className="text-gray-400 hover:text-[#D98A30] transition-colors p-1">
+                      <button onClick={() => openEdit(plan.id)} className="text-gray-400 hover:text-[#E8923A] transition-colors p-1">
                         <i className="fa-solid fa-pen-to-square text-sm" />
                       </button>
                     </div>
@@ -272,7 +272,7 @@ export default function AdminSubscriptions() {
                           const enabled = val === true || (typeof val === "number" && val > 0) || (Array.isArray(val) && val.length > 0);
                           return (
                             <div key={key} className={`flex items-center gap-2 py-1.5 px-2 rounded text-[12px] ${enabled ? "bg-green-50" : "bg-gray-50"}`}>
-                              <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${enabled ? "bg-[#D98A30]/10 text-[#D98A30]" : "bg-gray-100 text-gray-300"}`}>
+                              <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${enabled ? "bg-[#E8923A]/10 text-[#E8923A]" : "bg-gray-100 text-gray-300"}`}>
                                 <i className={`fa-solid ${icon} text-[10px]`} />
                               </div>
                               <span className={`flex-1 ${enabled ? "text-gray-800" : "text-gray-400"}`}>{label}</span>
@@ -287,7 +287,7 @@ export default function AdminSubscriptions() {
                   </div>
                   <div className="px-5 pb-4">
                     <button onClick={() => openEdit(plan.id)}
-                      className="w-full py-2 border border-gray-200 rounded text-[12px] font-semibold text-gray-600 hover:bg-gray-50 hover:border-[#D98A30] hover:text-[#D98A30] transition-colors">
+                      className="w-full py-2 border border-gray-200 rounded text-[12px] font-semibold text-gray-600 hover:bg-gray-50 hover:border-[#E8923A] hover:text-[#E8923A] transition-colors">
                       <i className="fa-solid fa-pen text-[10px] mr-1" />Modifier ce plan
                     </button>
                   </div>
@@ -300,7 +300,7 @@ export default function AdminSubscriptions() {
 
       <div className="mb-6">
         <h3 className="font-bold text-sm text-gray-800 mb-4 flex items-center gap-2">
-          <i className="fa-solid fa-tag text-[#D98A30]" />
+          <i className="fa-solid fa-tag text-[#E8923A]" />
           Promotion VIP
           <InfoTooltip text="Gérez le prix et la durée de l'offre promotionnelle VIP." />
         </h3>
@@ -312,18 +312,18 @@ export default function AdminSubscriptions() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Prix promo (XAF)</label>
                 <input type="number" value={promoForm.price} onChange={(e) => setPromoForm({ ...promoForm, price: Number(e.target.value) })}
-                  className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors bg-white" />
+                  className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors bg-white" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Durée (mois)</label>
                 <input type="number" value={promoForm.duration_months} onChange={(e) => setPromoForm({ ...promoForm, duration_months: Number(e.target.value) })}
-                  className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors bg-white" />
+                  className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors bg-white" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Statut</label>
                 <label className="relative inline-flex items-center cursor-pointer mt-2">
                   <input type="checkbox" checked={promoForm.is_active} onChange={(e) => setPromoForm({ ...promoForm, is_active: e.target.checked })} className="sr-only peer" />
-                  <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#1E3A2F]" />
+                  <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2D5A42]" />
                   <span className="ml-3 text-[13px] font-medium text-gray-700">{promoForm.is_active ? "Active" : "Inactive"}</span>
                 </label>
               </div>
@@ -348,7 +348,7 @@ export default function AdminSubscriptions() {
                 finally { setPromoSaving(false); }
               }}
               disabled={promoSaving}
-              className="flex items-center gap-1.5 bg-[#1E3A2F] text-white px-5 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60">
+              className="flex items-center gap-1.5 bg-[#2D5A42] text-white px-5 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60">
               {promoSaving ? <><i className="fa-solid fa-spinner fa-spin text-xs" /> Enregistrement...</> : <><i className="fa-solid fa-floppy-disk text-xs" /> Enregistrer la promotion</>}
             </button>
           </div>
@@ -393,7 +393,7 @@ export default function AdminSubscriptions() {
                     <td className="py-3 px-4 text-right">
                       <select value={s.status || ""} onChange={(e) => updateStatus(s.id, e.target.value)}
                         disabled={statusUpdating === s.id}
-                        className="px-2 py-1.5 border border-gray-200 rounded text-[12px] outline-none focus:border-[#D98A30] bg-white disabled:opacity-50">
+                        className="px-2 py-1.5 border border-gray-200 rounded text-[12px] outline-none focus:border-[#E8923A] bg-white disabled:opacity-50">
                         <option value="ACTIVE">Actif</option>
                         <option value="EXPIRED">Expiré</option>
                         <option value="CANCELED">Annulé</option>
@@ -420,18 +420,18 @@ export default function AdminSubscriptions() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">{t("admin_subscriptions_plan_name")}</label>
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Premium" required
-                  className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors" />
+                  className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">{t("admin_subscriptions_price")}</label>
                   <input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                    className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors" />
+                    className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">{t("admin_subscriptions_duration")}</label>
                   <input type="number" value={form.duration_months} onChange={(e) => setForm({ ...form, duration_months: Number(e.target.value) })}
-                    className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors" />
+                    className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
                 </div>
               </div>
               {features.length > 0 && (
@@ -450,12 +450,12 @@ export default function AdminSubscriptions() {
                           <input type="checkbox" checked={form.features[feat.code] || false}
                             onChange={(e) => setForm({ ...form, features: { ...form.features, [feat.code]: e.target.checked } })}
                             className="sr-only peer" />
-                          <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#1E3A2F]" />
+                          <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2D5A42]" />
                         </label>
                       ) : (
                         <input type="number" value={form.features[feat.code] ?? ""}
                           onChange={(e) => setForm({ ...form, features: { ...form.features, [feat.code]: e.target.value === "" ? null : Number(e.target.value) } })}
-                          className="w-20 px-2 py-1.5 border border-gray-200 rounded text-[12px] text-center outline-none focus:border-[#D98A30]" placeholder="0" />
+                          className="w-20 px-2 py-1.5 border border-gray-200 rounded text-[12px] text-center outline-none focus:border-[#E8923A]" placeholder="0" />
                       )}
                     </div>
                   ))}
@@ -468,7 +468,7 @@ export default function AdminSubscriptions() {
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" checked={form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} className="sr-only peer" />
-                  <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#D98A30]" />
+                  <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#E8923A]" />
                 </label>
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
@@ -476,7 +476,7 @@ export default function AdminSubscriptions() {
                   Annuler
                 </button>
                 <button type="submit" disabled={saving || !form.name.trim()}
-                  className="px-5 py-2 bg-[#1E3A2F] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
+                  className="px-5 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
                   {saving && <i className="fa-solid fa-spinner fa-spin text-xs" />}
                   {editingId ? "Enregistrer" : "Créer"}
                 </button>

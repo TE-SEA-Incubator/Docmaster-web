@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import { useNotifications } from "../../hooks/useNotifications";
 import { socketService } from "../../services/socket";
 import { notificationsService } from "../../services/notificationsService";
+import { emitToast } from "../../utils/toastEmitter";
 
 export default function NotificationModal({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
   const { t } = useI18n();
   const { notifications, loading, unreadCount, markAsRead, markAllAsRead, fetch } = useNotifications();
   const [liveNotifs, setLiveNotifs] = useState<any[]>([]);
@@ -36,6 +39,18 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
   }, [onClose]);
 
   const [respondingId, setRespondingId] = useState<string | null>(null);
+
+  const parseMetadata = (raw: unknown): Record<string, any> => {
+    if (!raw) return {};
+    if (typeof raw === "string") {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return {};
+      }
+    }
+    return raw as Record<string, any>;
+  };
 
   const allNotifs = [
     ...liveNotifs.map((n: any) => ({ ...n, is_read: false, lue: false, _live: true })),
@@ -129,22 +144,38 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
           ) : (
             <div className="divide-y divide-borda">
               {allNotifs.map((n: any, idx) => {
-                const meta = getMeta(n.type || n.notification_type);
+                const typeMeta = getMeta(n.type || n.notification_type);
                 const key = n.id || n._id || `notif-${idx}`;
                 const nType = n.type || n.notification_type;
+                const notifMeta = parseMetadata(n.metadata);
                 const isVaultMatch = nType === "VAULT_MATCH_PENDING" || nType === "vault_match_pending";
                 const isResponding = respondingId === key;
 
                 const handleVaultResponse = async (response: "yes" | "no") => {
                   setRespondingId(key);
                   try {
-                    await notificationsService.respondVaultMatch(
-                      n.metadata?.declaration_id,
+                    const result = await notificationsService.respondVaultMatch(
+                      notifMeta.declaration_id,
                       response,
-                      n.metadata?.vault_doc_id
+                      notifMeta.vault_doc_id
                     );
                     if (!n._live && !n.is_read && !n.lue) markAsRead(n.id);
-                  } catch {} finally {
+
+                    if (response === "yes" && result?.success) {
+                      const lostId = (result as any).lost_declaration_id;
+                      const foundId = (result as any).found_declaration_id || notifMeta.declaration_id;
+                      emitToast({ type: "success", message: result.message || "Correspondance confirmée." });
+                      onClose();
+                      if (lostId) {
+                        navigate(`/recuperer?id=${lostId}${foundId ? `&found=${foundId}` : ""}`);
+                      }
+                    } else if (response === "no" && result?.success) {
+                      emitToast({ type: "success", message: result.message || "Réponse enregistrée." });
+                    }
+                  } catch (err: any) {
+                    const msg = err?.response?.data?.message || "Impossible de traiter votre réponse.";
+                    emitToast({ type: "error", message: msg });
+                  } finally {
                     setRespondingId(null);
                   }
                 };
@@ -163,8 +194,8 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
                     {!n.is_read && !n.lue && (
                       <div className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
                     )}
-                    <div className={`w-9 h-9 rounded-[9px] ${meta.bg} flex items-center justify-center text-sm flex-shrink-0`}>
-                      <i className={`${meta.icon} ${meta.color}`} />
+                    <div className={`w-9 h-9 rounded-[9px] ${typeMeta.bg} flex items-center justify-center text-sm flex-shrink-0`}>
+                      <i className={`${typeMeta.icon} ${typeMeta.color}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[12px] text-textMain leading-snug italic">

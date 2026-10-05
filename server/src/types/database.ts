@@ -18,6 +18,7 @@ export interface User {
     wallet_balance: number;
     date_naissance?: Date;
     lieu_naissance?: string;
+    genre?: 'HOMME' | 'FEMME' | 'AUTRE' | string;
     photo_url?: string;
     currency: string;
     role: 'USER' | 'ADMIN' | 'PARTNER';
@@ -211,6 +212,7 @@ export interface Autorite {
     region?: string;
     department?: string;
     arrondissement?: string;
+    bureau?: string;
     is_active: boolean;
     must_change_password: boolean;
     created_by?: string | null;
@@ -229,6 +231,7 @@ export interface AutoritePublic {
     region?: string;
     department?: string;
     arrondissement?: string;
+    bureau?: string;
     is_active: boolean;
     must_change_password: boolean;
     created_at: Date;

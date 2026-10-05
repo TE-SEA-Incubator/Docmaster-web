@@ -221,3 +221,48 @@ export const getDocumentMedia = async (req: Request, res: Response) => {
   }
 };
 
+export const updateMyDocument = async (req: Request, res: Response) => {
+  try {
+    const data = req.body;
+    const userId = (req as any).user?.id;
+    const id = req.params.id as string;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Utilisateur non authentifié'
+      });
+    }
+
+    const updatePayload: any = { ...data };
+    if (files?.photo_recto?.[0]?.path) {
+      updatePayload.photo_recto = files.photo_recto[0].path;
+    }
+    if (files?.photo_verso?.[0]?.path) {
+      updatePayload.photo_verso = files.photo_verso[0].path;
+    }
+
+    const result = await documentService.updateDocument(id, userId, updatePayload);
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: 'Document non trouvé ou accès non autorisé'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Document modifié avec succès',
+      data: result
+    });
+  } catch (error: any) {
+    console.error('❌ Erreur lors de la modification du document:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Erreur lors de la modification du document'
+    });
+  }
+};
+
+

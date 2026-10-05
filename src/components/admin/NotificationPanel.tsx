@@ -25,7 +25,7 @@ export default function NotificationPanel({ open, onClose, notifications, loadin
           <h3 className="font-bold text-sm text-gray-900">{t("notification_title")}</h3>
           <div className="flex items-center gap-2">
             {unreadCount > 0 && (
-              <button onClick={onMarkAllRead} className="text-[12px] font-semibold text-[#D98A30] hover:underline transition-colors">
+              <button onClick={onMarkAllRead} className="text-[12px] font-semibold text-[#E8923A] hover:underline transition-colors">
                 {t("notification_mark_all_read")}
               </button>
             )}
@@ -55,7 +55,7 @@ export default function NotificationPanel({ open, onClose, notifications, loadin
                   className={`w-full text-left px-5 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${isUnread ? "bg-[#FEF9F0]" : ""}`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-7 h-7 rounded border flex items-center justify-center text-xs shrink-0 ${isUnread ? "bg-[#D98A30]/10 border-[#D98A30]/20 text-[#D98A30]" : "bg-gray-100 border-gray-200 text-gray-400"}`}>
+                    <div className={`w-7 h-7 rounded border flex items-center justify-center text-xs shrink-0 ${isUnread ? "bg-[#E8923A]/10 border-[#E8923A]/20 text-[#E8923A]" : "bg-gray-100 border-gray-200 text-gray-400"}`}>
                       <i className="fa-solid fa-bell" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -65,7 +65,7 @@ export default function NotificationPanel({ open, onClose, notifications, loadin
                         {new Date(n.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                       </span>
                     </div>
-                    {isUnread && <span className="w-2 h-2 rounded-full bg-[#D98A30] shrink-0 mt-2" />}
+                    {isUnread && <span className="w-2 h-2 rounded-full bg-[#E8923A] shrink-0 mt-2" />}
                   </div>
                 </button>
               );

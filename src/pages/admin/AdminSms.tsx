@@ -109,7 +109,7 @@ export default function AdminSms() {
         {/* Send SMS */}
         <div className="bg-white border border-gray-200 rounded p-5">
           <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <i className="fa-solid fa-paper-plane text-[#D98A30]" />
+            <i className="fa-solid fa-paper-plane text-[#E8923A]" />
             Envoyer un SMS
             <InfoTooltip text="Envoyez un SMS à un ou plusieurs numéros (séparés par des virgules)." />
           </h3>
@@ -120,13 +120,13 @@ export default function AdminSms() {
               </label>
               <input type="text" value={recipients} onChange={(e) => setRecipients(e.target.value)}
                 placeholder="+237677000000, +237655000000"
-                className="w-full px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors" />
+                className="w-full px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors" />
             </div>
             <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Message *</label>
               <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4}
                 placeholder={t("admin_sms_placeholder")} required
-                className="w-full px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#D98A30] transition-colors resize-none" />
+                className="w-full px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors resize-none" />
             </div>
             {sendResult && (
               <div className={`px-3 py-2.5 rounded border text-[13px] flex items-center gap-2 ${sendResult.success ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>
@@ -136,7 +136,7 @@ export default function AdminSms() {
             )}
             <div className="flex items-center gap-3">
               <button type="submit" disabled={!message.trim() || sending}
-                className="flex items-center gap-1.5 bg-[#1E3A2F] text-white px-5 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-50">
+                className="flex items-center gap-1.5 bg-[#2D5A42] text-white px-5 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-50">
                 {sending ? <><i className="fa-solid fa-spinner fa-spin text-xs" /> Envoi...</> : <><i className="fa-solid fa-paper-plane text-xs" /> {t("admin_sms_send")}</>}
               </button>
               <span className="text-[12px] text-gray-400">{message.length} caractères</span>
@@ -168,7 +168,7 @@ export default function AdminSms() {
                 <tr key={i} className="hover:bg-gray-50 transition-colors">
                   <td className="px-3 py-2.5 font-mono text-[12px]">{row.appid}</td>
                   <td className="px-3 py-2.5 text-[13px]">{usageCountry}</td>
-                  <td className="px-3 py-2.5 font-bold text-[#D98A30]">{row.usage}</td>
+                  <td className="px-3 py-2.5 font-bold text-[#E8923A]">{row.usage}</td>
                   <td className="px-3 py-2.5 text-[13px]">{row.nbEnforcements}</td>
                 </tr>
               ))}

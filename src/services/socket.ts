@@ -1,6 +1,24 @@
 import { io, Socket } from "socket.io-client";
-import { getToken } from "../utils/cookie";
+import { getToken, type TokenPortal } from "../utils/cookie";
 import { API_BASE_URL } from "./api";
+
+/** Le même serveur Socket.IO sert les 4 portails : le token doit suivre l'URL courante. */
+function activePortal(): TokenPortal {
+  const path = window.location.pathname;
+  if (path.startsWith("/admin")) return "admin";
+  if (path.startsWith("/partenaire")) return "partenaire";
+  if (path.startsWith("/autorite")) return "autorite";
+  return "user";
+}
+
+interface ConversationOpenedPayload {
+  conversationId?: string;
+  declarationId?: string;
+}
+
+interface ConversationClosedPayload {
+  conversationId?: string;
+}
 
 type NotificationType =
   | "MATCH_FOUND"
@@ -26,6 +44,7 @@ class SocketService {
   private listeners: ListenerMap = new Map();
   private userId: string | null = null;
   private isInitialized = false;
+  private rooms: Set<string> = new Set();
 
   get connected(): boolean {
     return this.socket?.connected ?? false;
@@ -34,7 +53,7 @@ class SocketService {
   init(): Socket | null {
     if (this.isInitialized && this.socket?.connected) return this.socket;
 
-    const token = getToken();
+    const token = getToken(activePortal());
     if (!token) return null;
 
     this.isInitialized = true;
@@ -52,6 +71,10 @@ class SocketService {
 
     this.socket.on("connect", () => {
       console.log("[Socket] Connected to", socketUrl);
+      // Une reconnexion crée une nouvelle socket : les rooms sont perdues, il faut les redemander.
+      this.rooms.forEach((conversationId) =>
+        this.socket?.emit("conversation:join", { conversationId })
+      );
     });
 
     this.socket.on("connect_error", (err) => {
@@ -94,8 +117,21 @@ class SocketService {
       window.dispatchEvent(new CustomEvent("docmaster:matching-cycle-error", { detail: data }));
     });
 
+    this.socket.on("MESSAGE_NEW", (message: unknown) => {
+      window.dispatchEvent(new CustomEvent("docmaster:conversation-message", { detail: message }));
+    });
+
+    this.socket.on("CONVERSATION_OPENED", (data: ConversationOpenedPayload) => {
+      if (data?.conversationId) this.rooms.add(data.conversationId);
+      window.dispatchEvent(new CustomEvent("docmaster:conversation-opened", { detail: data }));
+    });
+
+    this.socket.on("CONVERSATION_CLOSED", (data: ConversationClosedPayload) => {
+      window.dispatchEvent(new CustomEvent("docmaster:conversation-closed", { detail: data }));
+    });
+
     this.socket.io?.on?.("reconnect_attempt", () => {
-      const newToken = getToken();
+      const newToken = getToken(activePortal());
       if (newToken && this.socket) {
         this.socket.auth = { token: newToken };
       }
@@ -140,6 +176,20 @@ class SocketService {
     this.socket.emit(event, payload);
   }
 
+  /** L'abonnement serveur vérifie la participation : un acteur non participant ne reçoit rien. */
+  joinConversation(conversationId: string): void {
+    this.rooms.add(conversationId);
+    if (!this.socket) this.init();
+    if (!this.socket?.connected) return;
+    this.socket.emit("conversation:join", { conversationId });
+  }
+
+  leaveConversation(conversationId: string): void {
+    this.rooms.delete(conversationId);
+    if (!this.socket?.connected) return;
+    this.socket.emit("conversation:leave", { conversationId });
+  }
+
   disconnect(): void {
     if (this.socket) {
       this.socket.disconnect();
@@ -147,6 +197,7 @@ class SocketService {
     }
     this.isInitialized = false;
     this.userId = null;
+    this.rooms.clear();
     this.listeners.clear();
   }
 

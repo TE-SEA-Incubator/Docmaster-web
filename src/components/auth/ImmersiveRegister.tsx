@@ -757,7 +757,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                     border: pwMatch === false
                       ? "2px solid #ef4444"
                       : pwMatch === true
-                      ? "2px solid #D98A30"
+                      ? "2px solid #E8923A"
                       : "2px solid rgba(255,255,255,0.12)",
                     color: "#fff",
                     backdropFilter: "blur(4px)",

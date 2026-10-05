@@ -129,6 +129,7 @@ export default function GestionAutorites() {
         <Text style={{ fontSize: 12, color: autoritePalette.textMain }}>
           {v}
           {a.region ? `, ${a.region}` : ""}
+          {a.bureau ? ` (${a.bureau})` : ""}
         </Text>
       ),
     },
@@ -276,6 +277,9 @@ export default function GestionAutorites() {
               <Input placeholder="ex: 671000000" />
             </Form.Item>
           </div>
+          <Form.Item name="bureau" label={t("autorite_gestion_bureau")}>
+            <Input placeholder={t("autorite_gestion_bureau_placeholder")} />
+          </Form.Item>
           <Form.Item
             label={t("autorite_gestion_location")}
             required

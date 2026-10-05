@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Button, Card, Form, Input, Typography, Alert, Space } from "antd";
-import { LockOutlined, KeyOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { LockOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { usePartenaire } from "../../context/PartenaireContext";
 import { useI18n } from "../../context/I18nContext";
 import { partenairesService } from "../../services/partenairesService";
 import { partenairePalette } from "../../theme/partenaires";
 import PartenaireDesignProvider from "../../components/partenaires/PartenaireDesignProvider";
+import PartenaireBrandLogo from "../../components/partenaires/PartenaireBrandLogo";
 import LanguageSwitcher from "../../components/ui/LanguageSwitcher";
 
 export default function ChangementMotDePasse() {
@@ -48,27 +49,26 @@ export default function ChangementMotDePasse() {
           <LanguageSwitcher onDark accentColor={partenairePalette.primary} />
         </div>
 
-        <Card style={{ width: 440, maxWidth: "100%", boxShadow: "0 12px 40px rgba(18,18,18,0.25)" }} styles={{ body: { padding: 36 } }}>
+        <Card
+          style={{
+            width: 440,
+            maxWidth: "100%",
+            boxShadow: "0 12px 40px rgba(18, 52, 60, 0.22)",
+            borderRadius: 10,
+            border: `1px solid ${partenairePalette.border}`,
+          }}
+          styles={{ body: { padding: 36 } }}
+        >
           <div style={{ textAlign: "center", marginBottom: 22 }}>
-            <div
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: 16,
-                background: partenairePalette.primary,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 12,
-              }}
-            >
-              <KeyOutlined style={{ color: "#fff", fontSize: 26 }} />
+            <div style={{ marginBottom: 16 }}>
+              <PartenaireBrandLogo />
             </div>
-            <Typography.Title level={4} style={{ margin: 0, color: partenairePalette.greenDark }}>
+            <Typography.Title level={5} style={{ margin: 0, color: partenairePalette.greenDark }}>
               {t("pwd_title")}
             </Typography.Title>
-            <Typography.Text type="secondary" style={{ display: "block", marginTop: 6 }}>
-              {partenaire && `${partenaire.nom_organisation} — `}{t("pwd_desc").replace(/^—\s*/, "")}
+            <Typography.Text type="secondary" style={{ display: "block", marginTop: 6, fontSize: 13 }}>
+              {partenaire && `${partenaire.nom_organisation} — `}
+              {t("pwd_desc").replace(/^—\s*/, "")}
             </Typography.Text>
           </div>
 

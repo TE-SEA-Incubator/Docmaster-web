@@ -57,6 +57,11 @@ export class CreateAutoriteDTO {
   @IsString()
   @MaxLength(100, { message: "L'arrondissement ne peut pas dépasser 100 caractères" })
   arrondissement?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255, { message: 'Le bureau ne peut pas dépasser 255 caractères' })
+  bureau?: string;
 }
 
 /**
@@ -155,6 +160,11 @@ export class UpdateAutoriteDTO {
   @IsString()
   @MaxLength(100)
   arrondissement?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  bureau?: string;
 
   @IsOptional()
   @IsBoolean()

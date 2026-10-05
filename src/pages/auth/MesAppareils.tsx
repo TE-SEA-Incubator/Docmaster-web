@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../context/I18nContext";
+import { useTopbar } from "../../hooks/useTopbar";
 import { useToast } from "../../context/ToastContext";
 import { devicesService } from "../../services/devicesService";
 import { deviceTransferService } from "../../services/deviceTransferService";
-import Topbar from "../../layout/Topbar";
+
 import DatePicker from "../../components/ui/DatePicker";
 import type { Device } from "../../types/api";
 import {
@@ -110,6 +111,7 @@ const BRAND_OPTIONS = [
 
 export default function MesAppareils() {
   const { t } = useI18n();
+  useTopbar("Mes appareils & équipements", [{ label: "Accueil", href: "/dashboard" }, { label: "Mes appareils" }]);
   const { user } = useAuth();
   const toast = useToast();
   const TYPE_META = getTypeMeta(t);
@@ -572,28 +574,20 @@ export default function MesAppareils() {
         .device-card-footer { padding: 10px 20px; background: #F9F6F1; border-top: 1px solid #EDE7DB; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
         .tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px; font-size: 10.5px; font-weight: 600; }
         .filter-btn { padding: 6px 14px; border-radius: 99px; border: 1.5px solid #E0D5C4; background: white; font-family: 'Poppins',sans-serif; font-size: 12px; font-weight: 600; color: #6B7280; cursor: pointer; transition: all .2s; white-space: nowrap; }
-        .filter-btn:hover { border-color: #D98A30; color: #D98A30; }
-        .filter-btn.active { border-color: #D98A30; background: #D98A30; color: white; }
+        .filter-btn:hover { border-color: #E8923A; color: #E8923A; }
+        .filter-btn.active { border-color: #E8923A; background: #E8923A; color: white; }
         .view-btn { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid #E0D5C4; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6B7280; font-size: 13px; transition: all .2s; }
-        .view-btn.active { background: #1E3A2F; border-color: #1E3A2F; color: white; }
+        .view-btn.active { background: #2D5A42; border-color: #2D5A42; color: white; }
         .type-option { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 12px 8px; border-radius: 12px; border: 2px solid #E0D5C4; background: white; cursor: pointer; transition: all .2s; font-family: 'Poppins',sans-serif; font-size: 11px; font-weight: 600; color: #374151; text-align: center; }
-        .type-option:hover { border-color: #D98A30; background: #FEF8F0; }
-        .type-option.selected { border-color: #D98A30; background: #FEF0DC; color: #D98A30; }
-        .type-option .type-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; background: #F2EBD9; color: #D98A30; transition: background .2s; }
+        .type-option:hover { border-color: #E8923A; background: #FEF8F0; }
+        .type-option.selected { border-color: #E8923A; background: #FEF0DC; color: #E8923A; }
+        .type-option .type-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; background: #F2EBD9; color: #E8923A; transition: background .2s; }
         .type-option.selected .type-icon { background: rgba(217,138,48,.25); }
         .upload-zone { border: 2px dashed #D0C6B8; border-radius: 13px; background: #F9F6F1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 20px 16px; cursor: pointer; transition: all .22s; text-align: center; }
-        .upload-zone:hover, .upload-zone.dragover { border-color: #D98A30; background: #FEF8F0; }
-        .upload-zone.has-file { border-color: #1E3A2F; background: #E8F5EE; border-style: solid; }
-        .file-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #1E3A2F; color: white; border-radius: 8px; font-size: 11.5px; font-weight: 600; margin-top: 6px; }
+        .upload-zone:hover, .upload-zone.dragover { border-color: #E8923A; background: #FEF8F0; }
+        .upload-zone.has-file { border-color: #2D5A42; background: #E8F5EE; border-style: solid; }
+        .file-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: #2D5A42; color: white; border-radius: 8px; font-size: 11.5px; font-weight: 600; margin-top: 6px; }
       `}</style>
-
-      <Topbar
-        title="Mes appareils &amp; équipements"
-        breadcrumbs={[
-          { label: "Accueil", href: "/dashboard" },
-          { label: "Mes appareils" },
-        ]}
-      />
 
       <div className="custom-scroll p-4 md:p-6 flex flex-col gap-6 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         {/* Stats */}
@@ -608,7 +602,7 @@ export default function MesAppareils() {
               <Paper key={stat.label} p="md" radius="xl" withBorder>
                 <Group gap="md">
                   <div className="w-[46px] h-[46px] rounded-[13px] flex items-center justify-center text-lg flex-shrink-0" style={{ background: stat.bg }}>
-                    <i className={`fa-solid ${stat.icon}`} style={{ color: stat.bg === "#EEF2FF" ? "#6366F1" : stat.bg === "#E8F5EE" ? "#1E3A2F" : stat.bg === "#FEF0DC" ? "#D98A30" : "#ef4444" }} />
+                    <i className={`fa-solid ${stat.icon}`} style={{ color: stat.bg === "#EEF2FF" ? "#6366F1" : stat.bg === "#E8F5EE" ? "#2D5A42" : stat.bg === "#FEF0DC" ? "#E8923A" : "#ef4444" }} />
                   </div>
                   <div>
                     <Text size="10px" fw={700} c="dimmed" tt="uppercase" tracking="widest">{stat.label}</Text>
@@ -666,7 +660,7 @@ export default function MesAppareils() {
               radius="xl"
               leftSection={<i className="fa-solid fa-shield-halved" />}
               onClick={() => setVerifyModalOpen(true)}
-              style={{ backgroundColor: "#D98A30" }}
+              style={{ backgroundColor: "#E8923A" }}
             >
               <span className="hidden sm:inline">Vérifier</span>
             </Button>
@@ -675,7 +669,7 @@ export default function MesAppareils() {
               radius="xl"
               leftSection={<i className="fa-solid fa-plus" />}
               onClick={() => openAddModal()}
-              style={{ backgroundColor: "#1E3A2F" }}
+              style={{ backgroundColor: "#2D5A42" }}
             >
               <span className="hidden sm:inline">Ajouter</span>
             </Button>
@@ -735,8 +729,8 @@ export default function MesAppareils() {
                 <div className="device-card-footer">
                   <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                     {isReported && <span className="tag" style={{ background: "#ef4444", color: "white" }}><i className="fa-solid fa-bell" style={{ fontSize: 9 }} /> Signalé</span>}
-                    {d.garantie && <span className="tag" style={{ background: expWarn ? "#fef2f2" : "#E8F5EE", color: expWarn ? "#ef4444" : "#1E3A2F" }}><i className={`fa-solid ${expWarn ? "fa-triangle-exclamation" : "fa-shield-check"}`} style={{ fontSize: 9 }} /> {expWarn ? "Exp" : "OK"}</span>}
-                    {d.assurance === "oui" && <span className="tag" style={{ background: "#FEF0DC", color: "#D98A30" }}><i className="fa-solid fa-shield-halved" style={{ fontSize: 9 }} /> Assuré</span>}
+                    {d.garantie && <span className="tag" style={{ background: expWarn ? "#fef2f2" : "#E8F5EE", color: expWarn ? "#ef4444" : "#2D5A42" }}><i className={`fa-solid ${expWarn ? "fa-triangle-exclamation" : "fa-shield-check"}`} style={{ fontSize: 9 }} /> {expWarn ? "Exp" : "OK"}</span>}
+                    {d.assurance === "oui" && <span className="tag" style={{ background: "#FEF0DC", color: "#E8923A" }}><i className="fa-solid fa-shield-halved" style={{ fontSize: 9 }} /> Assuré</span>}
                   </div>
                   {d.prix ? <span style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}>{Number(d.prix).toLocaleString("fr")} FCFA</span> : null}
                 </div>
@@ -793,7 +787,7 @@ export default function MesAppareils() {
             <Button
               leftSection={<i className="fa-solid fa-plus" />}
               onClick={() => openAddModal()}
-              style={{ backgroundColor: "#1E3A2F" }}
+              style={{ backgroundColor: "#2D5A42" }}
               radius="xl"
             >
               Ajouter mon premier appareil
@@ -842,7 +836,7 @@ export default function MesAppareils() {
             <Button flex={1} variant="outline" radius="xl" onClick={() => { setVerifyModalOpen(false); setVerifyResult(null); setVerifyImei(""); }}>
               Annuler
             </Button>
-            <Button flex={1.5} radius="xl" loading={verifyLoading} onClick={startVerification} style={{ backgroundColor: "#D98A30" }}>
+            <Button flex={1.5} radius="xl" loading={verifyLoading} onClick={startVerification} style={{ backgroundColor: "#E8923A" }}>
               <i className="fa-solid fa-magnifying-glass mr-1" /> Vérifier
             </Button>
           </Group>
@@ -909,7 +903,7 @@ export default function MesAppareils() {
                 flex={1.5}
                 radius="xl"
                 loading={transferSending}
-                style={{ backgroundColor: "#1E3A2F" }}
+                style={{ backgroundColor: "#2D5A42" }}
                 onClick={async () => {
                   if (!transferEmail.trim()) { setTransferError("Veuillez saisir un email"); return; }
                   if (!transferPassword.trim()) { setTransferError("Veuillez saisir votre mot de passe"); return; }
@@ -1090,7 +1084,7 @@ export default function MesAppareils() {
           {/* Buttons */}
           <Group>
             <Button flex={1} variant="outline" radius="xl" onClick={closeAddModal}>Annuler</Button>
-            <Button flex={2} radius="xl" loading={saving} onClick={handleSave} leftSection={<i className="fa-solid fa-floppy-disk" />} style={{ backgroundColor: "#1E3A2F" }}>
+            <Button flex={2} radius="xl" loading={saving} onClick={handleSave} leftSection={<i className="fa-solid fa-floppy-disk" />} style={{ backgroundColor: "#2D5A42" }}>
               {editingId ? "Modifications" : "Enregistrer"}
             </Button>
           </Group>
@@ -1271,7 +1265,7 @@ export default function MesAppareils() {
           </Stack>
         }
       >
-        <Button fullWidth radius="xl" size="md" onClick={() => setSuccessOpen(false)} style={{ backgroundColor: "#1E3A2F" }}>
+        <Button fullWidth radius="xl" size="md" onClick={() => setSuccessOpen(false)} style={{ backgroundColor: "#2D5A42" }}>
           D'accord
         </Button>
       </Modal>

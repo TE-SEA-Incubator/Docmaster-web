@@ -5,7 +5,8 @@ import { declarationsService, documentTypesService } from "../../services/declar
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { useI18n } from "../../context/I18nContext";
-import Topbar from "../../layout/Topbar";
+import { useTopbar } from "../../hooks/useTopbar";
+
 import type { Declaration } from "../../types/api";
 
 interface DeclarationExtended extends Declaration {
@@ -49,6 +50,7 @@ function fmtDate(v?: string | null) {
 
 export default function MesDeclarations() {
   const { t } = useI18n();
+  useTopbar(t("mesdeclarations_title"), [{ label: t("mesdeclarations_breadcrumb_home"), href: "/dashboard" }, { label: t("mesdeclarations_title") }]);
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -142,7 +144,6 @@ export default function MesDeclarations() {
   if (loading) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar title={t("mesdeclarations_title")} breadcrumbs={[{ label: t("mesdeclarations_breadcrumb_home"), href: "/dashboard" }, { label: t("mesdeclarations_title") }]} />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="w-11 h-11 rounded-full border-4 border-borda border-t-primary animate-spin" />
         </div>
@@ -152,15 +153,8 @@ export default function MesDeclarations() {
 
   return (
     <div className="flex flex-col h-full">
-      <Topbar
-        title={t("mesdeclarations_title")}
-        breadcrumbs={[
-          { label: t("mesdeclarations_breadcrumb_home"), href: "/dashboard" },
-          { label: t("mesdeclarations_title") },
-        ]}
-      />
 
-{/* REMPLACE la div enveloppante juste après le premier <Topbar /> */}
+{/* REMPLACE la div enveloppante juste après le premier */}
 <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-4 pb-28 md:pb-8 w-full max-w-7xl mx-auto max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         {/* Header card */}
         <section className="bg-white border border-borda rounded-[16px] sm:rounded-[18px] p-3 sm:p-5">
@@ -421,7 +415,9 @@ export default function MesDeclarations() {
                     <button
                       onClick={() =>
                         navigate(
-                          `/recuperer?id=${detailItem.id}`
+                          (detailItem.declaration_type || detailItem.type || "").toUpperCase() === "LOST"
+                            ? `/recuperer?id=${detailItem.id}`
+                            : `/rendre?id=${detailItem.id}`
                         )
                       }
                       className={`w-full py-3 sm:py-4 text-white rounded-xl font-black text-sm sm:text-base shadow-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 sm:gap-3 ${

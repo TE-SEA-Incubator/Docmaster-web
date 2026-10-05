@@ -15,6 +15,7 @@ import { v4 as uuidv4 } from "uuid";
 import { nokashService } from "./nokash.service.ts";
 import { startNokashPaymentPolling, activateRecovery } from "../controllers/payment.controller.ts";
 import { encodeMediaFields } from "../utils/media.utils.ts";
+import { numOr, resolveFinderRewardBasis } from "../utils/recovery.utils.ts";
 
 
 export class DeclarationService {
@@ -109,13 +110,13 @@ export class DeclarationService {
 
   // 2.5 Check Subscription Limits
   console.log('🔵 [3] Vérification limites abonnement...');
-  if (data.reporter_id && !options.bypassLimits) {
+  if (data.reporter_id && !options.bypassLimits && data.declaration_type === 'LOST') {
     console.log(`🔵 [3] reporter_id: ${data.reporter_id}, bypassLimits: false`);
     try {
       const validation = await subscriptionService.validateAction(
         data.reporter_id, 
         'CREATE_DECLARATION', 
-        { docTypeId: data.doc_type }
+        { docTypeId: data.doc_type, docTypeCode: docType?.code || data.doc_type }
       );
       console.log('🟢 [3] Résultat validation:', JSON.stringify(validation, null, 2));
 
@@ -208,25 +209,38 @@ export class DeclarationService {
     matchingService.notifyNewDeclaration();
     matchingService
       .findAndNotifyMatches(declaration)
-      .catch((err) => console.error("Error checking matches:", err));
+      .catch((err) => {
+        console.error('Error checking matches:', err);
+        matchingService.notifyNewDeclaration();
+      });
     console.log('🟢 [8] Vérification matches lancée (async)');
 
-    // 8. Award Points (only for user reporters; partner rewards go to the partner wallet)
-    if (declaration.reporter_id && declaration.reporter_type !== 'PARTENAIRE') {
-      console.log(`🔵 [9] Attribution points à ${declaration.reporter_id}...`);
+    // 8. Award Points (users + partenaires — partenaires ont leur propre colonne points)
+    if (declaration.reporter_id) {
       const points = await this.settingRepository.getByKey('points_per_declaration');
       const pts = Number(points) || 5;
-      await this.awardPoints(declaration.reporter_id, pts);
 
-      const { EarningsService } = await import('./earnings.service.ts');
-      await new EarningsService().recordDeclarationPoints(declaration.reporter_id, pts, {
-        declarationId: declaration.id,
-        docType: declaration.doc_type
-      });
+      if (declaration.reporter_type === 'PARTENAIRE') {
+        console.log(`🔵 [9] Attribution points partenaire à ${declaration.reporter_id}...`);
+        await this.awardPartnerPoints(declaration.reporter_id, pts);
+        const { PartenaireEarningsService } = await import('./partenaire-earnings.service.ts');
+        await new PartenaireEarningsService().recordDeclarationPoints(declaration.reporter_id, pts, {
+          declarationId: declaration.id,
+          docType: declaration.doc_type,
+        });
+        console.log(`🟢 [9] ${pts} points partenaire attribués`);
+      } else {
+        console.log(`🔵 [9] Attribution points à ${declaration.reporter_id}...`);
+        await this.awardPoints(declaration.reporter_id, pts);
 
-      console.log(`🟢 [9] ${points} points attribués`);
-    } else if (declaration.reporter_type === 'PARTENAIRE') {
-      console.log('🟡 [9] Déclarant partenaire — points utilisateur ignorés');
+        const { EarningsService } = await import('./earnings.service.ts');
+        await new EarningsService().recordDeclarationPoints(declaration.reporter_id, pts, {
+          declarationId: declaration.id,
+          docType: declaration.doc_type,
+        });
+
+        console.log(`🟢 [9] ${points} points attribués`);
+      }
     }
 
     console.log('✅ [DeclarationService.createDeclaration] === FIN SUCCÈS ===');
@@ -252,6 +266,18 @@ export class DeclarationService {
     }
   }
 
+  async awardPartnerPoints(partenaireId: string, points: number) {
+    try {
+      await pool.query(
+        'UPDATE partenaires SET points = COALESCE(points, 0) + $1, updated_at = NOW() WHERE id = $2',
+        [points, partenaireId]
+      );
+      console.log(`✅ Awarded ${points} points to partner ${partenaireId}`);
+    } catch (error) {
+      console.error(`❌ Error awarding points to partner ${partenaireId}:`, error);
+    }
+  }
+
   /**
    * Internal method to check for matches and notify users
    */
@@ -261,6 +287,7 @@ export class DeclarationService {
    */
   async searchDeclarations(filters: any): Promise<{ data: any[]; total: number }> {
     const { rows, total } = await this.declarationRepository.search(filters);
+    const isAdminView = !!filters.include_all;
 
     // Attach partner organisation name for PARTENAIRE reporters
     const partnerMap: Record<string, string> = {};
@@ -295,11 +322,19 @@ export class DeclarationService {
         if (!docType) {
           docType = await this.docTypeRepository.findByCode(decl.doc_type);
         }
-        return {
-          ...decl,
-          docTypeInfo: docType || null,
-          reporter_partenaire_nom: decl.reporter_type === 'PARTENAIRE' ? partnerMap[decl.reporter_id] || null : null,
-        };
+        return isAdminView
+          ? {
+              ...decl,
+              docTypeInfo: docType || null,
+              reporter_partenaire_nom:
+                decl.reporter_type === 'PARTENAIRE' ? partnerMap[decl.reporter_id] || null : null,
+            }
+          : this.maskDeclarationForPublic({
+              ...decl,
+              docTypeInfo: docType || null,
+              reporter_partenaire_nom:
+                decl.reporter_type === 'PARTENAIRE' ? partnerMap[decl.reporter_id] || null : null,
+            });
       })
     );
 
@@ -350,7 +385,10 @@ export class DeclarationService {
   /**
    * Get a specific declaration by ID with full metadata
    */
-  async getDeclarationById(id: string): Promise<any | null> {
+  async getDeclarationById(
+    id: string,
+    options?: { preferredMatchFoundId?: string },
+  ): Promise<any | null> {
     const declaration = await this.declarationRepository.findById(id);
     if (!declaration) return null;
 
@@ -385,15 +423,36 @@ export class DeclarationService {
       }
     }
 
-    // Calculate specific gains for finder if this is a found document or matching
+    // Calculate specific gains & recovery cost if docType is resolved
     if (docType) {
-      enrichedData.reward_amount = (docType.prix_retrouvaille * docType.finder_percent) / 100;
+      enrichedData.prix_retrouvaille = Number(docType.prix_retrouvaille);
+      enrichedData.prix_recuperation = Number(docType.prix_retrouvaille);
+      enrichedData.recovery_cost = Number(docType.prix_retrouvaille);
+      enrichedData.reward_amount = (Number(docType.prix_retrouvaille) * Number(docType.finder_percent)) / 100;
       enrichedData.reward_points = docType.points_recompense;
     }
 
-    // If matched, find the counter-party and claim status
-    if (declaration.status === 'MATCHED' && matches && matches.length > 0) {
-      const match = matches[0];
+    // If matched or has an active potential match, attach counter-party details
+    const activeStatuses = ['PENDING', 'CONFIRMED', 'MATCHED'];
+    let match = null as (typeof matches)[number] | null;
+    if (matches && matches.length > 0) {
+      if (options?.preferredMatchFoundId) {
+        match = matches.find(
+          (m) =>
+            activeStatuses.includes(m.status) &&
+            (m.found_declaration_id === options.preferredMatchFoundId ||
+              m.lost_declaration_id === options.preferredMatchFoundId),
+        ) ?? null;
+      }
+      if (!match && declaration.status === 'MATCHED') {
+        match = matches.find((m) => activeStatuses.includes(m.status)) ?? matches[0] ?? null;
+      }
+      if (!match && declaration.declaration_type === 'LOST') {
+        match = matches.find((m) => activeStatuses.includes(m.status)) ?? null;
+      }
+    }
+
+    if (match) {
       const counterPartId = declaration.declaration_type === 'FOUND' 
         ? match.lost_declaration_id 
         : match.found_declaration_id;
@@ -454,10 +513,49 @@ export class DeclarationService {
         
         const claim = await this.claimRepository.findByDocIdAndOwner(lostId, ownerId);
         enrichedData.claim = claim || null;
+
+        // Afficher la récompense qui sera réellement versée (fraction de l'encaissement),
+        // pas le tarif actuel du type de document.
+        if (claim && claim.amount !== null && claim.amount !== undefined) {
+          enrichedData.reward_amount = (Number(claim.amount) * numOr(docType?.finder_percent, 80)) / 100;
+        }
       }
     }
 
     return await encodeMediaFields(enrichedData);
+  }
+
+  /**
+   * Whether a user may open the recovery render context (owner, finder, or lost owner via match).
+   */
+  async userCanAccessRenderContext(userId: string, declaration: any): Promise<boolean> {
+    const matches = declaration.matches || [];
+    for (const m of matches) {
+      if (!['PENDING', 'CONFIRMED', 'MATCHED'].includes(m.status)) continue;
+
+      const lostId = m.lost_declaration_id;
+      const foundId = m.found_declaration_id;
+
+      if (declaration.declaration_type === 'LOST' && declaration.id === lostId && declaration.reporter_id === userId) {
+        return true;
+      }
+      if (declaration.declaration_type === 'FOUND' && declaration.id === foundId && declaration.reporter_id === userId) {
+        return true;
+      }
+
+      const lostDecl =
+        declaration.declaration_type === 'LOST' && declaration.id === lostId
+          ? declaration
+          : await this.declarationRepository.findById(lostId);
+      if (lostDecl?.reporter_id === userId) return true;
+
+      const foundDecl =
+        declaration.declaration_type === 'FOUND' && declaration.id === foundId
+          ? declaration
+          : await this.declarationRepository.findById(foundId);
+      if (foundDecl?.reporter_id === userId) return true;
+    }
+    return false;
   }
 
   /**
@@ -482,7 +580,12 @@ export class DeclarationService {
 
       // Trigger matching again for the updated declaration
       matchingService.notifyNewDeclaration();
-      matchingService.findAndNotifyMatches(declaration).catch(err => console.error(err));
+      matchingService
+      .findAndNotifyMatches(declaration)
+      .catch((err) => {
+        console.error('Matching error:', err);
+        matchingService.notifyNewDeclaration();
+      });
     }
 
     return await encodeMediaFields(declaration);
@@ -514,26 +617,53 @@ export class DeclarationService {
       results = await this.declarationRepository.searchPublicFound(query);
     }
 
-    return results.map((doc) => ({
-      id: doc.id,
-      identifiant_doc_dm: doc.identifiant_doc_dm,
-      doc_type: doc.doc_type,
-      owner_name: doc.owner_name,
-      date_trouvaille: doc.date_perte,
-      date_perte: doc.date_perte,
-      created_at: doc.created_at,
-      ville: doc.ville,
-      region: doc.region,
-      pays: doc.pays,
-      found_location: doc.found_location,
-      status: doc.status,
-      declaration_type: doc.declaration_type,
-      // Public response must not expose any photo
+    return Promise.all(
+      results.map(async (doc) => {
+        const media = await encodeMediaFields({ photo_recto: doc.photo_recto });
+        return {
+          id: doc.id,
+          identifiant_doc_dm: doc.identifiant_doc_dm,
+          doc_type: doc.doc_type,
+          owner_name: this.maskName(doc.owner_name),
+          date_trouvaille: doc.date_perte,
+          date_perte: doc.date_perte,
+          created_at: doc.created_at,
+          ville: doc.ville,
+          region: doc.region,
+          pays: doc.pays,
+          found_location: doc.found_location,
+          status: doc.status,
+          declaration_type: doc.declaration_type,
+          photo_recto: media.photo_recto || null,
+          photo_verso: null,
+          has_photo: Boolean(media.photo_recto),
+          reporter_id: "HIDDEN",
+        };
+      }),
+    );
+  }
+
+  private maskDeclarationForPublic(decl: any) {
+    const { metadata, ...rest } = decl;
+    return {
+      ...rest,
+      owner_name: this.maskName(decl.owner_name),
+      document_number: this.maskNumber(decl.document_number),
+      date_naissance: null,
+      telephone_contact: decl.telephone_contact ? this.maskNumber(decl.telephone_contact) : null,
+      email_contact: decl.email_contact ? this.maskEmail(decl.email_contact) : null,
       photo_recto: null,
       photo_verso: null,
-      // Mask reporter if present
-      reporter_id: "HIDDEN",
-    }));
+      reporter_id: 'HIDDEN',
+      metadata: null,
+    };
+  }
+
+  private maskEmail(email: string): string {
+    if (!email || !email.includes('@')) return '***@***';
+    const [local, domain] = email.split('@');
+    const maskedLocal = local.length <= 2 ? `${local[0] || ''}***` : `${local[0]}***${local.slice(-1)}`;
+    return `${maskedLocal}@${domain}`;
   }
 
   private maskName(name: string): string {
@@ -564,10 +694,14 @@ export class DeclarationService {
     method: string,
     phone?: string
   ) {
-    // 1. Check declaration
-    const declaration = await this.declarationRepository.findById(declarationId);
-    if (!declaration) throw new Error("Déclaration introuvable");
-    if (declaration.reporter_id !== userId) throw new Error("Action non autorisée");
+    const { assertOwnerCanPayRecovery } = await import('../utils/recovery.utils.ts');
+    const pair = await assertOwnerCanPayRecovery(userId, declarationId);
+    const lostId = pair.lostId;
+    const declaration = pair.lostDecl;
+
+    if (declaration.payment_status === 'PAID') {
+      throw new Error('Les frais de récupération ont déjà été payés pour ce document.');
+    }
 
     // 2. Resolve Document Type for real price
     let docType = null;
@@ -598,7 +732,7 @@ export class DeclarationService {
       payment_method: method || "MOBILE_MONEY",
       type: "recovery_fee",
       external_ref: nokashRes.data.id,
-      metadata: { docId: declarationId },
+      metadata: { docId: lostId },
     });
 
     startNokashPaymentPolling({
@@ -641,10 +775,17 @@ export class DeclarationService {
   async rewardFinderAfterValidation(claim: any, lostDecl: any, docType: any): Promise<number | null> {
     if (!lostDecl || !claim.finder_id || !docType) return null;
 
-    const basePrice = Number(docType.prix_retrouvaille) || 5000;
-    const finderPercent = Number(docType.finder_percent) || 80;
-    const pointsReward = Number(docType.points_recompense) || 20;
-    const rewardAmount = (basePrice * finderPercent) / 100;
+    const basis = resolveFinderRewardBasis(claim, docType);
+    if (!basis) {
+      console.warn(`[Reward] No payment basis for claim ${claim.id} — skipping finder payout`);
+      return null;
+    }
+    const finderPercent = numOr(docType.finder_percent, 80);
+    const pointsReward = numOr(docType.points_recompense, 20);
+    const rewardAmount = (basis.amount * finderPercent) / 100;
+    if (basis.source === 'docType') {
+      console.warn(`[Reward] claim ${claim.id} has no persisted payment fact, payout derived from tariff`);
+    }
 
     // Detect if the finder is a partner (standalone account, own wallet)
     const finderIsPartner = (await pool.query(
@@ -654,57 +795,69 @@ export class DeclarationService {
 
     const { walletService } = await import('./wallet.service.ts');
     if (finderIsPartner) {
-      await walletService.creditPartner(claim.finder_id, rewardAmount, 'DECLARATION_REWARD', {
-        referenceId: claim.id,
-        referenceType: 'claim',
-        metadata: { docId: lostDecl.id }
-      });
-      // Record transaction (payout) for the partner
-      await pool.query(
-        `INSERT INTO transactions (id, user_id, amount, currency, status, payment_method, type, metadata)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          uuidv4(),
+      if (rewardAmount > 0) {
+        await walletService.creditPartner(claim.finder_id, rewardAmount, 'DECLARATION_REWARD', {
+          referenceId: claim.id,
+          referenceType: 'claim',
+          metadata: { docId: lostDecl.id }
+        });
+        // Record transaction (payout) for the partner
+        await pool.query(
+          `INSERT INTO transactions (id, user_id, amount, currency, status, payment_method, type, metadata)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            uuidv4(),
+            claim.finder_id,
+            rewardAmount,
+            'XAF',
+            'SUCCESS',
+            'VIRTUAL_WALLET',
+            'finder_payout',
+            JSON.stringify({
+              docId: lostDecl.id,
+              claimId: claim.id,
+              note: `Récompense pour remise de ${docType.nom}`,
+              partenaire: true,
+            }),
+          ]
+        );
+        // Notifier le partenaire de la rémunération
+        await this.notificationService.notifyPartenaireReward(
           claim.finder_id,
           rewardAmount,
-          'XAF',
-          'SUCCESS',
-          'VIRTUAL_WALLET',
-          'finder_payout',
-          JSON.stringify({
-            docId: lostDecl.id,
-            claimId: claim.id,
-            note: `Récompense pour remise de ${docType.nom}`,
-            partenaire: true,
-          }),
-        ]
-      );
-      // Notifier le partenaire de la rémunération
-      await this.notificationService.notifyPartenaireReward(
-        claim.finder_id,
-        rewardAmount,
-        docType.nom,
-        lostDecl.id
-      );
-      console.log(`🟢 [Reward] Finder est un partenaire — récompense ${rewardAmount} XAF créditée sur wallet partenaire`);
-    } else {
-      await walletService.credit(claim.finder_id, rewardAmount, 'DECLARATION_REWARD', {
-        referenceId: claim.id,
-        referenceType: 'claim',
-        metadata: { docId: lostDecl.id }
+          docType.nom,
+          lostDecl.id
+        );
+      }
+      await this.awardPartnerPoints(claim.finder_id, pointsReward);
+      const { PartenaireEarningsService } = await import('./partenaire-earnings.service.ts');
+      await new PartenaireEarningsService().recordReturnPoints(claim.finder_id, pointsReward, rewardAmount, {
+        docId: lostDecl.id,
+        claimId: claim.id,
+        docType: docType.nom,
       });
+      console.log(`🟢 [Reward] Finder est un partenaire — récompense ${rewardAmount} XAF + ${pointsReward} pts créditées`);
+    } else {
       await this.awardPoints(claim.finder_id, pointsReward);
 
-      // Record Transaction
-      await this.transactionRepository.create({
-        user_id: claim.finder_id,
-        amount: rewardAmount,
-        currency: 'XAF',
-        status: 'SUCCESS',
-        payment_method: 'VIRTUAL_WALLET',
-        type: 'finder_payout',
-        metadata: { docId: lostDecl.id, claimId: claim.id }
-      });
+      if (rewardAmount > 0) {
+        await walletService.credit(claim.finder_id, rewardAmount, 'DECLARATION_REWARD', {
+          referenceId: claim.id,
+          referenceType: 'claim',
+          metadata: { docId: lostDecl.id }
+        });
+
+        // Record Transaction
+        await this.transactionRepository.create({
+          user_id: claim.finder_id,
+          amount: rewardAmount,
+          currency: 'XAF',
+          status: 'SUCCESS',
+          payment_method: 'VIRTUAL_WALLET',
+          type: 'finder_payout',
+          metadata: { docId: lostDecl.id, claimId: claim.id }
+        });
+      }
 
       // Record Earnings & Send Notifications
       const { EarningsService } = await import('./earnings.service.ts');
@@ -727,65 +880,8 @@ export class DeclarationService {
    * Validate recovery code and process all rewards/status updates
    */
   async validateRecovery(declarationId: string, userId: string, code: string) {
-    // 1. Find the active claim
-    // We try direct find, then counterpart find (like in ClaimController)
-    let claim = await this.claimRepository.findActiveByDocId(declarationId);
-    
-    if (!claim) {
-      const matches = await this.matchRepository.findByDeclarationId(declarationId);
-      if (matches && matches.length > 0) {
-        for (const match of matches) {
-          const counterpartId = match.lost_declaration_id === declarationId ? match.found_declaration_id : match.lost_declaration_id;
-          const potentialClaim = await this.claimRepository.findActiveByDocId(counterpartId);
-          if (potentialClaim) {
-            claim = potentialClaim;
-            break;
-          }
-        }
-      }
-    }
-
-    if (!claim) {
-      throw new Error("Aucune réclamation active trouvée pour ce document.");
-    }
-
-    // 2. Verify code
-    if (claim.verification_code !== code) {
-      await this.claimRepository.incrementAttempts(claim.id);
-      throw new Error("Code de vérification invalide.");
-    }
-
-    // 3. Process Success - All actions identified in plan
-    
-    // 3.1 Update Claim & Declarations Status
-    await this.claimRepository.updateStatus(claim.id, 'VALIDATED');
-    await this.declarationRepository.updateStatus(claim.doc_id, 'RETURNED');
-    
-    const matches = await this.matchRepository.findByDeclarationId(claim.doc_id);
-    if (matches && matches.length > 0) {
-      for (const match of matches) {
-        const otherId = match.lost_declaration_id === claim.doc_id ? match.found_declaration_id : match.lost_declaration_id;
-        await this.declarationRepository.updateStatus(otherId, 'RETURNED');
-      }
-    }
-
-    // 3.2 Reward Finder (Financial & Social)
-    const lostDecl = await this.declarationRepository.findById(claim.doc_id);
-    if (lostDecl && claim.finder_id) {
-      let docType = null;
-      if (lostDecl.doc_type && this.isUuid(lostDecl.doc_type)) {
-        docType = await this.docTypeRepository.findById(lostDecl.doc_type);
-      }
-
-      if (docType) {
-        await this.rewardFinderAfterValidation(claim, lostDecl, docType);
-      }
-    }
-
-    return {
-      success: true,
-      message: "Code validé avec succès ! Récompenses créditées."
-    };
+    const { validateRecoveryCode } = await import('./recovery-validation.service.ts');
+    return validateRecoveryCode(declarationId, userId, code);
   }
 
   /**

@@ -50,7 +50,12 @@ export class MatchingService {
     this.hasNewDeclarations = true;
   }
 
-  async findAndNotifyMatches(declaration: DocumentDeclaration): Promise<void> {
+  async findAndNotifyMatches(declaration: DocumentDeclaration): Promise<{ highConfidence: number; potential: number }> {
+    const stats = { highConfidence: 0, potential: 0 };
+
+    if (['MATCHED', 'RETURNED', 'CANCELLED', 'CLAIMED'].includes(declaration.status)) {
+      return stats;
+    }
     let docTypeCode = declaration.doc_type;
     let docTypeMeta = await this.docTypeRepository.findById(declaration.doc_type);
     if (!docTypeMeta) {
@@ -74,21 +79,33 @@ export class MatchingService {
 
     for (const candidate of candidates) {
       if (candidate.id === declaration.id) continue;
+      if (['MATCHED', 'RETURNED', 'CANCELLED', 'CLAIMED'].includes(candidate.status)) continue;
 
       const lostId = declaration.declaration_type === 'LOST' ? declaration.id : candidate.id;
       const foundId = declaration.declaration_type === 'LOST' ? candidate.id : declaration.id;
 
       const existing = await this.matchRepository.findBetween(lostId, foundId);
+      const matchResult = this.calculateMatchScore(declaration, candidate, lostId, foundId);
+      const score = matchResult.totalScore;
+
       if (existing) {
-        if (existing.score >= 80 && (declaration.status !== 'MATCHED' || candidate.status !== 'MATCHED')) {
-           console.log(`      🔄 [MatchingWorker] Match exists but status not updated. Syncing...`);
-           await this.handleHighConfidenceMatch(declaration, candidate);
+        if (score >= 80 && existing.score < 80) {
+          await this.matchRepository.updateScoreAndStatus(lostId, foundId, score, 'CONFIRMED', {
+            criteria: matchResult.criteria,
+          });
+          await this.handleHighConfidenceMatch(declaration, candidate);
+          stats.highConfidence++;
+        } else if (score >= 80 && (declaration.status !== 'MATCHED' || candidate.status !== 'MATCHED')) {
+          await this.handleHighConfidenceMatch(declaration, candidate);
+          stats.highConfidence++;
+        } else if (score >= 50 && score < 80 && existing.score < 50) {
+          await this.matchRepository.updateScoreAndStatus(lostId, foundId, score, 'PENDING', {
+            criteria: matchResult.criteria,
+          });
+          stats.potential++;
         }
         continue;
       }
-
-      const matchResult = this.calculateMatchScore(declaration, candidate, lostId, foundId);
-      const score = matchResult.totalScore;
 
       // Toujours émettre l'événement de tentative de matching pour le monitoring
       this.socketService.sendToAdmins('MATCHING:ATTEMPT', {
@@ -114,8 +131,11 @@ export class MatchingService {
 
       if (score >= 80) {
         console.log(`      ✨ [HIGH CONFIDENCE MATCH] Score: ${score} between ${lostId} and ${foundId}`);
+        stats.highConfidence++;
         const match = await this.matchRepository.create(lostId, foundId, score, 'CONFIRMED', { criteria: matchResult.criteria });
-        await this.handleHighConfidenceMatch(declaration, candidate);
+        if (match) {
+          await this.handleHighConfidenceMatch(declaration, candidate);
+        }
         // Note: L'événement 'MATCHING:MATCH_FOUND' est conservé en plus de 'MATCHING:ATTEMPT' pour compatibilité
         this.socketService.sendToAdmins('MATCHING:MATCH_FOUND', {
           ...matchResult,
@@ -140,6 +160,7 @@ export class MatchingService {
         });
       } else if (score >= 50) {
         console.log(`      🔎 [POTENTIAL MATCH] Score: ${score} between ${lostId} and ${foundId}`);
+        stats.potential++;
         const match = await this.matchRepository.create(lostId, foundId, score, 'PENDING', { criteria: matchResult.criteria });
         try {
           const ownerId = declaration.declaration_type === 'LOST' ? declaration.reporter_id : candidate.reporter_id;
@@ -184,10 +205,13 @@ export class MatchingService {
     if (declaration.declaration_type === 'FOUND') {
       await this.checkAgainstPrivateVaults(declaration);
     }
+
+    return stats;
   }
 
   private async checkAgainstPrivateVaults(foundDecl: DocumentDeclaration) {
-    console.log(`🛡️ [VaultMatch] Checking found item ${foundDecl.identifiant_doc_dm} against private vaults...`);
+    console.log(`🛡️ [VaultMatch] Checking found item ${foundDecl.identifiant_doc_dm} (id=${foundDecl.id}) against private vaults...`);
+    console.log(`🛡️ [VaultMatch] — doc_type=${foundDecl.doc_type}, fingerprint=${foundDecl.fingerprint || 'N/A'}, doc_number=${foundDecl.document_number || 'N/A'}, owner=${foundDecl.owner_name || 'N/A'}`);
 
     const docTypeName = await this.getDocTypeName(foundDecl.doc_type);
     const alreadyNotified = new Set<string>();
@@ -196,22 +220,30 @@ export class MatchingService {
     const isSelf = (userId: string) => userId === foundDecl.reporter_id;
 
     const skipOrNotify = async (vaultDoc: { user_id: string; id: string }) => {
-      if (isSelf(vaultDoc.user_id)) return;
-      if (alreadyNotified.has(vaultDoc.user_id)) return;
+      if (isSelf(vaultDoc.user_id)) {
+        console.log(`⏭️ [VaultMatch] Skip — user ${vaultDoc.user_id} est le déclarant lui-même`);
+        return;
+      }
+      if (alreadyNotified.has(vaultDoc.user_id)) {
+        console.log(`⏭️ [VaultMatch] Skip — user ${vaultDoc.user_id} déjà notifié`);
+        return;
+      }
       alreadyNotified.add(vaultDoc.user_id);
 
-      console.log(`🎯 [VaultMatch] FOUND match in private vault for user ${vaultDoc.user_id}`);
+      console.log(`🎯 [VaultMatch] Match trouvé — userId=${vaultDoc.user_id}, vaultDocId=${vaultDoc.id}, foundDeclId=${foundDecl.id}`);
       await this.notificationService.notifyVaultMatch(
         vaultDoc.user_id,
         foundDecl.id,
         vaultDoc.id,
         docTypeName
       );
+      console.log(`📤 [VaultMatch] Notification VAULT_MATCH_PENDING envoyée — userId=${vaultDoc.user_id}, foundDeclId=${foundDecl.id}, vaultDocId=${vaultDoc.id}`);
     };
 
     // 1. Match by fingerprint (exact)
     if (foundDecl.fingerprint) {
       const vaultDocs = await this.documentRepository.findCandidatesByFingerprint(foundDecl.fingerprint);
+      console.log(`🔍 [VaultMatch] Fingerprint: ${vaultDocs.length} candidat(s) trouvé(s)`);
       for (const doc of vaultDocs) {
         await skipOrNotify(doc);
       }
@@ -220,6 +252,7 @@ export class MatchingService {
     // 2. Match by document number (last 6 chars)
     if (foundDecl.document_number) {
       const vaultDocs = await this.documentRepository.findCandidatesByDocNumber(foundDecl.document_number);
+      console.log(`🔍 [VaultMatch] Numéro doc: ${vaultDocs.length} candidat(s) trouvé(s)`);
       for (const doc of vaultDocs) {
         await skipOrNotify(doc);
       }
@@ -228,13 +261,14 @@ export class MatchingService {
       const vaultDevice = await deviceRepository.findAnyByIdentifier(foundDecl.document_number);
       if (vaultDevice && !isSelf(vaultDevice.user_id) && !alreadyNotified.has(vaultDevice.user_id)) {
         alreadyNotified.add(vaultDevice.user_id);
-        console.log(`🎯 [VaultMatch] FOUND match in device vault for user ${vaultDevice.user_id}`);
+        console.log(`🎯 [VaultMatch] Match device vault — userId=${vaultDevice.user_id}, deviceId=${vaultDevice.id}`);
         await this.notificationService.notifyVaultMatch(
           vaultDevice.user_id,
           foundDecl.id,
           vaultDevice.id,
           docTypeName
         );
+        console.log(`📤 [VaultMatch] Notification VAULT_MATCH_PENDING envoyée (device) — userId=${vaultDevice.user_id}, foundDeclId=${foundDecl.id}`);
       }
     }
 
@@ -249,10 +283,13 @@ export class MatchingService {
       }
 
       const vaultDocs = await this.documentRepository.findCandidatesByNameAndType(foundDecl.owner_name, vaultDocType);
+      console.log(`🔍 [VaultMatch] Nom+type: ${vaultDocs.length} candidat(s) trouvé(s)`);
       for (const doc of vaultDocs) {
         await skipOrNotify(doc);
       }
     }
+
+    console.log(`✅ [VaultMatch] Fin vérification vaults — ${alreadyNotified.size} utilisateur(s) notifié(s)`);
   }
 
   async runFullMatchingCycle(): Promise<void> {
@@ -296,7 +333,10 @@ export class MatchingService {
           timestamp: new Date().toISOString(),
         });
 
-        await this.findAndNotifyMatches(lost);
+        await this.findAndNotifyMatches(lost).then((s) => {
+          highConfidence += s.highConfidence;
+          potential += s.potential;
+        });
       }
 
       const summary = { highConfidence, potential };
@@ -458,28 +498,27 @@ export class MatchingService {
   }
 
   private async handleHighConfidenceMatch(d1: DocumentDeclaration, d2: DocumentDeclaration) {
-    if (d1.reporter_id && d2.reporter_id) {
-      const lostUserId = d1.declaration_type === 'LOST' ? d1.reporter_id : d2.reporter_id;
-      const foundUserId = d1.declaration_type === 'FOUND' ? d1.reporter_id : d2.reporter_id;
+    if (!d1.reporter_id || !d2.reporter_id) return;
 
-      const lostId = d1.declaration_type === 'LOST' ? d1.id : d2.id;
-      const foundId = d1.declaration_type === 'FOUND' ? d1.id : d2.id;
+    const lostDecl = d1.declaration_type === 'LOST' ? d1 : d2;
+    const foundDecl = d1.declaration_type === 'FOUND' ? d1 : d2;
 
-      await this.declarationRepository.update(lostId, lostUserId, { status: 'MATCHED' });
-      await this.declarationRepository.update(foundId, foundUserId, { status: 'MATCHED' });
+    if (lostDecl.status === 'MATCHED' && foundDecl.status === 'MATCHED') {
+      return;
+    }
 
-      const verificationCode = this.generateVerificationCode();
-      await this.claimRepository.create({
-        doc_id: foundId,
-        owner_id: lostUserId,
-        finder_id: foundUserId,
-        verification_code: verificationCode,
-        status: 'PENDING'
-      });
+    const lostUserId = lostDecl.reporter_id!;
+    const foundUserId = foundDecl.reporter_id!;
+    const lostId = lostDecl.id;
+    const foundId = foundDecl.id;
 
-      console.log(`🔐 [Claim] Auto-generated claim for document ${foundId} with code ${verificationCode}`);
+    await this.declarationRepository.update(lostId, lostUserId, { status: 'MATCHED' });
+    await this.declarationRepository.update(foundId, foundUserId, { status: 'MATCHED' });
 
-      const docTypeName = await this.getDocTypeName(d1.doc_type);
+    // Claim is created only after owner payment (activateRecovery) — not at match time
+    console.log(`🔐 [Match] High-confidence match confirmed LOST=${lostId} FOUND=${foundId}`);
+
+    const docTypeName = await this.getDocTypeName(d1.doc_type);
 
       const finderIsPartner = (await pool.query(
         `SELECT id FROM partenaires WHERE id = $1`,
@@ -507,7 +546,6 @@ export class MatchingService {
           docTypeName
         );
       }
-    }
   }
 
   private async getDocTypeName(docType: string): Promise<string> {

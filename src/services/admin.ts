@@ -324,7 +324,7 @@ export const adminService = {
     return { rows: res.data?.rows ?? [], total: res.data?.total ?? 0 };
   },
 
-  async createPartenaire(data: Partial<Partenaire>): Promise<Partenaire & { temp_password: string }> {
+  async createPartenaire(data: Partial<Partenaire>): Promise<Partenaire> {
     const res = await apiClient.post("partenaires", data);
     return res.data.data;
   },
