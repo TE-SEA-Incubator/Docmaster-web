@@ -9,17 +9,17 @@ export default {
       colors: {
         primary: {
           DEFAULT: "#F5A64B",
-          dark: "#D98A30",
-          light: "#FEF0DC",
+          dark: "#E8923A",
+          light: "#FEF3E2",
         },
         green: {
-          dark: "#1E3A2F",
-          mid: "#2D5A42",
-          light: "#E8F5EE",
+          dark: "#2D5A42",
+          mid: "#3D7A5A",
+          light: "#EAF4EE",
         },
-        bgMain: "#F4EFE6",
+        bgMain: "#FFFFFF",
         surface: "#FFFFFF",
-        surface2: "#FAF7F2",
+        surface2: "#F9FAFB",
         textMain: "#1A1A1A",
         textMuted: "#6B7280",
         borderMain: "#EAE3D8",
@@ -52,6 +52,7 @@ export default {
         "8xl": "40px",
       },
       animation: {
+        vibrate: "vibrate 0.3s ease-in-out infinite",
         float: "float 4s ease-in-out infinite",
         "float-slow": "float 5s ease-in-out infinite",
         "float-slower": "float 6s ease-in-out infinite",
@@ -63,6 +64,11 @@ export default {
         "slide-up": "slideUp 0.6s ease forwards",
       },
       keyframes: {
+        vibrate: {
+          "0%, 100%": { transform: "translateX(0)" },
+          "10%, 50%, 90%": { transform: "translateX(-3px)" },
+          "30%, 70%": { transform: "translateX(3px)" },
+        },
         float: {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },

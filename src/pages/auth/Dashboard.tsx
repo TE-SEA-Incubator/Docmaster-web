@@ -4,7 +4,7 @@ import { Button, Badge, Loader, Modal, Paper, SimpleGrid, Text, Group, Card, Rin
 import { useAuth } from "../../context/AuthContext";
 import { useDocuments } from "../../hooks/useDocuments";
 import { useNotifications } from "../../hooks/useNotifications";
-import { useDeclarations, useDeclarationStats } from "../../hooks/useDeclarations";
+import { useDeclarations } from "../../hooks/useDeclarations";
 import { useDevices } from "../../hooks/useDevices";
 import { useGlobalStats, useStatsByType, useActiveDocumentTypes } from "../../hooks/useStats";
 import { usePromo } from "../../hooks/usePromo";
@@ -12,8 +12,9 @@ import { useToast } from "../../context/ToastContext";
 import { subscriptionsService } from "../../services/subscriptionsService";
 import apiClient from "../../services/api";
 import { socketService } from "../../services/socket";
-import Topbar from "../../layout/Topbar";
+
 import { useI18n } from "../../context/I18nContext";
+import { useTopbar } from "../../hooks/useTopbar";
 import PromoBanner from "../../components/ui/PromoBanner";
 import PromoPopup from "../../components/ui/PromoPopup";
 import PollingModal from "../../components/modals/PollingModal";
@@ -72,6 +73,7 @@ export default function Dashboard() {
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
+  useTopbar(t("sidebar_dashboard"), [{ label: t("sidebar_dashboard") }]);
   const { documents: docs, loading: docsLoading } = useDocuments();
   const { notifications: notifs, loading: notifsLoading, unreadCount, fetch: fetchNotifs } = useNotifications();
   const { declarations, loading: declsLoading } = useDeclarations();
@@ -84,6 +86,7 @@ export default function Dashboard() {
   const toast = useToast();
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [usage, setUsage] = useState<any>(null);
   const [skeletonDone, setSkeletonDone] = useState(false);
   const [selectedPerfDoc, setSelectedPerfDoc] = useState<any>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -154,6 +157,9 @@ export default function Dashboard() {
     }).catch((e: any) => {
       console.error("[Dashboard] Failed to load subscription:", e?.response?.data || e);
     });
+    subscriptionsService.getUsage().then((res) => {
+      if (res.success && res.data) setUsage(res.data);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -197,17 +203,21 @@ export default function Dashboard() {
   const newCount = Math.max(0, docCount - verifiedCount - lostCount);
   const activeDecls = declarations.filter((d: Declaration) => !["RETURNED", "CANCELLED", "CLAIMED"].includes(d.status));
 
-  const planName = subscription?.plan_name || "Standard";
-  const docLimit = subscription?.doc_limit || 5;
-  const docCountSub = subscription?.doc_count || docCount;
+  const planName = subscription?.plan_name || usage?.plan_name || "Standard";
+  const docLimit = subscription?.doc_limit || usage?.doc_limit || 5;
+  const docCountSub = subscription?.doc_count || usage?.doc_count || docCount;
   const quotaPct = Math.min((docCountSub / docLimit) * 100, 100);
+  const daysRemaining = usage?.days_remaining ?? null;
+  const daysTotal = usage?.days_total ?? null;
+  const daysUsed = usage?.days_used ?? 0;
+  const daysProgress = daysTotal && daysTotal > 0 ? Math.min((daysUsed / daysTotal) * 100, 100) : 0;
 
   const perfData = Array.isArray(perfStats) ? perfStats : [];
 
   const donutTotal = docCount || 1;
   const donutSegments = [
     { count: verifiedCount, color: "#10B981" },
-    { count: lostCount, color: "#D98A30" },
+    { count: lostCount, color: "#E8923A" },
     { count: newCount, color: "#7C3AED" },
   ].filter((s) => s.count > 0);
 
@@ -221,14 +231,8 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col h-full">
-      <Topbar
-        title={t("sidebar_dashboard")}
-        breadcrumbs={[
-          { label: t("sidebar_dashboard") },
-        ]}
-      />
 
-      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-4 sm:gap-5 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
+      <div className="p-4 sm:p-6 flex flex-col gap-3 sm:gap-4 h-full overflow-hidden">
 
         {/* Greeting */}
         <Group justify="space-between" wrap="wrap" gap="sm">
@@ -297,9 +301,9 @@ export default function Dashboard() {
         </SimpleGrid>
 
         {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_340px] gap-4 sm:gap-5 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_340px] gap-3 sm:gap-4 items-start">
           {/* Left */}
-          <div className="flex flex-col gap-4 sm:gap-5">
+          <div className="flex flex-col gap-3 sm:gap-4">
             {/* Tracking */}
             <div className="flex flex-col gap-4" id="trackingContainer">
               {activeDecls.length === 0 ? (
@@ -316,13 +320,9 @@ export default function Dashboard() {
                 </Paper>
               ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                  {activeDecls.map((decl: Declaration) =>
-                    decl.declaration_type === "LOST" ? (
-                      <TrackingLostCard key={decl.id} decl={decl} navigate={navigate} userName={user?.prenom} />
-                    ) : (
-                      <TrackingFoundCard key={decl.id} decl={decl} navigate={navigate} />
-                    )
-                  )}
+                  {activeDecls.map((decl: Declaration) => (
+                    <DeclCard key={decl.id} decl={decl} navigate={navigate} userName={user?.prenom} t={t} />
+                  ))}
                 </div>
               )}
             </div>
@@ -339,12 +339,12 @@ export default function Dashboard() {
                 </Text>
               </Group>
               <div>
-                {activeDecls.slice(0, 5).map((decl: any) => {
+                {activeDecls.slice(0, 2).map((decl: any) => {
                   const dateStr = decl.created_at ? new Date(decl.created_at).toLocaleDateString("fr-FR") : "—";
                   const isLost = decl.declaration_type === "LOST";
                   return (
                     <Group key={decl.id} gap="sm" px="md" py="sm" style={{ cursor: "pointer" }}>
-                      <div className={`w-9 h-9 rounded-[10px] ${isLost ? "bg-primary-light" : "bg-blue-50"} flex items-center justify-center text-sm flex-shrink-0`}>
+                      <div className={`w-9 h-9 rounded-[10px] flex items-center justify-center text-sm flex-shrink-0`}>
                         <i className={`fa-solid ${getIconForType(decl.doc_type)} ${isLost ? "text-primary-dark" : "text-blue-500"}`} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -408,7 +408,7 @@ export default function Dashboard() {
           </div>
 
           {/* Right column */}
-          <div className="flex flex-col gap-4 sm:gap-5">
+          <div className="flex flex-col gap-3 sm:gap-4">
             {/* Donut */}
             <Card withBorder radius="md" padding={0}>
               <Group px="md" py="sm" style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }} gap="xs">
@@ -422,7 +422,7 @@ export default function Dashboard() {
                   roundCaps
                   sections={[
                     { value: (verifiedCount / donutTotal) * 100, color: "#10B981" },
-                    { value: (lostCount / donutTotal) * 100, color: "#D98A30" },
+                    { value: (lostCount / donutTotal) * 100, color: "#E8923A" },
                     { value: (newCount / donutTotal) * 100, color: "#7C3AED" },
                   ]}
                   label={
@@ -433,7 +433,7 @@ export default function Dashboard() {
                 />
                 <Stack gap="xs" w="100%">
                   {verifiedCount > 0 && <DonutRow color="#10B981" label={t("dashboard_donut_recovered")} value={verifiedCount} />}
-                  {lostCount > 0 && <DonutRow color="#D98A30" label={t("dashboard_donut_in_progress")} value={lostCount} />}
+                  {lostCount > 0 && <DonutRow color="#E8923A" label={t("dashboard_donut_in_progress")} value={lostCount} />}
                   {newCount > 0 && <DonutRow color="#7C3AED" label={t("dashboard_donut_new")} value={newCount} />}
                 </Stack>
               </Stack>
@@ -451,10 +451,10 @@ export default function Dashboard() {
                 </Button>
               </Group>
               <div>
-                {notifs.length > 0 ? notifs.slice(0, 3).map((n, i) => (
-                  <Group key={n.id || i} gap="sm" px="md" py="sm" style={{ borderBottom: i < Math.min(notifs.length, 3) - 1 ? "1px solid var(--mantine-color-default-border)" : "none" }}>
-                    {!n.is_read && !n.lue && <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", width: 6, height: 6, borderRadius: "50%", background: "#D98A30" }} />}
-                    <div className="w-9 h-9 rounded-[9px] bg-green-100 flex items-center justify-center text-sm flex-shrink-0"><i className={`fa-solid ${n.icon || "fa-bell"} text-green-700`} /></div>
+                {notifs.length > 0 ? notifs.slice(0, 2).map((n, i) => (
+                  <Group key={n.id || i} gap="sm" px="md" py="sm" style={{ borderBottom: i < Math.min(notifs.length, 2) - 1 ? "1px solid var(--mantine-color-default-border)" : "none" }}>
+                    {!n.is_read && !n.lue && <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", width: 6, height: 6, borderRadius: "50%", background: "#E8923A" }} />}
+                    <div className="w-9 h-9 rounded-[9px] flex items-center justify-center text-sm flex-shrink-0"><i className={`fa-solid ${n.icon || "fa-bell"} text-green-dark`} /></div>
                     <div style={{ flex: 1 }}>
                       <Text size="sm" fs="italic"><strong>{n.titre || ""}</strong> {n.message}</Text>
                       <Text size="xs" c="dimmed" fs="italic" mt={2}>{timeAgo(n.created_at, t)}</Text>
@@ -467,7 +467,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Plan card */}
-            <Card withBorder radius="md" p="lg" style={{ background: "#1E3A2F", borderColor: "#2A4A3A", position: "relative", overflow: "hidden" }}>
+            <Card withBorder radius="md" p="lg" style={{ background: "#2D5A42", borderColor: "#2A4A3A", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(217,138,48,0.06)", bottom: -48, right: -40, pointerEvents: "none" }} />
               <Group gap="xs" style={{ background: "rgba(217,138,48,0.15)", border: "1px solid rgba(217,138,48,0.25)", borderRadius: 999, padding: "4px 10px", display: "inline-flex", marginBottom: 12 }}>
                 <i className="fa-solid fa-star text-primary" style={{ fontSize: 9 }} />
@@ -481,9 +481,20 @@ export default function Dashboard() {
                   <Text size="sm" fw={700} c="gold">{docCountSub} / {docLimit}</Text>
                 </Group>
                 <div style={{ height: 5, background: "rgba(255,255,255,0.1)", borderRadius: 999, overflow: "hidden" }}>
-                  <div style={{ height: "100%", background: "#D98A30", borderRadius: 999, boxShadow: "0 0 8px rgba(217,138,48,0.4)", width: `${quotaPct}%` }} />
+                  <div style={{ height: "100%", background: "#E8923A", borderRadius: 999, boxShadow: "0 0 8px rgba(217,138,48,0.4)", width: `${quotaPct}%` }} />
                 </div>
               </div>
+              {daysRemaining != null && daysTotal != null && (
+                <div style={{ marginBottom: 14 }}>
+                  <Group justify="space-between" mb={6}>
+                    <Text size="sm" c="white" opacity={0.6}>{daysTotal <= 31 ? "Cycle mensuel" : "Durée abonnement"}</Text>
+                    <Text size="sm" fw={700} c="gold">{daysRemaining}j / {daysTotal}j</Text>
+                  </Group>
+                  <div style={{ height: 5, background: "rgba(255,255,255,0.1)", borderRadius: 999, overflow: "hidden" }}>
+                    <div style={{ height: "100%", background: daysRemaining <= 3 ? "#ef4444" : "#E8923A", borderRadius: 999, boxShadow: "0 0 8px rgba(217,138,48,0.4)", width: `${daysProgress}%` }} />
+                  </div>
+                </div>
+              )}
               <Stack gap="xs" mb="md" style={{ position: "relative", zIndex: 10 }}>
                 <FeatureRow icon="fa-solid fa-check" text={t("dashboard_feature_sms")} color="text-primary" />
                 <FeatureRow icon="fa-solid fa-check" text={t("dashboard_feature_tracking")} color="text-primary" />
@@ -533,6 +544,89 @@ export default function Dashboard() {
 
 /* ── Sub-components ── */
 
+function DeclCard({ decl, navigate, userName, t }: {
+  decl: Declaration;
+  navigate: (path: string, opts?: any) => void;
+  userName?: string;
+  t: (k: string) => string;
+}) {
+  const isPerdu = (decl.declaration_type || (decl as any).type || "").toUpperCase() === "LOST";
+  const typeBadge = isPerdu
+    ? "bg-red-50 text-red-700 border-red-100"
+    : "bg-green-50 text-green-700 border-green-100";
+  const typeIcon = isPerdu ? "fa-triangle-exclamation" : "fa-file-circle-check";
+  const typeLabel = isPerdu ? t("mesdeclarations_type_loss") : t("mesdeclarations_type_found");
+
+  const statusCls: Record<string, string> = {
+    MATCHED:  "bg-green-100 text-green-700 border-green-200 animate-pulse",
+    RETURNED: "bg-gray-100 text-gray-700 border-gray-200",
+    RESOLVED: "bg-green-50 text-green-700 border-green-100",
+    NEW:      "bg-blue-50 text-blue-700 border-blue-100",
+    EN_COURS: "bg-amber-50 text-amber-700 border-amber-100",
+  };
+  const statusLabel: Record<string, string> = {
+    MATCHED:  t("mesdeclarations_status_match"),
+    RETURNED: t("mesdeclarations_status_closed"),
+    RESOLVED: t("mesdeclarations_status_resolved"),
+    NEW:      t("mesdeclarations_status_new"),
+    EN_COURS: t("mesdeclarations_status_pending"),
+  };
+  const sCls = statusCls[decl.status || ""] || "bg-amber-50 text-amber-700 border-amber-100";
+  const sLabel = statusLabel[decl.status || ""] || t("mesdeclarations_status_pending");
+  const docName = (decl as any).docTypeInfo?.nom || (decl as any).doc_type || t("dashboard_document");
+  const fmtDate = (v?: string | null) =>
+    v ? new Date(v).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+  return (
+    <article
+      onClick={() => navigate("/mes-declarations")}
+      className="bg-white border border-borda rounded-[18px] p-4 sm:p-5 hover:shadow-md transition-all cursor-pointer"
+    >
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] sm:text-[11px] font-bold text-textMuted/60 uppercase tracking-wide truncate">
+            {(decl as any).identifiant_doc_dm || "DOC-DM"}
+          </p>
+          <h3 className="font-bricolage text-[16px] sm:text-[18px] font-bold text-gray-800 leading-tight mt-0.5 truncate">
+            {docName}
+          </h3>
+        </div>
+        <span className={`shrink-0 px-2 py-1 sm:px-2.5 sm:py-1 rounded-full border text-[10px] sm:text-[11px] font-bold whitespace-nowrap ${typeBadge}`}>
+          <i className={`fa-solid ${typeIcon} mr-0.5 sm:mr-1`} />{typeLabel}
+        </span>
+      </div>
+
+      <div className="space-y-1 text-[12px] sm:text-[12.5px] text-textMuted">
+        <p className="truncate"><i className="fa-regular fa-user mr-1.5 w-4 shrink-0" /> {(decl as any).nom_complet || (decl as any).owner_name || userName || t("dashboard_user")}</p>
+        <p><i className="fa-regular fa-calendar mr-1.5 w-4 shrink-0" /> {fmtDate(decl.created_at)}</p>
+        <p className="truncate"><i className="fa-solid fa-location-dot mr-1.5 w-4 shrink-0" /> {(decl as any).ville || (decl as any).lieu_perte || (decl as any).lieu_trouvee || "—"}</p>
+      </div>
+
+      <div className="mt-3 sm:mt-4 flex items-center justify-between gap-2">
+        <span className={`px-2 sm:px-2.5 py-1 rounded-full border text-[10px] sm:text-[11px] font-semibold ${sCls}`}>
+          {sLabel}
+        </span>
+        <button
+          onClick={(e) => { e.stopPropagation(); navigate("/mes-declarations"); }}
+          className="px-2.5 sm:px-3 py-1.5 rounded-[8px] sm:rounded-[9px] bg-surface2 border border-borda text-[11px] sm:text-[12px] font-semibold text-textMuted/70 hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
+        >
+          {t("mesdeclarations_view_details")}
+        </button>
+      </div>
+
+      {decl.status === "MATCHED" && isPerdu && (
+        <button
+          onClick={(e) => { e.stopPropagation(); navigate(`/recuperer?id=${decl.id}`); }}
+          className="mt-2 w-full py-2 rounded-xl bg-green-dark text-white font-bold text-xs flex items-center justify-center gap-2 animate-vibrate"
+        >
+          <i className="fa-solid fa-handshake" />
+          {t("dashboard_recover_document")}
+        </button>
+      )}
+    </article>
+  );
+}
+
 function DonutRow({ color, label, value }: any) {
   return (
     <Group justify="space-between" style={{ fontSize: 13 }}>
@@ -550,158 +644,6 @@ function FeatureRow({ icon, text, color, muted }: any) {
     <Group gap="sm" style={{ fontSize: 12.5, color: muted ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.7)", fontStyle: muted ? "italic" : "normal" }}>
       <i className={`${icon} ${muted ? "" : color}`} style={{ fontSize: 11 }} />{text}
     </Group>
-  );
-}
-
-const stepColors: Record<string, { bg: string; border: string; text: string; faded: string; line: string; fill: string; headerBg: string; iconBg: string }> = {
-  red:    { bg: "#EF4444", border: "#EF4444", text: "#DC2626", faded: "#FCA5A5", line: "#FECACA", fill: "#EF4444", headerBg: "rgba(239,68,68,0.05)", iconBg: "rgba(239,68,68,0.1)" },
-  blue:   { bg: "#3B82F6", border: "#3B82F6", text: "#2563EB", faded: "#93C5FD", line: "#BFDBFE", fill: "#3B82F6", headerBg: "rgba(59,130,246,0.05)", iconBg: "rgba(59,130,246,0.1)" },
-  green:  { bg: "#22C55E", border: "#22C55E", text: "#16A34A", faded: "#86EFAC", line: "#BBF7D0", fill: "#22C55E", headerBg: "rgba(34,197,94,0.05)", iconBg: "rgba(34,197,94,0.1)" },
-  orange: { bg: "#F97316", border: "#F97316", text: "#EA580C", faded: "#FDBA74", line: "#FED7AA", fill: "#F97316", headerBg: "rgba(249,115,22,0.05)", iconBg: "rgba(249,115,22,0.1)" },
-};
-
-function StepIndicator({ steps, current, color: theme }: { steps: string[]; current: number; color: "red" | "blue" | "green" | "orange" }) {
-  const c = stepColors[theme] || stepColors.red;
-  return (
-    <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingLeft: 8, paddingRight: 8, marginTop: 16 }}>
-      <div style={{ position: "absolute", top: 12, left: 40, right: 40, height: 2, backgroundColor: c.line }} />
-      <div style={{ position: "absolute", top: 12, left: 40, height: 2, width: `${(current - 1) / (steps.length - 1) * 100}%`, backgroundColor: c.fill }} />
-      {steps.map((step, i) => {
-        const done = i < current - 1;
-        const active = i === current - 1;
-        return (
-          <div key={i} style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 60 }}>
-            <div style={{
-              width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8,
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              background: done ? c.bg : "white",
-              border: done ? "none" : `2px solid ${active ? c.border : c.line}`,
-              color: done ? "white" : active ? c.text : c.faded,
-            }}>
-              {done ? <i className="fa-solid fa-check" /> : <i className={`fa-solid ${i === 0 ? "fa-check" : i === 1 ? "fa-search" : i === 2 ? "fa-handshake" : "fa-check-double"}`} />}
-            </div>
-            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: -0.3, color: done || active ? c.text : c.faded }}>{step}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-type CardTheme = "red" | "orange" | "green" | "blue";
-
-function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; navigate: (path: string) => void; userName?: string }) {
-  const { t } = useI18n();
-  const hasMatch = decl.status === "MATCHED" || decl.status === "RETURNED";
-  const allMatches = (decl.matches as unknown as Array<{ status: string; found_declaration_id: string }> | undefined) || [];
-  const hasPotential = !hasMatch && allMatches.some((m) => m.status === "PENDING");
-  const colorKey = hasMatch ? "green" : hasPotential ? "orange" : "red";
-  const c = stepColors[colorKey];
-
-  let step = 1;
-  if (decl.status === "SEARCHING") step = 2;
-  if (decl.status === "MATCHED") step = 3;
-  if (decl.status === "RETURNED") step = 4;
-
-  const viewPotentialMatches = () => {
-    const ids = allMatches.filter((m) => m.status === "PENDING").map((m) => m.found_declaration_id);
-    navigate("/rechercher", { state: { potentialIds: ids } });
-  };
-
-  return (
-    <Card withBorder padding={0} radius="lg" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-      <Group justify="space-between" px="md" py="sm" style={{ background: c.headerBg, borderBottom: `1px solid ${c.line}` }}>
-        <Group gap="xs">
-          <i className={`fa-solid ${hasMatch ? "fa-check-double" : hasPotential ? "fa-magnifying-glass-chart" : "fa-triangle-exclamation"}`} style={{ color: c.text }} />
-          <Text size="sm" fw={700} style={{ color: c.text, fontFamily: "'Bricolage Grotesque', sans-serif" }}>
-            {hasMatch ? t("dashboard_card_lost_matched") : hasPotential ? t("dashboard_card_lost_potential") : t("dashboard_card_lost_reported")}
-          </Text>
-        </Group>
-        <Badge color={colorKey === "green" ? "green" : colorKey === "orange" ? "orange" : "red"} size="sm" variant="filled">
-          {decl.status === "MATCHED" ? t("dashboard_badge_matched") : decl.status === "RETURNED" ? t("dashboard_badge_returned") : hasPotential ? t("dashboard_badge_potential") : t("dashboard_badge_lost")}
-        </Badge>
-      </Group>
-      <div style={{ padding: "16px 20px" }}>
-        <Group gap="sm" mb="md">
-          <div className={`w-10 h-10 rounded-[12px] flex items-center justify-center`} style={{ background: c.iconBg, color: c.text }}>
-            <i className={`fa-solid ${getIconForType(decl.doc_type)}`} style={{ fontSize: 18 }} />
-          </div>
-          <div>
-            <Text fz={13.5} fw={700}>{decl.docTypeInfo?.nom || decl.doc_type || t("dashboard_document")} — {decl.nom_complet || decl.owner_name || userName || t("dashboard_user")}</Text>
-            <Text size="xs" c="dimmed" fs="italic">{t("dashboard_ref")}: {decl.identifiant_doc_dm || decl.reference || "---"} · {t(statusText(decl.status))}</Text>
-          </div>
-        </Group>
-        <StepIndicator steps={[t("dashboard_step_submission"), t("dashboard_step_search"), t("dashboard_step_matching"), t("dashboard_step_recovered")]} current={step} color={colorKey} />
-        {hasPotential && (
-          <Group justify="flex-end" mt="lg">
-            <Button onClick={viewPotentialMatches} color="orange" size="sm" leftSection={<i className="fa-solid fa-magnifying-glass-chart" />}>
-              {t("dashboard_view_matches")}
-            </Button>
-          </Group>
-        )}
-        {decl.status === "MATCHED" && (
-          <Group justify="flex-end" mt="lg">
-            <Button onClick={() => navigate(`/recuperer?id=${decl.id}`)} color="green" size="sm" leftSection={<i className="fa-solid fa-handshake" />}>
-              {t("dashboard_recover_document")}
-            </Button>
-          </Group>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function TrackingFoundCard({ decl, navigate }: { decl: Declaration; navigate: (path: string) => void }) {
-  const { t } = useI18n();
-  const colorKey = decl.status === "RETURNED" || decl.status === "MATCHED" ? "green" : "blue";
-  const c = stepColors[colorKey];
-
-  let step = 1;
-  if (decl.status === "AVAILABLE") step = 2;
-  if (decl.status === "MATCHED") step = 3;
-  if (decl.status === "RETURNED") step = 4;
-
-  const headerLabel = decl.status === "RETURNED" ? t("dashboard_card_found_returned") : decl.status === "MATCHED" ? t("dashboard_card_found_matched") : t("dashboard_card_found_reported");
-  const headerIcon = decl.status === "RETURNED" ? "fa-circle-check" : decl.status === "MATCHED" ? "fa-handshake" : "fa-hand-holding-heart";
-  const badgeLabel = decl.status === "RETURNED" ? t("dashboard_badge_returned") : decl.status === "MATCHED" ? t("dashboard_badge_to_return") : t("dashboard_badge_reported");
-
-  return (
-    <Card withBorder padding={0} radius="lg" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-      <Group justify="space-between" px="md" py="sm" style={{ background: c.headerBg, borderBottom: `1px solid ${c.line}` }}>
-        <Group gap="xs">
-          <i className={`fa-solid ${headerIcon}`} style={{ color: c.text }} />
-          <Text size="sm" fw={700} style={{ color: c.text, fontFamily: "'Bricolage Grotesque', sans-serif" }}>
-            {headerLabel}
-          </Text>
-        </Group>
-        <Badge color={colorKey === "green" ? "green" : "blue"} size="sm" variant="filled">{badgeLabel}</Badge>
-      </Group>
-      <div style={{ padding: "16px 20px" }}>
-        <Group gap="sm" mb="md">
-          <div className="w-10 h-10 rounded-[12px] flex items-center justify-center" style={{ background: c.iconBg, color: c.text }}>
-            <i className={`fa-solid ${getIconForType(decl.doc_type)}`} style={{ fontSize: 18 }} />
-          </div>
-          <div>
-            <Text fz={13.5} fw={700}>{decl.docTypeInfo?.nom || decl.doc_type || t("dashboard_document")} — {decl.owner_name || t("dashboard_unknown")}</Text>
-            <Text size="xs" c="dimmed" fs="italic">{t("dashboard_ref")}: {decl.identifiant_doc_dm || decl.reference || "---"} · {t(statusText(decl.status))}</Text>
-          </div>
-        </Group>
-        <StepIndicator steps={[t("dashboard_found_step_found"), t("dashboard_found_step_reported"), t("dashboard_found_step_owner"), t("dashboard_found_step_returned")]} current={step} color={colorKey} />
-        {decl.status === "MATCHED" && decl.status !== "RETURNED" && (
-          <Group justify="flex-end" mt="lg">
-            <Button onClick={() => navigate(`/rendre?id=${decl.id}`)} color="green" size="sm" leftSection={<i className="fa-solid fa-hand-holding-heart" />}>
-              {t("dashboard_return_document")}
-            </Button>
-          </Group>
-        )}
-        {decl.status !== "MATCHED" && decl.status !== "RETURNED" && (
-          <Paper style={{ marginTop: 16, fontSize: 11, color: "var(--mantine-color-dimmed)", fontStyle: "italic", textAlign: "center", background: "rgba(59,130,246,0.1)", borderRadius: 12, padding: "8px 12px" }}>
-            <i className="fa-solid fa-clock-rotate-left" style={{ color: "#3B82F6", marginRight: 4 }} />
-            {t("dashboard_waiting_confirmation")}
-          </Paper>
-        )}
-      </div>
-    </Card>
   );
 }
 
