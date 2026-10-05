@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
+import { useTopbar } from "../../hooks/useTopbar";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import Topbar from "../../layout/Topbar";
+
 import PaymentModal from "../../components/modals/PaymentModal";
+import PollingModal from "../../components/modals/PollingModal";
+import ActionSuccessModal from "../../components/modals/ActionSuccessModal";
 import apiClient from "../../services/api";
 import {
   Paper,
@@ -13,7 +16,6 @@ import {
   Group,
   Stack,
   SimpleGrid,
-  Loader,
   Badge,
   Card,
   ThemeIcon,
@@ -37,6 +39,7 @@ const PACK_ICONS = ["fa-seedling", "fa-star", "fa-gem", "fa-crown", "fa-rocket"]
 
 export default function AcheterPoints() {
   const { t } = useI18n();
+  useTopbar("Acheter des points", [{ label: t("mesgains_breadcrumb_home"), href: "/dashboard" }, { label: "Acheter des points" }]);
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -48,6 +51,8 @@ export default function AcheterPoints() {
   const [payError, setPayError] = useState("");
   const [pollingStatus, setPollingStatus] = useState<string | null>(null);
   const [pollingElapsed, setPollingElapsed] = useState(0);
+  const [nokashTransactionId, setNokashTransactionId] = useState<string | null>(null);
+  const [isManualChecking, setIsManualChecking] = useState(false);
   const [paySuccess, setPaySuccess] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -70,6 +75,7 @@ export default function AcheterPoints() {
     setSelectedPack(points);
     setPayError("");
     setPollingStatus(null);
+    setNokashTransactionId(null);
     setPollingElapsed(0);
     setPaySuccess(false);
     setPayModalOpen(true);
@@ -79,42 +85,92 @@ export default function AcheterPoints() {
     setPayModalOpen(false);
     setSelectedPack(null);
     setPayError("");
-    setPollingStatus(null);
-    if (pollingRef.current) clearInterval(pollingRef.current);
   };
 
-  const startPolling = () => {
+  const startPolling = (txId?: string | null) => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    const activeTxId = txId || nokashTransactionId;
+    const initialPoints = user?.points ?? 0;
     const startedAt = Date.now();
+
     pollingRef.current = setInterval(async () => {
       const elapsed = Math.floor((Date.now() - startedAt) / 1000);
       setPollingElapsed(elapsed);
 
       try {
-        const profileRes = await apiClient.get("/api/auth/profile");
+        // 1. Check transaction status directly
+        if (activeTxId) {
+          const checkRes = await apiClient.get(`payments/check/${activeTxId}`);
+          const checkData = checkRes.data?.data;
+          if (
+            checkRes.data?.success &&
+            (checkData?.status === "SUCCESS" ||
+              checkData?.currentStatus === "SUCCESS" ||
+              (checkData?.updated && checkData?.status !== "FAILED"))
+          ) {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            setPollingStatus(null);
+            setPaySuccess(true);
+            const profileRes = await apiClient.get("auth/profile");
+            updateUser(profileRes.data.data || profileRes.data);
+            return;
+          }
+        }
+
+        // 2. Check points balance
+        const profileRes = await apiClient.get("auth/profile");
         const newPoints = profileRes.data?.points ?? profileRes.data?.data?.points ?? 0;
-        const oldPoints = user?.points ?? 0;
-        if (newPoints > oldPoints) {
-          clearInterval(pollingRef.current!);
+        if (newPoints > initialPoints) {
+          if (pollingRef.current) clearInterval(pollingRef.current);
           setPollingStatus(null);
           setPaySuccess(true);
           updateUser(profileRes.data.data || profileRes.data);
           return;
         }
+
         if (elapsed > 120) {
           setPollingStatus("Le paiement est en cours de traitement. Vous recevrez vos points sous peu.");
         } else if (elapsed > 60) {
           setPollingStatus("Confirmation en cours... Cette opération peut prendre jusqu'à 2 minutes.");
         } else {
-          setPollingStatus("Paiement en attente de confirmation...");
+          setPollingStatus("Veuillez valider le paiement sur votre téléphone...");
         }
-      } catch {}
+      } catch (e) {
+        console.error("[AcheterPoints] Polling error:", e);
+      }
     }, 5000);
+
     setTimeout(() => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     }, 300000);
   };
 
-  const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
+  const handleManualCheck = async () => {
+    if (!nokashTransactionId) return;
+    setIsManualChecking(true);
+    try {
+      const res = await apiClient.get(`payments/check/${nokashTransactionId}`);
+      const checkData = res.data?.data;
+      if (
+        res.data?.success &&
+        (checkData?.updated || checkData?.status === "SUCCESS" || checkData?.currentStatus === "SUCCESS")
+      ) {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        setPollingStatus(null);
+        setPaySuccess(true);
+        const profileRes = await apiClient.get("auth/profile");
+        updateUser(profileRes.data.data || profileRes.data);
+      } else if (checkData?.status || checkData?.currentStatus) {
+        setPollingStatus(`Statut: ${checkData.status || checkData.currentStatus}. En attente de validation sur votre téléphone...`);
+      }
+    } catch (e) {
+      console.error("[AcheterPoints] manual check error:", e);
+    } finally {
+      setIsManualChecking(false);
+    }
+  };
+
+  const handlePay = async (method: "orange" | "mtn" | "moov" | "points", phone: string) => {
     setProcessing(true);
     setPayError("");
 
@@ -125,7 +181,7 @@ export default function AcheterPoints() {
     }
 
     try {
-      const paymentMethod = method === "orange" ? "ORANGE_MONEY" : "MTN_MOMO";
+      const paymentMethod = method === "orange" ? "ORANGE_MONEY" : method === "moov" ? "MOOV_MONEY" : "MTN_MOMO";
       const res = await apiClient.post("points/purchase", {
         pointsAmount: selectedPack,
         phone,
@@ -139,8 +195,12 @@ export default function AcheterPoints() {
       }
 
       if (res.data.success && res.data.data?.transactionId) {
-        toast.success("Paiement initié ! Confirmez la transaction sur votre téléphone.");
-        startPolling();
+        const txId = res.data.data.transactionId;
+        setNokashTransactionId(txId);
+        setPayModalOpen(false);
+        setPollingStatus("Veuillez valider le paiement sur votre téléphone");
+        setPollingElapsed(0);
+        startPolling(txId);
       } else if (res.data.message) {
         setPayError(res.data.message);
       } else {
@@ -159,76 +219,8 @@ export default function AcheterPoints() {
 
   const xafAmount = selectedPack ? Math.ceil(selectedPack / rate) : 0;
 
-  // --- Écran de statut (polling / succès) ---
-  if (pollingStatus || paySuccess) {
-    return (
-      <Box style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100%" }}>
-        <Topbar title="Achat de points" />
-        <Box
-          className="custom-scroll"
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            overflowY: "auto",
-            padding: "1.5rem",
-          }}
-        >
-          {paySuccess ? (
-            <Stack align="center" gap="lg" maw={380} ta="center">
-              <ThemeIcon size={80} radius={40} variant="light" color="green">
-                <i className="fa-solid fa-check" style={{ fontSize: 30 }} />
-              </ThemeIcon>
-              <Title order={2} className="font-bricolage">
-                Achat réussi !
-              </Title>
-              <Text c="dimmed">
-                <Text component="span" fw={800} c="primary" size="xl">
-                  {selectedPack?.toLocaleString("fr-FR")}
-                </Text>{" "}
-                points ont été crédités sur votre compte.
-              </Text>
-              <Button
-                size="md"
-                radius="xl"
-                color="primary"
-                mt="sm"
-                className="font-bricolage"
-                onClick={() => navigate("/mes-gains")}
-              >
-                Voir mes gains
-              </Button>
-            </Stack>
-          ) : (
-            <Stack align="center" gap="md" ta="center">
-              <Loader size="lg" color="primary" />
-              <Text size="lg" fw={600}>
-                {pollingStatus}
-              </Text>
-              {pollingElapsed > 0 && (
-                <Text size="sm" c="dimmed">
-                  Temps écoulé : {pollingElapsed}s
-                </Text>
-              )}
-            </Stack>
-          )}
-        </Box>
-      </Box>
-    );
-  }
-
-  // --- Écran principal ---
   return (
     <Box style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100%" }}>
-      <Topbar
-        title="Acheter des points"
-        breadcrumbs={[
-          { label: t("mesgains_breadcrumb_home"), href: "/dashboard" },
-          { label: "Acheter des points" },
-        ]}
-      />
 
       <Box
         className="custom-scroll"
@@ -243,7 +235,7 @@ export default function AcheterPoints() {
               p="xl"
               radius="lg"
               style={{
-                background: "linear-gradient(135deg, #1E3A2F 0%, #2D5A42 55%, #3B7A58 100%)",
+                background: "linear-gradient(135deg, #2D5A42 0%, #2D5A42 55%, #3B7A58 100%)",
                 position: "relative",
                 overflow: "hidden",
               }}
@@ -260,140 +252,127 @@ export default function AcheterPoints() {
                   pointerEvents: "none",
                 }}
               />
-              <Box
-                style={{
-                  position: "absolute",
-                  width: 200,
-                  height: 200,
-                  borderRadius: "50%",
-                  background: "var(--mantine-color-primary-light)",
-                  opacity: 0.15,
-                  bottom: -70,
-                  left: -50,
-                  pointerEvents: "none",
-                }}
-              />
-
-              <Group justify="space-between" align="flex-start" style={{ position: "relative", zIndex: 1 }}>
-                <div>
-                  <Text size="xs" fw={600} tt="uppercase" c="white" opacity={0.65} style={{ letterSpacing: 1.5 }}>
+              <Group justify="space-between" align="center" wrap="wrap" gap="md">
+                <Stack gap={4}>
+                  <Text size="sm" c="white" opacity={0.8} fw={500}>
                     Solde actuel
                   </Text>
-                  <Group gap={8} mt={4} align="baseline">
-                    <Text fw={800} className="font-bricolage" fz={32} lh={1} c="white">
-                      {(user?.points ?? 0).toLocaleString("fr-FR")}
-                    </Text>
-                    <Text c="white" opacity={0.7} fw={600} size="sm">
+                  <Group gap="xs" align="baseline">
+                    <Title order={1} c="white" className="font-bricolage" style={{ fontSize: "2.5rem" }}>
+                      {(user?.points || 0).toLocaleString("fr-FR")}
+                    </Title>
+                    <Text size="lg" c="yellow.4" fw={700}>
                       pts
                     </Text>
                   </Group>
-                </div>
-                <ThemeIcon
-                  size={56}
-                  radius="lg"
+                  <Text size="xs" c="white" opacity={0.7}>
+                    Taux : 1 FCFA = {rate} points
+                  </Text>
+                </Stack>
+                <Button
                   variant="white"
-                  style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}
+                  color="dark"
+                  radius="xl"
+                  size="md"
+                  className="font-bricolage"
+                  leftSection={<i className="fa-solid fa-clock-rotate-left" />}
+                  onClick={() => navigate("/mes-gains")}
                 >
-                  <i className="fa-solid fa-sack-dollar" style={{ fontSize: 20 }} />
-                </ThemeIcon>
+                  Historique
+                </Button>
               </Group>
-
-              <Text size="sm" c="white" opacity={0.8} mt="md" style={{ position: "relative", zIndex: 1 }}>
-                {rate} points = 1 XAF
-              </Text>
             </Paper>
 
-            {/* Grille des packs */}
-            <div>
+            {/* Titre section packs */}
+            <Box>
               <Title order={3} className="font-bricolage" mb={4}>
-                Choisissez un pack
+                Choisissez votre pack
               </Title>
-              <Text size="sm" c="dimmed" mb="md">
-                Sélectionnez le nombre de points que vous souhaitez acheter
+              <Text size="sm" c="dimmed">
+                Rechargez votre compte pour effectuer vos déclarations et débloquer des services.
               </Text>
+            </Box>
 
-              <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 5 }} spacing="md">
-                {PACKS.map((pack, index) => {
-                  const xaf = Math.ceil(pack.points / rate);
-                  const color = PACK_COLORS[index];
-                  return (
-                    <Card
-                      key={pack.points}
-                      radius="lg"
-                      padding="lg"
-                      withBorder
-                      className="transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
-                      style={{ cursor: "pointer" }}
-                      onClick={() => openPayModal(pack.points)}
-                    >
-                      <Card.Section
-                        p="lg"
-                        style={{
-                          background: `linear-gradient(135deg, var(--mantine-color-${color}-6), var(--mantine-color-${color}-8))`,
+            {/* Grille des packs */}
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+              {PACKS.map((pack, idx) => {
+                const color = PACK_COLORS[idx % PACK_COLORS.length];
+                const icon = PACK_ICONS[idx % PACK_ICONS.length];
+                const price = Math.ceil(pack.points / rate);
+                const isSelected = selectedPack === pack.points;
+
+                return (
+                  <Card
+                    key={pack.points}
+                    shadow="sm"
+                    padding="lg"
+                    radius="lg"
+                    withBorder
+                    style={{
+                      borderColor: isSelected ? "var(--mantine-color-primary-6)" : undefined,
+                      borderWidth: isSelected ? 2 : 1,
+                      transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                      cursor: "pointer",
+                    }}
+                    className="hover:shadow-md hover:-translate-y-0.5"
+                    onClick={() => openPayModal(pack.points)}
+                  >
+                    <Group justify="space-between" align="flex-start" mb="xs">
+                      <ThemeIcon size={44} radius="md" color={color} variant="light">
+                        <i className={`fa-solid ${icon}`} style={{ fontSize: 20 }} />
+                      </ThemeIcon>
+                      <Badge color={color} variant="light" size="sm" radius="sm">
+                        {pack.badge}
+                      </Badge>
+                    </Group>
+
+                    <Text fw={700} size="lg" className="font-bricolage" mt="xs">
+                      {pack.label}
+                    </Text>
+
+                    <Group gap="xs" align="baseline" my="xs">
+                      <Title order={2} className="font-bricolage" c="primary">
+                        {pack.points.toLocaleString("fr-FR")}
+                      </Title>
+                      <Text size="sm" c="dimmed" fw={600}>
+                        points
+                      </Text>
+                    </Group>
+
+                    <Divider my="xs" />
+
+                    <Group justify="space-between" align="center" mt="auto">
+                      <Stack gap={0}>
+                        <Text size="xs" c="dimmed">
+                          Prix
+                        </Text>
+                        <Text fw={800} size="md" className="font-bricolage">
+                          {price.toLocaleString("fr-FR")} FCFA
+                        </Text>
+                      </Stack>
+                      <Button
+                        size="xs"
+                        radius="xl"
+                        color="primary"
+                        className="font-bricolage"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openPayModal(pack.points);
                         }}
                       >
-                        <Group justify="space-between" align="flex-start">
-                          <ThemeIcon
-                            size={40}
-                            radius="md"
-                            variant="white"
-                            style={{ background: "rgba(255,255,255,0.2)" }}
-                          >
-                            <i className={`fa-solid ${PACK_ICONS[index]}`} style={{ color: "white" }} />
-                          </ThemeIcon>
-                          <Badge
-                            variant="white"
-                            size="sm"
-                            style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
-                          >
-                            {pack.badge}
-                          </Badge>
-                        </Group>
-                        <Text fw={800} className="font-bricolage" fz={28} lh={1} c="white" mt="md">
-                          {pack.points.toLocaleString("fr-FR")}
-                        </Text>
-                        <Text size="xs" c="white" opacity={0.75}>
-                          points
-                        </Text>
-                      </Card.Section>
+                        Acheter
+                      </Button>
+                    </Group>
+                  </Card>
+                );
+              })}
+            </SimpleGrid>
 
-                      <Group justify="space-between" mt="md">
-                        <div>
-                          <Text fw={600} size="sm">
-                            {pack.label}
-                          </Text>
-                          <Text size="xs" c="dimmed">
-                            {xaf.toLocaleString("fr-FR")} XAF
-                          </Text>
-                        </div>
-                        <ThemeIcon size={28} radius="xl" variant="light" color={color}>
-                          <i className="fa-solid fa-arrow-right" style={{ fontSize: 11 }} />
-                        </ThemeIcon>
-                      </Group>
-                    </Card>
-                  );
-                })}
-              </SimpleGrid>
-            </div>
-
-            {/* Info méthodes de paiement */}
-            <Card radius="lg" padding="lg" withBorder>
-              <Group gap="sm" mb="md">
-                <ThemeIcon size={36} radius="md" variant="light" color="primary">
-                  <i className="fa-solid fa-shield-halved" style={{ fontSize: 14 }} />
-                </ThemeIcon>
-                <div>
-                  <Text fw={700} size="sm">
-                    Paiement sécurisé
-                  </Text>
-                  <Text size="xs" c="dimmed">
-                    Via Orange Money ou MTN MoMo
-                  </Text>
-                </div>
-              </Group>
-
-              <Divider mb="md" />
-
+            {/* Infos supplémentaires */}
+            <Card shadow="xs" padding="lg" radius="lg" withBorder bg="gray.0">
+              <Title order={4} className="font-bricolage" mb="sm">
+                Moyens de paiement acceptés
+              </Title>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                 <Paper p="sm" radius="md" bg="orange.0">
                   <Group gap="sm">
@@ -425,6 +404,7 @@ export default function AcheterPoints() {
         </Container>
       </Box>
 
+      {/* Payment Selection Modal */}
       <PaymentModal
         isOpen={payModalOpen}
         onClose={closePayModal}
@@ -435,6 +415,50 @@ export default function AcheterPoints() {
         processing={processing}
         error={payError}
       />
+
+      {/* Polling Modal during mobile money verification */}
+      <PollingModal
+        isOpen={!!pollingStatus}
+        onClose={() => {
+          setPollingStatus(null);
+          if (pollingRef.current) clearInterval(pollingRef.current);
+        }}
+        pollingStatus={pollingStatus || "Vérification en cours..."}
+        pollingElapsed={pollingElapsed}
+        nokashTransactionId={nokashTransactionId}
+        onManualCheck={handleManualCheck}
+        isManualChecking={isManualChecking}
+      />
+
+      {/* Success Modal */}
+      {paySuccess && (
+        <ActionSuccessModal
+          opened={paySuccess}
+          onClose={() => setPaySuccess(false)}
+          title="Points crédités !"
+          description={`Votre recharge a été effectuée avec succès. Les points ont été ajoutés à votre compte.`}
+          badgeText={`+${selectedPack?.toLocaleString("fr-FR")} PTS`}
+          badgeColor="green"
+          icon="fa-coins"
+          details={[
+            { label: "Points achetés", value: `+${selectedPack?.toLocaleString("fr-FR")} pts`, highlighted: true },
+            { label: "Montant payé", value: `${xafAmount.toLocaleString("fr-FR")} FCFA` },
+            { label: "Nouveau solde", value: `${(user?.points || 0).toLocaleString("fr-FR")} pts` },
+          ]}
+          primaryAction={{
+            label: "Voir mon solde et historique",
+            icon: "fa-wallet",
+            onClick: () => {
+              setPaySuccess(false);
+              navigate("/mes-gains");
+            },
+          }}
+          secondaryAction={{
+            label: "Acheter un autre pack",
+            onClick: () => setPaySuccess(false),
+          }}
+        />
+      )}
     </Box>
   );
 }

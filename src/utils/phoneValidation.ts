@@ -1,4 +1,4 @@
-export function validatePhone(phone: string, operator: "MTN" | "ORANGE"): string | null {
+export function validatePhone(phone: string, operator: "MTN" | "ORANGE" | "MOOV"): string | null {
   const cleaned = phone.replace(/[\s\+\-]/g, "");
   const digitsOnly = cleaned.replace(/^237/, "");
 
@@ -12,6 +12,11 @@ export function validatePhone(phone: string, operator: "MTN" | "ORANGE"): string
   if (operator === "ORANGE") {
     const valid = /^6[59]\d{7}$/.test(digitsOnly);
     if (!valid) return "Ce numéro n'est pas un numéro Orange valide (doit commencer par 65 ou 69)";
+  }
+
+  if (operator === "MOOV") {
+    const valid = /^66\d{7}$/.test(digitsOnly);
+    if (!valid) return "Ce numéro n'est pas un numéro Moov valide (doit commencer par 66)";
   }
 
   return null;

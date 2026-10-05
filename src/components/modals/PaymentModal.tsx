@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Modal, Button, TextInput } from "@mantine/core";
+import { Modal, Button, TextInput, Alert } from "@mantine/core";
 import { useI18n } from "../../context/I18nContext";
 import { useToast } from "../../context/ToastContext";
 import { paymentsService, type SavedPaymentMethod } from "../../services/paymentsService";
@@ -10,7 +10,7 @@ import api from "../../services/api";
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPay: (method: "orange" | "mtn" | "points", phone: string) => Promise<void>;
+  onPay: (method: "orange" | "mtn" | "moov" | "points", phone: string) => Promise<void>;
   amount: number;
   title?: string;
   description?: string;
@@ -29,6 +29,7 @@ const STEPPER_STEPS = [
 const METHOD_LABELS: Record<string, string> = {
   orange: "Orange Money",
   mtn: "MTN Mobile Money",
+  moov: "Moov Money",
   points: "Points DocMaster",
 };
 
@@ -50,7 +51,7 @@ export default function PaymentModal({
 
   // Step state
   const [step, setStep] = useState<1 | 2>(1);
-  const [selectedMethod, setSelectedMethod] = useState<"orange" | "mtn" | "points" | "">("");
+  const [selectedMethod, setSelectedMethod] = useState<"orange" | "mtn" | "moov" | "points" | "">("");
 
   // Step 2 state
   const [payPhone, setPayPhone] = useState("");
@@ -98,6 +99,7 @@ export default function PaymentModal({
   const savedForMethod = savedMethods.filter((m) => {
     if (selectedMethod === "mtn") return m.method_type === "MTN";
     if (selectedMethod === "orange") return m.method_type === "ORANGE";
+    if (selectedMethod === "moov") return (m.method_type as string) === "MOOV";
     return false;
   });
 
@@ -131,7 +133,7 @@ export default function PaymentModal({
 
     if (!phone.trim()) return;
 
-    const operator = selectedMethod === "mtn" ? "MTN" : "ORANGE";
+    const operator = selectedMethod === "mtn" ? "MTN" : selectedMethod === "moov" ? "MOOV" : "ORANGE";
     const vErr = validatePhone(phone.trim(), operator);
     if (vErr) {
       setPhoneErr(vErr);
@@ -209,6 +211,26 @@ export default function PaymentModal({
                 <p className="text-[11px] text-textMuted">{t("payment_mtn_sublabel")}</p>
               </div>
               {selectedMethod === "mtn" && (
+                <i className="fa-solid fa-circle-check text-green-dark text-sm flex-shrink-0" />
+              )}
+            </div>
+          </div>
+
+          {/* Moov Money */}
+          <div
+            className={cardBase}
+            style={selectedMethod === "moov" ? cardSelected : cardUnselected}
+            onClick={() => setSelectedMethod("moov")}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[10px] border border-borderMain flex items-center justify-center flex-shrink-0">
+                <span className="font-bricolage font-black text-base" style={{ color: "#0D9488" }}>V</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-[13px] font-bold text-textMain">Moov Money</p>
+                <p className="text-[11px] text-textMuted">Paiement via Moov Africa</p>
+              </div>
+              {selectedMethod === "moov" && (
                 <i className="fa-solid fa-circle-check text-green-dark text-sm flex-shrink-0" />
               )}
             </div>
@@ -302,6 +324,7 @@ export default function PaymentModal({
           <div className="w-8 h-8 rounded-[8px] border border-borderMain flex items-center justify-center flex-shrink-0">
             {selectedMethod === "orange" && <span className="font-bricolage font-black text-sm" style={{ color: "#F97316" }}>O</span>}
             {selectedMethod === "mtn" && <span className="font-bricolage font-black text-sm" style={{ color: "#EAB308" }}>M</span>}
+            {selectedMethod === "moov" && <span className="font-bricolage font-black text-sm" style={{ color: "#0D9488" }}>V</span>}
             {selectedMethod === "points" && <i className="fa-solid fa-star text-xs" style={{ color: "#F5A64B" }} />}
           </div>
           <span className="text-[13px] font-semibold text-textMain">{methodLabel}</span>
@@ -390,13 +413,16 @@ export default function PaymentModal({
             {selectedMethod === "orange" && !useSaved && (
               <p className="text-[10px] text-textMuted mt-1">{t("payment_phone_orange_hint")}</p>
             )}
+            {selectedMethod === "moov" && !useSaved && (
+              <p className="text-[10px] text-textMuted mt-1">Numéros Moov commençant par 66</p>
+            )}
           </div>
         )}
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-100 rounded-[12px] text-[12px] text-red-600 font-semibold mb-4 flex items-center gap-2">
-            <i className="fa-solid fa-circle-exclamation" /> {error}
-          </div>
+          <Alert color="red" variant="light" radius="md" mb="md" icon={<i className="fa-solid fa-circle-exclamation" />}>
+            {error}
+          </Alert>
         )}
 
         {termsText && (

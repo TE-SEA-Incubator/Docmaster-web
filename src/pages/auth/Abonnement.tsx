@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { subscriptionsService } from "../../services/subscriptionsService";
 import { paymentsService, type SavedPaymentMethod } from "../../services/paymentsService";
 import apiClient from "../../services/api";
 import { useI18n } from "../../context/I18nContext";
-import Topbar from "../../layout/Topbar";
+import { useTopbar } from "../../hooks/useTopbar";
+
 import PaymentModal from "../../components/modals/PaymentModal";
-import SuccessModal from "../../components/modals/Successmodal";
+import ActionSuccessModal from "../../components/modals/ActionSuccessModal";
 import type { Plan, Transaction } from "../../types/api";
 import { usePromo } from "../../hooks/usePromo";
 import { useToast } from "../../context/ToastContext";
@@ -37,14 +39,16 @@ import {
 } from "@mantine/core";
 
 const METHOD_ICONS: Record<string, { icon: string; color: string; bg: string }> = {
-  MTN: { icon: "fa-mobile-screen-button", color: "text-[#D98A30]", bg: "bg-[#D98A30]/10" },
-  ORANGE: { icon: "fa-mobile-screen-button", color: "text-[#D98A30]", bg: "bg-[#D98A30]/10" },
+  MTN: { icon: "fa-mobile-screen-button", color: "text-[#E8923A]", bg: "bg-[#E8923A]/10" },
+  ORANGE: { icon: "fa-mobile-screen-button", color: "text-[#E8923A]", bg: "bg-[#E8923A]/10" },
   BANK: { icon: "fa-university", color: "text-blue-400", bg: "bg-blue-50" },
 };
 
 export default function Abonnement() {
   const { user } = useAuth();
   const { t } = useI18n();
+  useTopbar(t("abonnement_title"), [{ label: t("abonnement_breadcrumb_home"), href: "/dashboard" }, { label: t("abonnement_breadcrumb_subscription") }]);
+  const navigate = useNavigate();
   const { promo, loading: promoLoading, subscribing, subscribe: promoSubscribe, dismiss: dismissPromo, isDismissed } = usePromo();
   const toast = useToast();
 
@@ -109,13 +113,87 @@ export default function Abonnement() {
   }, []);
 
   useEffect(() => { fetchMethods(); }, [fetchMethods]);
-
   const [processingPayment, setProcessingPayment] = useState(false);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handlePromoSubscribe = async (method: "orange" | "mtn" | "points", phone: string) => {
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    };
+  }, []);
+
+  const startPolling = (txIdParam?: string | null, targetPlanParam?: Plan | null) => {
+    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    const activeTxId = txIdParam ?? nokashTransactionId;
+    const targetPlan = targetPlanParam ?? selectedPlan;
+    const initialPlanName = usage?.plan_name || "";
+    const startedAt = Date.now();
+
+    pollingIntervalRef.current = setInterval(async () => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      setPollingElapsed(elapsed);
+
+      try {
+        // 1. Check transaction state via Nokash check endpoint
+        if (activeTxId) {
+          const checkRes = await apiClient.get(`payments/check/${activeTxId}`);
+          const checkData = checkRes.data?.data;
+          if (
+            checkRes.data?.success &&
+            (checkData?.status === "SUCCESS" ||
+              checkData?.currentStatus === "SUCCESS" ||
+              (checkData?.updated && checkData?.status !== "FAILED"))
+          ) {
+            if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+            setPollingStatus(null);
+            setPollingElapsed(0);
+            dismissPromo();
+            setPaySuccess(true);
+            loadData();
+            return;
+          }
+        }
+
+        // 2. Check if subscription actually activated (plan name changed or renewal confirmed)
+        const res = await subscriptionsService.getUsage();
+        if (
+          res.success &&
+          res.data &&
+          targetPlan &&
+          res.data.plan_name?.toLowerCase() === targetPlan.name?.toLowerCase() &&
+          res.data.plan_name?.toLowerCase() !== initialPlanName.toLowerCase()
+        ) {
+          if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+          setPollingStatus(null);
+          setPollingElapsed(0);
+          dismissPromo();
+          setPaySuccess(true);
+          loadData();
+          return;
+        }
+
+        if (elapsed > 120) {
+          setPollingStatus("Le paiement est en cours de traitement. Vous recevrez une notification dès confirmation. Vous pouvez fermer cette page.");
+        } else if (elapsed > 60) {
+          setPollingStatus("Confirmation en cours auprès de votre opérateur... Cette opération peut prendre jusqu'à 2 minutes.");
+        } else {
+          setPollingStatus(t("abonnement_payment_pending"));
+        }
+      } catch (e: any) {
+        console.error("[Abonnement] polling error:", e?.response?.data || e);
+      }
+    }, 5000);
+
+    setTimeout(() => {
+      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    }, 300000);
+  };
+
+  const handlePromoSubscribe = async (method: "orange" | "mtn" | "moov" | "points", phone: string) => {
     let paymentMethod = "";
     if (method === "orange") paymentMethod = "ORANGE_MONEY";
     else if (method === "mtn") paymentMethod = "MTN_MOMO";
+    else if (method === "moov") paymentMethod = "MOOV_MONEY";
     else paymentMethod = "POINTS";
 
     setProcessingPayment(true);
@@ -123,16 +201,16 @@ export default function Abonnement() {
       const res = await promoSubscribe(paymentMethod, phone);
       const paymentData = res?.data;
       const txId = paymentData?.transactionId;
-      if (paymentData?.status === 'PENDING_PAYMENT' && txId) {
+      if (paymentData?.status === "PENDING_PAYMENT" && txId) {
         setNokashTransactionId(txId);
         setPollingStatus("Veuillez valider le paiement sur votre téléphone");
         setPollingElapsed(0);
         setProcessingPayment(false);
-        startPolling();
+        startPolling(txId, null);
       } else {
         setProcessingPayment(false);
         dismissPromo();
-        toast.success("Félicitations ! Votre abonnement VIP est actif pour 2 mois.");
+        setPaySuccess(true);
         loadData();
       }
     } catch (e: any) {
@@ -159,15 +237,17 @@ export default function Abonnement() {
     setNokashTransactionId(null);
     setPollingElapsed(0);
     setPayError("");
+    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
   };
 
-  const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
+  const handlePay = async (method: "orange" | "mtn" | "moov" | "points", phone: string) => {
     setProcessing(true);
     setPayError("");
     try {
       let paymentMethod = "";
       if (method === "orange") paymentMethod = "ORANGE_MONEY";
       else if (method === "mtn") paymentMethod = "MTN_MOMO";
+      else if (method === "moov") paymentMethod = "MOOV_MONEY";
       else paymentMethod = "POINTS";
 
       const months = billingPeriod === "annual" ? 12 : 1;
@@ -181,16 +261,16 @@ export default function Abonnement() {
       setProcessing(false);
 
       if (result.success) {
-        if (paymentMethod === 'POINTS') {
-            closeSubscribeModal();
-            setPaySuccess(true);
-            loadData();
+        closeSubscribeModal();
+        if (paymentMethod === "POINTS") {
+          setPaySuccess(true);
+          loadData();
         } else {
-            const transactionId = (result as any).data?.transactionId || null;
-            setNokashTransactionId(transactionId);
-            setPollingStatus(t("abonnement_payment_pending"));
-            setPollingElapsed(0);
-            startPolling();
+          const transactionId = (result as any).data?.transactionId || (result as any).transactionId || null;
+          setNokashTransactionId(transactionId);
+          setPollingStatus(t("abonnement_payment_pending"));
+          setPollingElapsed(0);
+          startPolling(transactionId, selectedPlan);
         }
       } else {
         setPayError(result.message || t("abonnement_subscribe_error"));
@@ -202,54 +282,20 @@ export default function Abonnement() {
     }
   };
 
-  const startPolling = () => {
-    const startedAt = Date.now();
-    const interval = setInterval(async () => {
-      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-      setPollingElapsed(elapsed);
-
-      try {
-        const res = await subscriptionsService.getUsage();
-        if (res.success && res.data?.subscription_id) {
-          clearInterval(interval);
-          setPollingStatus(null);
-          setPollingElapsed(0);
-          dismissPromo();
-          setPaySuccess(true);
-          loadData();
-          return;
-        }
-
-        if (nokashTransactionId && elapsed > 30) {
-          try { await apiClient.get(`payments/check/${nokashTransactionId}`); } catch {}
-        }
-
-        if (elapsed > 120) {
-          setPollingStatus("Le paiement est en cours de traitement. Vous recevrez une notification dès confirmation. Vous pouvez fermer cette page.");
-        } else if (elapsed > 60) {
-          setPollingStatus("Confirmation en cours auprès de votre opérateur... Cette opération peut prendre jusqu'à 2 minutes.");
-        } else {
-          setPollingStatus(t("abonnement_payment_pending"));
-        }
-      } catch (e: any) {
-        console.error("[Abonnement] polling error:", e?.response?.data || e);
-      }
-    }, 5000);
-    setTimeout(() => clearInterval(interval), 300000);
-  };
-
   const manualCheck = async () => {
     if (!nokashTransactionId) return;
     setManualChecking(true);
     try {
       const res = await apiClient.get(`payments/check/${nokashTransactionId}`);
-      if (res.data?.success && res.data?.data?.updated) {
+      const checkData = res.data?.data;
+      if (res.data?.success && (checkData?.updated || checkData?.status === "SUCCESS" || checkData?.currentStatus === "SUCCESS")) {
+        if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
         setPollingStatus(null);
         setPollingElapsed(0);
         setPaySuccess(true);
         loadData();
-      } else if (res.data?.data?.status) {
-        setPollingStatus(`Statut actuel: ${res.data.data.status}. En attente de confirmation...`);
+      } else if (checkData?.status || checkData?.currentStatus) {
+        setPollingStatus(`Statut actuel: ${checkData.status || checkData.currentStatus}. En attente de validation sur votre téléphone...`);
       }
     } catch (e: any) {
       console.error("[Abonnement] manual check error:", e);
@@ -261,7 +307,15 @@ export default function Abonnement() {
   const currentPlan = usage?.plan_name || t("abonnement_plan_free");
   const currentPlanObj = plans.find((p) => p.name?.toLowerCase() === currentPlan.toLowerCase());
   const percentage = usage?.percentage || 0;
+  const daysRemaining = usage?.days_remaining ?? null;
+  const daysTotal = usage?.days_total ?? null;
+  const daysUsed = usage?.days_used ?? 0;
+  const daysProgress = daysTotal && daysTotal > 0 ? Math.min((daysUsed / daysTotal) * 100, 100) : 0;
+  const subscriptionEnd = usage?.subscription_end || usage?.expires_at;
+  const subscriptionStart = usage?.subscription_start;
+  const declarationsUsed = usage?.usage?.declarations ?? usage?.usage?.docs_per_type ?? 0;
   const hasActiveSub = Boolean(usage?.subscription_id);
+  const isFreePlan = usage?.plan_name === "Gratuit" || usage?.plan_name === "free";
   const isPromoUser = user?.subscription?.plan_id === "vip_promo_2m";
 
   const displayedPlans = billingPeriod === "annual"
@@ -332,39 +386,51 @@ export default function Abonnement() {
         <>
           <Overlay zIndex={10001} color="white" opacity={0.8} />
           <div className="fixed inset-0 z-[10002] flex flex-col items-center justify-center gap-4">
-            <Loader color="#D98A30" size="lg" />
+            <Loader color="#E8923A" size="lg" />
             <Title order={5} c="gray" ff="Bricolage Grotesque">Traitement du paiement...</Title>
           </div>
         </>
       )}
 
       {paySuccess && (
-        <SuccessModal
-          refNumber="Paiement réussi"
+        <ActionSuccessModal
+          opened={paySuccess}
           onClose={() => setPaySuccess(false)}
-          onNewDeclaration={() => { setPaySuccess(false); }}
-          onMyDeclarations={() => { setPaySuccess(false); }}
+          title="Abonnement activé !"
+          description={`Votre abonnement ${selectedPlan?.name || "VIP"} est désormais actif. Vous avez accès à tous les avantages de votre formule.`}
+          badgeText={selectedPlan?.name || "VIP"}
+          badgeColor="green"
+          icon="fa-crown"
+          details={[
+            { label: "Plan", value: selectedPlan?.name || "VIP" },
+            { label: "Durée", value: billingPeriod === "annual" ? "12 mois (1 an)" : "1 mois" },
+            { label: "Statut", value: "Actif", highlighted: true },
+          ]}
+          primaryAction={{
+            label: "Accéder au tableau de bord",
+            icon: "fa-arrow-right",
+            onClick: () => {
+              setPaySuccess(false);
+              navigate("/dashboard");
+            },
+          }}
+          secondaryAction={{
+            label: "Gérer mon abonnement",
+            onClick: () => setPaySuccess(false),
+          }}
         />
       )}
-
-      <Topbar
-        title={t("abonnement_title")}
-        breadcrumbs={[
-          { label: t("abonnement_breadcrumb_home"), href: "/dashboard" },
-          { label: t("abonnement_breadcrumb_subscription") },
-        ]}
-      />
 
       <div className="custom-scroll p-4 md:p-6 flex flex-col gap-5 pb-24 md:pb-6">
 
         {/* Current plan card */}
         <div className="bg-green-dark rounded-[20px] p-5 md:p-6 relative overflow-hidden shadow-2xl shadow-green-950/40 w-full">
-          <div className="absolute w-40 h-40 md:w-80 md:h-80 rounded-full bg-[#D98A30]/10 -top-12 -right-12 md:-top-24 md:-right-24 blur-3xl pointer-events-none" />
+          <div className="absolute w-40 h-40 md:w-80 md:h-80 rounded-full bg-[#E8923A]/10 -top-12 -right-12 md:-top-24 md:-right-24 blur-3xl pointer-events-none" />
           <div className="absolute w-20 h-20 md:w-40 md:h-40 rounded-full bg-white/5 bottom-0 left-12 md:left-24 blur-2xl pointer-events-none" />
 
           <div className="relative z-10 w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-8">
             <div className="flex-1 w-full">
-              <span className="inline-flex items-center gap-1.5 bg-[#D98A30]/15 text-[#D98A30] text-xs font-semibold px-3 py-1 rounded-full mb-4">
+              <span className="inline-flex items-center gap-1.5 bg-[#E8923A]/15 text-[#E8923A] text-xs font-semibold px-3 py-1 rounded-full mb-4">
                 <i className="fa-solid fa-bolt text-[10px]" />
                 {t("abonnement_current_plan").toUpperCase()}
               </span>
@@ -374,22 +440,55 @@ export default function Abonnement() {
               </Text>
 
               <Text component="div" size="sm" c="white.6" mb="md">
-                {loadingUsage ? <Skeleton width={200} height={16} /> : <>Quota utilisé : {usage?.usage?.objects || 0} / {usage?.limits?.objects || 0} objets</>}
+                {loadingUsage ? (
+                  <Skeleton width={200} height={16} />
+                ) : (
+                  <>
+                    Quota utilisé : {usage?.usage?.objects || 0} / {usage?.limits?.objects || 0} objets
+                    {daysRemaining != null && (
+                      <> · Il reste <strong>{daysRemaining}</strong> jour{daysRemaining > 1 ? "s" : ""}</>
+                    )}
+                    {subscriptionEnd && daysRemaining == null && (
+                      <> · Expire le {new Date(subscriptionEnd).toLocaleDateString("fr-FR")}</>
+                    )}
+                    {!subscriptionEnd && !daysRemaining && subscriptionStart && (
+                      <> · Membre depuis le {new Date(subscriptionStart).toLocaleDateString("fr-FR")}</>
+                    )}
+                  </>
+                )}
               </Text>
+
+              {daysRemaining != null && daysTotal != null && (
+                <div className="mb-4">
+                  <div className="flex justify-between text-xs text-white/60 mb-1.5">
+                    <span>{isFreePlan ? "Cycle mensuel" : "Durée de l&apos;abonnement"}</span>
+                    <span>{daysRemaining}j restants / {daysTotal}j</span>
+                  </div>
+                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-1000"
+                      style={{
+                        width: `${daysProgress}%`,
+                        background: daysRemaining <= 3 ? "#ef4444" : "#E8923A",
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
 
               <Group gap="sm">
                 <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md rounded-2xl px-3 py-2">
-                  <div className="w-8 h-8 rounded-lg bg-[#D98A30]/20 flex items-center justify-center">
-                    <i className="fa-solid fa-file-circle-check text-[#D98A30] text-sm" />
+                  <div className="w-8 h-8 rounded-lg bg-[#E8923A]/20 flex items-center justify-center">
+                    <i className="fa-solid fa-file-circle-check text-[#E8923A] text-sm" />
                   </div>
                   <div>
-                    <Text size="sm" fw={700}  c="white">{usage?.limits?.docs_per_type || 0} Déclarations</Text>
+                    <Text size="sm" fw={700}  c="white">{declarationsUsed} / {usage?.limits?.docs_per_type || 0} Déclarations</Text>
                     <Text size="9px" c="gray-500" tt="uppercase" fw={600}>Active(s) / type</Text>
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md rounded-2xl px-3 py-2">
-                  <div className="w-8 h-8 rounded-lg bg-[#D98A30]/20 flex items-center justify-center">
-                    <i className="fa-solid fa-box-open text-[#D98A30] text-sm" />
+                  <div className="w-8 h-8 rounded-lg bg-[#E8923A]/20 flex items-center justify-center">
+                    <i className="fa-solid fa-box-open text-[#E8923A] text-sm" />
                   </div>
                   <div>
                     <Text size="sm" fw={700} c="white">{usage?.usage?.objects || 0} Objets</Text>
@@ -403,7 +502,7 @@ export default function Abonnement() {
               <RingProgress
                 size={100}
                 thickness={8}
-                sections={[{ value: Math.min(percentage as number, 100), color: "#D98A30" }]}
+                sections={[{ value: Math.min(percentage as number, 100), color: "#E8923A" }]}
                 label={
                   <div className="text-center">
                     <Text fw={700} ff="Bricolage Grotesque" c="white" size="lg" ta="center">{percentage}%</Text>
@@ -413,7 +512,7 @@ export default function Abonnement() {
               />
               <Text size="10px" c="white.5" tt="uppercase" ta="center" fw={700}>Capacité utilisée</Text>
               <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min(percentage as number, 100)}%`, background: "#D98A30" }} />
+                <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min(percentage as number, 100)}%`, background: "#E8923A" }} />
               </div>
             </div>
           </div>
@@ -421,7 +520,7 @@ export default function Abonnement() {
 
         {/* Active subscription warning */}
         {hasActiveSub && !promo && (
-          <Alert color="#D98A30" variant="light" radius="md" icon={<i className="fa-solid fa-circle-info" />}>
+          <Alert color="#E8923A" variant="light" radius="md" icon={<i className="fa-solid fa-circle-info" />}>
             <Text fw={700} size="sm">{t("abonnement_active_sub_warning_title")}</Text>
             <Text size="xs" c="dimmed" mt={2}>
               {isPromoUser
@@ -487,7 +586,7 @@ export default function Abonnement() {
                     radius="xl"
                     p="md"
                     style={{
-                      background: isFeatured ? "#1E3A2F" : undefined,
+                      background: isFeatured ? "#2D5A42" : undefined,
                       transition: "all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
                     }}
                     className={isFeatured ? "shadow-lg" : ""}
@@ -504,11 +603,11 @@ export default function Abonnement() {
                     className={!isFeatured ? "border border-gray-200" : ""}
                   >
                     {isFeatured && (
-                      <div className="absolute w-40 h-40 rounded-full bg-[#D98A30]/8 -bottom-10 -right-10 pointer-events-none" />
+                      <div className="absolute w-40 h-40 rounded-full bg-[#E8923A]/8 -bottom-10 -right-10 pointer-events-none" />
                     )}
                     <div className="relative z-10">
                       <div className="w-10 h-10 rounded-[12px] flex items-center justify-center mb-3" style={{ background: isFeatured ? "rgba(217,138,48,.15)" : "rgba(217,138,48,.1)" }}>
-                        <i className={`fa-solid ${isFeatured ? "fa-rocket" : "fa-star"} text-[#D98A30] text-base`} />
+                        <i className={`fa-solid ${isFeatured ? "fa-rocket" : "fa-star"} text-[#E8923A] text-base`} />
                       </div>
                       <Text fw={700} ff="Bricolage Grotesque" size="lg" c={isFeatured ? "white" : "gray.7"}>
                         {plan.name}
@@ -531,7 +630,7 @@ export default function Abonnement() {
                     <Stack gap="sm" className="relative z-10" style={{ flex: 1 }}>
                       {features.map((f, fi) => (
                         <Group key={fi} gap="xs" wrap="nowrap">
-                           <i className={`${featureIcon(f)} w-4 flex-shrink-0 text-[11px] text-[#D98A30]`} />
+                           <i className={`${featureIcon(f)} w-4 flex-shrink-0 text-[11px] text-[#E8923A]`} />
                           <Text size="sm" fw={500} c={isFeatured ? "white" : "dark"} style={{ opacity: f.value === "Non inclus" ? 0.4 : 1 }}>
                             {f.label ? (
                               <><span style={{ color: isFeatured ? "rgba(255,255,255,.6)" : undefined, opacity: 0.7 }}>{f.label} : </span></>
@@ -548,7 +647,7 @@ export default function Abonnement() {
                       mt="md"
                       className="relative z-10"
                       variant={isCurrent ? "outline" : isFeatured ? "filled" : "outline"}
-                      color={isFeatured ? "#D98A30" : isCurrent ? "gray" : "dark"}
+                      color={isFeatured ? "#E8923A" : isCurrent ? "gray" : "dark"}
                       disabled={isCurrent}
                       onClick={() => isCurrent ? null : openSubscribeModal(plan)}
                     >
@@ -565,7 +664,7 @@ export default function Abonnement() {
         <Paper radius="xl">
           <Group justify="space-between" px="md" py="sm" className="border-b border-gray-200">
             <Text fw={700} ff="Bricolage Grotesque" size="sm">
-              <i className="fa-solid fa-receipt text-[#D98A30] text-sm mr-2" /> Historique de facturation
+              <i className="fa-solid fa-receipt text-[#E8923A] text-sm mr-2" /> Historique de facturation
             </Text>
           </Group>
           {loadingTransactions ? (
@@ -609,7 +708,7 @@ export default function Abonnement() {
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
           <Paper radius="xl" className="border border-gray-200" p="md">
             <Text fw={700} ff="Bricolage Grotesque" size="sm" mb="md">
-              <i className="fa-solid fa-credit-card text-[#D98A30] text-sm mr-2" /> Moyen de paiement
+              <i className="fa-solid fa-credit-card text-[#E8923A] text-sm mr-2" /> Moyen de paiement
             </Text>
             {savedMethods.length === 0 ? (
               <Paper p="md" radius="md" className="border border-dashed border-gray-200" ta="center">
@@ -680,7 +779,7 @@ export default function Abonnement() {
         <Paper radius="xl">
           <Group px="md" py="sm" className="border-b border-gray-200">
             <Text fw={700} ff="Bricolage Grotesque" size="sm">
-                <i className="fa-solid fa-table-columns text-[#D98A30] text-sm mr-2" /> Comparatif complet des plans
+                <i className="fa-solid fa-table-columns text-[#E8923A] text-sm mr-2" /> Comparatif complet des plans
             </Text>
           </Group>
           <div className="overflow-x-auto">
@@ -689,7 +788,7 @@ export default function Abonnement() {
                 <Table.Tr>
                   <Table.Th>Fonctionnalité</Table.Th>
                   {plans.map((p, i) => (
-                    <Table.Th key={i} ta="center" style={p.popular ? { color: "#D98A30", backgroundColor: "rgba(217,138,48,.05)" } : {}}>
+                    <Table.Th key={i} ta="center" style={p.popular ? { color: "#E8923A", backgroundColor: "rgba(217,138,48,.05)" } : {}}>
                       {p.name}
                     </Table.Th>
                   ))}
@@ -717,7 +816,7 @@ export default function Abonnement() {
                             key={pi}
                             ta="center"
                             fw={600}
-                             style={plan.popular ? { color: "#D98A30", backgroundColor: "rgba(217,138,48,.05)" } : {}}
+                             style={plan.popular ? { color: "#E8923A", backgroundColor: "rgba(217,138,48,.05)" } : {}}
                           >
                             {val === "Inclus" ? (
                               <i className="fa-solid fa-check text-green-500" />
@@ -764,7 +863,7 @@ export default function Abonnement() {
                 </div>
               </div>
               <div className="text-right">
-                <Title order={3} fw={900} style={{ color: "#D98A30" }}>
+                <Title order={3} fw={900} style={{ color: "#E8923A" }}>
                   {(selectedPlan?.price || 0).toLocaleString("fr-FR")} FCFA
                 </Title>
                 <Text size="10px" c="dimmed" fw={700} tt="uppercase" mt={4}>Montant Total</Text>
@@ -860,8 +959,8 @@ function SubscriptionAddMethodModal({ opened, methodType, onClose, onDone, t }: 
   const [validationErr, setValidationErr] = useState("");
 
   const typeIcon = methodType === "BANK" ? "fa-university" : "fa-mobile-screen-button";
-  const typeColor = methodType === "MTN" ? "text-[#D98A30]" : methodType === "ORANGE" ? "text-[#D98A30]" : "text-blue-400";
-  const typeBg = methodType === "MTN" ? "bg-[#D98A30]/10" : methodType === "ORANGE" ? "bg-[#D98A30]/10" : "bg-blue-50";
+  const typeColor = methodType === "MTN" ? "text-[#E8923A]" : methodType === "ORANGE" ? "text-[#E8923A]" : "text-blue-400";
+  const typeBg = methodType === "MTN" ? "bg-[#E8923A]/10" : methodType === "ORANGE" ? "bg-[#E8923A]/10" : "bg-blue-50";
   const typeLabel = methodType === "BANK" ? "Virement bancaire" : `${methodType} Mobile Money`;
 
   const handleSave = async () => {
@@ -959,7 +1058,7 @@ function SubscriptionAddMethodModal({ opened, methodType, onClose, onDone, t }: 
             onClick={handleSave}
             radius="xl"
             size="md"
-            style={{ backgroundColor: "#D98A30" }}
+            style={{ backgroundColor: "#E8923A" }}
           >
             Enregistrer
           </Button>

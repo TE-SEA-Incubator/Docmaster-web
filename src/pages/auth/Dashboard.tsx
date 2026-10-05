@@ -169,10 +169,11 @@ export default function Dashboard() {
     }
   }, [loading]);
 
-  const handlePromoSubscribe = async (method: "orange" | "mtn" | "points", phone: string) => {
+  const handlePromoSubscribe = async (method: "orange" | "mtn" | "moov" | "points", phone: string) => {
     let paymentMethod = "";
     if (method === "orange") paymentMethod = "ORANGE_MONEY";
     else if (method === "mtn") paymentMethod = "MTN_MOMO";
+    else if (method === "moov") paymentMethod = "MOOV_MONEY";
     else paymentMethod = "POINTS";
 
     setProcessingPayment(true);
@@ -742,7 +743,7 @@ function PerfModal({ doc, onClose, promo, isDismissed, onPromoSubscribe, onPromo
   onClose: () => void;
   promo: any;
   isDismissed: boolean;
-  onPromoSubscribe: (method: "orange" | "mtn" | "points", phone: string) => Promise<void>;
+  onPromoSubscribe: (method: "orange" | "mtn" | "moov" | "points", phone: string) => Promise<void>;
   onPromoDismiss: () => void;
   promoProcessing: boolean;
   pollingStatus: string | null;

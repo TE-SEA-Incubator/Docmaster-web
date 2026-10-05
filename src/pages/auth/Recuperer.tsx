@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { Loader, Button, Paper, Badge, Progress, Alert, Group, Divider, Text } from "@mantine/core";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Loader, Button, Paper, Badge, Alert, Group, Text } from "@mantine/core";
 import { declarationsService } from "../../services/declarationsService";
 import type { Declaration } from "../../types/api";
 
@@ -26,9 +26,11 @@ export default function Recuperer() {
     t("recuperer_step_payment"),
     t("recuperer_step_withdrawal"),
   ];
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const docId = searchParams.get("id");
   const foundMatchId = searchParams.get("found");
+  const conversationHref = `/messagerie?doc=${docId}`;
 
   const [doc, setDoc] = useState<Declaration | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,10 +58,8 @@ export default function Recuperer() {
   const mapReadyRef = useRef(false);
   const mapFullscreenRef = useRef(false);
 
-  const displayStep = pickupCode ? 4
-    : step >= 4 ? 4
-    : step >= 3 ? 3
-    : 2;
+  // Le code est connu dès le paiement : l'étape PICKUP reste en cours tant que le document n'est pas remis.
+  const displayStep = step >= 4 ? 4 : step >= 3 ? 3 : 2;
 
   const paid = step >= 3;
   const collected = step >= 4;
@@ -363,12 +363,12 @@ export default function Recuperer() {
     }
   };
 
-  const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
+  const handlePay = async (method: "orange" | "mtn" | "moov" | "points", phone: string) => {
     if (!docId) return;
     setPayProcessing(true);
     setPayError("");
     try {
-      const pm = method === "orange" ? "ORANGE_MONEY" : method === "mtn" ? "MTN_MOMO" : "POINTS";
+      const pm = method === "orange" ? "ORANGE_MONEY" : method === "mtn" ? "MTN_MOMO" : method === "moov" ? "MOOV_MONEY" : "POINTS";
       const res = await declarationsService.payRecoveryFee({ docId, paymentMethod: pm, phone });
       setPayProcessing(false);
 
@@ -404,14 +404,15 @@ export default function Recuperer() {
     for (const raw of candidates) {
       if (raw == null) continue;
       const num = typeof raw === "number" ? raw : parseInt(raw);
-      if (!isNaN(num) && num > 0) return num;
+      // 0 est un prix explicite (« récupération gratuite »), pas une absence de prix : le serveur
+      // facture Number(prix_retrouvaille), l'affichage doit suivre la même valeur.
+      if (!isNaN(num) && num >= 0) return num;
     }
     return 5000;
   }
 
   function formatCost(d: Declaration | null): string {
-    const val = getCost(d);
-    return val > 0 ? `${val.toLocaleString("fr-FR")} FCFA` : "—";
+    return `${getCost(d).toLocaleString("fr-FR")} FCFA`;
   }
 
   function formatDate(d: string | undefined) {
@@ -568,37 +569,10 @@ export default function Recuperer() {
 
   // ── Render: Main ─────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1 overflow-hidden">
 
-      <div className="custom-scroll flex-1 p-4 sm:p-6 space-y-5 pb-28 lg:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-bgMain px-4 sm:px-6 py-6">
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* ═══ Progress Banner ═══ */}
-          <Paper radius="xl" withBorder p="lg">
-            <Group justify="space-between" align="flex-start" mb="xs">
-              <div className="flex items-center gap-3">
-                <i className={`fa-solid ${
-                  collected ? 'fa-key' : paid ? 'fa-spinner fa-spin' : 'fa-rotate'
-                } text-primary text-xl`} />
-                <div>
-                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{letterSpacing: '0.05em'}}>
-                    Progression du dossier
-                  </Text>
-                  <Text fw={700} size="sm" c="dark">
-                    {collected
-                      ? t('Document récupéré')
-                      : paid
-                      ? t('Paiement confirmé — Récupération en cours')
-                      : `Étape ${displayStep} sur 4 — ${stepLabels[displayStep - 1] || ''}`}
-                  </Text>
-                </div>
-              </div>
-              <Badge color="orange" variant="light" radius="xl" size="sm">
-                {displayStep * 25}%
-              </Badge>
-            </Group>
-            <Progress value={displayStep * 25} color="orange" radius="xl" size="sm" />
-          </Paper>
-
           {/* ═══ Step Tracker ═══ */}
           <Paper radius="xl" withBorder p="lg">
             <div className="flex items-center justify-between min-w-0 gap-0">
@@ -916,7 +890,7 @@ export default function Recuperer() {
               {/* Payment Card */}
               <Paper radius="xl" withBorder p="xl" id="ownerActionPanel" style={{position: 'relative', overflow: 'hidden'}} className="space-y-6">
 
-                {collected && pickupCode ? (
+                {pickupCode ? (
                   /* ── Success Panel ── */
                   <div className="text-center space-y-6">
                     <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{backgroundColor: '#F5A64B', color: 'white'}}>
@@ -927,7 +901,7 @@ export default function Recuperer() {
                         {t("Code de Retrait")}
                       </h5>
                       <p className="text-[13px] text-textMuted">
-                        {t("Montrez ce code au recuperateur")}
+                        {collected ? t("Montrez ce code au recuperateur") : t("messagerie_code_hint")}
                       </p>
                     </div>
                     <Paper
@@ -947,7 +921,22 @@ export default function Recuperer() {
                         {t("Cliquez pour copier")}
                       </div>
                     </Paper>
-                    <Button component={Link} to="/dashboard" fullWidth radius="xl" style={{backgroundColor: '#2D5A42'}}>
+                    <Alert color="orange" variant="light" radius="md" icon={<i className="fa-solid fa-triangle-exclamation" />}>
+                      <p className="text-[12px] font-semibold leading-relaxed">
+                        {t("messagerie_code_warning")}
+                      </p>
+                    </Alert>
+                    <Button
+                      component={Link}
+                      to={conversationHref}
+                      fullWidth
+                      radius="xl"
+                      leftSection={<i className="fa-solid fa-comments" />}
+                      style={{backgroundColor: '#2D5A42'}}
+                    >
+                      {t("messagerie_cta_from_payment")}
+                    </Button>
+                    <Button component={Link} to="/dashboard" fullWidth radius="xl" variant="default">
                       {t("Retourner au dashboard")}
                     </Button>
                   </div>
@@ -1160,7 +1149,7 @@ export default function Recuperer() {
           highlightBox={{
             label: "Code de retrait sécurisé",
             value: pickupCode || doc?.reference || "—",
-            sublabel: "À présenter lors de la récupération de votre document",
+            sublabel: t("messagerie_code_warning"),
           }}
           details={[
             { label: "Document", value: doc?.titre || "Document", highlighted: false },
@@ -1168,6 +1157,14 @@ export default function Recuperer() {
             { label: "Statut", value: "Prêt pour retrait" },
           ]}
           primaryAction={{
+            label: t("messagerie_cta_from_payment"),
+            icon: "fa-comments",
+            onClick: () => {
+              setShowSuccessModal(false);
+              navigate(conversationHref);
+            },
+          }}
+          secondaryAction={{
             label: "Voir les instructions de retrait",
             icon: "fa-location-dot",
             onClick: () => setShowSuccessModal(false),
