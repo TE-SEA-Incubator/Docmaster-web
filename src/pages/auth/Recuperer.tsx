@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Loader, Button } from "@mantine/core";
+import { Loader, Button, Paper, Badge, Progress, Alert, Group, Divider, Text } from "@mantine/core";
 import { declarationsService } from "../../services/declarationsService";
 import type { Declaration } from "../../types/api";
-import Topbar from "../../layout/Topbar";
+
 import PaymentModal from "../../components/modals/PaymentModal";
+import PollingModal from "../../components/modals/PollingModal";
+import ActionSuccessModal from "../../components/modals/ActionSuccessModal";
+import apiClient from "../../services/api";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useI18n } from "../../context/I18nContext";
+import { useTopbar } from "../../hooks/useTopbar";
 
 const POLL_INTERVAL = 5000;
 const FALLBACK_LAT = 3.8480;
@@ -15,6 +19,7 @@ const FALLBACK_LNG = 11.5021;
 
 export default function Recuperer() {
   const { t } = useI18n();
+  useTopbar(t("recuperer_title"), [{ label: t("recuperer_breadcrumb_search"), href: "/rechercher" }, { label: t("recuperer_breadcrumb_recovery") }]);
   const stepLabels = [
     t("recuperer_step_declared"),
     t("recuperer_step_found"),
@@ -23,6 +28,7 @@ export default function Recuperer() {
   ];
   const [searchParams] = useSearchParams();
   const docId = searchParams.get("id");
+  const foundMatchId = searchParams.get("found");
 
   const [doc, setDoc] = useState<Declaration | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +39,12 @@ export default function Recuperer() {
   const [payProcessing, setPayProcessing] = useState(false);
   const [payError, setPayError] = useState("");
   const [pickupCode, setPickupCode] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [pollingStatus, setPollingStatus] = useState<string | null>(null);
+  const [pollingElapsed, setPollingElapsed] = useState(0);
+  const [nokashTxId, setNokashTxId] = useState<string | null>(null);
+  const [isManualChecking, setIsManualChecking] = useState(false);
+  const recoveryPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [ownerCoords, setOwnerCoords] = useState<{ lat: number; lng: number } | null>(null);
 
@@ -56,10 +68,11 @@ export default function Recuperer() {
   useEffect(() => {
     if (!docId) { setLoading(false); return; }
     setLoading(true);
-    declarationsService.getRenderContext(docId)
+    declarationsService.getRenderContext(docId, foundMatchId || undefined)
       .then((res) => {
         if (res.success && res.data) {
           const d = res.data;
+          console.log("DEBUG DOC DATA:", d); // Inspecter la structure ici
           setDoc(d);
           const ps = (d.payment_status || "").toUpperCase();
           const ds = (d.status || "").toUpperCase();
@@ -79,14 +92,14 @@ export default function Recuperer() {
         setError(e.response?.data?.message || e.response?.data?.error || t("recuperer_load_error"));
       })
       .finally(() => setLoading(false));
-  }, [docId, t]);
+  }, [docId, foundMatchId, t]);
 
   // ── Payment polling ───────────────────────────────────────────────────
   useEffect(() => {
     if (step >= 3 || !docId || pickupCode) return;
     const interval = setInterval(async () => {
       try {
-        const res = await declarationsService.getRenderContext(docId);
+        const res = await declarationsService.getRenderContext(docId, foundMatchId || undefined);
         if (res.success && res.data) {
           const d = res.data;
           const ps = (d.payment_status || "").toUpperCase();
@@ -104,7 +117,7 @@ export default function Recuperer() {
       }
     }, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [step, docId, pickupCode]);
+  }, [step, docId, foundMatchId, pickupCode]);
 
   // ── Geolocation ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -256,6 +269,100 @@ export default function Recuperer() {
   }, []);
 
   // ── Payment handler ──────────────────────────────────────────────────
+  const startRecoveryPolling = (txId?: string | null) => {
+    if (recoveryPollingRef.current) clearInterval(recoveryPollingRef.current);
+    const activeTxId = txId || nokashTxId;
+    const startedAt = Date.now();
+
+    recoveryPollingRef.current = setInterval(async () => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      setPollingElapsed(elapsed);
+
+      try {
+        if (activeTxId) {
+          const checkRes = await apiClient.get(`payments/check/${activeTxId}`);
+          const checkData = checkRes.data?.data;
+          if (
+            checkRes.data?.success &&
+            (checkData?.status === "SUCCESS" ||
+              checkData?.currentStatus === "SUCCESS" ||
+              (checkData?.updated && checkData?.status !== "FAILED"))
+          ) {
+            if (recoveryPollingRef.current) clearInterval(recoveryPollingRef.current);
+            setPollingStatus(null);
+            setStep(3);
+            const docRes = await declarationsService.getRenderContext(docId!, foundMatchId || undefined);
+            if (docRes.success && docRes.data) {
+              setDoc(docRes.data);
+              setPickupCode(docRes.data.claim?.verification_code || docRes.data.reference || "");
+            }
+            setShowSuccessModal(true);
+            return;
+          }
+        }
+
+        const res = await declarationsService.getRenderContext(docId!, foundMatchId || undefined);
+        if (res.success && res.data) {
+          const d = res.data;
+          const ps = (d.payment_status || "").toUpperCase();
+          const ds = (d.status || "").toUpperCase();
+          if (ps === "PAID" || ds === "PAID" || d.claim?.status === "PAID" || d.claim?.status === "VALIDATED") {
+            if (recoveryPollingRef.current) clearInterval(recoveryPollingRef.current);
+            setPollingStatus(null);
+            setStep(3);
+            setDoc(d);
+            setPickupCode(d.claim?.verification_code || d.reference || "");
+            setShowSuccessModal(true);
+            return;
+          }
+        }
+
+        if (elapsed > 120) {
+          setPollingStatus("Le paiement est en cours de traitement. Vous recevrez une confirmation sous peu.");
+        } else if (elapsed > 60) {
+          setPollingStatus("Confirmation en cours auprès de votre opérateur... Cette opération peut prendre jusqu'à 2 minutes.");
+        } else {
+          setPollingStatus("Veuillez valider le paiement sur votre téléphone...");
+        }
+      } catch (e) {
+        console.error("[Recuperer] Polling error:", e);
+      }
+    }, 5000);
+
+    setTimeout(() => {
+      if (recoveryPollingRef.current) clearInterval(recoveryPollingRef.current);
+    }, 300000);
+  };
+
+  const handleManualCheck = async () => {
+    if (!nokashTxId) return;
+    setIsManualChecking(true);
+    try {
+      const res = await apiClient.get(`payments/check/${nokashTxId}`);
+      const checkData = res.data?.data;
+      if (
+        res.data?.success &&
+        (checkData?.updated || checkData?.status === "SUCCESS" || checkData?.currentStatus === "SUCCESS")
+      ) {
+        if (recoveryPollingRef.current) clearInterval(recoveryPollingRef.current);
+        setPollingStatus(null);
+        setStep(3);
+        const docRes = await declarationsService.getRenderContext(docId!, foundMatchId || undefined);
+        if (docRes.success && docRes.data) {
+          setDoc(docRes.data);
+          setPickupCode(docRes.data.claim?.verification_code || docRes.data.reference || "");
+        }
+        setShowSuccessModal(true);
+      } else if (checkData?.status || checkData?.currentStatus) {
+        setPollingStatus(`Statut actuel: ${checkData.status || checkData.currentStatus}. En attente de validation sur votre téléphone...`);
+      }
+    } catch (e) {
+      console.error("[Recuperer] Manual check error:", e);
+    } finally {
+      setIsManualChecking(false);
+    }
+  };
+
   const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
     if (!docId) return;
     setPayProcessing(true);
@@ -263,16 +370,27 @@ export default function Recuperer() {
     try {
       const pm = method === "orange" ? "ORANGE_MONEY" : method === "mtn" ? "MTN_MOMO" : "POINTS";
       const res = await declarationsService.payRecoveryFee({ docId, paymentMethod: pm, phone });
+      setPayProcessing(false);
+
       if (res.success) {
-        setStep(2);
         setShowPaymentModal(false);
+        if (pm === "POINTS" || (res as any).data?.paid) {
+          setStep(3);
+          setPickupCode((res as any).data?.verification_code || doc?.reference || "");
+          setShowSuccessModal(true);
+        } else {
+          const txId = (res as any).data?.transactionId || (res as any).transactionId || null;
+          setNokashTxId(txId);
+          setPollingStatus("Veuillez valider le paiement sur votre téléphone");
+          setPollingElapsed(0);
+          startRecoveryPolling(txId);
+        }
       } else {
         setPayError(res.message || t("recuperer_pay_error"));
       }
     } catch {
-      setPayError(t("recuperer_network_error"));
-    } finally {
       setPayProcessing(false);
+      setPayError(t("recuperer_network_error"));
     }
   };
 
@@ -356,7 +474,7 @@ export default function Recuperer() {
         labelCls += " text-green-600";
         lineCls += " bg-green-500";
       } else if (isActive) {
-        circleCls += " bg-primary text-white shadow-xl shadow-primary/30 border-4 border-white";
+        circleCls += " bg-primary text-white border-4 border-white";
         labelCls += " text-primary";
         lineCls += " bg-primary";
       } else {
@@ -390,18 +508,9 @@ export default function Recuperer() {
   if (!docId) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar
-          title={t("recuperer_title")}
-          breadcrumbs={[
-            { label: t("recuperer_breadcrumb_search"), href: "/rechercher" },
-            { label: t("recuperer_breadcrumb_recovery") },
-          ]}
-        />
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] border border-borderMain p-8 max-w-md w-full text-center shadow-sm">
-            <div className="w-16 h-16 bg-bgMain rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-file-circle-question text-textMuted text-2xl" />
-            </div>
+            <div className="flex justify-center mb-4"><i className="fa-solid fa-file-circle-question text-textMuted text-4xl" /></div>
             <h1 className="font-bricolage text-xl font-black text-textMain mb-2">
               {t("recuperer_not_found_title")}
             </h1>
@@ -423,13 +532,6 @@ export default function Recuperer() {
   if (loading) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar
-          title={t("recuperer_title")}
-          breadcrumbs={[
-            { label: t("recuperer_breadcrumb_search"), href: "/rechercher" },
-            { label: t("recuperer_breadcrumb_recovery") },
-          ]}
-        />
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <div className="w-11 h-11 rounded-full border-[3px] border-black/10 border-t-primary animate-spin" />
@@ -444,18 +546,9 @@ export default function Recuperer() {
   if (error || !doc) {
     return (
       <div className="flex flex-col h-full">
-        <Topbar
-          title={t("recuperer_title")}
-          breadcrumbs={[
-            { label: t("recuperer_breadcrumb_search"), href: "/rechercher" },
-            { label: t("recuperer_breadcrumb_recovery") },
-          ]}
-        />
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] border border-borderMain p-8 max-w-md w-full text-center shadow-sm">
-            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-circle-exclamation text-red-400 text-2xl" />
-            </div>
+            <div className="flex justify-center mb-4"><i className="fa-solid fa-circle-exclamation text-red-400 text-4xl" /></div>
             <h1 className="font-bricolage text-xl font-black text-textMain mb-2">
               {t("recuperer_not_found_title")}
             </h1>
@@ -476,59 +569,50 @@ export default function Recuperer() {
   // ── Render: Main ─────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full">
-      <Topbar
-        title={`Récupération : ${getDocTypeName()}`}
-        breadcrumbs={[
-          { label: t("recuperer_breadcrumb_search"), href: "/rechercher" },
-          { label: t("recuperer_breadcrumb_recovery") },
-        ]}
-      />
 
       <div className="custom-scroll flex-1 p-4 sm:p-6 space-y-5 pb-28 lg:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* ═══ Progress Banner ═══ */}
-          <div className="bg-green-dark rounded-[24px] p-6 text-white flex flex-col sm:flex-row items-center gap-5 shadow-xl shadow-green-950/20 relative overflow-hidden">
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
-            <div className="w-14 h-14 rounded-[18px] bg-white/10 flex items-center justify-center flex-shrink-0">
-              <i
-                className={`fa-solid text-primary text-2xl ${
-                  collected ? "fa-key" : paid ? "fa-spinner fa-spin" : "fa-rotate"
-                }`}
-              />
-            </div>
-            <div className="flex-1 w-full">
-              <p className="text-[11px] text-white/50 uppercase font-black tracking-widest mb-1.5">
-                {t("Progression du dossier")}
-              </p>
-              <div className="flex items-center justify-between mb-2">
-                <p className="font-bricolage text-[16px] font-bold text-white">
-                  {collected
-                    ? t("Document récupéré")
-                    : paid
-                    ? t("Paiement confirmé — Récupération en cours")
-                    : `Étape ${displayStep} sur 4 — ${stepLabels[displayStep - 1] || ""}`}
-                </p>
-                <p className="font-bricolage text-2xl font-extrabold text-primary">
-                  {displayStep * 25}%
-                </p>
+          <Paper radius="xl" withBorder p="lg">
+            <Group justify="space-between" align="flex-start" mb="xs">
+              <div className="flex items-center gap-3">
+                <i className={`fa-solid ${
+                  collected ? 'fa-key' : paid ? 'fa-spinner fa-spin' : 'fa-rotate'
+                } text-primary text-xl`} />
+                <div>
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{letterSpacing: '0.05em'}}>
+                    Progression du dossier
+                  </Text>
+                  <Text fw={700} size="sm" c="dark">
+                    {collected
+                      ? t('Document récupéré')
+                      : paid
+                      ? t('Paiement confirmé — Récupération en cours')
+                      : `Étape ${displayStep} sur 4 — ${stepLabels[displayStep - 1] || ''}`}
+                  </Text>
+                </div>
               </div>
-            </div>
-          </div>
+              <Badge color="orange" variant="light" radius="xl" size="sm">
+                {displayStep * 25}%
+              </Badge>
+            </Group>
+            <Progress value={displayStep * 25} color="orange" radius="xl" size="sm" />
+          </Paper>
 
           {/* ═══ Step Tracker ═══ */}
-          <div className="bg-white rounded-[28px] border border-borderMain p-6 shadow-sm">
+          <Paper radius="xl" withBorder p="lg">
             <div className="flex items-center justify-between min-w-0 gap-0">
               {renderSteps()}
             </div>
-          </div>
+          </Paper>
 
           {/* ═══ Main Grid ═══ */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* ── Left Column ── */}
             <div className="lg:col-span-7 xl:col-span-8 space-y-6">
               {/* Document Card */}
-              <div className="bg-white rounded-[32px] border border-borderMain overflow-hidden shadow-sm">
-                <div className="p-6 bg-surface2/40 border-b border-borderMain flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <Paper radius="xl" withBorder style={{overflow: 'hidden'}}>
+                <div className="p-6 border-b border-borderMain flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <h3 className="font-bricolage text-xl font-black text-textMain tracking-tighter flex items-center gap-3">
                       <i className="fa-solid fa-id-card text-primary text-xl" />
@@ -540,23 +624,22 @@ export default function Recuperer() {
                         : `Perdu le ${formatDate(doc.date_perte)}`}
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 font-bold text-[11px] uppercase border border-green-200">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <Badge color="green" variant="light" radius="xl" size="sm">
                     {doc.status === "MATCHED" || doc.status === "RESOLVED" || doc.status === "RETURNED"
                       ? "Matching Certifié"
                       : doc.status === "paid" || doc.status === "PAID"
                       ? "Paiement confirmé"
                       : "En attente"}
-                  </span>
+                  </Badge>
                 </div>
 
                 <div className="p-6 md:p-10 bg-surface2/20 flex items-center justify-center relative min-h-[260px]">
                   <div className="relative group w-full max-w-lg">
-                    {doc.photo_recto ? (
+                    {(doc.photo_recto || doc.photo_verso || (doc as any).counterPartPhotoRecto || (doc as any).counterPartPhotoVerso) ? (
                       <img
-                        src={getImageUrl(doc.photo_recto)}
+                        src={getImageUrl(doc.photo_recto || doc.photo_verso || (doc as any).counterPartPhotoRecto || (doc as any).counterPartPhotoVerso)}
                         className="w-full h-auto max-h-[320px] object-contain shadow-2xl rounded-2xl border-4 border-white transition-transform duration-500 group-hover:scale-[1.02]"
-                        alt="Document recto"
+                        alt="Document"
                       />
                     ) : (
                       <div className="w-full h-56 bg-gradient-to-br from-green-dark/5 to-green-mid/5 rounded-2xl flex items-center justify-center border-2 border-dashed border-borderMain">
@@ -602,20 +685,22 @@ export default function Recuperer() {
                     <DetailItem label={t("recuperer_label_fee")} value={formatCost(doc)} />
                   </div>
                 </div>
-              </div>
+              </Paper>
 
               {/* Finder Info Card */}
-              <div
+              <Paper
+                radius="xl"
+                withBorder
+                p="lg"
                 id="finder-info-card"
-                className={`bg-white rounded-[28px] border border-borderMain p-6 shadow-sm transition-all duration-700 ${
-                  paid ? "" : "opacity-80"
-                }`}
+                className={paid ? '' : 'opacity-80'}
+                style={{transition: 'all 0.7s'}}
               >
                 <h4 className="text-[11px] font-bold text-textMuted uppercase tracking-widest mb-6">
                   {t("Informations du bienfaiteur")}
                 </h4>
                 <div className="flex items-center gap-5 mb-6">
-                  <div className="w-14 h-14 rounded-full bg-green-dark border-4 border-green-light flex items-center justify-center font-bricolage text-xl font-bold text-primary shadow-lg">
+                  <div className="w-14 h-14 rounded-full bg-surface2 border border-borderMain flex items-center justify-center font-bricolage text-xl font-bold text-textMain">
                     {getFinderName()
                       .split(" ")
                       .map((s) => s[0])
@@ -673,48 +758,31 @@ export default function Recuperer() {
                 </div>
 
                 {!paid && (
-                  <div className="mt-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3">
-                    <i className="fa-solid fa-lock text-amber-500 mt-0.5" />
-                    <div>
-                      <p className="text-[12px] font-bold text-amber-700">
-                        {t("recuperer_owner")}
-                      </p>
-                      <p className="text-[11px] text-amber-600/80 mt-0.5">
-                        {t("recuperer_map_hint_unpaid")}
-                      </p>
-                    </div>
+                  <div className="mt-4">
+                    <Alert color="orange" variant="light" radius="md" icon={<i className="fa-solid fa-lock" />}>
+                      <p className="text-[12px] font-bold">{t('recuperer_owner')}</p>
+                      <p className="text-[11px] mt-0.5">{t('recuperer_map_hint_unpaid')}</p>
+                    </Alert>
                   </div>
                 )}
 
                 {paid && (
-                  <div className="mt-5 p-4 bg-primary/5 border border-primary/20 rounded-2xl">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white border border-primary/20 flex items-center justify-center text-primary shadow-sm flex-shrink-0">
-                        <i className="fa-solid fa-shield-halved" />
-                      </div>
-                      <div>
-                        <h4 className="text-[14px] font-bold text-textMain mb-1">
-                          {t("Sécurité DocMaster")}
-                        </h4>
-                        <p className="text-[12px] text-textMuted leading-relaxed">
-                          {t("Le bienfaiteur ne recevra ses gains qu'une fois que vous aurez récupéré physiquement le document et fourni le code de retrait en agence.")}
-                        </p>
-                      </div>
-                    </div>
+                  <div className="mt-5">
+                    <Alert color="green" variant="light" radius="md" icon={<i className="fa-solid fa-shield-halved" />}>
+                      <p className="text-[14px] font-bold text-textMain mb-1">{t('Sécurité DocMaster')}</p>
+                      <p className="text-[12px] text-textMuted leading-relaxed">
+                        {t("Le bienfaiteur ne recevra ses gains qu'une fois que vous aurez récupéré physiquement le document et fourni le code de retrait en agence.")}
+                      </p>
+                    </Alert>
                   </div>
                 )}
-              </div>
+              </Paper>
 
               {/* Map Section */}
-              <div
-                id="finder-map-section"
-                className="bg-white rounded-[28px] border border-borderMain overflow-hidden shadow-sm"
-              >
-                <div className="px-6 py-4 border-b border-borderMain flex items-center justify-between bg-surface2/60">
+              <Paper radius="xl" withBorder style={{overflow: 'hidden'}} id="finder-map-section">
+                <div className="px-6 py-4 border-b border-borderMain flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
-                      <i className="fa-solid fa-route text-white text-sm" />
-                    </div>
+                    <i className="fa-solid fa-route text-textMuted" />
                     <div>
                       <p className="text-[13px] font-bold text-textMain">
                         {t("Itinéraire vers le trouveur")}
@@ -776,12 +844,10 @@ export default function Recuperer() {
                 {/* ETA Badge */}
                 <div
                   id="eta-badge"
-                  className="hidden bg-white/95 backdrop-blur border-t border-borderMain px-6 py-4 flex items-center gap-6"
+                  className="hidden border-t border-borderMain px-6 py-4 flex items-center gap-6 bg-white"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-car text-blue-600 text-sm" />
-                    </div>
+                    <i className="fa-solid fa-car text-textMuted text-sm" />
                     <div>
                       <p className="text-[10px] font-bold text-textMuted uppercase tracking-wider">
                         Temps estimé
@@ -793,9 +859,7 @@ export default function Recuperer() {
                   </div>
                   <div className="w-px h-10 bg-borderMain" />
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-road text-blue-600 text-sm" />
-                    </div>
+                    <i className="fa-solid fa-road text-textMuted text-sm" />
                     <div>
                       <p className="text-[10px] font-bold text-textMuted uppercase tracking-wider">
                         Distance
@@ -810,51 +874,52 @@ export default function Recuperer() {
                 {/* Bottom Actions */}
                 {paid && (
                   <div className="px-6 py-4 border-t border-borderMain flex items-center gap-3 bg-white">
-                    <a
+                    <Button
+                      component="a"
                       href={`https://wa.me/${getFinderPhone().replace(/\D/g, "")}`}
                       target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 hover:bg-green-600 transition-all"
+                      color="green"
+                      radius="xl"
+                      size="sm"
+                      leftSection={<i className="fa-brands fa-whatsapp" />}
                     >
-                      <i className="fa-brands fa-whatsapp text-base" />
                       WhatsApp
-                    </a>
-                    <a
+                    </Button>
+                    <Button
+                      component="a"
                       href={`tel:${getFinderPhone()}`}
-                      className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 hover:bg-blue-700 transition-all"
+                      color="blue"
+                      radius="xl"
+                      size="sm"
+                      leftSection={<i className="fa-solid fa-phone" />}
                     >
-                      <i className="fa-solid fa-phone text-base" />
                       Appeler
-                    </a>
-                    <a
+                    </Button>
+                    <Button
+                      component="a"
                       href={`https://www.google.com/maps/dir/?api=1&destination=${getFinderLat()},${getFinderLng()}`}
                       target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-3 bg-green-dark text-white rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 hover:bg-green-mid transition-all"
+                      style={{backgroundColor: '#2D5A42'}}
+                      radius="xl"
+                      size="sm"
+                      leftSection={<i className="fa-solid fa-diamond-turn-right" />}
                     >
-                      <i className="fa-solid fa-diamond-turn-right text-base" />
                       Naviguer
-                    </a>
+                    </Button>
                   </div>
                 )}
-              </div>
+              </Paper>
             </div>
 
             {/* ── Right Column: Action Panel ── */}
             <div className="lg:col-span-5 xl:col-span-4 space-y-6">
               {/* Payment Card */}
-              <div
-                id="ownerActionPanel"
-                className={`bg-white rounded-[32px] border-2 p-8 shadow-2xl space-y-6 relative overflow-hidden ${
-                  collected ? "border-green-500/30" : "border-primary/30 shadow-primary/10"
-                }`}
-              >
-                <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-xl" />
+              <Paper radius="xl" withBorder p="xl" id="ownerActionPanel" style={{position: 'relative', overflow: 'hidden'}} className="space-y-6">
 
                 {collected && pickupCode ? (
                   /* ── Success Panel ── */
                   <div className="text-center space-y-6">
-                    <div className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center mx-auto shadow-xl animate-bounce">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{backgroundColor: '#F5A64B', color: 'white'}}>
                       <i className="fa-solid fa-key text-2xl" />
                     </div>
                     <div>
@@ -865,8 +930,11 @@ export default function Recuperer() {
                         {t("Montrez ce code au recuperateur")}
                       </p>
                     </div>
-                    <div
-                      className="bg-green-dark/5 border-2 border-dashed border-green-dark/20 rounded-3xl p-6 cursor-pointer hover:bg-green-dark/10 transition-all group"
+                    <Paper
+                      radius="xl"
+                      p="lg"
+                      style={{backgroundColor: '#F4EFE6', cursor: 'pointer'}}
+                      className="text-center hover:opacity-90 transition-opacity"
                       onClick={() => {
                         navigator.clipboard.writeText(pickupCode);
                       }}
@@ -874,17 +942,14 @@ export default function Recuperer() {
                       <p className="font-bricolage text-4xl font-black text-primary tracking-tighter">
                         {pickupCode}
                       </p>
-                      <div className="inline-flex items-center gap-2 mt-4 text-[10px] text-textMuted font-bold uppercase tracking-widest group-hover:text-primary transition-colors">
+                      <div className="inline-flex items-center gap-2 mt-4 text-[10px] text-textMuted font-bold uppercase tracking-widest hover:text-primary transition-colors">
                         <i className="fa-solid fa-copy" />
                         {t("Cliquez pour copier")}
                       </div>
-                    </div>
-                    <Link
-                      to="/dashboard"
-                      className="block w-full py-4 bg-green-dark text-white rounded-[24px] font-bold hover:bg-green-mid transition-all text-center"
-                    >
+                    </Paper>
+                    <Button component={Link} to="/dashboard" fullWidth radius="xl" style={{backgroundColor: '#2D5A42'}}>
                       {t("Retourner au dashboard")}
-                    </Link>
+                    </Button>
                   </div>
                 ) : (
                   /* ── Payment Panel ── */
@@ -899,27 +964,17 @@ export default function Recuperer() {
                         </span>
                         <span className="text-lg font-bold text-textMuted">FCFA</span>
                       </div>
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-bold">
-                        <i className="fa-solid fa-info-circle" />
+                      <Badge color="green" variant="light" radius="xl" size="sm">
                         Service + Récompense inclus
-                      </div>
+                      </Badge>
                     </div>
 
                     {paid ? (
                       /* Already paid - waiting */
-                      <div className="p-5 bg-green-light/50 rounded-2xl border border-green-200 text-center space-y-3">
-                        <div className="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center mx-auto">
-                          <i className="fa-solid fa-check text-lg" />
-                        </div>
-                        <div>
-                          <p className="text-[14px] font-bold text-green-dark">
-                            {t("Paiement confirmé")}
-                          </p>
-                          <p className="text-[12px] text-green-600/80 mt-1">
-                            {t("Veuillez patienter pendant le traitement...")}
-                          </p>
-                        </div>
-                      </div>
+                      <Alert color="green" variant="light" radius="md" icon={<i className="fa-solid fa-check" />}>
+                        <p className="text-[14px] font-bold">{t('Paiement confirmé')}</p>
+                        <p className="text-[12px] mt-1">{t('Veuillez patienter pendant le traitement...')}</p>
+                      </Alert>
                     ) : (
                       /* Not paid - show pay button */
                       <div className="space-y-4 pt-2">
@@ -928,7 +983,7 @@ export default function Recuperer() {
                           fullWidth
                           size="xl"
                           radius="xl"
-                          color="var(--primary)"
+                          color="green"
                           styles={{
                             root: { 
                               height: 'auto',
@@ -936,7 +991,6 @@ export default function Recuperer() {
                               fontFamily: 'Bricolage Grotesque, sans-serif',
                               fontWeight: 800,
                               fontSize: '18px',
-                              boxShadow: '0 10px 15px -3px rgba(var(--primary-rgb), 0.4)'
                             }
                           }}
                           rightSection={<i className="fa-solid fa-arrow-right text-sm" />}
@@ -974,10 +1028,10 @@ export default function Recuperer() {
                     </div>
                   </>
                 )}
-              </div>
+              </Paper>
 
               {/* Support Card */}
-              <div className="bg-white rounded-[24px] border border-borderMain p-6 shadow-sm">
+              <Paper radius="xl" withBorder p="lg">
                 <p className="text-[11px] font-bold text-textMuted uppercase mb-3 text-center">
                   {t("Besoin d'assistance ?")}
                 </p>
@@ -1001,14 +1055,14 @@ export default function Recuperer() {
                     Aide
                   </Button>
                 </div>
-              </div>
+              </Paper>
             </div>
           </div>
 
           {/* Polling Indicator */}
           {step === 2 && !pickupCode && (
             <div className="fixed bottom-20 left-4 right-4 lg:bottom-24 lg:left-auto lg:right-6 lg:w-80 z-30">
-              <div className="bg-white border border-primary/30 rounded-[16px] p-4 shadow-xl">
+              <Paper radius="xl" withBorder p="md" shadow="sm">
                 <div className="flex items-center gap-3">
                   <Loader size="md" color="var(--primary)" />
                   <div>
@@ -1020,7 +1074,7 @@ export default function Recuperer() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </Paper>
             </div>
           )}
         </div>
@@ -1078,6 +1132,48 @@ export default function Recuperer() {
           </>
         }
       />
+
+      {/* Polling Modal for recovery payment */}
+      <PollingModal
+        isOpen={!!pollingStatus}
+        onClose={() => {
+          setPollingStatus(null);
+          if (recoveryPollingRef.current) clearInterval(recoveryPollingRef.current);
+        }}
+        pollingStatus={pollingStatus || "Vérification en cours..."}
+        pollingElapsed={pollingElapsed}
+        nokashTransactionId={nokashTxId}
+        onManualCheck={handleManualCheck}
+        isManualChecking={isManualChecking}
+      />
+
+      {/* Action Success Modal for recovery */}
+      {showSuccessModal && (
+        <ActionSuccessModal
+          opened={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          title="Paiement validé !"
+          description="Votre paiement de frais de récupération a été confirmé avec succès. Vous pouvez maintenant procéder au retrait de votre document."
+          badgeText="Retrait autorisé"
+          badgeColor="green"
+          icon="fa-shield-halved"
+          highlightBox={{
+            label: "Code de retrait sécurisé",
+            value: pickupCode || doc?.reference || "—",
+            sublabel: "À présenter lors de la récupération de votre document",
+          }}
+          details={[
+            { label: "Document", value: doc?.titre || "Document", highlighted: false },
+            { label: "Montant réglé", value: formatCost(doc), highlighted: true },
+            { label: "Statut", value: "Prêt pour retrait" },
+          ]}
+          primaryAction={{
+            label: "Voir les instructions de retrait",
+            icon: "fa-location-dot",
+            onClick: () => setShowSuccessModal(false),
+          }}
+        />
+      )}
     </div>
   );
 }
