@@ -616,7 +616,7 @@ function DeclCard({ decl, navigate, userName, t }: {
       {decl.status === "MATCHED" && isPerdu && (
         <button
           onClick={(e) => { e.stopPropagation(); navigate(`/recuperer?id=${decl.id}`); }}
-          className="mt-2 w-full py-2 rounded-xl bg-green-dark text-white font-bold text-xs flex items-center justify-center gap-2 animate-vibrate"
+          className={`mt-2 w-full py-2 rounded-xl bg-green-dark text-white font-bold text-xs flex items-center justify-center gap-2${decl.status === "MATCHED" ? " animate-vibrate" : ""}`}
         >
           <i className="fa-solid fa-handshake" />
           {t("dashboard_recover_document")}
@@ -690,7 +690,7 @@ function PerfCard({ doc, onClick, period }: { doc: any; onClick?: () => void; pe
       <Card.Section>
         <div style={{ position: "relative", height: 96, overflow: "hidden", background: "var(--mantine-color-surface2)" }}>
           <img src={typeImages[code] || "/src/assets/images/devices_docs.png"} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.9 }} alt={doc.name} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.4), transparent)", opacity: 0.6 }} />
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.25)" }} />
           <Paper style={{ position: "absolute", top: 8, right: 8, padding: "2px 6px", borderRadius: 6, background: "rgba(255,255,255,0.9)", fontSize: 9, fontWeight: 700, color: isUp ? "#16a34a" : "#ef4444", display: "flex", alignItems: "center", gap: 2 }}>
             <i className={`fa-solid ${isUp ? "fa-arrow-up" : "fa-arrow-down"}`} style={{ fontSize: 7 }} /> {Math.abs(trend)}%
           </Paper>
@@ -761,7 +761,7 @@ function PerfModal({ doc, onClose, promo, isDismissed, onPromoSubscribe, onPromo
       <Modal opened onClose={onClose} size="lg" padding={0} withCloseButton={false}>
         <div style={{ position: "relative", height: 176, overflow: "hidden", flexShrink: 0 }}>
           <img src={image} alt={doc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0.2), transparent)" }} />
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)" }} />
           <Group style={{ position: "absolute", bottom: 12, left: 16 }} gap="sm">
             <i className={`fa-solid ${cfg.icon} ${cfg.color} text-lg`} />
             <div>
