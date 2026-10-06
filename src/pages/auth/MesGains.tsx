@@ -550,7 +550,7 @@ function PointsCard({ totalPoints, pointsBreakdown, levelLabel, pointsToNext, ne
       {totalPoints > 0 && (
         <button
           onClick={onConvert}
-          className="w-full mt-3 py-2.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary font-bricolage text-[13px] font-bold rounded-[12px] transition-all flex items-center justify-center gap-2"
+          className="w-full mt-3 py-2.5 bg-surface2 hover:bg-borda border border-borda text-textMain font-bricolage text-[13px] font-bold rounded-[12px] transition-all flex items-center justify-center gap-2"
         >
           <i className="fa-solid fa-coins text-xs" /> {t("mesgains_convert_points")}
         </button>
@@ -1041,9 +1041,9 @@ function WithdrawHistoryModal({ onClose, fmtAmount, fmtDate, t }: any) {
   }, []);
 
   const statusBadge = (status: string) => {
-    const cls = status === "approved" ? "bg-green-light text-green-mid" : status === "pending" ? "bg-orange-50 text-orange-500" : "bg-red-50 text-red-500";
+    const color = status === "approved" ? "green" : status === "pending" ? "orange" : "red";
     const label = status === "approved" ? t("mesgains_withdraw_status_approved") : status === "pending" ? t("mesgains_withdraw_status_pending") : t("mesgains_withdraw_status_rejected");
-    return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls}`}>{label}</span>;
+    return <Badge variant="light" color={color} radius="xl" size="xs">{label}</Badge>;
   };
 
   return (
@@ -1449,15 +1449,11 @@ function ConvertPointsModal({ points, onClose, onDone, onUpdateUser, t }: { poin
 /* ── Helpers ── */
 
 function TxStatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
-  const cls =
-    status === "SUCCESS"
-      ? "bg-green-light text-green-mid"
-      : status === "PENDING"
-      ? "bg-orange-50 text-orange-500"
-      : "bg-gray-100 text-gray-500";
+  const color =
+    status === "SUCCESS" ? "green" : status === "PENDING" ? "orange" : "gray";
   const label =
     status === "SUCCESS" ? t("tx_success") : status === "PENDING" ? t("tx_pending") : status;
-  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls}`}>{label}</span>;
+  return <Badge variant="light" color={color} radius="xl" size="xs">{label}</Badge>;
 }
 
 function getEarningMeta(type: string, t: (key: string) => string): { icon: string; color: string; label: string } {
