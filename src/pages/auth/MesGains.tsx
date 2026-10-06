@@ -54,6 +54,9 @@ export default function MesGains() {
   const [addMethodType, setAddMethodType] = useState<"MTN" | "ORANGE" | "BANK">("MTN");
   const [savedMethods, setSavedMethods] = useState<SavedPaymentMethod[]>([]);
 
+  // Toggle section on mobile
+  const [activeSection, setActiveSection] = useState<"gains" | "history">("gains");
+
   const fetchData = useCallback(async () => {
     setTxLoading(true);
     setEarningsLoading(true);
@@ -154,139 +157,192 @@ export default function MesGains() {
     setShowWithdrawModal(true);
   };
 
-  return (
-    <div className="flex flex-col">
+  // Shared sub-panels — defined once, rendered in both desktop cols and mobile sections
+  const gainsPanel = (
+    <Stack gap="lg">
+      <WalletCard
+        balance={balance}
+        points={points}
+        minWithdrawal={minWithdrawal}
+        progressPct={progressPct}
+        onWithdraw={handleWithdraw}
+        onHistory={() => setShowHistoryModal(true)}
+        fmtAmount={fmtAmount}
+        t={t}
+      />
 
-      <div className="custom-scroll p-4 sm:p-6 flex flex-col gap-5 pb-24 md:pb-8">
-        <Stack gap="lg">
-          <WalletCard
-            balance={balance}
-            points={points}
-            minWithdrawal={minWithdrawal}
-            progressPct={progressPct}
-            onWithdraw={handleWithdraw}
-            onHistory={() => setShowHistoryModal(true)}
-            fmtAmount={fmtAmount}
-            t={t}
-          />
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard
-              icon="fa-file-circle-check"
-              bg="bg-green-light"
-              color="text-green-mid"
-              value={String(statsCards.total_found ?? 0)}
-              label={t("mesgains_docs_found")}
-            />
-            <StatCard
-              icon="fa-handshake"
-              bg="bg-primary/10"
-              color="text-primary"
-              value={String(statsCards.total_returned ?? 0)}
-              label={t("mesgains_docs_returned")}
-            />
-            <StatCard
-              icon="fa-coins"
-              bg="bg-amber-50"
-              color="text-amber-500"
-              value={fmtAmount(totalFinderPayouts)}
-              label={t("mesgains_xaf_earned")}
-            />
-            <StatCard
-              icon="fa-arrow-up-right-from-square"
-              bg="bg-blue-50"
-              color="text-blue-400"
-              value={fmtAmount(totalWithdrawn)}
-              label={t("mesgains_xaf_withdrawn")}
-            />
-          </div>
-
-          <PotentialEarningsCard
-            declarations={potentialDeclarations}
-            totalXaf={totalPotentialXaf}
-            totalPts={totalPotentialPts}
-            fmtAmount={fmtAmount}
-            t={t}
-          />
-
-          <PointsCard
-            totalPoints={totalPoints}
-            pointsBreakdown={pointsBreakdown as any}
-            levelLabel={levelLabel}
-            pointsToNext={pointsToNext}
-            nextLevelPoints={nextLevelPoints}
-            onConvert={() => setShowConvertModal(true)}
-            onBuy={() => navigate("/acheter-points")}
-            fmtAmount={fmtAmount}
-            t={t}
-          />
-
-          <TransactionsCard
-            transactions={transactions}
-            loading={txLoading}
-            fmtAmount={fmtAmount}
-            fmtDate={fmtDate}
-            t={t}
-          />
-
-          <EarningsHistoryCard
-            earningsHistory={earningsHistory}
-            loading={earningsLoading}
-            fmtAmount={fmtAmount}
-            fmtDate={fmtDate}
-            t={t}
-          />
-
-          <div className="bg-white border border-borda rounded-[18px] p-5">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-[9px] bg-green-light flex items-center justify-center">
-                <i className="fa-solid fa-mobile-screen-button text-green-mid text-sm" />
-              </div>
-              <h2 className="font-bricolage text-[15px] font-bold text-textMain">
-                {t("mesgains_withdrawal_methods")}
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <PaymentMethodCard
-                icon="fa-mobile-screen-button"
-                name="MTN Mobile Money"
-                color="text-yellow-500"
-                bg="bg-yellow-50"
-                t={t}
-                saved={savedMethods.find(m => m.method_type === "MTN")}
-                onManage={() => { fetchMethods(); setShowMethodsModal(true); }}
-                onAdd={() => { setAddMethodType("MTN"); setShowAddMethodModal(true); }}
-              />
-              <PaymentMethodCard
-                icon="fa-mobile-screen-button"
-                name="Orange Money"
-                color="text-orange-500"
-                bg="bg-orange-50"
-                t={t}
-                saved={savedMethods.find(m => m.method_type === "ORANGE")}
-                onManage={() => { fetchMethods(); setShowMethodsModal(true); }}
-                onAdd={() => { setAddMethodType("ORANGE"); setShowAddMethodModal(true); }}
-              />
-              <PaymentMethodCard
-                icon="fa-university"
-                name={t("mesgains_bank_transfer")}
-                color="text-blue-400"
-                bg="bg-blue-50"
-                t={t}
-                saved={savedMethods.find(m => m.method_type === "BANK")}
-                onManage={() => { fetchMethods(); setShowMethodsModal(true); }}
-                onAdd={() => { setAddMethodType("BANK"); setShowAddMethodModal(true); }}
-              />
-            </div>
-
-            <p className="text-[11px] text-textMuted mt-3 text-center">
-              {t("mesgains_min_withdrawal_delay").replace("{amount}", fmtAmount(minWithdrawal))}
-            </p>
-          </div>
-        </Stack>
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard
+          icon="fa-file-circle-check"
+          color="text-green-mid"
+          value={String(statsCards.total_found ?? 0)}
+          label={t("mesgains_docs_found")}
+        />
+        <StatCard
+          icon="fa-handshake"
+          color="text-primary"
+          value={String(statsCards.total_returned ?? 0)}
+          label={t("mesgains_docs_returned")}
+        />
+        <StatCard
+          icon="fa-coins"
+          color="text-amber-500"
+          value={fmtAmount(totalFinderPayouts)}
+          label={t("mesgains_xaf_earned")}
+        />
+        <StatCard
+          icon="fa-arrow-up-right-from-square"
+          color="text-blue-400"
+          value={fmtAmount(totalWithdrawn)}
+          label={t("mesgains_xaf_withdrawn")}
+        />
       </div>
 
+      <PotentialEarningsCard
+        declarations={potentialDeclarations}
+        totalXaf={totalPotentialXaf}
+        totalPts={totalPotentialPts}
+        fmtAmount={fmtAmount}
+        t={t}
+      />
+
+      <PointsCard
+        totalPoints={totalPoints}
+        pointsBreakdown={pointsBreakdown as any}
+        levelLabel={levelLabel}
+        pointsToNext={pointsToNext}
+        nextLevelPoints={nextLevelPoints}
+        onConvert={() => setShowConvertModal(true)}
+        onBuy={() => navigate("/acheter-points")}
+        fmtAmount={fmtAmount}
+        t={t}
+      />
+
+      <div className="bg-white border border-borda rounded-[18px] p-5">
+        <div className="flex items-center gap-2.5 mb-4">
+          <i className="fa-solid fa-mobile-screen-button text-green-mid text-base" />
+          <h2 className="font-bricolage text-[15px] font-bold text-textMain">
+            {t("mesgains_withdrawal_methods")}
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <PaymentMethodCard
+            icon="fa-mobile-screen-button"
+            name="MTN Mobile Money"
+            color="text-yellow-500"
+            t={t}
+            saved={savedMethods.find(m => m.method_type === "MTN")}
+            onManage={() => { fetchMethods(); setShowMethodsModal(true); }}
+            onAdd={() => { setAddMethodType("MTN"); setShowAddMethodModal(true); }}
+          />
+          <PaymentMethodCard
+            icon="fa-mobile-screen-button"
+            name="Orange Money"
+            color="text-orange-500"
+            t={t}
+            saved={savedMethods.find(m => m.method_type === "ORANGE")}
+            onManage={() => { fetchMethods(); setShowMethodsModal(true); }}
+            onAdd={() => { setAddMethodType("ORANGE"); setShowAddMethodModal(true); }}
+          />
+          <PaymentMethodCard
+            icon="fa-university"
+            name={t("mesgains_bank_transfer")}
+            color="text-blue-400"
+            t={t}
+            saved={savedMethods.find(m => m.method_type === "BANK")}
+            onManage={() => { fetchMethods(); setShowMethodsModal(true); }}
+            onAdd={() => { setAddMethodType("BANK"); setShowAddMethodModal(true); }}
+          />
+        </div>
+
+        <p className="text-[11px] text-textMuted mt-3 text-center">
+          {t("mesgains_min_withdrawal_delay").replace("{amount}", fmtAmount(minWithdrawal))}
+        </p>
+      </div>
+    </Stack>
+  );
+
+  const historyPanel = (
+    <Stack gap="lg">
+      <TransactionsCard
+        transactions={transactions}
+        loading={txLoading}
+        fmtAmount={fmtAmount}
+        fmtDate={fmtDate}
+        t={t}
+      />
+      <EarningsHistoryCard
+        earningsHistory={earningsHistory}
+        loading={earningsLoading}
+        fmtAmount={fmtAmount}
+        fmtDate={fmtDate}
+        t={t}
+      />
+    </Stack>
+  );
+
+  return (
+    <div className="flex flex-col flex-1 overflow-hidden">
+
+      {/* ── Tab bar mobile ── */}
+      <div className="flex md:hidden border-b border-borda mb-0 bg-bgMain">
+        <button
+          onClick={() => setActiveSection("gains")}
+          className={`flex-1 py-2.5 text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+            activeSection === "gains"
+              ? "border-b-2 border-green-dark text-green-dark"
+              : "text-textMuted"
+          }`}
+        >
+          <i className="fa-solid fa-wallet text-xs" />
+          Carte &amp; Gains
+        </button>
+        <button
+          onClick={() => setActiveSection("history")}
+          className={`flex-1 py-2.5 text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+            activeSection === "history"
+              ? "border-b-2 border-green-dark text-green-dark"
+              : "text-textMuted"
+          }`}
+        >
+          <i className="fa-solid fa-clock-rotate-left text-xs" />
+          Historique
+        </button>
+      </div>
+
+      {/* ── Desktop : deux colonnes côte à côte ── */}
+      <div className="hidden md:flex flex-row gap-4 flex-1 overflow-hidden px-6 py-6">
+        {/* Left panel — Carte & Gains */}
+        <div className="w-[45%] overflow-y-auto custom-scroll" style={{ height: "calc(100vh - 130px)" }}>
+          <div className="pb-8">
+            {gainsPanel}
+          </div>
+        </div>
+
+        {/* Right panel — Historique */}
+        <div className="flex-1 overflow-y-auto custom-scroll" style={{ height: "calc(100vh - 130px)" }}>
+          <div className="pb-8">
+            {historyPanel}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Mobile : section active plein écran ── */}
+      <div className="md:hidden flex-1 overflow-y-auto custom-scroll">
+        {activeSection === "gains" && (
+          <div className="p-4 pb-24">
+            {gainsPanel}
+          </div>
+        )}
+        {activeSection === "history" && (
+          <div className="p-4 pb-24">
+            {historyPanel}
+          </div>
+        )}
+      </div>
+
+      {/* ── Modals ── */}
       {showWithdrawModal && (
         <WithdrawModal
           balance={balance}
@@ -419,12 +475,10 @@ function WalletCard({ balance, points, minWithdrawal, progressPct, onWithdraw, o
 
 /* ── StatCard ── */
 
-function StatCard({ icon, bg, color, value, label }: any) {
+function StatCard({ icon, color, value, label }: { icon: string; color: string; value: string; label: string }) {
   return (
     <Paper p="md" className="border border-borda hover:-translate-y-0.5 hover:shadow-lg transition-all" style={{ borderRadius: 16 }}>
-      <div className={`w-9 h-9 rounded-[10px] ${bg} flex items-center justify-center mb-3`}>
-        <i className={`fa-solid ${icon} ${color} text-sm`} />
-      </div>
+      <i className={`fa-solid ${icon} ${color} text-xl mb-3 block`} />
       <Text fw={800} className="font-bricolage" style={{ fontSize: 24, lineHeight: 1 }} mb={4}>
         {value}
       </Text>
@@ -440,9 +494,7 @@ function PointsCard({ totalPoints, pointsBreakdown, levelLabel, pointsToNext, ne
     <Paper p="lg" className="border border-borda" style={{ borderRadius: 18 }}>
       <Group justify="space-between" mb="md">
         <Group gap="sm">
-          <div className="w-8 h-8 rounded-[9px] bg-primary/10 flex items-center justify-center">
-            <i className="fa-solid fa-star text-primary text-sm" />
-          </div>
+          <i className="fa-solid fa-star text-primary text-base" />
           <div>
             <Title order={3} size={15} style={{ lineHeight: 1.3 }}>{t("mesgains_points_title")}</Title>
             <Text size="xs" c="dimmed">{t("mesgains_loyalty_program")}</Text>
@@ -539,9 +591,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
     <Paper className="border border-borda" style={{ borderRadius: 18, overflow: "hidden" }}>
       <Group px="lg" py="md" className="border-b border-borda">
         <Group gap="sm">
-          <div className="w-8 h-8 rounded-[9px] bg-amber-50 flex items-center justify-center">
-            <i className="fa-solid fa-sack-dollar text-amber-500 text-sm" />
-          </div>
+          <i className="fa-solid fa-sack-dollar text-amber-500 text-base" />
           <div>
             <Title order={3} size={15}>{t("mesgains_potential_title")}</Title>
             <Text size="xs" c="dimmed">{t("mesgains_potential_desc")}</Text>
@@ -549,12 +599,10 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
         </Group>
       </Group>
 
-      <Paper px="lg" py="md" className="bg-amber-50/50 border-b border-borda" style={{ borderRadius: 0 }}>
+      <Paper px="lg" py="md" className="bg-surface2 border-b border-borda" style={{ borderRadius: 0 }}>
         <SimpleGrid cols={2} spacing="md">
           <Group gap="sm">
-            <div className="w-10 h-10 rounded-[11px] bg-amber-100 flex items-center justify-center">
-              <i className="fa-solid fa-coins text-amber-500 text-lg" />
-            </div>
+            <i className="fa-solid fa-coins text-amber-500 text-xl" />
             <div>
               <Text fw={800} className="font-bricolage" size="xl" lh={1}>
                 {fmtAmount(totalXaf)} <Text component="span" fw={700} size="sm" c="dimmed">XAF</Text>
@@ -563,9 +611,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
             </div>
           </Group>
           <Group gap="sm">
-            <div className="w-10 h-10 rounded-[11px] bg-primary/10 flex items-center justify-center">
-              <i className="fa-solid fa-star text-primary text-lg" />
-            </div>
+            <i className="fa-solid fa-star text-primary text-xl" />
             <div>
               <Text fw={800} className="font-bricolage" size="xl" lh={1}>
                 {fmtAmount(totalPts)} <Text component="span" fw={700} size="sm" c="dimmed">pts</Text>
@@ -586,9 +632,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
 
           return (
             <Group key={decl.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
-              <div className="w-9 h-9 rounded-[10px] bg-amber-50 flex items-center justify-center flex-shrink-0">
-                <i className={`fa-solid fa-${icon} text-amber-500 text-sm`} />
-              </div>
+              <i className={`fa-solid fa-${icon} text-amber-500 text-base flex-shrink-0`} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <Text size="sm" fw={600} truncate lh="tight">
                   {decl.docTypeInfo?.nom || decl.doc_type || "Document"}
@@ -601,7 +645,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
               <Group gap="sm" wrap="nowrap" style={{ flexShrink: 0 }}>
                 <Badge
                   size="xs"
-                  variant={decl.status === "MATCHED" ? "light" : "light"}
+                  variant="light"
                   color={decl.status === "MATCHED" ? "green" : "gold"}
                 >
                   {decl.status === "MATCHED" ? t("mesgains_potential_matched") : t("mesgains_potential_available")}
@@ -618,7 +662,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
         })}
       </Stack>
 
-      <Paper px="lg" py="sm" className="bg-amber-50/30 border-t border-borda" style={{ borderRadius: 0 }}>
+      <Paper px="lg" py="sm" className="bg-surface2 border-t border-borda" style={{ borderRadius: 0 }}>
         <Text size="xs" c="dimmed" ta="center">
           <i className="fa-solid fa-circle-info text-amber-400 mr-1" />
           {t("mesgains_potential_note")}
@@ -635,9 +679,7 @@ function TransactionsCard({ transactions, loading, fmtAmount, fmtDate, t }: any)
     <Paper className="border border-borda" style={{ borderRadius: 18, overflow: "hidden" }}>
       <Group px="lg" py="md" className="border-b border-borda">
         <Group gap="sm">
-          <div className="w-8 h-8 rounded-[9px] bg-green-light flex items-center justify-center">
-            <i className="fa-solid fa-clock-rotate-left text-green-mid text-sm" />
-          </div>
+          <i className="fa-solid fa-clock-rotate-left text-green-mid text-base" />
           <Title order={3} size={15}>{t("mesgains_recent_transactions")}</Title>
         </Group>
       </Group>
@@ -658,9 +700,7 @@ function TransactionsCard({ transactions, loading, fmtAmount, fmtDate, t }: any)
             const meta = getTxMeta(tx.type || "", t);
             return (
               <Group key={tx.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
-                <div className={`w-9 h-9 rounded-[10px] ${meta.bg} flex items-center justify-center flex-shrink-0`}>
-                  <i className={`fa-solid ${meta.icon} ${meta.color} text-sm`} />
-                </div>
+                <i className={`fa-solid ${meta.icon} ${meta.color} text-base flex-shrink-0`} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Text size="sm" fw={600} truncate>{meta.label}</Text>
                   <Text size="xs" c="dimmed" mt={2}>{meta.sub} · {fmtDate(tx.created_at)}</Text>
@@ -687,9 +727,7 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
     <Paper className="border border-borda" style={{ borderRadius: 18, overflow: "hidden" }}>
       <Group px="lg" py="md" className="border-b border-borda" justify="space-between">
         <Group gap="sm">
-          <div className="w-8 h-8 rounded-[9px] bg-primary/10 flex items-center justify-center">
-            <i className="fa-solid fa-clock-rotate-left text-primary text-sm" />
-          </div>
+          <i className="fa-solid fa-clock-rotate-left text-primary text-base" />
           <Title order={3} size={15}>{t("mesgains_earnings_history") || "Historique des gains"}</Title>
         </Group>
         <Text size="xs" fw={500} c="dimmed">
@@ -713,9 +751,7 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
             const meta = getEarningMeta(entry.type, t);
             return (
               <Group key={entry.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
-                <div className={`w-9 h-9 rounded-[10px] ${meta.bg} flex items-center justify-center flex-shrink-0`}>
-                  <i className={`fa-solid ${meta.icon} ${meta.color} text-sm`} />
-                </div>
+                <i className={`fa-solid ${meta.icon} ${meta.color} text-base flex-shrink-0`} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Text size="sm" fw={600} truncate>{entry.description || meta.label}</Text>
                   <Text size="xs" c="dimmed" mt={2}>{fmtDate(entry.created_at)}</Text>
@@ -736,7 +772,7 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
 
 /* ── PaymentMethodCard ── */
 
-function PaymentMethodCard({ icon, name, color, bg, saved, onAdd, onManage, t }: any) {
+function PaymentMethodCard({ icon, name, color, saved, onAdd, onManage, t }: any) {
   const hasMethod = !!saved;
   return (
     <Paper
@@ -746,9 +782,7 @@ function PaymentMethodCard({ icon, name, color, bg, saved, onAdd, onManage, t }:
       }`}
       style={{ borderRadius: 13, display: "flex", alignItems: "center", gap: 12, padding: 14 }}
     >
-      <div className={`w-9 h-9 rounded-[10px] ${bg} flex items-center justify-center flex-shrink-0`}>
-        <i className={`fa-solid ${icon} ${color} text-sm`} />
-      </div>
+      <i className={`fa-solid ${icon} ${color} text-base flex-shrink-0`} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <Text size="sm" fw={700} truncate>{name}</Text>
         <Text size={10.5} c={hasMethod ? "green.6" : "dimmed"} fw={hasMethod ? 600 : 400}>
@@ -836,9 +870,7 @@ function WithdrawModal({ balance, minWithdrawal, savedMethods, onClose, onDone, 
     <Modal opened onClose={onClose} title={t("mesgains_withdraw_modal_title")} size="sm">
       {success ? (
         <Stack align="center" py="xl" gap="md">
-          <div className="w-16 h-16 rounded-full bg-green-light flex items-center justify-center">
-            <i className="fa-solid fa-check-circle text-green-mid text-3xl" />
-          </div>
+          <i className="fa-solid fa-check-circle text-green-mid text-5xl" />
           <Text fw={700} size="md" className="font-bricolage">{t("mesgains_withdraw_modal_success")}</Text>
         </Stack>
       ) : (
@@ -889,7 +921,6 @@ function WithdrawModal({ balance, minWithdrawal, savedMethods, onClose, onDone, 
                   {savedMethods.map((m: SavedPaymentMethod) => {
                     const typeIcon = m.method_type === "MTN" || m.method_type === "ORANGE" ? "fa-mobile-screen-button" : "fa-university";
                     const typeColor = m.method_type === "MTN" ? "text-yellow-500" : m.method_type === "ORANGE" ? "text-orange-500" : "text-blue-400";
-                    const typeBg = m.method_type === "MTN" ? "bg-yellow-50" : m.method_type === "ORANGE" ? "bg-orange-50" : "bg-blue-50";
                     return (
                       <div
                         key={m.id}
@@ -898,9 +929,7 @@ function WithdrawModal({ balance, minWithdrawal, savedMethods, onClose, onDone, 
                           selectedMethod?.id === m.id ? "border-primary bg-primary/5" : "border-borda hover:border-gray-300"
                         }`}
                       >
-                        <div className={`w-9 h-9 rounded-[10px] ${typeBg} flex items-center justify-center`}>
-                          <i className={`fa-solid ${typeIcon} ${typeColor} text-sm`} />
-                        </div>
+                        <i className={`fa-solid ${typeIcon} ${typeColor} text-base flex-shrink-0`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-[12.5px] font-bold text-textMain truncate">{m.account_name || `${m.method_type} - ${m.account_number}`}</p>
                           <p className="text-[11px] text-textMuted">{m.account_number}{m.is_default ? ` · ${t("mesgains_withdraw_default_method")}` : ""}</p>
@@ -1032,9 +1061,7 @@ function WithdrawHistoryModal({ onClose, fmtAmount, fmtDate, t }: any) {
         <Stack gap={0} className="divide-y divide-borda">
           {withdrawals.map((w: any) => (
             <Group key={w.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
-              <div className="w-9 h-9 rounded-[10px] bg-blue-50 flex items-center justify-center">
-                <i className="fa-solid fa-arrow-right-from-bracket text-blue-400 text-sm" />
-              </div>
+              <i className="fa-solid fa-arrow-right-from-bracket text-blue-400 text-base flex-shrink-0" />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <Text size="sm" fw={600} truncate>{fmtAmount(w.amount)} XAF</Text>
                 <Text size="xs" c="dimmed" mt={2}>{w.payment_method} · {fmtDate(w.created_at)}</Text>
@@ -1078,7 +1105,6 @@ function SavedMethodsModal({ methods, onClose, onRefresh, t }: any) {
 
   const typeIcon = (type: string) => type === "MTN" || type === "ORANGE" ? "fa-mobile-screen-button" : "fa-university";
   const typeColor = (type: string) => type === "MTN" ? "text-yellow-500" : type === "ORANGE" ? "text-orange-500" : "text-blue-400";
-  const typeBg = (type: string) => type === "MTN" ? "bg-yellow-50" : type === "ORANGE" ? "bg-orange-50" : "bg-blue-50";
 
   return (
     <Modal opened onClose={onClose} title={t("mesgains_withdrawal_methods")} size="sm">
@@ -1091,9 +1117,7 @@ function SavedMethodsModal({ methods, onClose, onRefresh, t }: any) {
         <Stack gap="sm">
           {methods.map((m: SavedPaymentMethod) => (
             <Group key={m.id} p="sm" className="border border-borda" style={{ borderRadius: 14 }} gap="md">
-              <div className={`w-9 h-9 rounded-[10px] ${typeBg(m.method_type)} flex items-center justify-center`}>
-                <i className={`fa-solid ${typeIcon(m.method_type)} ${typeColor(m.method_type)} text-sm`} />
-              </div>
+              <i className={`fa-solid ${typeIcon(m.method_type)} ${typeColor(m.method_type)} text-base flex-shrink-0`} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <Text size="sm" fw={700} truncate>{m.account_name || `${m.method_type} - ${m.account_number}`}</Text>
                 <Text size="xs" c="dimmed">{m.account_number}</Text>
@@ -1132,7 +1156,6 @@ function AddPaymentMethodModal({ methodType, onClose, onDone, t }: any) {
 
   const typeIcon = methodType === "BANK" ? "fa-university" : "fa-mobile-screen-button";
   const typeColor = methodType === "MTN" ? "text-yellow-500" : methodType === "ORANGE" ? "text-orange-500" : "text-blue-400";
-  const typeBg = methodType === "MTN" ? "bg-yellow-50" : methodType === "ORANGE" ? "bg-orange-50" : "bg-blue-50";
   const typeLabel = methodType === "BANK" ? t("mesgains_bank_transfer") : methodType;
 
   const handleSave = async () => {
@@ -1166,16 +1189,12 @@ function AddPaymentMethodModal({ methodType, onClose, onDone, t }: any) {
   return (
     <Modal opened onClose={onClose} title={typeLabel} size="sm">
       <Group gap="sm" mb="md">
-        <div className={`w-9 h-9 rounded-[10px] ${typeBg} flex items-center justify-center`}>
-          <i className={`fa-solid ${typeIcon} ${typeColor} text-sm`} />
-        </div>
+        <i className={`fa-solid ${typeIcon} ${typeColor} text-xl`} />
       </Group>
 
         {success ? (
           <div className="p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-green-light flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-check-circle text-green-mid text-3xl" />
-            </div>
+            <i className="fa-solid fa-check-circle text-green-mid text-5xl block mb-4 mx-auto" />
             <p className="font-bricolage text-[16px] font-bold text-textMain">{t("mesgains_withdraw_modal_method_saved")}</p>
           </div>
         ) : (
@@ -1299,9 +1318,7 @@ function ConvertPointsModal({ points, onClose, onDone, onUpdateUser, t }: { poin
   return (
     <Modal opened onClose={onClose} title={step === "success" ? "Conversion réussie" : t("mesgains_convert_title")} size="sm">
       <Stack align="center" gap="md" mb="md">
-        <div className={`w-16 h-16 ${step === "success" ? "bg-green-100" : "bg-primary/10"} rounded-full flex items-center justify-center`}>
-          <i className={`${step === "success" ? "fa-solid fa-check-circle text-green-600" : "fa-solid fa-coins text-primary"} text-2xl`} />
-        </div>
+        <i className={`${step === "success" ? "fa-solid fa-check-circle text-green-mid" : "fa-solid fa-coins text-primary"} text-4xl`} />
         <Text size="sm" c="dimmed">{t("mesgains_convert_balance")}</Text>
         <Text fw={800} className="font-bricolage" size="xl" c="gold">{points.totalPoints.toLocaleString()} pts</Text>
       </Stack>
@@ -1443,18 +1460,18 @@ function TxStatusBadge({ status, t }: { status: string; t: (key: string) => stri
   return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cls}`}>{label}</span>;
 }
 
-function getEarningMeta(type: string, t: (key: string) => string): { icon: string; bg: string; color: string; label: string } {
-  if (type === "declaration_points") return { icon: "fa-file-circle-check", bg: "bg-primary/10", color: "text-primary", label: t("mesgains_declaration_points") || "Points déclaration" };
-  if (type === "return_points") return { icon: "fa-handshake", bg: "bg-green-light", color: "text-green-mid", label: t("mesgains_return_points") || "Points remise document" };
-  if (type === "referral_points") return { icon: "fa-user-plus", bg: "bg-amber-50", color: "text-amber-500", label: t("mesgains_referral_points") || "Points parrainage" };
-  if (type === "referral_bonus") return { icon: "fa-gift", bg: "bg-purple-50", color: "text-purple-400", label: t("mesgains_referral_bonus") || "Bonus parrainage" };
-  if (type === "finder_payout") return { icon: "fa-sack-dollar", bg: "bg-green-light", color: "text-green-mid", label: t("mesgains_finder_payout") || "Récompense remise" };
-  return { icon: "fa-coins", bg: "bg-gray-100", color: "text-gray-500", label: type };
+function getEarningMeta(type: string, t: (key: string) => string): { icon: string; color: string; label: string } {
+  if (type === "declaration_points") return { icon: "fa-file-circle-check", color: "text-primary", label: t("mesgains_declaration_points") || "Points déclaration" };
+  if (type === "return_points") return { icon: "fa-handshake", color: "text-green-mid", label: t("mesgains_return_points") || "Points remise document" };
+  if (type === "referral_points") return { icon: "fa-user-plus", color: "text-amber-500", label: t("mesgains_referral_points") || "Points parrainage" };
+  if (type === "referral_bonus") return { icon: "fa-gift", color: "text-purple-400", label: t("mesgains_referral_bonus") || "Bonus parrainage" };
+  if (type === "finder_payout") return { icon: "fa-sack-dollar", color: "text-green-mid", label: t("mesgains_finder_payout") || "Récompense remise" };
+  return { icon: "fa-coins", color: "text-gray-500", label: type };
 }
 
-function getTxMeta(type: string, t: (key: string) => string): { icon: string; bg: string; color: string; label: string; sub: string } {
-  if (type === "finder_payout") return { icon: "fa-file-circle-check", bg: "bg-green-light", color: "text-green-mid", label: t("tx_commission"), sub: t("tx_reward") };
-  if (type === "recovery_fee") return { icon: "fa-arrow-up", bg: "bg-orange-50", color: "text-orange-500", label: t("tx_recovery_fee"), sub: t("tx_payment_made") };
-  if (type === "withdrawal") return { icon: "fa-arrow-right-from-bracket", bg: "bg-blue-50", color: "text-blue-400", label: t("tx_withdrawal"), sub: t("tx_mobile_money") };
-  return { icon: "fa-receipt", bg: "bg-gray-100", color: "text-gray-500", label: type, sub: "—" };
+function getTxMeta(type: string, t: (key: string) => string): { icon: string; color: string; label: string; sub: string } {
+  if (type === "finder_payout") return { icon: "fa-file-circle-check", color: "text-green-mid", label: t("tx_commission"), sub: t("tx_reward") };
+  if (type === "recovery_fee") return { icon: "fa-arrow-up", color: "text-orange-500", label: t("tx_recovery_fee"), sub: t("tx_payment_made") };
+  if (type === "withdrawal") return { icon: "fa-arrow-right-from-bracket", color: "text-blue-400", label: t("tx_withdrawal"), sub: t("tx_mobile_money") };
+  return { icon: "fa-receipt", color: "text-gray-500", label: type, sub: "—" };
 }
