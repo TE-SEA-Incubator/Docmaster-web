@@ -5,8 +5,17 @@ import { useToast } from "../../context/ToastContext";
 import { subscriptionsService } from "../../services/subscriptionsService";
 import { useAuth } from "../../context/AuthContext";
 import { useGoogleOneTap } from "../../hooks/useGoogleOneTap";
+import { ProtectedDocumentImage } from "../../components/ui/ProtectedDocumentImage";
 
 import type { Plan } from "../../types/api";
+
+const API_BASE = (import.meta as any).env?.VITE_API_URL || "/api/";
+
+function getFullImageUrl(url?: string): string {
+  if (!url) return "";
+  if (url.startsWith("http") || url.startsWith("data:")) return url;
+  return window.location.origin + "/" + url.replace(/^\//, "");
+}
 
 const testimonials = [
   { author: "Marie NGUYEN", roleKey: "testimonial_1_role", quoteKey: "testimonial_1_quote", icon: "fas fa-briefcase" },
@@ -114,48 +123,132 @@ export default function Home() {
   );
 }
 
-function HeroSection({ t }) {
+/* ─── Images locales pour le carousel hero ─── */
+const docImagesLeft = [
+  { src: "/src/assets/images/images.jpg",        alt: "Carte Nationale d'Identité" },
+  { src: "/src/assets/images/permis.jpg",        alt: "Permis de conduire" },
+  { src: "/src/assets/images/bacc.png",          alt: "Baccalauréat" },
+  { src: "/src/assets/images/1.png",             alt: "Document officiel" },
+  { src: "/src/assets/images/cni-poubelle.jpeg", alt: "CNI retrouvée" },
+];
+
+const docImagesRight = [
+  { src: "/src/assets/images/passport.png", alt: "Passeport" },
+  { src: "/src/assets/images/bacc.png",     alt: "Diplôme" },
+  { src: "/src/assets/images/images.jpg",   alt: "Carte d'identité" },
+  { src: "/src/assets/images/permis.jpg",   alt: "Permis" },
+  { src: "/src/assets/images/1.png",        alt: "Document officiel" },
+];
+
+function DocImageCard({ src, alt }: { src: string; alt: string; [k: string]: unknown }) {
   return (
-    <section className="bg-bgMain noise relative overflow-hidden min-h-screen flex items-center pt-[68px]">
+    <div
+      className="w-[180px] flex-shrink-0 rounded-3xl overflow-hidden"
+      style={{
+        opacity: 0.45,
+        boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
+        border: "1px solid rgba(234,227,216,0.6)",
+        background: "#fffbf6",
+      }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-[115px] object-cover"
+        draggable={false}
+      />
+      {/* Bande basse très soft */}
+      <div className="px-3 py-2.5" style={{ background: "#fffbf6" }}>
+        <div className="h-1.5 rounded-full w-3/4 mb-1.5" style={{ background: "rgba(26,26,26,0.08)" }} />
+        <div className="h-1.5 rounded-full w-1/2"         style={{ background: "rgba(26,26,26,0.05)" }} />
+      </div>
+    </div>
+  );
+}
+
+function VerticalImgCarousel({ items, duration = 30, reversed = false }: {
+  items: { src: string; alt: string }[];
+  duration?: number;
+  reversed?: boolean;
+}) {
+  const doubled = [...items, ...items];
+  const cls = reversed ? "carousel-up-reverse" : "carousel-up";
+  return (
+    <div
+      className="relative overflow-hidden h-[500px] w-[180px]"
+      style={{
+        maskImage: "linear-gradient(to bottom, transparent, black 18%, black 82%, transparent)",
+        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 18%, black 82%, transparent)",
+      }}
+    >
+      <div className={`flex flex-col gap-4 ${cls}`} style={{ animationDuration: `${duration}s` }}>
+        {doubled.map((d, i) => (
+          <DocImageCard key={i} src={d.src} alt={d.alt} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HeroSection({ t }) {
+  const svgBg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Cpath fill='%23e8923a' fill-opacity='0.18' d='M600 325.1v-1.17c-6.5 3.83-13.06 7.64-14.68 8.64-10.6 6.56-18.57 12.56-24.68 19.09-5.58 5.95-12.44 10.06-22.42 14.15-1.45.6-2.96 1.2-4.83 1.9l-4.75 1.82c-9.78 3.75-14.8 6.27-18.98 10.1-4.23 3.88-9.65 6.6-16.77 8.84-1.95.6-3.99 1.17-6.47 1.8l-6.14 1.53c-5.29 1.35-8.3 2.37-10.54 3.78-3.08 1.92-6.63 3.26-12.74 5.03a384.1 384.1 0 0 1-4.82 1.36c-2.04.58-3.6 1.04-5.17 1.52a110.03 110.03 0 0 0-11.2 4.05c-2.7 1.15-5.5 3.93-8.78 8.4a157.68 157.68 0 0 0-6.15 9.2c-5.75 9.07-7.58 11.74-10.24 14.51a50.97 50.97 0 0 1-4.6 4.22c-2.33 1.9-10.39 7.54-11.81 8.74a14.68 14.68 0 0 0-3.67 4.15c-1.24 2.3-1.9 4.57-2.78 8.87-2.17 10.61-3.52 14.81-8.2 22.1-4.07 6.33-6.8 9.88-9.83 12.99-.47.48-.95.96-1.5 1.48l-3.75 3.56c-1.67 1.6-3.18 3.12-4.86 4.9a42.44 42.44 0 0 0-9.89 16.94c-2.5 8.13-2.72 15.47-1.76 27.22.47 5.82.51 6.36.51 8.18 0 10.51.12 17.53.63 25.78.24 4.05.56 7.8.97 11.22h.9c-1.13-9.58-1.5-21.83-1.5-37 0-1.86-.04-2.4-.52-8.26-.94-11.63-.72-18.87 1.73-26.85a41.44 41.44 0 0 1 9.65-16.55c1.67-1.76 3.18-3.27 4.83-4.85.63-.6 3.13-2.96 3.75-3.57a71.6 71.6 0 0 0 1.52-1.5c3.09-3.16 5.86-6.76 9.96-13.15 4.77-7.42 6.15-11.71 8.34-22.44.86-4.21 1.5-6.4 2.68-8.6.68-1.25 1.79-2.48 3.43-3.86 1.38-1.15 9.43-6.8 11.8-8.72 1.71-1.4 3.26-2.81 4.7-4.3 2.72-2.85 4.56-5.54 10.36-14.67a156.9 156.9 0 0 1 6.1-9.15c3.2-4.33 5.9-7.01 8.37-8.07 3.5-1.5 7.06-2.77 11.1-4.02a233.84 233.84 0 0 1 7.6-2.2l2.38-.67c6.19-1.79 9.81-3.16 12.98-5.15 2.14-1.33 5.08-2.33 10.27-3.65l6.14-1.53c2.5-.63 4.55-1.2 6.52-1.82 7.24-2.27 12.79-5.06 17.15-9.05 4.05-3.72 9-6.2 18.66-9.9l4.75-1.82c1.87-.72 3.39-1.31 4.85-1.91 10.1-4.15 17.07-8.32 22.76-14.4 6.05-6.45 13.95-12.4 24.49-18.92 1.56-.96 7.82-4.6 14.15-8.33v-64.58c-4 8.15-8.52 14.85-12.7 17.9-2.51 1.82-5.38 4.02-9.04 6.92a1063.87 1063.87 0 0 0-6.23 4.98l-1.27 1.02a2309.25 2309.25 0 0 1-4.87 3.9c-7.55 6-12.9 10.05-17.61 13.19-3.1 2.06-3.86 2.78-8.06 7.13-5.84 6.07-11.72 8.62-29.15 10.95-11.3 1.5-20.04 4.91-30.75 11.07-1.65.94-7.27 4.27-6.97 4.1-2.7 1.58-4.69 2.69-6.64 3.66-5.63 2.8-10.47 4.17-15.71 4.17-17.13 0-41.44 11.51-51.63 22.83-12.05 13.4-31.42 27.7-45.25 31.16-7.4 1.85-11.85 7.05-14.04 14.69-1.26 4.4-1.58 8.28-1.58 13.82 0 .82.01.98.24 3.63.45 5.18.35 8.72-.77 13.26-1.53 6.2-4.89 12.6-10.59 19.43-13.87 16.65-22.88 46.58-22.88 71.68 0 2.39.02 4.26.06 8.75.12 10.8.1 15.8-.22 21.95-.56 11.18-2.09 20.73-5 29.3h-1.05c2.94-8.56 4.49-18.12 5.05-29.35.31-6.13.34-11.1.22-21.9-.04-4.48-.06-6.36-.06-8.75 0-25.32 9.07-55.47 23.12-72.32 5.6-6.72 8.88-12.99 10.38-19.03 1.09-4.4 1.18-7.85.74-12.93-.23-2.7-.24-2.86-.24-3.72 0-5.62.32-9.57 1.62-14.1 2.28-7.95 6.97-13.44 14.76-15.39 13.6-3.4 32.82-17.59 44.75-30.84C409 360.14 433.58 348.5 451 348.5c5.07 0 9.77-1.33 15.26-4.07 1.93-.96 3.9-2.05 6.58-3.62-.3.18 5.33-3.16 6.98-4.11 10.82-6.21 19.66-9.67 31.11-11.2 17.23-2.3 22.9-4.75 28.57-10.64 4.25-4.41 5.04-5.16 8.22-7.28 4.68-3.11 10.01-7.14 17.55-13.14a1113.33 1113.33 0 0 0 4.86-3.89l1.28-1.02a4668.54 4668.54 0 0 1 6.23-4.98c3.67-2.9 6.55-5.12 9.07-6.95 4.37-3.19 9.16-10.56 13.29-19.4v66.9zm0-116.23c-.62.01-1.27.06-1.95.13-6.13.63-13.83 3.45-21.83 7.45-3.64 1.82-8.46 2.67-14.17 2.71-4.7.04-9.72-.47-14.73-1.33-1.7-.3-3.26-.61-4.67-.93a31.55 31.55 0 0 0-3.55-.57 273.4 273.4 0 0 0-16.66-.88c-10.42-.16-17.2.74-17.97 2.73-.38.97.6 2.55 3.03 4.87 1.01.97 2.22 2.03 4.04 3.55a1746.07 1746.07 0 0 0 4.79 4.02c1.39 1.2 3.1 1.92 5.5 2.5.7.16.86.2 2.64.54 3.53.7 5.03 1.25 6.15 2.63 1.41 1.76 1.4 4.54-.15 8.88-2.44 6.83-5.72 10.05-10.19 10.33-3.63.23-7.6-1.29-14.52-5.06-4.53-2.47-6.82-7.3-8.32-15.26-.17-.87-.32-1.78-.5-2.86l-.43-2.76c-1.05-6.58-1.9-9.2-3.73-10.11-.81-.4-1.59-.74-2.36-1-2.27-.77-4.6-1.02-8.1-.92-2.29.07-14.7 1-13.77.93-20.55 1.37-28.8 5.05-37.09 14.99a133.07 133.07 0 0 0-4.25 5.44l-2.3 3.09-2.51 3.32c-4.1 5.36-7.06 8.48-10.39 11.12-.65.52-1.33 1.04-2.13 1.62l-4.11 2.94a106.8 106.8 0 0 0-5.16 3.99c-4.55 3.74-9.74 8.6-16.25 15.38-8.25 8.58-11.78 13.54-11.7 15.95.07 1.65 1.64 2.11 6.79 2.38 1.61.09 2.15.12 2.98.2 2.95.24 5.09.73 6.81 1.68 7.48 4.15 11.63 7.26 13.95 11.58 3.3 6.15.8 12.88-8.89 20.26-8.28 6.3-11.1 10.37-11.31 14.96-.06 1.17 0 1.93.26 4.43.69 6.47.25 10.65-2.8 17.42a44.23 44.23 0 0 1-4.16 7.53c-2.82 3.97-5.47 5.74-10.6 7.69-.43.16-3.34 1.23-4.27 1.59-1.8.68-3.38 1.36-5.01 2.14-4.18 2-8.4 4.6-13.1 8.24-8.44 6.51-13.23 14.56-15.98 25.06-1.1 4.2-1.55 6.81-2.8 15.21-1.26 8.6-2.17 12.64-4.08 16.55-2.1 4.28-11.93 26.59-12.97 28.88a382.7 382.7 0 0 1-6.37 13.41c-4.07 8.11-7.61 14.07-10.73 17.81-5.38 6.46-8.98 14.37-13.77 28.42a810.14 810.14 0 0 0-1.89 5.6c-1.8 5.35-2.96 8.6-4.26 11.85-6.13 15.32-25.43 26.31-46.46 26.31-11.2 0-20.58-2.74-31.02-8.55-5.6-3.13-4.55-2.42-22.26-14.54-14.33-9.8-17.7-10.73-20.47-6.9-.37.5-1.81 2.74-1.83 2.77a52.24 52.24 0 0 1-4.94 5.9c-.73.79-5.52 5.87-6.97 7.45-2.38 2.6-4.3 4.81-5.98 6.93a45.6 45.6 0 0 0-5.08 7.66c-1.29 2.57-1.9 5.25-2.66 10.6a997.6 997.6 0 0 1-.46 3.18h-1l.47-3.32c.77-5.45 1.4-8.2 2.75-10.9a46.54 46.54 0 0 1 5.2-7.84c1.7-2.14 3.63-4.38 6.03-6.98 1.45-1.59 6.24-6.68 6.96-7.46a51.58 51.58 0 0 0 4.84-5.78s1.47-2.26 1.86-2.8c3.25-4.5 7.08-3.44 21.84 6.67 17.67 12.08 16.62 11.38 22.19 14.48 10.3 5.73 19.5 8.43 30.53 8.43 20.65 0 39.57-10.77 45.54-25.69a219.7 219.7 0 0 0 4.24-11.8 6752.32 6752.32 0 0 0 1.88-5.6c4.83-14.16 8.47-22.14 13.96-28.73 3.05-3.66 6.56-9.57 10.6-17.61 1.97-3.93 4.04-8.31 6.35-13.38 1.03-2.28 10.88-24.61 12.98-28.91 1.85-3.79 2.75-7.76 4-16.25 1.24-8.44 1.7-11.07 2.81-15.32 2.8-10.7 7.71-18.94 16.33-25.6a73.18 73.18 0 0 1 13.29-8.35c1.66-.8 3.27-1.48 5.08-2.18.94-.36 3.86-1.43 4.28-1.59 4.95-1.88 7.44-3.55 10.14-7.33 1.35-1.9 2.68-4.3 4.06-7.37 2.97-6.58 3.39-10.59 2.72-16.9a27.13 27.13 0 0 1-.27-4.58c.22-4.94 3.21-9.24 11.7-15.7 9.33-7.11 11.66-13.34 8.62-19-2.2-4.09-6.25-7.12-13.55-11.17-1.57-.88-3.6-1.33-6.42-1.57-.8-.07-1.34-.1-2.95-.19-5.77-.3-7.63-.85-7.72-3.34-.1-2.81 3.5-7.87 11.97-16.69 6.53-6.8 11.75-11.69 16.33-15.45 1.79-1.47 3.42-2.72 5.2-4.03l4.12-2.94c.79-.58 1.46-1.08 2.1-1.59 3.26-2.6 6.16-5.65 10.21-10.94a383.2 383.2 0 0 0 2.5-3.32l2.31-3.09c1.8-2.39 3.04-4 4.29-5.48 8.47-10.17 16.98-13.96 37.27-15.3-.44.02 12-.9 14.32-.98 3.62-.1 6.05.16 8.46.98.8.27 1.62.62 2.47 1.04 2.27 1.14 3.17 3.87 4.27 10.85l.44 2.76c.17 1.07.33 1.97.5 2.83 1.44 7.69 3.62 12.29 7.8 14.57 6.76 3.68 10.6 5.15 13.99 4.94 4-.25 6.99-3.17 9.3-9.67 1.45-4.04 1.46-6.49.32-7.92-.9-1.12-2.28-1.62-5.57-2.27a55.8 55.8 0 0 1-2.67-.55c-2.54-.6-4.39-1.4-5.93-2.71a252.63 252.63 0 0 0-4.78-4.01 84.35 84.35 0 0 1-4.08-3.6c-2.73-2.6-3.86-4.43-3.28-5.95 1.02-2.64 7.82-3.54 18.93-3.37a230.56 230.56 0 0 1 16.73.88c2.76.39 3.2.49 3.68.6 1.4.3 2.95.62 4.62.91a82.9 82.9 0 0 0 14.56 1.32c5.56-.04 10.24-.86 13.73-2.6 8.1-4.05 15.89-6.9 22.17-7.56.7-.07 1.4-.11 2.05-.13v1zm0-100.94v1.5c-8.62 16.05-17.27 29.55-23.65 35.92-3.19 3.2-7.62 4.9-13.54 5.56-4.45.48-8.28.4-19.18-.2-9.91-.55-15.32-.44-20.52.78a84.05 84.05 0 0 1-15 2.11l-2.25.14c-12.49.75-19.37 1.78-32.72 5.74-4.5 1.33-9.27 2.49-14.3 3.48a246.27 246.27 0 0 1-32.6 3.97c-7.56.45-13.21.57-20.24.57-5.4 0-11.9 1.61-18 5.18-8.3 4.87-15.06 12.87-19.53 24.5a68.57 68.57 0 0 1-4.56 9.8c-3.6 6.2-6.92 8.99-13.38 12.18l-4.03 1.96a64.48 64.48 0 0 0-15.16 10.25c-8.2 7.33-13.72 16.63-22.54 35.6l-2.08 4.49c-7.3 15.7-11.5 23.3-17.35 29.87-7.7 8.66-20.25 14.42-40.31 20.08-4.37 1.23-19.04 5.08-19.24 5.13-6.92 1.87-11.68 3.34-15.63 4.92-10.55 4.22-18.71 10.52-36.38 26.52l-1.7 1.54c-8.58 7.76-13.41 11.9-18.81 15.88-3.95 2.9-8 5.67-12.97 8.91-2.06 1.34-10.3 6.6-12.33 7.94-11.52 7.5-18.53 13.04-24.62 20.08a62.01 62.01 0 0 0-6.44 8.85c-4.13 6.91-6.27 13.15-9.2 25.11l-1.54 6.26c-.6 2.45-1.15 4.54-1.72 6.58-2.97 10.7-6.9 17.36-14.78 26.91L69.6 491a148.51 148.51 0 0 0-4.19 5.3 23.9 23.9 0 0 0-3.44 6.28c-1.16 3.23-1.52 5.9-1.87 11.94-.58 10.05-1.42 15.04-4.63 22.67-1.57 3.72-5.66 14.02-6.41 15.8a73.46 73.46 0 0 1-3.57 7.4c-2.88 5.14-6.71 10.12-13.12 16.95-5.96 6.36-8.87 10.9-10.61 16a56.88 56.88 0 0 0-1.38 4.82l-.46 1.84h-1.03l.52-2.08c.52-2.09.92-3.49 1.4-4.9 1.8-5.25 4.78-9.9 10.84-16.36 6.35-6.78 10.13-11.7 12.97-16.77a72.5 72.5 0 0 0 3.52-7.29c.75-1.76 4.84-12.06 6.4-15.8 3.17-7.5 3.99-12.4 4.56-22.33.35-6.14.72-8.88 1.93-12.23a24.9 24.9 0 0 1 3.58-6.54c1.27-1.7 2.6-3.37 4.22-5.34l4.11-4.95c7.8-9.46 11.66-16 14.59-26.54.56-2.04 1.1-4.12 1.71-6.56l1.53-6.26c2.96-12.04 5.13-18.36 9.32-25.39 1.84-3.08 4-6.05 6.54-8.99 6.17-7.12 13.24-12.7 24.83-20.26 2.05-1.33 10.28-6.6 12.33-7.94 4.96-3.22 9-5.98 12.92-8.87 5.37-3.95 10.19-8.08 18.74-15.82l1.7-1.54c17.76-16.09 25.98-22.43 36.67-26.7 4-1.6 8.8-3.09 15.75-4.96.21-.06 14.87-3.9 19.22-5.13 19.9-5.61 32.32-11.31 39.85-19.78 5.76-6.48 9.93-14.02 17.18-29.64l2.09-4.5c8.87-19.07 14.44-28.46 22.77-35.9a65.48 65.48 0 0 1 15.38-10.4l4.04-1.97c6.3-3.1 9.47-5.77 12.96-11.77a67.6 67.6 0 0 0 4.48-9.67c4.56-11.84 11.47-20.02 19.97-25 6.25-3.66 12.93-5.32 18.5-5.32 7.01 0 12.65-.12 20.17-.57a245.3 245.3 0 0 0 32.47-3.96c5-.98 9.75-2.13 14.22-3.45 13.43-3.98 20.38-5.02 32.94-5.78l2.24-.14c5.76-.37 9.8-.9 14.85-2.09 5.31-1.25 10.79-1.35 22.6-.7 9.04.5 12.84.58 17.21.1 5.71-.62 9.94-2.26 12.95-5.26 6.44-6.45 15.3-20.37 24.35-36.72zm0 450.21c-1.28-4.6-2.2-10.55-3.33-20.25l-.24-2.04-.23-2.03c-1.82-15.7-3.07-21.98-5.55-24.47-2.46-2.46-3.04-5.03-2.52-8.64.1-.6.18-1.1.39-2.15.69-3.54.77-5.04.08-6.84-.91-2.38-3.31-4.41-7.79-6.26-5.08-2.09-6.52-4.84-4.89-8.44.66-1.45 1.79-3.02 3.52-5.01 1.04-1.2 5.48-5.96 5.08-5.53 6.15-6.7 8.98-11.34 8.98-16.48a15.2 15.2 0 0 1 6.5-12.89v1.26a14.17 14.17 0 0 0-5.5 11.63c0 5.47-2.93 10.29-9.24 17.16.38-.42-4.04 4.33-5.07 5.5-1.67 1.93-2.75 3.43-3.36 4.77-1.37 3.04-.23 5.22 4.36 7.1 4.71 1.95 7.32 4.16 8.34 6.83.78 2.04.7 3.67-.03 7.4-.2 1.03-.3 1.51-.38 2.09-.48 3.33.03 5.59 2.23 7.8 2.74 2.74 3.98 8.96 5.84 25.06l.24 2.03.23 2.04c.82 7.01 1.53 12.06 2.34 16.03v4.33zm0-62.16c-1.4-3.13-4.43-9.9-4.95-11.17-1.02-2.53-1.25-3.8-.91-5.18.2-.84 2.05-4.68 2.32-5.33a70.79 70.79 0 0 0 3.54-11.2v3.99a62.82 62.82 0 0 1-2.62 7.6c-.31.75-2.09 4.46-2.27 5.18-.28 1.12-.08 2.22.87 4.57.41 1.02 2.5 5.7 4.02 9.09v2.45zm0-85.09c-1.65 1.66-3.66 2.9-6.4 4.13-.25.1-13.97 5.47-20.4 8.43-9.35 4.32-16.7 5.9-23.03 5.25-5.08-.53-9.02-2.25-14.77-5.92l-3.2-2.07a77.4 77.4 0 0 0-5.44-3.27c-4.05-2.18-3.25-5.8 1.47-10.47 3.71-3.68 9.6-7.93 18.73-13.8l4.46-2.82c17.95-11.33 18.22-11.5 22.27-14.74 11.25-9 19.69-14.02 26.31-15.1v1.02c-6.37 1.1-14.62 6-25.69 14.86-4.1 3.28-4.34 3.44-22.36 14.8a652.4 652.4 0 0 0-4.45 2.83c-9.07 5.83-14.92 10.05-18.57 13.66-4.31 4.28-4.95 7.13-1.7 8.88 1.7.91 3.29 1.88 5.5 3.3l3.2 2.08c5.64 3.59 9.45 5.25 14.34 5.76 6.13.64 13.32-.9 22.52-5.15 6.46-2.98 20.18-8.35 20.4-8.44 3.04-1.37 5.1-2.71 6.81-4.69v1.47zm0-41.37v1c-6.56.26-12.11 3.13-19.71 9.08l-4.63 3.68a51.87 51.87 0 0 1-4.4 3.14c-.82.52-5.51 3.33-6.22 3.76-3.31 2-6.15 3.8-8.87 5.6a112.61 112.61 0 0 0-8.16 5.92c-4.61 3.72-7.4 6.9-7.97 9.35-.63 2.67 1.48 4.53 7.05 5.46 10.7 1.78 20.92-.05 30.45-4.65a61.96 61.96 0 0 0 17.1-12.2 41.8 41.8 0 0 0 5.36-7.42v1.92a38.94 38.94 0 0 1-4.64 6.19 62.95 62.95 0 0 1-17.39 12.41c-9.7 4.68-20.13 6.55-31.05 4.73-6.06-1-8.65-3.29-7.85-6.67.64-2.74 3.53-6.05 8.31-9.9 2.35-1.9 5.1-3.88 8.24-5.97 2.73-1.82 5.58-3.61 8.9-5.62.72-.44 5.4-3.24 6.22-3.75 1.26-.8 2.6-1.76 4.3-3.09.8-.62 3.9-3.1 4.63-3.67 7.77-6.1 13.49-9.04 20.33-9.3zm0-154.6v1c-1.75-.24-4.3.23-7.82 1.55-10.01 3.75-13.8 5.07-19.15 6.76-1.78.56-2.63.83-3.87 1.24-1.48.5-3.16.76-6.74 1.16a1550.34 1550.34 0 0 0-2.64.3c-7.8.94-11.28 2.47-11.28 6.07 0 4.45 2.89 13.18 7.96 25.81a57.34 57.34 0 0 1 2.33 7.6 258.32 258.32 0 0 1 .84 3.46c1.86 7.62 3.17 10.71 5.56 11.67 2.21.88 4.7.6 7.47-.72 3.48-1.69 7.22-4.94 11.2-9.47 1.52-1.7 2.97-3.49 4.59-5.57l3.16-4.1c2.59-3.23 6.07-12.21 8.39-20.23v3.45c-2.29 7.2-5.27 14.5-7.61 17.41-.44.55-2.67 3.46-3.15 4.09-1.63 2.1-3.1 3.9-4.62 5.62-4.08 4.61-7.9 7.94-11.53 9.7-2.99 1.44-5.77 1.75-8.28.74-2.84-1.13-4.2-4.34-6.15-12.35a2097.48 2097.48 0 0 1-.84-3.46c-.8-3.2-1.47-5.45-2.28-7.46-5.14-12.8-8.04-21.55-8.04-26.19 0-4.37 3.84-6.06 12.16-7.07a160.9 160.9 0 0 1 2.65-.3c3.5-.39 5.15-.64 6.53-1.1 1.26-.42 2.1-.7 3.88-1.26 5.34-1.68 9.11-3 19.1-6.74 3.53-1.32 6.22-1.84 8.18-1.61zM0 292c10.13-11.31 18.13-23.2 23.07-35.39 3.3-8.14 6.09-16.12 10.81-30.55l1.59-4.84c6.53-19.94 10.11-29.82 14.77-39.56 6.07-12.72 12.55-21.18 20.27-25.54 6.66-3.76 10.2-7.86 12.22-13.15a46.6 46.6 0 0 0 1.86-6.58c1.23-5.2 2.05-7.59 3.93-10.36 2.45-3.62 6.27-6.53 12.1-8.96 15.78-6.58 16.73-7.04 18.05-9.01.65-.98.83-2.15.74-4.51-.03-.73-.23-3.82-.24-4A93.8 93.8 0 0 1 119 94c0-10.04.18-11.37 2.37-13.15.52-.42 1.13-.8 2.07-1.3.27-.14 2.18-1.12 2.84-1.48a68.4 68.4 0 0 0 9.12-5.87c2.06-1.54 2.64-2.14 8.01-7.93 3.78-4.09 6.21-6.36 8.96-8.12 3.64-2.33 7.2-3.12 10.9-2.11 4.4 1.2 10.81 2 18.78 2.46 6.9.4 12.9.5 21.95.5 4.87 0 8.97.47 15.4 1.57 7.77 1.33 9.3 1.54 12.38 1.54 4.05 0 7.43-.88 10.68-2.95 5.06-3.22 8.11-4.67 11.2-5.2 3.62-.64 4.77-.46 16.55 2.06 17.26 3.7 30.85 1.36 41.06-9.7 5.1-5.53 5.48-8.9 3.48-14.8-.83-2.42-1.03-3.1-1.17-4.3-.29-2.52.5-4.71 2.71-6.93 2.65-2.65 4.72-9.17 6.22-18.29h2.03c-1.56 9.71-3.77 16.65-6.83 19.7-1.79 1.8-2.36 3.39-2.14 5.28.11 1 .3 1.63 1.07 3.9 2.22 6.53 1.76 10.66-3.9 16.8-10.77 11.66-25.07 14.13-42.95 10.3-11.42-2.45-12.55-2.62-15.78-2.06-2.77.48-5.62 1.84-10.47 4.92a20.93 20.93 0 0 1-11.76 3.27c-3.25 0-4.81-.22-12.73-1.57C212.74 59.46 208.73 59 204 59c-9.1 0-15.11-.1-22.07-.5-8.09-.47-14.62-1.29-19.2-2.54-5.62-1.53-10.17 1.38-17.85 9.66-5.5 5.94-6.08 6.53-8.28 8.18a70.38 70.38 0 0 1-9.38 6.03c-.68.37-2.58 1.35-2.84 1.49-.84.44-1.35.76-1.75 1.08C121.16 83.6 121 84.8 121 94c0 1.85.06 3.54.17 5.44 0 .17.2 3.28.24 4.03.1 2.75-.13 4.29-1.08 5.71-1.67 2.5-2.27 2.8-18.95 9.74-5.48 2.29-8.99 4.96-11.2 8.24-1.71 2.51-2.47 4.73-3.64 9.7-.83 3.5-1.21 4.92-1.94 6.83-2.18 5.73-6.05 10.19-13.1 14.18-7.3 4.12-13.55 12.28-19.46 24.66-4.6 9.64-8.17 19.46-14.67 39.32l-1.58 4.84c-4.75 14.47-7.54 22.48-10.86 30.69-5.28 13.01-13.95 25.65-24.93 37.6v-2.97z'%3E%3C/path%3E%3C/svg%3E")`;
+
+  return (
+    <section
+      className="relative overflow-hidden min-h-screen flex items-center pt-[68px]"
+      style={{
+        backgroundColor: "#fffbf6",
+        backgroundImage: svgBg,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <style>{`
-        .tower-col { perspective: 1200px; }
-        .tower-col-inner { 
-          transform-style: preserve-3d; 
-          animation: tower-rotate 60s linear infinite;
+        @keyframes carousel-up {
+          0%   { transform: translateY(0); }
+          100% { transform: translateY(-50%); }
         }
-        @keyframes tower-rotate {
-          0% { transform: rotateY(0deg); }
-          50% { transform: rotateY(15deg) rotateX(5deg); }
-          100% { transform: rotateY(0deg); }
+        @keyframes carousel-up-reverse {
+          0%   { transform: translateY(-50%); }
+          100% { transform: translateY(0); }
         }
-        .tower-col-inner img { 
-          transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          backface-visibility: hidden;
+        .carousel-up {
+          animation: carousel-up linear infinite;
         }
-        .tower-col-inner img:hover { transform: scale(1.05) translateZ(30px); box-shadow: 0 20px 60px rgba(0,0,0,.2); z-index: 50; }
-        .tower-stack { display: flex; flex-direction: column; }
-        @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(2deg); }
+        .carousel-up-reverse {
+          animation: carousel-up-reverse linear infinite;
         }
+        @keyframes hero-fadein {
+          from { opacity: 0; transform: translateY(24px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .hero-fadein { animation: hero-fadein 0.7s ease forwards; }
       `}</style>
 
-      <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "linear-gradient(#1A1A1A 1px, transparent 1px), linear-gradient(90deg, #1A1A1A 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
-
       <div className="relative z-10 max-w-7xl mx-auto px-5 py-16 lg:py-24 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div style={{ animation: "slideUp 0.6s ease forwards" }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-8 lg:gap-12 items-center">
+
+          {/* ── Colonne gauche : carousel descendant ── */}
+          <div className="hidden lg:block" style={{ marginTop: "60px" }}>
+            <VerticalImgCarousel
+              items={docImagesLeft}
+              duration={34}
+              reversed={false}
+            />
+          </div>
+
+          {/* ── Centre : copy ── */}
+          <div className="hero-fadein text-center mx-auto max-w-xl">
             <div className="inline-flex items-center gap-2.5 px-4 py-2 bg-primary/15 border border-primary/20 rounded-full mb-8">
-              <span className="w-2 h-2 rounded-full bg-primary" style={{ animation: "pulse-dot 2s ease-in-out infinite" }} />
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               <span className="text-xs font-bold text-primary uppercase tracking-widest">{t("hero_badge")}</span>
             </div>
 
             <h1 className="font-bricolage text-[2.2rem] sm:text-[2.6rem] lg:text-[3.2rem] font-extrabold text-textMain leading-tight tracking-normal mb-8">
               {t("hero_title_1")}<br />
               {t("hero_title_2")}<br />
-              <span className="gradient-text" style={{
+              <span style={{
                 background: "linear-gradient(90deg, #E8923A, #FFD580, #E8923A)",
                 backgroundSize: "200% auto",
                 WebkitBackgroundClip: "text",
@@ -165,57 +258,45 @@ function HeroSection({ t }) {
               }}>{t("hero_title_3")}</span>
             </h1>
 
-            <p className="text-textMuted text-[15px] leading-loose mb-10 max-w-lg tracking-wide">{t("hero_desc")}</p>
+            <p className="text-textMuted text-[15px] leading-loose mb-10 tracking-wide">{t("hero_desc")}</p>
 
-            <div className="flex flex-wrap items-center gap-4 mb-12">
-              <Link to="/login"
+            <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
+              <Link
+                to="/login"
                 className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary text-white rounded-[18px] font-black text-[15px] shadow-xl shadow-primary/40 hover:bg-primary-dark transition-all hover:-translate-y-1 active:scale-95"
               >
                 <i className="fa-solid fa-file-circle-plus" /> {t("btn_declare_loss")}
               </Link>
-              <Link to="/rechercher"
-                className="inline-flex items-center gap-2.5 px-8 py-4 bg-white border border-borda text-textMain rounded-[18px] font-bold text-[15px] hover:bg-white/80 transition-all hover:-translate-y-1 active:scale-95 shadow-sm"
+              <Link
+                to="/rechercher"
+                className="inline-flex items-center gap-2.5 px-8 py-4 bg-white border border-borderMain text-textMain rounded-[18px] font-bold text-[15px] hover:bg-white/80 transition-all hover:-translate-y-1 active:scale-95 shadow-sm"
               >
                 <i className="fa-solid fa-magnifying-glass" /> {t("btn_search")}
               </Link>
             </div>
 
-            <div className="flex flex-wrap items-center gap-6">
+            <div className="flex flex-wrap items-center justify-center gap-6">
               <MiniStat icon="fa-solid fa-file-lines" value="2 847" label={t("home_mini_declared")} />
-              <div className="w-px h-8 bg-borda" />
+              <div className="w-px h-8 bg-borderMain" />
               <MiniStat icon="fa-solid fa-search" value="2 156" label={t("home_mini_found")} />
-              <div className="w-px h-8 bg-borda" />
+              <div className="w-px h-8 bg-borderMain" />
               <MiniStat icon="fa-solid fa-users" value="1 523" label={t("home_mini_members")} />
             </div>
           </div>
 
-          <div className="relative hidden lg:flex items-center justify-center min-h-[500px] overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-80 h-80 rounded-full bg-primary/10 blur-3xl" />
-            </div>
-            <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden" >
-              <div className="grid grid-cols-2 gap-8 auto-rows-max" style={{ perspective: "1500px" }}>
-                <div className="flex flex-col gap-6 tower-col">
-                  <div className="tower-col-inner tower-stack">
-                    <img src="/src/assets/images/images.jpg" className="w-full h-auto max-w-[240px] object-cover rounded-[24px] shadow-xl border-4 border-white/10" alt="Document CNI" />
-                    <img src="/src/assets/images/1.png" className="w-full h-auto max-w-[240px] object-cover rounded-[24px] shadow-xl border-4 border-white/10" alt="Document" />
-                    <img src="/src/assets/images/permis.jpg" className="w-full h-auto max-w-[240px] object-contain rounded-[24px] shadow-xl border-4 border-white/10" alt="Document Passeport"/>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-6 mt-20 tower-col">
-                  <div className="tower-col-inner tower-stack" >
-                    <img src="/src/assets/images/passport.png" className="w-full h-auto max-w-[240px] object-cover rounded-[24px] shadow-xl border-4 border-white/10" alt="Document Passeport"/>
-                    <img src="/src/assets/images/cni-poubelle.jpeg" className="w-full h-auto max-w-[240px] object-cover rounded-[24px] shadow-xl border-4 border-white/10" alt="Document" />
-                    <img src="/src/assets/images/bacc.png" className="w-full h-auto max-w-[240px] object-contain rounded-[24px] shadow-xl border-4 border-white/10" alt="Document" />
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* ── Colonne droite : carousel montant ── */}
+          <div className="hidden lg:block" style={{ marginTop: "-40px" }}>
+            <VerticalImgCarousel
+              items={docImagesRight}
+              duration={28}
+              reversed={true}
+            />
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 animate-bounce">
+      {/* scroll cue */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-textMuted/40 animate-bounce">
         <span className="text-[10px] font-bold uppercase tracking-widest">{t("home_how_title")}</span>
         <i className="fa-solid fa-chevron-down text-xs" />
       </div>
@@ -237,91 +318,202 @@ function MiniStat({ icon, value, label }) {
   );
 }
 
-const recentDocuments = [
-  {
-    id: 1,
-    titre: "Carte D'identité",
-    date_retrouve: "13/08/2025",
-    statut: "RÉCENT",
-    priorite: 1,
-    proprietaire: "Jean Dupont",
-    retrouve_par: "Pierre Martin",
-    pourcentage_restitution: 50,
-    image_url: "/src/assets/images/images.jpg",
-  },
-  {
-    id: 2,
-    titre: "Passeport",
-    date_retrouve: "15/08/2025",
-    statut: "RÉCENT",
-    priorite: 2,
-    proprietaire: "Awa Traoré",
-    retrouve_par: "Koffi Paul",
-    pourcentage_restitution: 80,
-    image_url: "/src/assets/images/passport.png",
-  },
-  {
-    id: 3,
-    titre: "Acte de naissance",
-    date_retrouve: "10/08/2025",
-    statut: "RÉCENT",
-    priorite: 3,
-    proprietaire: "Marie Curie",
-    retrouve_par: "Albert Einstein",
-    pourcentage_restitution: 90,
-    image_url: "/src/assets/images/1.png",
-  },
-];
+
+interface RecentDoc {
+  id: string | number;
+  score?: number;
+  type_doc?: string;
+  document_type?: string;
+  doc_type?: string;
+  nom_sur_doc?: string;
+  owner_name?: string;
+  document_owner?: string;
+  numero_doc?: string;
+  document_number?: string;
+  photo_recto?: string;
+  photo?: string;
+  image_url?: string;
+  created_at?: string;
+  location?: string;
+  ville?: string;
+  city?: string;
+  pays?: string;
+  country?: string;
+  declaration_id?: string;
+  counterPart?: boolean;
+}
 
 function RecentDocsSection({ t }) {
-  const [docs] = useState(recentDocuments);
+  const [docs, setDocs] = useState<RecentDoc[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE}declarations/search-public`, { headers: { Accept: "application/json" } })
+      .then((r) => r.json())
+      .then((data) => setDocs((data.data || []).slice(0, 6)))
+      .catch(() => setDocs([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const getDocType = (doc: RecentDoc) =>
+    doc.document_type || doc.type_doc || doc.doc_type || t("rechercher_document");
+  const getOwnerName = (doc: RecentDoc) =>
+    doc.document_owner || doc.owner_name || doc.nom_sur_doc || t("rechercher_owner_unknown");
+  const getPhoto = (doc: RecentDoc) => doc.photo_recto || doc.photo || doc.image_url || "";
+  const getLocation = (doc: RecentDoc) =>
+    doc.location || doc.ville || doc.city || t("rechercher_location_unknown");
+  const getDate = (doc: RecentDoc) =>
+    doc.created_at ? new Date(doc.created_at).toLocaleDateString("fr-FR") : new Date().toLocaleDateString("fr-FR");
+  const getDocNumber = (doc: RecentDoc) =>
+    doc.numero_doc || doc.document_number || t("rechercher_number_unavailable");
+  const hasDeclaration = (doc: RecentDoc) =>
+    Boolean(doc.document_owner || doc.owner_name || doc.declaration_id || doc.counterPart);
+  const getScore = (doc: RecentDoc) => Math.round((doc.score || 0) * 100);
 
   return (
-    <section id="recent-docs" className="py-20 px-5">
+    <section id="recent-docs" className="py-20 px-5" style={{ backgroundColor: "#fffbf6" }}>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
             <i className="fa-solid fa-clock-rotate-left text-[10px]" /> {t("home_recent_badge")}
           </span>
-          <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">{t("home_recent_title")}</h2>
-          <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">{t("home_recent_desc")}</p>
+          <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">
+            {t("home_recent_title")}
+          </h2>
+          <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">
+            {t("home_recent_desc")}
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {docs.map((doc) => (
-            <div key={doc.id} className="bg-white border border-borda rounded-[20px] overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group">
-              <div className="relative h-44 overflow-hidden bg-gray-100">
-                <img src={doc.image_url} alt={doc.titre} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute top-3 right-3 bg-primary text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest shadow-lg">
-                  {doc.statut}
-                </div>
-                <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-[11px] font-bold text-textMain shadow-sm">
-                  <i className="fa-solid fa-calendar text-primary text-[10px] mr-1.5" />{doc.date_retrouve}
-                </div>
+        {/* Skeleton */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-[24px] p-5 border border-borderMain">
+                <div className="h-48 w-full mb-4 rounded-xl bg-borderMain animate-pulse" />
+                <div className="h-3 w-3/4 mb-2 rounded bg-borderMain animate-pulse" />
+                <div className="h-3 w-1/2 mb-4 rounded bg-borderMain animate-pulse" />
+                <div className="h-10 w-full rounded-xl bg-borderMain animate-pulse" />
               </div>
-              <div className="p-5">
-                <h3 className="font-bricolage text-[16px] font-black text-textMain mb-1">{doc.titre}</h3>
-                <div className="flex items-center gap-1.5 text-[12px] text-textMuted mb-3">
-                  <i className="fa-solid fa-user text-primary text-[10px]" />
-                  <span className="font-semibold">{doc.proprietaire}</span>
-                  <span className="mx-1">·</span>
-                  <i className="fa-solid fa-hand-holding-heart text-primary text-[10px]" />
-                  <span>{doc.retrouve_par}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all duration-1000"
-                      style={{ width: `${doc.pourcentage_restitution}%` }}
-                    />
+            ))}
+          </div>
+        )}
+
+        {/* Grille — cartes identiques à la page Rechercher */}
+        {!loading && docs.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {docs.map((doc, i) => {
+              const score = getScore(doc);
+              const photo = getPhoto(doc);
+              const docType = getDocType(doc);
+              const ownerName = getOwnerName(doc);
+              const dateText = getDate(doc);
+              const locationText = getLocation(doc);
+              const docNumber = getDocNumber(doc);
+              const hasDecl = hasDeclaration(doc);
+
+              if (!hasDecl) {
+                return (
+                  <div
+                    key={doc.id}
+                    className="group bg-white border border-borderMain rounded-[24px] overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
+                    style={{ animationDelay: `${i * 50}ms` }}
+                  >
+                    <div className="relative h-40 bg-surface2 flex items-center justify-center overflow-hidden">
+                      <ProtectedDocumentImage
+                        src={photo ? getFullImageUrl(photo) : undefined}
+                        revealed={false}
+                        className="relative w-full h-full overflow-hidden"
+                        imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        loginUrl="/connexion"
+                        lockLabelKey="rechercher_public_locked"
+                        lockHintKey="rechercher_public_locked_hint"
+                      />
+                      <div className="absolute top-3 left-3">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase border border-borderMain text-textMain">
+                          <i className="fa-solid fa-shield-halved text-primary" /> {docType}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t("rechercher_document")}</span>
+                        <span className="text-[10px] font-bold text-textMain">{dateText}</span>
+                      </div>
+                      <h3 className="font-bricolage font-bold text-textMain text-[17px] mb-3">{docType}</h3>
+                      <div className="text-[13px] text-textMuted mb-4">
+                        <i className="fa-solid fa-location-dot text-primary mr-2" />
+                        <span className="font-medium">{locationText}</span>
+                      </div>
+                      <Link to={`/recuperer?id=${doc.id}`}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md"
+                      >
+                        {t("rechercher_view_details")}
+                      </Link>
+                    </div>
                   </div>
-                  <span className="text-[11px] font-black text-primary whitespace-nowrap">{doc.pourcentage_restitution}%</span>
+                );
+              }
+
+              return (
+                <div
+                  key={doc.id}
+                  className="group bg-white border border-borderMain rounded-[24px] overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  <div className="relative h-48 bg-surface2 overflow-hidden">
+                    <ProtectedDocumentImage
+                      src={photo ? getFullImageUrl(photo) : undefined}
+                      revealed={false}
+                      className="relative w-full h-full overflow-hidden"
+                      imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      loginUrl="/connexion"
+                    />
+                    <div className="absolute top-3 left-3">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase border border-borderMain text-textMain">
+                        <i className="fa-solid fa-shield-halved text-primary" /> {docType}
+                      </span>
+                    </div>
+                    {score > 30 && (
+                      <div className="absolute bottom-[-10px] left-1/2 -translate-x-1/2 bg-primary text-white font-extrabold text-[10px] px-2 py-0.5 rounded-md shadow-lg z-10">
+                        {score}% MATCH
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t("rechercher_found_doc")}</span>
+                      <span className="text-[10px] font-bold text-textMain">{dateText}</span>
+                    </div>
+                    <h3 className="font-bricolage font-bold text-textMain text-[17px] mb-4">{ownerName}</h3>
+                    <div className="space-y-2 mb-4">
+                      <p className="text-[12px] text-textMuted flex items-center gap-1.5">
+                        <i className="fa-solid fa-hashtag text-[10px] text-primary/50" />
+                        <span className="blur-sm select-none font-mono text-[11px] opacity-80 pointer-events-none">{docNumber}</span>
+                      </p>
+                      <div className="flex items-center gap-2 py-2 border-y border-borderMain/50">
+                        <i className="fa-solid fa-location-dot text-primary text-[11px]" />
+                        <span className="blur-sm select-none text-[12px] font-medium opacity-80 pointer-events-none">{locationText}</span>
+                      </div>
+                    </div>
+                    <Link to={`/recuperer?id=${doc.id}`}
+                      className="flex items-center justify-center gap-2 w-full py-3 bg-primary text-white rounded-[14px] font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md shadow-primary/20 active:scale-95"
+                    >
+                      <i className="fa-solid fa-hand-holding-heart text-xs" /> {t("rechercher_its_mine")}
+                    </Link>
+                  </div>
                 </div>
-                <p className="text-[10px] text-textMuted mt-1 font-medium">{t("home_recent_desc")}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && docs.length === 0 && (
+          <div className="text-center py-16 text-textMuted">
+            <i className="fa-solid fa-inbox text-4xl mb-4 block opacity-30" />
+            <p className="text-[14px]">{t("rechercher_no_results")}</p>
+          </div>
+        )}
 
         <div className="text-center mt-12">
           <Link to="/rechercher"
@@ -336,53 +528,162 @@ function RecentDocsSection({ t }) {
 }
 
 function HowItWorksSection({ t }) {
-  return (
-    <section className="py-20 px-5 bg-bgMain relative overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(#1A1A1A 1px, transparent 1px), linear-gradient(90deg, #1A1A1A 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+  const howSteps = [
+    {
+      num: 1,
+      titleKey: "home_how_step1_title",
+      descKey: "home_how_step1_desc",
+      // Screenshot-style illustration: login/declare page
+      illustration: (
+        <div className="w-full h-full flex items-center justify-center p-4">
+          <div className="w-full max-w-[220px] rounded-2xl overflow-hidden shadow-lg border border-borderMain bg-white">
+            <div className="bg-primary/10 px-4 pt-5 pb-2 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary/40" />
+              <div className="w-2 h-2 rounded-full bg-primary/30" />
+              <div className="w-2 h-2 rounded-full bg-primary/20" />
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                  <i className="fa-solid fa-file-lines text-primary text-[9px]" />
+                </div>
+                <div className="h-2.5 bg-textMain/10 rounded-full w-20" />
+              </div>
+              <div className="h-2 bg-borderMain rounded-full w-full" />
+              <div className="h-2 bg-borderMain rounded-full w-4/5" />
+              <div className="h-7 bg-primary/15 rounded-xl w-full mt-2" />
+              <div className="h-7 bg-borderMain rounded-xl w-full" />
+              <div className="h-8 bg-primary rounded-xl w-full mt-1 flex items-center justify-center">
+                <div className="h-2 bg-white/60 rounded-full w-16" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      num: 2,
+      titleKey: "home_how_step2_title",
+      descKey: "home_how_step2_desc",
+      // Notification / match illustration
+      illustration: (
+        <div className="w-full h-full flex items-center justify-center p-4">
+          <div className="relative flex flex-col items-center gap-3 w-full max-w-[200px]">
+            {/* Big match badge */}
+            <div className="w-24 h-24 rounded-3xl bg-green-light flex items-center justify-center shadow-md border border-borderMain">
+              <i className="fa-solid fa-check-circle text-green-mid text-4xl" />
+            </div>
+            {/* Notification card */}
+            <div className="w-full bg-white border border-borderMain rounded-2xl p-3 shadow-sm flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i className="fa-solid fa-bell text-primary text-[11px]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="h-2 bg-textMain/15 rounded-full w-3/4 mb-1.5" />
+                <div className="h-1.5 bg-borderMain rounded-full w-full mb-1" />
+                <div className="h-1.5 bg-borderMain rounded-full w-2/3" />
+              </div>
+            </div>
+            {/* Email badge */}
+            <div className="flex items-center gap-2 bg-white border border-borderMain rounded-full px-3 py-1.5 shadow-sm">
+              <i className="fa-solid fa-envelope text-primary text-[10px]" />
+              <div className="h-1.5 bg-borderMain rounded-full w-16" />
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      num: 3,
+      titleKey: "home_how_step3_title",
+      descKey: "home_how_step3_desc",
+      // Document recovery / ID card illustration
+      illustration: (
+        <div className="w-full h-full flex items-center justify-center p-4">
+          <div className="w-full max-w-[200px] space-y-3">
+            {/* ID card mock */}
+            <div className="w-full rounded-2xl bg-white border border-borderMain shadow-md overflow-hidden">
+              <div className="bg-primary/10 px-3 py-2 flex items-center gap-2">
+                <i className="fa-solid fa-id-card text-primary text-[11px]" />
+                <div className="h-1.5 bg-primary/30 rounded-full w-20" />
+              </div>
+              <div className="p-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-textMuted/10 flex items-center justify-center flex-shrink-0">
+                  <i className="fa-solid fa-user text-textMuted text-sm" />
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-2 bg-textMain/15 rounded-full w-3/4" />
+                  <div className="h-1.5 bg-borderMain rounded-full w-full" />
+                  <div className="h-1.5 bg-borderMain rounded-full w-1/2" />
+                </div>
+              </div>
+            </div>
+            {/* Verified badge */}
+            <div className="flex items-center gap-2 bg-green-light border border-borderMain rounded-xl px-3 py-2">
+              <i className="fa-solid fa-circle-check text-green-mid text-sm" />
+              <div className="h-1.5 bg-green-mid/30 rounded-full flex-1" />
+              <div className="text-[9px] font-black text-green-mid whitespace-nowrap">98%</div>
+            </div>
+            {/* QR code mock */}
+            <div className="w-full rounded-xl border border-borderMain bg-white p-2 flex items-center gap-2.5 shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-textMain/5 grid grid-cols-3 gap-0.5 p-1 flex-shrink-0">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className={`rounded-[1px] ${[0,1,3,4,5,8].includes(i) ? "bg-textMain/40" : "bg-transparent"}`} />
+                ))}
+              </div>
+              <div className="flex-1 space-y-1">
+                <div className="h-1.5 bg-textMain/15 rounded-full w-3/4" />
+                <div className="h-1.5 bg-borderMain rounded-full w-1/2" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+  ];
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-bold uppercase tracking-widest mb-5 border border-primary/20">
-            <i className="fa-solid fa-route text-[10px]" /> {t("home_how_badge")}
-          </span>
-          <h2 className="font-bricolage text-2xl md:text-3xl font-extrabold text-textMain tracking-normal mb-4">{t("home_how_title")}</h2>
-          <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">{t("home_how_desc")}</p>
+  return (
+    <section className="py-24 px-5 bg-white">
+      <div className="max-w-6xl mx-auto">
+
+        {/* Header — centré, épuré comme la référence */}
+        <div className="text-center mb-16 max-w-xl mx-auto">
+          <h2 className="font-bricolage text-[2rem] md:text-[2.6rem] font-extrabold text-textMain leading-tight mb-5">
+            {t("home_how_title")}
+          </h2>
+          <p className="text-textMuted text-[15px] leading-relaxed">
+            {t("home_how_desc")}
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((step, i) => (
-            <div key={i} className="relative">
-              <div className="bg-white border border-borda rounded-[24px] p-8 hover:bg-primary/5 transition-all group shadow-sm">
-                <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center font-bricolage text-2xl font-black mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-primary/20">
-                  {step.num}
-                </div>
-                <h3 className="font-bricolage text-lg font-bold text-textMain mb-3">{t(step.titleKey)}</h3>
-                <p className="text-textMuted text-[13px] leading-relaxed">{t(step.descKey)}</p>
+        {/* 3 cards horizontales */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {howSteps.map((step) => (
+            <div key={step.num} className="flex flex-col">
+              {/* Illustration area — fond légèrement coloré */}
+              <div
+                className="rounded-[24px] overflow-hidden mb-5"
+                style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #fef3e2 100%)", minHeight: 220 }}
+              >
+                {step.illustration}
               </div>
-            {i < steps.length - 1 && (
-  <div className="hidden lg:block absolute top-[60px] -translate-y-1/2 -right-8 w-9 h-7 z-10">
-    <svg width="36" height="28" viewBox="0 0 36 28" className="text-primary">
-      <line x1="0" y1="14" x2="26" y2="14" stroke="currentColor" strokeWidth="2" strokeDasharray="5 5" />
-      <path d="M 22 7 L 33 14 L 22 21" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  </div>
-)}
+
+              {/* Number + title + desc */}
+              <div className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 text-primary text-[13px] font-black flex items-center justify-center mt-0.5">
+                  {step.num}
+                </span>
+                <div>
+                  <h3 className="font-bricolage text-[16px] font-bold text-textMain mb-1.5">
+                    {t(step.titleKey)}
+                  </h3>
+                  <p className="text-textMuted text-[13px] leading-relaxed">
+                    {t(step.descKey)}
+                  </p>
+                </div>
+              </div>
             </div>
           ))}
-        </div>
-
-        <div className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/login"
-            className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary text-white rounded-[18px] font-black text-[15px] shadow-xl shadow-primary/30 hover:bg-primary-dark transition-all hover:-translate-y-1"
-          >
-            <i className="fa-solid fa-file-circle-plus" /> {t("home_how_btn_loss")}
-          </Link>
-          <Link to="/trouver"
-            className="inline-flex items-center gap-2.5 px-8 py-4 bg-white border border-borda text-textMain rounded-[18px] font-bold text-[15px] hover:bg-primary/5 transition-all hover:-translate-y-1 shadow-sm"
-          >
-            <i className="fa-solid fa-hand-holding-heart" /> {t("home_how_btn_found")}
-          </Link>
         </div>
       </div>
     </section>
@@ -493,95 +794,34 @@ function VaultIllustration() {
 
 function VaultDeviceSection({ t }) {
   return (
-    <section className="py-20 px-5 relative overflow-hidden bg-white">
-      <div className="relative z-10 max-w-7xl mx-auto">
-        <div className="p-8 md:p-14 lg:px-0 lg:py-20 overflow-hidden relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center relative z-10">
+    <section className="py-16 px-4 bg-bgMain">
+      <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {/* Carte 1 - Appareil */}
+          <div className="bg-white rounded-2xl border border-borderMain p-8 flex flex-col justify-between min-h-[220px]">
             <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full mb-6 border border-primary/10 shadow-sm">
-                <span className="flex h-2.5 w-2.5 relative">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" style={{ animation: "ping 1s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
-                </span>
-                <span className="text-xs font-black text-secondary uppercase tracking-widest">{t("home_vault_badge")}</span>
-              </div>
-
-              <h2 className="font-bricolage text-2xl md:text-4xl font-black text-[#1A1A1A] leading-tight mb-8 tracking-normal">
-                {t("home_vault_title")}
-              </h2>
-
-              <p className="text-gray-600 text-[15px] leading-loose tracking-wide mb-8">{t("home_vault_desc")}</p>
-
-              <ul className="space-y-4 mb-10">
-                <li className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-orange-100 text-primary flex items-center justify-center flex-shrink-0 mt-1">
-                    <i className="fa-solid fa-laptop-mobile" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-[#1A1A1A]">{t("home_vault_feature1_title")}</h4>
-                    <p className="text-sm text-gray-500 mt-1">{t("home_vault_feature1_desc")}</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-green-100 text-green-700 flex items-center justify-center flex-shrink-0 mt-1">
-                    <i className="fa-solid fa-file-shield" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-[#1A1A1A]">{t("home_vault_feature2_title")}</h4>
-                    <p className="text-sm text-gray-500 mt-1">{t("home_vault_feature2_desc")}</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
-                    <i className="fa-solid fa-qrcode" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-[#1A1A1A]">{t("home_device_feature1_title")}</h4>
-                    <p className="text-sm text-gray-500 mt-1">{t("home_device_feature1_desc")}</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-red-100 text-red-500 flex items-center justify-center flex-shrink-0 mt-1">
-                    <i className="fa-solid fa-triangle-exclamation" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-[#1A1A1A]">{t("home_device_feature2_title")}</h4>
-                    <p className="text-sm text-gray-500 mt-1">{t("home_device_feature2_desc")}</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-green-100 text-green-700 flex items-center justify-center flex-shrink-0 mt-1">
-                    <i className="fa-solid fa-bell" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-[#1A1A1A]">{t("home_device_feature3_title")}</h4>
-                    <p className="text-sm text-gray-500 mt-1">{t("home_device_feature3_desc")}</p>
-                  </div>
-                </li>
-              </ul>
-
-              <Link to="/login"
-                className="inline-flex items-center gap-3 px-8 py-4 bg-green-dark text-white rounded-2xl font-bold hover:bg-green-mid transition-all shadow-lg hover:-translate-y-1"
-              >
-                <i className="fa-solid fa-vault" /> {t("home_vault_btn")}
-              </Link>
+              <h3 className="text-xl font-semibold text-textMain mb-3">{t('home_device_card_title')}</h3>
+              <p className="text-sm text-textMuted leading-relaxed">{t('home_device_card_description')}</p>
             </div>
-
-            <div className="relative flex justify-center lg:justify-end items-center">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-64 h-64 bg-primary/20 rounded-full blur-[60px] animate-pulse" />
-              </div>
-              <div className="relative z-10 w-full max-w-md lg:max-w-lg mb-4 lg:mb-0" style={{ filter: "drop-shadow(0 30px 40px rgba(0,0,0,0.15))" }}>
-                <VaultIllustration />
-                <div className="absolute top-4 -left-4 md:-left-8 bg-white border border-borda rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3 z-20">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><i className="fa-solid fa-check text-primary text-[10px]" /></div>
-                  <div><p className="text-[10px] font-black text-textMain">{t("home_vault_imei_verified")}</p><p className="text-[9px] text-textMuted">{t("home_vault_secure")}</p></div>
-                </div>
-                <div className="absolute bottom-10 -right-4 md:-right-8 bg-white border border-borda rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3 z-20">
-                  <div className="w-8 h-8 rounded-full bg-green-light flex items-center justify-center"><i className="fa-solid fa-lock text-green-dark text-[10px]" /></div>
-                  <div><p className="text-[10px] font-black text-textMain">{t("home_vault_encrypted")}</p><p className="text-[9px] text-textMuted">{t("home_vault_private")}</p></div>
-                </div>
-              </div>
+            <div className="flex items-end justify-between mt-6">
+              <a href="#" className="text-sm text-green-dark font-medium hover:underline">
+                {t('home_device_card_cta')} →
+              </a>
+              <i className="fa-solid fa-mobile-screen-button text-green-dark text-4xl opacity-20" />
+            </div>
+          </div>
+          
+          {/* Carte 2 - Documents */}
+          <div className="bg-white rounded-2xl border border-borderMain p-8 flex flex-col justify-between min-h-[220px]">
+            <div>
+              <h3 className="text-xl font-semibold text-textMain mb-3">{t('home_docs_card_title')}</h3>
+              <p className="text-sm text-textMuted leading-relaxed">{t('home_docs_card_description')}</p>
+            </div>
+            <div className="flex items-end justify-between mt-6">
+              <a href="#" className="text-sm font-medium hover:underline" style={{color: '#F5A64B'}}>
+                {t('home_docs_card_cta')} →
+              </a>
+              <i className="fa-solid fa-share-nodes text-4xl opacity-20" style={{color: '#F5A64B'}} />
             </div>
           </div>
         </div>
@@ -781,54 +1021,43 @@ function StatsSection({ t, statCounters }) {
 /* ═══ Wallet / Rewards Section ═══ */
 
 function WalletRewardsSection({ t }) {
-  const rewards = [
-    { icon: "fa-solid fa-hand-holding-heart", color: "text-primary", bg: "bg-primary/10", titleKey: "home_wallet_feature1_title", descKey: "home_wallet_feature1_desc" },
-    { icon: "fa-solid fa-star", color: "text-amber-500", bg: "bg-amber-50", titleKey: "home_wallet_feature2_title", descKey: "home_wallet_feature2_desc" },
-    { icon: "fa-solid fa-coins", color: "text-green-mid", bg: "bg-green-light", titleKey: "home_wallet_feature3_title", descKey: "home_wallet_feature3_desc" },
-    { icon: "fa-solid fa-arrow-right-from-bracket", color: "text-blue-500", bg: "bg-blue-50", titleKey: "home_wallet_feature4_title", descKey: "home_wallet_feature4_desc" },
+  const steps = [
+    { icon: "fa-solid fa-file-circle-plus", titleKey: "home_wallet_step1_title", descKey: "home_wallet_step1_desc" },
+    { icon: "fa-solid fa-handshake", titleKey: "home_wallet_step2_title", descKey: "home_wallet_step2_desc" },
+    { icon: "fa-solid fa-wallet", titleKey: "home_wallet_step3_title", descKey: "home_wallet_step3_desc" },
   ];
 
   return (
-    <section className="py-20 px-5 bg-bgMain relative overflow-hidden">
+    <section className="py-16 px-5 bg-bgMain relative overflow-hidden">
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(#1A1A1A 1px, transparent 1px), linear-gradient(90deg, #1A1A1A 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
-      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        <div className="text-center mb-14">
+      <div className="relative z-10 max-w-5xl mx-auto">
+        <div className="text-center mb-8">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
             <i className="fa-solid fa-sack-dollar text-[10px]" /> {t("home_wallet_badge")}
           </span>
           <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">{t("home_wallet_title")}</h2>
-          <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">{t("home_wallet_desc")}</p>
+          <p className="text-textMuted text-[14px] leading-relaxed max-w-xl mx-auto tracking-wide">{t("home_wallet_desc")}</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-14">
-          {rewards.map((r, i) => (
-            <div key={i} className="bg-white border border-borda rounded-[24px] p-7 hover:shadow-lg hover:-translate-y-1 transition-all group">
-              <div className={`w-12 h-12 rounded-2xl ${r.bg} ${r.color} flex items-center justify-center text-xl mb-5 group-hover:scale-110 transition-transform`}>
-                <i className={r.icon} />
+        <div className="bg-white border border-borda rounded-[24px] p-6 md:p-8 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {steps.map((s, i) => (
+              <div key={i}>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="font-bricolage text-[13px] font-black text-primary">0{i + 1}</span>
+                  <i className={`${s.icon} text-textMuted text-sm`} />
+                </div>
+                <h3 className="font-bricolage text-[15px] font-bold text-textMain mb-1">{t(s.titleKey)}</h3>
+                <p className="text-textMuted text-[13px] leading-relaxed">{t(s.descKey)}</p>
               </div>
-              <h3 className="font-bricolage text-[16px] font-bold text-textMain mb-2">{t(r.titleKey)}</h3>
-              <p className="text-textMuted text-[13px] leading-relaxed">{t(r.descKey)}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <div className="bg-green-dark rounded-[24px] p-8 md:p-10 shadow-xl relative overflow-hidden">
-          <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute -left-8 -top-8 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-5">
-              <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-green-dark text-2xl flex-shrink-0 shadow-lg">
-                <i className="fa-solid fa-percent" />
-              </div>
-              <div>
-                <h3 className="font-bricolage text-xl md:text-2xl font-black text-white">{t("home_wallet_bonus_title")}</h3>
-                <p className="text-white/60 text-[13px] mt-1">{t("home_wallet_bonus_desc")}</p>
-              </div>
-            </div>
+          <div className="mt-7 pt-6 border-t border-borda flex flex-col sm:flex-row items-center justify-between gap-5">
+            <p className="text-textMuted text-[12px] leading-relaxed text-center sm:text-left max-w-md">{t("home_wallet_footnote")}</p>
             <Link to="/login"
-              className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary text-green-dark rounded-[18px] font-black text-[15px] hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 flex-shrink-0"
+              className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-green-dark text-white rounded-[18px] font-black text-[14px] hover:bg-green-mid transition-all flex-shrink-0"
             >
               {t("home_wallet_btn")} <i className="fa-solid fa-arrow-right text-[11px]" />
             </Link>
@@ -1128,40 +1357,80 @@ function PartnersSection({ t }) {
 
 function AppDownloadSection({ t }) {
   return (
-    <section className="relative overflow-hidden" style={{ backgroundColor: "#F4EFE6" }}>
-      <div className="absolute inset-0" style={{ backgroundImage: "url('/src/assets/images/favicon.png')", backgroundRepeat: "repeat", backgroundSize: "32px 32px", opacity: 0.07, filter: "grayscale(1)" }} />
-      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 30% 50%, rgba(244,239,230,0.7) 0%, rgba(244,239,230,0.4) 100%)" }} />
+    <section className="py-16 px-5" style={{ backgroundColor: "#fffbf6" }}>
+      <div className="max-w-5xl mx-auto">
+        {/* Grande card arrondie fond primary-dark, comme la référence */}
+        <div
+          className="relative overflow-hidden rounded-[32px] px-10 md:px-16 pt-12 pb-0"
+          style={{ backgroundColor: "#2D5A42" }}
+        >
+          {/* Halo décoratif */}
+          <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
+          <div className="absolute top-10 right-80 w-32 h-32 rounded-full bg-primary/10 pointer-events-none" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-5 py-20 lg:py-28">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/15 border border-primary/20 rounded-full mb-8">
-              <i className="fa-solid fa-mobile-screen text-primary text-xs" />
-              <span className="text-xs font-black text-primary/90 uppercase tracking-widest">{t("home_app_badge")}</span>
-            </div>
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
 
-            <h2 className="font-bricolage text-3xl md:text-4xl lg:text-[2.8rem] font-black text-[#1A1A1A] leading-tight tracking-normal mb-8" dangerouslySetInnerHTML={{ __html: t("home_app_title") }} />
+            {/* Texte gauche */}
+            <div className="pb-12">
+              <h2
+                className="font-bricolage text-[1.9rem] md:text-[2.4rem] font-extrabold text-white leading-tight mb-5"
+                dangerouslySetInnerHTML={{ __html: t("home_app_title") }}
+              />
+              <p className="text-white/60 text-[14px] leading-relaxed mb-8 max-w-xs">
+                {t("home_app_desc")}
+              </p>
 
-            <p className="text-[#1A1A1A]/60 text-[15px] leading-loose tracking-wide mb-10 max-w-md">{t("home_app_desc")}</p>
-
-            <div className="flex flex-col sm:flex-row gap-3 mb-10">
-              <StoreBadge t={t} img="/src/assets/images/Playstore.png" label={t("home_app_available")} name={t("home_app_playstore")} />
-              <AppStoreBadge t={t} />
-            </div>
-
-            <div className="flex items-center gap-5">
-              <div className="bg-white p-2.5 rounded-2xl shadow-md w-20 h-20 flex items-center justify-center border border-[#EAE3D8]">
-                <img src="/src/assets/images/qr_code.png" alt="QR Code" className="w-full h-full object-contain" />
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="https://play.google.com/store/apps/details?id=com.tesea.docmaster"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-[14px] font-bold text-[13px] text-green-dark transition-all hover:opacity-90 active:scale-95"
+                  style={{ backgroundColor: "#FFFFFF" }}
+                >
+                  <i className="fa-solid fa-download text-sm" />
+                  {t("home_app_playstore") || "Télécharger pour Android"}
+                </a>
+                <Link
+                  to="/dashboard"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-[14px] font-bold text-[13px] text-white border border-white/30 hover:bg-white/10 transition-all active:scale-95"
+                >
+                  {t("nav_open_web") || "Ouvrir l'app web"}
+                </Link>
               </div>
-              <div>
-                <p className="text-[#1A1A1A] font-bold text-[14px] mb-1">{t("home_app_qr")}</p>
-                <p className="text-[#1A1A1A]/50 text-[12px] leading-relaxed">{t("home_app_qr_desc")}</p>
+            </div>
+
+            {/* Mockups — débordent vers le haut */}
+            <div className="relative flex items-end justify-center md:justify-end gap-4 h-[300px]">
+              {/* Mockup gauche (plus petit, légèrement en retrait) */}
+              <div
+                className="relative flex-shrink-0 w-[130px] self-end mb-[-4px]"
+                style={{ filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.35))" }}
+              >
+                <img
+                  src="/src/assets/images/app_mockup.png"
+                  alt="DocMaster app"
+                  className="w-full h-auto object-contain"
+                  style={{ transform: "scale(0.9) translateX(-8px)" }}
+                />
+              </div>
+              {/* Mockup droite (plus grand, au premier plan) */}
+              <div
+                className="relative flex-shrink-0 w-[160px] self-end"
+                style={{ filter: "drop-shadow(0 20px 48px rgba(0,0,0,0.4))" }}
+              >
+                <img
+                  src="/src/assets/images/devices_docs.png"
+                  alt="DocMaster documents"
+                  className="w-full h-auto object-contain"
+                  onError={(e) => {
+                    // fallback sur app_mockup si devices_docs absent
+                    (e.target as HTMLImageElement).src = "/src/assets/images/app_mockup.png";
+                    (e.target as HTMLImageElement).style.transform = "scale(1)";
+                  }}
+                />
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center justify-center lg:justify-end">
-            <img src="/src/assets/images/app_mockup.png" alt="DocMaster App" className="w-full max-w-md lg:max-w-lg h-auto object-contain" style={{ filter: "drop-shadow(0 24px 48px rgba(0,0,0,0.15))" }} />
           </div>
         </div>
       </div>
