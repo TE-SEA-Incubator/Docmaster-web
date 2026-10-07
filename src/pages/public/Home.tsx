@@ -145,8 +145,7 @@ function DocImageCard({ src, alt }: { src: string; alt: string; [k: string]: unk
     <div
       className="w-[180px] flex-shrink-0 rounded-3xl overflow-hidden"
       style={{
-        opacity: 0.45,
-        boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
         border: "1px solid rgba(234,227,216,0.6)",
         background: "#fffbf6",
       }}
@@ -156,6 +155,9 @@ function DocImageCard({ src, alt }: { src: string; alt: string; [k: string]: unk
         alt={alt}
         className="w-full h-[115px] object-cover"
         draggable={false}
+        style={{
+          filter: "contrast(1.05) saturate(1.1)"
+        }}
       />
       {/* Bande basse très soft */}
       <div className="px-3 py-2.5" style={{ background: "#fffbf6" }}>
@@ -175,10 +177,10 @@ function VerticalImgCarousel({ items, duration = 30, reversed = false }: {
   const cls = reversed ? "carousel-up-reverse" : "carousel-up";
   return (
     <div
-      className="relative overflow-hidden h-[500px] w-[180px]"
+      className="relative overflow-hidden h-[600px] w-[180px]"
       style={{
-        maskImage: "linear-gradient(to bottom, transparent, black 18%, black 82%, transparent)",
-        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 18%, black 82%, transparent)",
+        maskImage: "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
+        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
       }}
     >
       <div className={`flex flex-col gap-4 ${cls}`} style={{ animationDuration: `${duration}s` }}>
@@ -240,7 +242,7 @@ function HeroSection({ t }) {
 
           {/* ── Centre : copy ── */}
           <div className="hero-fadein text-center mx-auto max-w-xl">
-            <div className="inline-flex items-center gap-2.5 px-4 py-2 bg-primary/15 border border-primary/20 rounded-full mb-8">
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 bg-primary/15 border border-primary/15 rounded-full mb-8">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               <span className="text-xs font-bold text-primary uppercase tracking-widest">{t("hero_badge")}</span>
             </div>
@@ -344,36 +346,28 @@ interface RecentDoc {
 }
 
 function RecentDocsSection({ t }) {
+  const { user } = useAuth();
   const [docs, setDocs] = useState<RecentDoc[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch(`${API_BASE}declarations/search-public`, { headers: { Accept: "application/json" } })
       .then((r) => r.json())
-      .then((data) => setDocs((data.data || []).slice(0, 6)))
+      .then((data) => setDocs((data.data || []).slice(0, 12)))
       .catch(() => setDocs([]))
       .finally(() => setLoading(false));
   }, []);
 
   const getDocType = (doc: RecentDoc) =>
     doc.document_type || doc.type_doc || doc.doc_type || t("rechercher_document");
-  const getOwnerName = (doc: RecentDoc) =>
-    doc.document_owner || doc.owner_name || doc.nom_sur_doc || t("rechercher_owner_unknown");
   const getPhoto = (doc: RecentDoc) => doc.photo_recto || doc.photo || doc.image_url || "";
-  const getLocation = (doc: RecentDoc) =>
-    doc.location || doc.ville || doc.city || t("rechercher_location_unknown");
   const getDate = (doc: RecentDoc) =>
     doc.created_at ? new Date(doc.created_at).toLocaleDateString("fr-FR") : new Date().toLocaleDateString("fr-FR");
-  const getDocNumber = (doc: RecentDoc) =>
-    doc.numero_doc || doc.document_number || t("rechercher_number_unavailable");
-  const hasDeclaration = (doc: RecentDoc) =>
-    Boolean(doc.document_owner || doc.owner_name || doc.declaration_id || doc.counterPart);
-  const getScore = (doc: RecentDoc) => Math.round((doc.score || 0) * 100);
 
   return (
-    <section id="recent-docs" className="py-20 px-5" style={{ backgroundColor: "#fffbf6" }}>
+    <section id="recent-docs" className="py-20 px-5" style={{ backgroundColor: "#F7F7F7" }}>
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-14">
+        <div className="text-center mb-10">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
             <i className="fa-solid fa-clock-rotate-left text-[10px]" /> {t("home_recent_badge")}
           </span>
@@ -385,144 +379,86 @@ function RecentDocsSection({ t }) {
           </p>
         </div>
 
-        {/* Skeleton */}
-        {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-[24px] p-5 border border-borderMain">
-                <div className="h-48 w-full mb-4 rounded-xl bg-borderMain animate-pulse" />
+        {/* Carrousel horizontal */}
+        {loading ? (
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="flex-shrink-0 w-[280px] bg-white rounded-[20px] p-4 border border-borderMain">
+                <div className="h-40 w-full mb-3 rounded-xl bg-borderMain animate-pulse" />
                 <div className="h-3 w-3/4 mb-2 rounded bg-borderMain animate-pulse" />
-                <div className="h-3 w-1/2 mb-4 rounded bg-borderMain animate-pulse" />
-                <div className="h-10 w-full rounded-xl bg-borderMain animate-pulse" />
+                <div className="h-3 w-1/2 rounded bg-borderMain animate-pulse" />
               </div>
             ))}
           </div>
-        )}
+        ) : (
+          <div className="relative">
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+              {docs.map((doc, i) => {
+                const photo = getPhoto(doc);
+                const docType = getDocType(doc);
+                const dateText = getDate(doc);
 
-        {/* Grille — cartes identiques à la page Rechercher */}
-        {!loading && docs.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {docs.map((doc, i) => {
-              const score = getScore(doc);
-              const photo = getPhoto(doc);
-              const docType = getDocType(doc);
-              const ownerName = getOwnerName(doc);
-              const dateText = getDate(doc);
-              const locationText = getLocation(doc);
-              const docNumber = getDocNumber(doc);
-              const hasDecl = hasDeclaration(doc);
-
-              if (!hasDecl) {
                 return (
-                  <div
+                  <Link
                     key={doc.id}
-                    className="group bg-white border border-borderMain rounded-[24px] overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
-                    style={{ animationDelay: `${i * 50}ms` }}
+                    to={user ? `/rechercher?id=${doc.id}` : "/login"}
+                    className="flex-shrink-0 w-[280px] snap-start group bg-white border border-borderMain rounded-[20px] overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                   >
+                    {/* Image avec ProtectedDocumentImage */}
                     <div className="relative h-40 bg-surface2 flex items-center justify-center overflow-hidden">
                       <ProtectedDocumentImage
                         src={photo ? getFullImageUrl(photo) : undefined}
                         revealed={false}
                         className="relative w-full h-full overflow-hidden"
                         imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        loginUrl="/connexion"
                         lockLabelKey="rechercher_public_locked"
                         lockHintKey="rechercher_public_locked_hint"
+                        loginUrl={user ? undefined : "/login"}
                       />
-                      <div className="absolute top-3 left-3">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase border border-borderMain text-textMain">
-                          <i className="fa-solid fa-shield-halved text-primary" /> {docType}
+                      
+                      {/* Badge type de document (par dessus) */}
+                      <div className="absolute top-3 left-3 px-3 py-1.5 bg-white/95 backdrop-blur rounded-full border border-borderMain z-10">
+                        <span className="text-[11px] font-black text-textMain uppercase tracking-wide">
+                          {docType}
                         </span>
                       </div>
                     </div>
-                    <div className="p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t("rechercher_document")}</span>
-                        <span className="text-[10px] font-bold text-textMain">{dateText}</span>
+
+                    {/* Info */}
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 text-[12px] text-textMuted">
+                        <i className="fa-solid fa-calendar text-[10px]" />
+                        <span>{dateText}</span>
                       </div>
-                      <h3 className="font-bricolage font-bold text-textMain text-[17px] mb-3">{docType}</h3>
-                      <div className="text-[13px] text-textMuted mb-4">
-                        <i className="fa-solid fa-location-dot text-primary mr-2" />
-                        <span className="font-medium">{locationText}</span>
-                      </div>
-                      <Link to={`/recuperer?id=${doc.id}`}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md"
-                      >
-                        {t("rechercher_view_details")}
-                      </Link>
                     </div>
-                  </div>
+                  </Link>
                 );
-              }
+              })}
+            </div>
 
-              return (
-                <div
-                  key={doc.id}
-                  className="group bg-white border border-borderMain rounded-[24px] overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
-                  style={{ animationDelay: `${i * 50}ms` }}
-                >
-                  <div className="relative h-48 bg-surface2 overflow-hidden">
-                    <ProtectedDocumentImage
-                      src={photo ? getFullImageUrl(photo) : undefined}
-                      revealed={false}
-                      className="relative w-full h-full overflow-hidden"
-                      imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      loginUrl="/connexion"
-                    />
-                    <div className="absolute top-3 left-3">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase border border-borderMain text-textMain">
-                        <i className="fa-solid fa-shield-halved text-primary" /> {docType}
-                      </span>
-                    </div>
-                    {score > 30 && (
-                      <div className="absolute bottom-[-10px] left-1/2 -translate-x-1/2 bg-primary text-white font-extrabold text-[10px] px-2 py-0.5 rounded-md shadow-lg z-10">
-                        {score}% MATCH
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t("rechercher_found_doc")}</span>
-                      <span className="text-[10px] font-bold text-textMain">{dateText}</span>
-                    </div>
-                    <h3 className="font-bricolage font-bold text-textMain text-[17px] mb-4">{ownerName}</h3>
-                    <div className="space-y-2 mb-4">
-                      <p className="text-[12px] text-textMuted flex items-center gap-1.5">
-                        <i className="fa-solid fa-hashtag text-[10px] text-primary/50" />
-                        <span className="blur-sm select-none font-mono text-[11px] opacity-80 pointer-events-none">{docNumber}</span>
-                      </p>
-                      <div className="flex items-center gap-2 py-2 border-y border-borderMain/50">
-                        <i className="fa-solid fa-location-dot text-primary text-[11px]" />
-                        <span className="blur-sm select-none text-[12px] font-medium opacity-80 pointer-events-none">{locationText}</span>
-                      </div>
-                    </div>
-                    <Link to={`/recuperer?id=${doc.id}`}
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-primary text-white rounded-[14px] font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md shadow-primary/20 active:scale-95"
-                    >
-                      <i className="fa-solid fa-hand-holding-heart text-xs" /> {t("rechercher_its_mine")}
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
+            {/* Indication de scroll */}
+            {docs.length > 4 && (
+              <div className="mt-4 text-center">
+                <p className="text-[12px] text-textMuted flex items-center justify-center gap-2">
+                  <i className="fa-solid fa-arrow-left text-[10px]" />
+                  <span>Faites défiler pour voir plus</span>
+                  <i className="fa-solid fa-arrow-right text-[10px]" />
+                </p>
+              </div>
+            )}
           </div>
         )}
-
-        {!loading && docs.length === 0 && (
-          <div className="text-center py-16 text-textMuted">
-            <i className="fa-solid fa-inbox text-4xl mb-4 block opacity-30" />
-            <p className="text-[14px]">{t("rechercher_no_results")}</p>
-          </div>
-        )}
-
-        <div className="text-center mt-12">
-          <Link to="/rechercher"
-            className="inline-flex items-center gap-2.5 px-8 py-4 bg-green-dark text-white rounded-[18px] font-bold text-[14px] hover:bg-green-mid transition-all hover:-translate-y-1 shadow-lg shadow-green-dark/20"
-          >
-            {t("home_recent_view_all")} <i className="fa-solid fa-arrow-right text-[11px]" />
-          </Link>
-        </div>
       </div>
+
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </section>
   );
 }
@@ -692,7 +628,7 @@ function HowItWorksSection({ t }) {
 
 function WhyDocmasterSection({ t }) {
   return (
-    <section className="py-20 px-5">
+    <section className="py-20 px-5" style={{ backgroundColor: "#F7F7F7" }}>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
@@ -794,36 +730,119 @@ function VaultIllustration() {
 
 function VaultDeviceSection({ t }) {
   return (
-    <section className="py-16 px-4 bg-bgMain">
-      <div className="max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {/* Carte 1 - Appareil */}
-          <div className="bg-white rounded-2xl border border-borderMain p-8 flex flex-col justify-between min-h-[220px]">
-            <div>
-              <h3 className="text-xl font-semibold text-textMain mb-3">{t('home_device_card_title')}</h3>
-              <p className="text-sm text-textMuted leading-relaxed">{t('home_device_card_description')}</p>
-            </div>
-            <div className="flex items-end justify-between mt-6">
-              <a href="#" className="text-sm text-green-dark font-medium hover:underline">
-                {t('home_device_card_cta')} →
-              </a>
-              <i className="fa-solid fa-mobile-screen-button text-green-dark text-4xl opacity-20" />
-            </div>
-          </div>
+    <section className="py-20 px-4" style={{ backgroundColor: '#F7F7F7' }}>
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          {/* Carte 2 - Documents */}
-          <div className="bg-white rounded-2xl border border-borderMain p-8 flex flex-col justify-between min-h-[220px]">
-            <div>
-              <h3 className="text-xl font-semibold text-textMain mb-3">{t('home_docs_card_title')}</h3>
-              <p className="text-sm text-textMuted leading-relaxed">{t('home_docs_card_description')}</p>
-            </div>
-            <div className="flex items-end justify-between mt-6">
-              <a href="#" className="text-sm font-medium hover:underline" style={{color: '#F5A64B'}}>
-                {t('home_docs_card_cta')} →
+          {/* Carte 1 - Appareil */}
+          <div className="bg-white rounded-3xl p-10 flex items-center justify-between gap-8 shadow-sm">
+            <div className="flex-1">
+              <h3 className="font-bricolage text-2xl font-bold text-textMain mb-4">
+                Enregistrez votre appareil
+              </h3>
+              <p className="text-textMuted text-base leading-relaxed mb-6">
+                En cas de vol après signalement, vous êtes immédiatement notifié et protégé
+              </p>
+              <a 
+                href="#" 
+                className="inline-flex items-center gap-2 text-sm font-semibold text-textMain hover:text-green-dark transition-colors"
+              >
+                En savoir plus
+                <i className="fa-solid fa-arrow-right text-xs" />
               </a>
-              <i className="fa-solid fa-share-nodes text-4xl opacity-20" style={{color: '#F5A64B'}} />
+            </div>
+            
+            {/* Illustration abstraite - forme organique verte/jaune */}
+            <div className="hidden md:block relative w-32 h-32 flex-shrink-0">
+              <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                {/* Forme jaune/vert style blob */}
+                <path 
+                  d="M 60 10 Q 90 20, 95 50 Q 100 80, 70 100 Q 40 110, 20 85 Q 5 60, 15 35 Q 25 10, 60 10 Z" 
+                  fill="#D4E157" 
+                  opacity="0.9"
+                />
+                {/* Forme noire par-dessus */}
+                <path 
+                  d="M 45 35 Q 70 30, 80 55 Q 85 75, 60 85 Q 35 90, 30 65 Q 25 40, 45 35 Z" 
+                  fill="#1A1A1A" 
+                  opacity="0.85"
+                />
+                {/* Trait simple style "10" */}
+                <text 
+                  x="55" 
+                  y="70" 
+                  fill="#F5A64B" 
+                  fontSize="32" 
+                  fontWeight="bold" 
+                  fontFamily="'Bricolage Grotesque', sans-serif"
+                >
+                  10
+                </text>
+              </svg>
             </div>
           </div>
+
+          {/* Carte 2 - Documents */}
+          <div className="bg-white rounded-3xl p-10 flex items-center justify-between gap-8 shadow-sm">
+            <div className="flex-1">
+              <h3 className="font-bricolage text-2xl font-bold text-textMain mb-4">
+                Partagez vos documents
+              </h3>
+              <p className="text-textMuted text-base leading-relaxed mb-6">
+                Accédez à vos documents médicaux même quand vous ne les avez pas physiquement sur vous
+              </p>
+              <a 
+                href="#" 
+                className="inline-flex items-center gap-2 text-sm font-semibold text-textMain hover:text-primary transition-colors"
+              >
+                En savoir plus
+                <i className="fa-solid fa-arrow-right text-xs" />
+              </a>
+            </div>
+            
+            {/* Illustration abstraite - graphique tendance avec arc rouge/jaune */}
+            <div className="hidden md:block relative w-32 h-32 flex-shrink-0">
+              <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                {/* Arc rouge/corail */}
+                <path 
+                  d="M 20 90 Q 30 50, 50 40" 
+                  stroke="#FF6B6B" 
+                  strokeWidth="10" 
+                  fill="none" 
+                  strokeLinecap="round"
+                  opacity="0.8"
+                />
+                {/* Arc jaune */}
+                <path 
+                  d="M 50 90 Q 65 45, 85 30" 
+                  stroke="#FFD93D" 
+                  strokeWidth="10" 
+                  fill="none" 
+                  strokeLinecap="round"
+                  opacity="0.85"
+                />
+                {/* Trait noir montant avec flèche */}
+                <path 
+                  d="M 60 95 L 95 30" 
+                  stroke="#1A1A1A" 
+                  strokeWidth="3" 
+                  fill="none" 
+                  strokeLinecap="round"
+                  opacity="0.9"
+                />
+                {/* Flèche */}
+                <path 
+                  d="M 95 30 L 88 35 M 95 30 L 90 37" 
+                  stroke="#1A1A1A" 
+                  strokeWidth="3" 
+                  fill="none" 
+                  strokeLinecap="round"
+                  opacity="0.9"
+                />
+              </svg>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -1028,7 +1047,7 @@ function WalletRewardsSection({ t }) {
   ];
 
   return (
-    <section className="py-16 px-5 bg-bgMain relative overflow-hidden">
+    <section className="py-16 px-5 relative overflow-hidden" style={{ backgroundColor: "#F7F7F7" }}>
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(#1A1A1A 1px, transparent 1px), linear-gradient(90deg, #1A1A1A 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
 
       <div className="relative z-10 max-w-5xl mx-auto">
@@ -1070,7 +1089,7 @@ function WalletRewardsSection({ t }) {
 
 function ReferralSection({ t }) {
   return (
-    <section className="py-20 px-5">
+    <section className="py-20 px-5" style={{ backgroundColor: "#F7F7F7" }}>
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
@@ -1267,7 +1286,7 @@ function TestimonialsSection({ t, lang }) {
   }, [renderRail, resetBar, next]);
 
   return (
-    <section className="py-20 px-5 overflow-hidden">
+    <section className="py-20 px-5 overflow-hidden" style={{ backgroundColor: "#F7F7F7" }}>
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
@@ -1336,7 +1355,7 @@ function TipsSection({ t }) {
 
 function PartnersSection({ t }) {
   return (
-    <section className="py-20 px-5 bg-surface2">
+    <section className="py-20 px-5" style={{ backgroundColor: "#F7F7F7" }}>
       <div className="max-w-7xl mx-auto text-center">
         <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">{t("home_partners_title")}</h2>
         <p className="text-textMuted mb-12 tracking-wide text-[14px]">{t("home_partners_desc")}</p>
@@ -1357,80 +1376,100 @@ function PartnersSection({ t }) {
 
 function AppDownloadSection({ t }) {
   return (
-    <section className="py-16 px-5" style={{ backgroundColor: "#fffbf6" }}>
-      <div className="max-w-5xl mx-auto">
-        {/* Grande card arrondie fond primary-dark, comme la référence */}
-        <div
-          className="relative overflow-hidden rounded-[32px] px-10 md:px-16 pt-12 pb-0"
-          style={{ backgroundColor: "#2D5A42" }}
-        >
-          {/* Halo décoratif */}
-          <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
-          <div className="absolute top-10 right-80 w-32 h-32 rounded-full bg-primary/10 pointer-events-none" />
+    <section className="py-20 px-5" style={{ backgroundColor: "#FFFFFF" }}>
+      <div className="max-w-7xl mx-auto">
+        {/* Badge supérieur */}
+        <div className="text-center mb-8">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest border border-primary/20">
+            <i className="fa-solid fa-mobile-screen text-[10px]" /> {t("home_app_badge")}
+          </span>
+        </div>
 
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
+        {/* Contenu sans carte */}
+        <div className="relative">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
-            {/* Texte gauche */}
-            <div className="pb-12">
-              <h2
-                className="font-bricolage text-[1.9rem] md:text-[2.4rem] font-extrabold text-white leading-tight mb-5"
-                dangerouslySetInnerHTML={{ __html: t("home_app_title") }}
-              />
-              <p className="text-white/60 text-[14px] leading-relaxed mb-8 max-w-xs">
+            {/* Partie gauche : Texte et boutons */}
+            <div className="px-4 md:px-8 flex flex-col justify-center">
+              {/* Logo DocMaster */}
+              <div className="mb-6">
+                <img 
+                  src="/src/assets/images/docmaster.png" 
+                  alt="DocMaster" 
+                  className="h-10 w-auto object-contain"
+                />
+              </div>
+
+              <h2 className="font-bricolage text-[2.2rem] md:text-[2.8rem] lg:text-[3.5rem] font-extrabold text-textMain leading-[1.1] mb-6">
+                {t("home_app_title")}
+              </h2>
+              
+              <p className="text-textMuted text-[16px] leading-relaxed mb-10 max-w-md">
                 {t("home_app_desc")}
               </p>
 
-              <div className="flex flex-wrap gap-3">
+              {/* Boutons de téléchargement */}
+              <div className="flex flex-wrap gap-3 mb-8">
                 <a
                   href="https://play.google.com/store/apps/details?id=com.tesea.docmaster"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-[14px] font-bold text-[13px] text-green-dark transition-all hover:opacity-90 active:scale-95"
-                  style={{ backgroundColor: "#FFFFFF" }}
+                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-[16px] font-black text-[14px] text-white transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  style={{ backgroundColor: "#2D5A42" }}
                 >
-                  <i className="fa-solid fa-download text-sm" />
-                  {t("home_app_playstore") || "Télécharger pour Android"}
+                  <img 
+                    src="/src/assets/images/Playstore.png" 
+                    alt="Google Play" 
+                    className="w-5 h-5 object-contain"
+                  />
+                  {t("home_app_playstore")}
                 </a>
                 <Link
                   to="/dashboard"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-[14px] font-bold text-[13px] text-white border border-white/30 hover:bg-white/10 transition-all active:scale-95"
+                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-[16px] font-bold text-[14px] text-textMain border-2 border-borderMain hover:bg-surface2 transition-all active:scale-95"
                 >
-                  {t("nav_open_web") || "Ouvrir l'app web"}
+                  <i className="fa-solid fa-arrow-right text-sm" />
+                  Accéder à l'app web
                 </Link>
+              </div>
+
+              {/* Badge "Disponible sur" */}
+              <div className="inline-flex items-center gap-2 text-textMuted text-[13px]">
+                <i className="fa-solid fa-circle-check text-green-mid text-sm" />
+                <span className="font-medium">{t("home_app_available")} Android</span>
               </div>
             </div>
 
-            {/* Mockups — débordent vers le haut */}
-            <div className="relative flex items-end justify-center md:justify-end gap-4 h-[300px]">
-              {/* Mockup gauche (plus petit, légèrement en retrait) */}
-              <div
-                className="relative flex-shrink-0 w-[130px] self-end mb-[-4px]"
-                style={{ filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.35))" }}
-              >
-                <img
-                  src="/src/assets/images/app_mockup.png"
-                  alt="DocMaster app"
-                  className="w-full h-auto object-contain"
-                  style={{ transform: "scale(0.9) translateX(-8px)" }}
-                />
-              </div>
-              {/* Mockup droite (plus grand, au premier plan) */}
-              <div
-                className="relative flex-shrink-0 w-[160px] self-end"
-                style={{ filter: "drop-shadow(0 20px 48px rgba(0,0,0,0.4))" }}
-              >
-                <img
-                  src="/src/assets/images/devices_docs.png"
-                  alt="DocMaster documents"
-                  className="w-full h-auto object-contain"
-                  onError={(e) => {
-                    // fallback sur app_mockup si devices_docs absent
-                    (e.target as HTMLImageElement).src = "/src/assets/images/app_mockup.png";
-                    (e.target as HTMLImageElement).style.transform = "scale(1)";
+            {/* Partie droite : MOCKUP */}
+            <div className="relative flex items-center justify-center lg:justify-end px-4 lg:px-0">
+              <div className="relative w-full" style={{ maxWidth: "620px" }}>
+                
+                {/* Mockup de téléphone */}
+                <div className="relative">
+                  <img
+                    src="/src/assets/images/mobile.png"
+                    alt="DocMaster app mobile"
+                    className="w-full h-auto object-contain"
+                    style={{ 
+                      maxHeight: "720px"
+                    }}
+                  />
+                </div>
+                
+                {/* Badge flottant "Disponible" */}
+                <div 
+                  className="absolute top-16 -right-8 bg-primary px-5 py-2.5 rounded-full shadow-xl"
+                  style={{ 
+                    animation: "bounce 3s ease-in-out infinite"
                   }}
-                />
+                >
+                  <p className="text-white font-black text-[12px] uppercase tracking-wide whitespace-nowrap">
+                    {t("home_app_available")}
+                  </p>
+                </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -1541,7 +1580,7 @@ function MatchingSection({ t }) {
   ];
 
   return (
-    <section className="py-20 px-5 bg-surface2 relative overflow-hidden">
+    <section className="py-20 px-5 relative overflow-hidden" style={{ backgroundColor: "#F7F7F7" }}>
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(#1A1A1A 1px, transparent 1px), linear-gradient(90deg, #1A1A1A 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="text-center mb-14">
