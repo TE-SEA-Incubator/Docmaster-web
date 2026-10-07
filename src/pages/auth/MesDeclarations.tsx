@@ -6,6 +6,9 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { useI18n } from "../../context/I18nContext";
 import { useTopbar } from "../../hooks/useTopbar";
+import SmsAlertUpsell from "../../components/subscription/SmsAlertUpsell";
+import CompleteDeclarationModal from "../../components/ui/CompleteDeclarationModal";
+import { declarationGaps } from "../../utils/declarationGaps";
 
 import type { Declaration } from "../../types/api";
 
@@ -113,13 +116,29 @@ export default function MesDeclarations() {
     return filter === "perdu" ? t === "LOST" : t === "FOUND" || t === "TROUVE";
   });
 
+  const waitingLoss = allDeclarations.some((item) => {
+    const kind = (item.declaration_type || item.type || "").toUpperCase();
+    return kind === "LOST" && !["RETURNED", "CANCELLED", "CLAIMED"].includes((item.status || "").toUpperCase());
+  });
+
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [completeId, setCompleteId] = useState<string | null>(null);
 
   const detailItem = detailId ? allDeclarations.find((d) => d.id === detailId) : null;
 
   const openDetail = (id: string) => setDetailId(id);
   const closeDetail = () => setDetailId(null);
+
+  const handleCompleted = (updated: Declaration) => {
+    setCompleteId(null);
+    setAllDeclarations((prev) =>
+      prev.map((d) => (d.id === updated.id ? ({ ...d, ...updated } as DeclarationExtended) : d))
+    );
+    toast.success(t("mesdeclarations_complete_saved"));
+  };
+
+  const completeItem = completeId ? allDeclarations.find((d) => d.id === completeId) : null;
 
   const handleDelete = async () => {
     if (!confirmDeleteId) return;
@@ -187,6 +206,8 @@ export default function MesDeclarations() {
           </div>
         </section>
 
+        {waitingLoss && <SmsAlertUpsell spot="declarations" variant="card" />}
+
         {/* Grid */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((item) => {
@@ -197,6 +218,7 @@ export default function MesDeclarations() {
             const typeIcon = isPerdu ? "fa-triangle-exclamation" : "fa-file-circle-check";
             const typeLabel = isPerdu ? t("mesdeclarations_type_loss") : t("mesdeclarations_type_found");
             const statusMeta = getStatusMeta(t, item.status);
+            const gapCount = declarationGaps(item).length;
 
             return (
               <article
@@ -229,6 +251,15 @@ export default function MesDeclarations() {
                     {statusMeta.label}
                   </span>
                   <div className="flex items-center gap-1.5 sm:gap-2">
+                    {gapCount > 0 && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setCompleteId(item.id); }}
+                        className="px-2.5 sm:px-3 py-1.5 rounded-[8px] sm:rounded-[9px] bg-primary-light text-primary-dark text-[11px] sm:text-[12px] font-semibold whitespace-nowrap"
+                      >
+                        <i className="fa-solid fa-circle-info mr-1.5" />
+                        {t("mesdeclarations_gap_badge")}
+                      </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }}
                       className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-[8px] sm:rounded-[9px] bg-surface2 border border-borda text-textMuted/50 hover:text-red-500 hover:border-red-200 transition-colors"
@@ -435,6 +466,16 @@ export default function MesDeclarations() {
 
                   
 
+                  {declarationGaps(detailItem).length > 0 && (
+                    <button
+                      onClick={() => setCompleteId(detailItem.id)}
+                      className="w-full py-3 sm:py-3.5 bg-primary text-white rounded-xl font-bold text-xs sm:text-sm hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+                    >
+                      <i className="fa-solid fa-pen-to-square" />
+                      {t("mesdeclarations_complete")}
+                    </button>
+                  )}
+
                   <button
                     onClick={() => setConfirmDeleteId(detailItem.id)}
                     className="w-full py-2.5 sm:py-3 border border-red-200 text-red-500 rounded-xl font-bold text-xs sm:text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
@@ -495,6 +536,14 @@ export default function MesDeclarations() {
           </div>
         </div>,
         document.body
+      )}
+
+      {completeItem && (
+        <CompleteDeclarationModal
+          declaration={completeItem}
+          onClose={() => setCompleteId(null)}
+          onSaved={handleCompleted}
+        />
       )}
     </div>
   );

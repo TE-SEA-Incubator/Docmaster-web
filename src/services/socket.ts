@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import { getToken, type TokenPortal } from "../utils/cookie";
-import { API_BASE_URL } from "./api";
+import { API_BASE_URL, refreshAccessToken } from "./api";
 
 /** Le même serveur Socket.IO sert les 4 portails : le token doit suivre l'URL courante. */
 function activePortal(): TokenPortal {
@@ -39,24 +39,36 @@ interface AppNotification {
 
 type ListenerMap = Map<string, Set<(...args: unknown[]) => void>>;
 
+/** Le middleware d'authentification du serveur rejette un jeton périmé avec ce
+ *  message : la réponse doit déclencher une réauthentification, pas un abandon. */
+function isAuthHandshakeError(message: string): boolean {
+  return message.includes("Authentication error");
+}
+
 class SocketService {
   private socket: Socket | null = null;
   private listeners: ListenerMap = new Map();
   private userId: string | null = null;
-  private isInitialized = false;
   private rooms: Set<string> = new Set();
+  /** Le client détruit son socket quand le handshake est refusé : un tel socket
+   *  ne se relance plus, il faut en créer un neuf. */
+  private destroyed = false;
+  private recovering = false;
+  private managerHandlers: Array<{ event: string; handler: () => void }> = [];
 
   get connected(): boolean {
     return this.socket?.connected ?? false;
   }
 
   init(): Socket | null {
-    if (this.isInitialized && this.socket?.connected) return this.socket;
+    // Un socket déjà en cours d'ouverture ou connecté suffit : monter deux fois
+    // (StrictMode) créerait un second socket et doublerait les événements.
+    if (this.socket && !this.destroyed) return this.socket;
+    if (this.destroyed) this.teardown();
 
     const token = getToken(activePortal());
     if (!token) return null;
 
-    this.isInitialized = true;
     // URL de base pour socket.io doit être la racine du domaine/port de l'API
     // On extrait la partie base de l'URL sans le /api
     const socketUrl = API_BASE_URL.replace(/\/api\/?$/, "");
@@ -70,6 +82,7 @@ class SocketService {
     });
 
     this.socket.on("connect", () => {
+      this.destroyed = false;
       console.log("[Socket] Connected to", socketUrl);
       // Une reconnexion crée une nouvelle socket : les rooms sont perdues, il faut les redemander.
       this.rooms.forEach((conversationId) =>
@@ -78,11 +91,14 @@ class SocketService {
     });
 
     this.socket.on("connect_error", (err) => {
+      this.destroyed = true;
       console.warn("[Socket] Connection warning:", err.message);
+      if (isAuthHandshakeError(err.message)) void this.recoverFromAuthError();
     });
 
     this.socket.on("disconnect", (reason) => {
       console.log("[Socket] Disconnected:", reason);
+      if (reason === "io server disconnect") this.destroyed = true;
     });
 
     this.socket.on("authenticated", (payload: { userId?: string }) => {
@@ -130,12 +146,14 @@ class SocketService {
       window.dispatchEvent(new CustomEvent("docmaster:conversation-closed", { detail: data }));
     });
 
-    this.socket.io?.on?.("reconnect_attempt", () => {
+    const refreshAuth = () => {
       const newToken = getToken(activePortal());
       if (newToken && this.socket) {
         this.socket.auth = { token: newToken };
       }
-    });
+    };
+    this.socket.io?.on?.("reconnect_attempt", refreshAuth);
+    this.managerHandlers.push({ event: "reconnect_attempt", handler: refreshAuth });
 
     return this.socket;
   }
@@ -179,7 +197,7 @@ class SocketService {
   /** L'abonnement serveur vérifie la participation : un acteur non participant ne reçoit rien. */
   joinConversation(conversationId: string): void {
     this.rooms.add(conversationId);
-    if (!this.socket) this.init();
+    if (!this.socket || this.destroyed) this.init();
     if (!this.socket?.connected) return;
     this.socket.emit("conversation:join", { conversationId });
   }
@@ -191,14 +209,40 @@ class SocketService {
   }
 
   disconnect(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
-    this.isInitialized = false;
+    this.teardown();
     this.userId = null;
     this.rooms.clear();
     this.listeners.clear();
+  }
+
+  private teardown(): void {
+    const socket = this.socket;
+    if (socket) {
+      // `off` du Manager n'ouvre ses events réservés qu'au typage interne.
+      const manager = socket.io as unknown as
+        { off?: (event: string, handler: () => void) => void };
+      this.managerHandlers.forEach(({ event, handler }) => manager.off?.(event, handler));
+      socket.removeAllListeners();
+      socket.disconnect();
+      this.socket = null;
+    }
+    this.managerHandlers = [];
+    this.destroyed = false;
+  }
+
+  /** Le jeton stocké était périmé : on en obtient un neuf puis on relance la
+   *  connexion — les rooms sont redemandées par le handler `connect`. */
+  private async recoverFromAuthError(): Promise<void> {
+    if (this.recovering) return;
+    this.recovering = true;
+    try {
+      const token = await refreshAccessToken(activePortal());
+      if (!token) return;
+      this.teardown();
+      this.init();
+    } finally {
+      this.recovering = false;
+    }
   }
 
   private getIconForType(type: NotificationType): string {

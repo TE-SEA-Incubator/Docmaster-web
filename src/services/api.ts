@@ -45,7 +45,7 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-async function refreshAccessToken(portal: TokenPortal): Promise<string | null> {
+export async function refreshAccessToken(portal: TokenPortal): Promise<string | null> {
   const refreshToken = getRefreshToken(portal);
   if (!refreshToken) return null;
 

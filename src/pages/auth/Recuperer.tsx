@@ -13,6 +13,8 @@ import "leaflet/dist/leaflet.css";
 import { useI18n } from "../../context/I18nContext";
 import { useTopbar } from "../../hooks/useTopbar";
 import { FlowCard, FlowFact, FlowNotice, FlowStepper } from "../../components/recuperation/FlowUI";
+import CompleteDeclarationModal from "../../components/ui/CompleteDeclarationModal";
+import { declarationGaps } from "../../utils/declarationGaps";
 
 const POLL_INTERVAL = 5000;
 const FALLBACK_LAT = 3.8480;
@@ -55,6 +57,7 @@ export default function Recuperer() {
 
   const [ownerCoords, setOwnerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -128,6 +131,12 @@ export default function Recuperer() {
     }, POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [step, docId, foundMatchId, pickupCode]);
+
+  // Le PATCH renvoie la ligne telle que la base l'a écrite : on n'affiche pas un état non accordé.
+  const handleCompleted = (updated: Declaration) => {
+    setShowComplete(false);
+    setDoc((current) => (current ? { ...current, ...updated } : current));
+  };
 
   // ── Geolocation ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -511,6 +520,9 @@ export default function Recuperer() {
     );
   }
 
+  // Ce que la plateforme ignore encore de cette déclaration : c est ce seul qu on redemande.
+  const gaps = declarationGaps(doc);
+
   // ── Render: Main ─────────────────────────────────────────────────────
   return (
     <div className="flex-1 px-4 sm:px-6 py-6 pb-24 lg:pb-6">
@@ -528,6 +540,20 @@ export default function Recuperer() {
             caption={t("flow_step_of", { current: Math.min(displayStep, stepLabels.length), total: stepLabels.length })}
           />
         </FlowCard>
+
+        {/* ═══ Informations manquantes ═══ */}
+        {gaps.length > 0 && (
+          <FlowNotice tone="orange" icon="fa-solid fa-circle-info">
+            <span className="font-bold">{t("recuperer_gaps_title")}</span> {t("recuperer_gaps_desc")}
+            <button
+              type="button"
+              onClick={() => setShowComplete(true)}
+              className="mt-1.5 block font-extrabold text-primary-dark underline underline-offset-2"
+            >
+              {t("mesdeclarations_complete")}
+            </button>
+          </FlowNotice>
+        )}
 
         {/* ═══ Action en cours ═══ */}
         <FlowCard title={t("flow_to_do")} icon="fa-solid fa-bullseye">
@@ -880,6 +906,14 @@ export default function Recuperer() {
             icon: "fa-location-dot",
             onClick: () => setShowSuccessModal(false),
           }}
+        />
+      )}
+
+      {showComplete && doc && (
+        <CompleteDeclarationModal
+          declaration={doc}
+          onClose={() => setShowComplete(false)}
+          onSaved={handleCompleted}
         />
       )}
     </div>

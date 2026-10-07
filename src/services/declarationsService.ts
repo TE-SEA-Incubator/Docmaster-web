@@ -21,6 +21,11 @@ export const declarationsService = {
     return res.data;
   },
 
+  async update(id: string, data: Record<string, any>) {
+    const res = await apiClient.patch<ApiResponse<Declaration>>(`declarations/${id}`, data);
+    return res.data;
+  },
+
   async getMyDeclarations() {
     const res = await apiClient.get<ApiResponse<Declaration[]>>("declarations/me");
     return res.data;

@@ -61,6 +61,9 @@ export default function Trouver() {
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+  const mapInitRef = useRef(false);
 
 
   useEffect(() => {
@@ -69,6 +72,28 @@ export default function Trouver() {
         setDocTypes(res.data as DocTypeItem[]);
       }
     });
+  }, []);
+
+  const updateLocation = useCallback(async (latlng: { lat: number; lng: number } | L.LatLng) => {
+    const data: LocationData = { lat: latlng.lat, lng: latlng.lng, city: "" };
+    setLocationData(data);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&zoom=18&addressdetails=1`
+      );
+      const json = await res.json();
+      const city =
+        json.address?.city ||
+        json.address?.town ||
+        json.address?.village ||
+        json.address?.suburb ||
+        "";
+      data.city = city;
+      setLocationData({ ...data });
+      if (city) setVille(city);
+    } catch {
+      // silent
+    }
   }, []);
 
   const initMap = useCallback(() => {
@@ -110,30 +135,7 @@ export default function Trouver() {
       loader.style.opacity = "0";
       setTimeout(() => loader.classList.add("hidden"), 500);
     }
-  }, []);
-
-  const updateLocation = useCallback(async (latlng: L.LatLng) => {
-    const data: LocationData = { lat: latlng.lat, lng: latlng.lng, city: "" };
-    setLocationData(data);
-
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&zoom=18&addressdetails=1`
-      );
-      const json = await res.json();
-      const city =
-        json.address?.city ||
-        json.address?.town ||
-        json.address?.village ||
-        json.address?.suburb ||
-        "";
-      data.city = city;
-      setLocationData({ ...data });
-      if (city) setVille(city);
-    } catch {
-      // silent
-    }
-  }, []);
+  }, [updateLocation]);
 
   const searchLocation = useCallback(async () => {
     const input = document.getElementById("map-search-input") as HTMLInputElement;
@@ -158,14 +160,33 @@ export default function Trouver() {
 
       resultsBox.innerHTML = data
         .map(
-          (item: any) =>
+          (item: any, idx: number) =>
             `<div class="p-3 hover:bg-surface2 cursor-pointer border-b border-borderMain last:border-0 transition-colors" 
-               onclick="window.selectSearchResult && window.selectSearchResult(${item.lat}, ${item.lon}, '${item.display_name.replace(/'/g, "\\'")}')">
+               data-lat="${item.lat}" data-lon="${item.lon}" data-name="${item.display_name.replace(/"/g, '&quot;')}" data-idx="${idx}">
               <div class="text-[12.5px] font-bold text-textMain truncate">${item.display_name.split(",")[0]}</div>
               <div class="text-[11px] text-textMuted truncate">${item.display_name.split(",").slice(1).join(",")}</div>
             </div>`
         )
         .join("");
+
+      // Attacher les événements click via event delegation (évite le onclick inline)
+      resultsBox.querySelectorAll("[data-lat]").forEach((el) => {
+        el.addEventListener("click", () => {
+          const lat = parseFloat((el as HTMLElement).dataset.lat!);
+          const lon = parseFloat((el as HTMLElement).dataset.lon!);
+          const name = (el as HTMLElement).dataset.name!;
+          const map = mapRef.current;
+          const marker = markerRef.current;
+          if (!map || !marker) return;
+          const latlng = L.latLng(lat, lon);
+          map.setView(latlng, 16);
+          marker.setLatLng(latlng);
+          updateLocation(latlng);
+          resultsBox.classList.add("hidden");
+          const inp = document.getElementById("map-search-input") as HTMLInputElement;
+          if (inp) inp.value = name.split(",")[0];
+        });
+      });
     } catch {
       resultsBox.innerHTML =
         `<div class="p-3 text-[12px] text-red-500 italic">${t("trouver_connection_error")}</div>`;
@@ -271,7 +292,7 @@ export default function Trouver() {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        updateLocation(pos.coords.latitude, pos.coords.longitude);
+        updateLocation(L.latLng(pos.coords.latitude, pos.coords.longitude));
       },
       () => setAlertMsg(t("trouver_position_failed")),
       { enableHighAccuracy: true }
@@ -762,68 +783,15 @@ export default function Trouver() {
               </div>
 
               <div className="flex flex-col gap-4 mb-4">
-                {/* Search */}
-                <div className="relative group/search">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted group-focus-within/search:text-primary transition-colors">
-                    <i className="fa-solid fa-magnifying-glass text-[13px]"></i>
-                  </div>
-                  <input
-                    id="map-search-input"
-                    type="text"
-                    placeholder={t("trouver_search_placeholder")}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") searchLocation();
-                    }}
-                    className="w-full pl-10 pr-12 py-3 bg-white border border-borderMain rounded-xl text-[12.5px] focus:border-primary focus:ring-0 outline-none transition-all"
-                  />
-                  <button
-                    onClick={searchLocation}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-all shadow-sm"
-                  >
-                    <i className="fa-solid fa-arrow-right text-[11px]"></i>
-                  </button>
-                  <div
-                    id="map-search-results"
-                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-borderMain shadow-xl max-h-[200px] overflow-y-auto hidden z-[1001]"
-                  ></div>
+                {/* Location select + date en premier */}
+                <div>
+                  <label className="text-[11px] font-bold text-textMuted mb-1 block tracking-[0.3px]">
+                    {t("trouver_city_district")} <span className="text-textMuted font-normal">({t("trouver_auto_filled")})</span>
+                  </label>
+                  <LocationSelect value={location} onChange={setLocation} />
                 </div>
-
-                {/* Location badge */}
-                <div
-                  className={`bg-green-light/30 border border-green-mid/10 p-3 rounded-xl flex items-center gap-3 transition-all duration-300 ${
-                    locationData ? "visible opacity-100" : "invisible opacity-0"
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-xl bg-white border border-green-mid/20 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <i className="fa-solid fa-location-dot text-green-mid text-lg"></i>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-green-mid uppercase tracking-wider">
-                      {t("trouver_found_location")}
-                    </p>
-                    <p className="text-[12px] text-textMain font-bold truncate">
-                      {locationData?.city || t("trouver_loading_address")}
-                    </p>
-                  </div>
-                  <div className="text-[10px] font-mono text-textMuted bg-white px-2 py-1 rounded border border-borderMain shadow-sm">
-                    {locationData
-                      ? `${locationData.lat.toFixed(4)}, ${locationData.lng.toFixed(4)}`
-                      : "0.000, 0.000"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                  {t("trouver_city_district")} <span className="text-textMuted font-normal">({t("trouver_auto_filled")})</span>
-                </label>
-                <LocationSelect
-                  value={location}
-                  onChange={setLocation}
-                />
-              </div>
-              <div className="mb-4">
-                  <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
+                <div>
+                  <label className="text-[11px] font-bold text-textMuted mb-1 block tracking-[0.3px]">
                     {t("trouver_date_found")}
                   </label>
                   <DatePicker
@@ -832,6 +800,78 @@ export default function Trouver() {
                     placeholder="AAAA-MM-JJ"
                     className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(217,138,48,0.1)]"
                   />
+                </div>
+
+                {/* Carte + recherche en bas */}
+                <div>
+                  <label className="text-[11px] font-bold text-textMuted mb-2 block tracking-[0.3px]">
+                    {t("trouver_found_location")}
+                  </label>
+                  {/* Search */}
+                  <div className="relative group/search mb-2">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted group-focus-within/search:text-primary transition-colors">
+                      <i className="fa-solid fa-magnifying-glass text-[13px]"></i>
+                    </div>
+                    <input
+                      id="map-search-input"
+                      type="text"
+                      placeholder={t("trouver_search_placeholder")}
+                      onChange={(e) => {
+                        const val = e.target.value.trim();
+                        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+                        if (val.length >= 2) {
+                          searchTimeoutRef.current = setTimeout(() => searchLocation(), 400);
+                        } else {
+                          const box = document.getElementById("map-search-results");
+                          if (box) { box.innerHTML = ""; box.classList.add("hidden"); }
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+                          searchLocation();
+                        }
+                      }}
+                      className="w-full pl-10 pr-12 py-3 bg-white border border-borderMain rounded-xl text-[12.5px] focus:border-primary focus:ring-0 outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={searchLocation}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-all shadow-sm"
+                    >
+                      <i className="fa-solid fa-arrow-right text-[11px]"></i>
+                    </button>
+                    <div
+                      id="map-search-results"
+                      className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-borderMain shadow-xl max-h-[200px] overflow-y-auto hidden z-[2000]"
+                    ></div>
+                  </div>
+
+                  {/* Location badge */}
+                  <div
+                    className={`border border-borderMain p-3 rounded-xl flex items-center gap-3 transition-all duration-300 mb-2 ${
+                      locationData ? "visible opacity-100" : "invisible opacity-0"
+                    }`}
+                  >
+                    <i className="fa-solid fa-location-dot text-green-mid"></i>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] text-textMain font-bold truncate">
+                        {locationData?.city || t("trouver_loading_address")}
+                      </p>
+                    </div>
+                    <div className="text-[10px] font-mono text-textMuted">
+                      {locationData ? `${locationData.lat.toFixed(4)}, ${locationData.lng.toFixed(4)}` : ""}
+                    </div>
+                  </div>
+
+                  {/* Map */}
+                  <div id="map-loader" className="w-full h-[280px] rounded-[16px] bg-bgMain border border-borderMain overflow-hidden relative">
+                    <div ref={mapContainerRef} className="w-full h-full"></div>
+                    <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                      <i className="fa-solid fa-spinner fa-spin text-primary text-2xl"></i>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-2">

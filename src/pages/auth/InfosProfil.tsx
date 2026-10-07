@@ -491,8 +491,9 @@ export default function InfosProfil() {
       </div>
 
       {/* Modal suppression */}
+      {showDeleteConfirm && (
       <Modal
-        opened={showDeleteConfirm}
+        opened
         onClose={() => setShowDeleteConfirm(false)}
         centered radius="xl" size="sm" padding="xl"
         title={
@@ -522,6 +523,7 @@ export default function InfosProfil() {
           </Button>
         </Stack>
       </Modal>
+      )}
     </div>
   );
 }

@@ -184,6 +184,7 @@ export default function MessageriePanel({ api, theme, portal }: Props) {
         // GET messages marque le fil comme lu côté serveur.
         const rows = await api.messages(conversation.id);
         setMessages(rows);
+        window.dispatchEvent(new CustomEvent("docmaster:conversation-read"));
       } catch (err) {
         setError(extractApiError(err));
       } finally {
@@ -207,6 +208,10 @@ export default function MessageriePanel({ api, theme, portal }: Props) {
       if (!message?.conversation_id) return;
       if (message.conversation_id === selectedIdRef.current) {
         setMessages((current) => appendUnique(current, message));
+        // Le fil est à l'écran : sans marquage, le compteur de la sidebar
+        // grimperait pendant que l'utilisateur lit.
+        api.markRead(message.conversation_id).catch(() => undefined);
+        window.dispatchEvent(new CustomEvent("docmaster:conversation-read"));
       }
       loadConversations(filter);
     };
@@ -219,7 +224,7 @@ export default function MessageriePanel({ api, theme, portal }: Props) {
       window.removeEventListener("docmaster:conversation-message", onMessage);
       window.removeEventListener("docmaster:conversation-opened", onOpened);
     };
-  }, [filter, loadConversations]);
+  }, [filter, loadConversations, api]);
 
   useEffect(() => {
     const node = scrollerRef.current;
@@ -301,7 +306,7 @@ export default function MessageriePanel({ api, theme, portal }: Props) {
     <div className="flex flex-1 overflow-hidden" style={{ background: theme.surface }}>
       {/* Colonne liste */}
       <aside
-        className={`flex-col flex-shrink-0 border-r ${selectedId ? "hidden md:flex" : "flex w-full"} md:w-80`}
+        className={`flex-col flex-shrink-0 border-r ${selectedId ? "hidden md:flex" : "flex w-full"} md:w-96`}
         style={{ borderColor: theme.border, background: theme.surface }}
       >
         <div className="p-4 border-b" style={{ borderColor: theme.border }}>

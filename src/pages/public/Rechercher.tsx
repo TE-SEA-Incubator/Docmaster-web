@@ -405,7 +405,7 @@ export default function Rechercher() {
                           revealed={false}
                           className="relative w-full h-full overflow-hidden"
                           imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          loginUrl="/connexion"
+                          loginUrl="/login"
                           lockLabelKey="rechercher_public_locked"
                           lockHintKey="rechercher_public_locked_hint"
                         />
@@ -455,7 +455,7 @@ export default function Rechercher() {
                         revealed={false}
                         className="relative w-full h-full overflow-hidden"
                         imgClassName="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        loginUrl="/connexion"
+                        loginUrl="/login"
                       />
                       <div className="absolute top-3 left-3">
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase border border-borda text-textMain">
@@ -499,10 +499,10 @@ export default function Rechercher() {
                       </div>
 
                       <Link
-                        to={`/recuperer?id=${doc.id}`}
+                        to={`/declarer?from=${encodeURIComponent(String(doc.id))}`}
                         className="flex items-center justify-center gap-2 w-full py-3 bg-primary text-secondary rounded-[14px] font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md shadow-primary/20 active:scale-95"
                       >
-                        <i className="fa-solid fa-hand-holding-heart text-xs" /> {t("rechercher_its_mine")}
+                        <i className="fa-solid fa-file-circle-plus text-xs" /> {t("rechercher_its_mine")}
                       </Link>
                     </div>
                   </div>

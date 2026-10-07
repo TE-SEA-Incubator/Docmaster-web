@@ -196,9 +196,11 @@ export class ConversationRepository {
   async setStatus(conversationId: string, status: 'CLOSED' | 'ARCHIVED' | 'OPEN'): Promise<ConversationRow | null> {
     const { rows } = await query(
       `UPDATE conversations
-       SET status = $2, closed_at = CASE WHEN $2 = 'OPEN' THEN NULL ELSE CURRENT_TIMESTAMP END
+       SET status = $2, closed_at = CASE WHEN $3 = 'OPEN' THEN NULL ELSE CURRENT_TIMESTAMP END
        WHERE id = $1 RETURNING *`,
-      [conversationId, status]
+      // Le statut est lié deux fois : affecté à la colonne VARCHAR puis comparé à une
+      // littérale text, un seul paramètre serait déduit avec deux types incompatibles.
+      [conversationId, status, status]
     );
     return rows[0] ?? null;
   }

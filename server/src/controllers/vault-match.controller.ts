@@ -12,6 +12,13 @@ const documentRepository = new DocumentRepository();
 const docTypeRepository = new DocumentTypeRepository();
 const notificationService = new NotificationService();
 
+function toDay(value?: Date | string | null): string | undefined {
+  if (!value) return undefined;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date.toISOString().slice(0, 10);
+}
+
 async function generateLostIdentifiant(): Promise<string> {
   const now = new Date();
   const year = now.getFullYear();
@@ -72,6 +79,15 @@ export async function respondVaultMatch(req: Request, res: Response) {
 
       const lostIdentifiant = await generateLostIdentifiant();
       console.log(`[VaultMatch] Création déclaration LOST identifiant=${lostIdentifiant}`);
+
+      // Le profil du perdant, pas celui du trouvailleur : la ville de trouvaille n'est pas
+      // la ville de perte, et les contacts de récupération doivent être ceux du propriétaire.
+      const { rows: profileRows } = await pool.query(
+        'SELECT ville, pays, telephone, email FROM users WHERE id = $1',
+        [userId]
+      );
+      const profile = profileRows[0] || {};
+
       const lostDecl = await declarationRepository.create({
         identifiant_doc_dm: lostIdentifiant,
         doc_type: foundDecl.doc_type,
@@ -80,12 +96,17 @@ export async function respondVaultMatch(req: Request, res: Response) {
         declaration_type: 'LOST',
         status: 'SEARCHING',
         reporter_id: userId,
-        ville: foundDecl.ville,
-        region: foundDecl.region,
-        pays: foundDecl.pays,
+        ville: profile.ville || null,
+        pays: profile.pays || null,
+        // Ce que la plateforme sait déjà du document enregistré, plutôt que de le redemander.
+        date_expiration: toDay(vaultDoc?.date_expiration),
+        photo_recto: vaultDoc?.photo_recto ?? undefined,
+        photo_verso: vaultDoc?.photo_verso ?? undefined,
         fingerprint: vaultDoc?.fingerprint || foundDecl.fingerprint,
         etat_physique: foundDecl.etat_physique,
-        mode_contact: 'APP_CHAT',
+        mode_contact: profile.telephone ? 'PHONE' : profile.email ? 'EMAIL' : 'APP_CHAT',
+        telephone_contact: profile.telephone || null,
+        email_contact: profile.email || null,
         metadata: { source: 'vault_confirmation', vault_doc_id },
       });
       console.log(`[VaultMatch] Déclaration LOST créée — id=${lostDecl.id}`);

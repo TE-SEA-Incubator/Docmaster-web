@@ -1,15 +1,16 @@
-import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "../../context/I18nContext";
 import type { Document } from "../../types/api";
 import { generateDocumentPDF } from "../../utils/pdf";
 import { subscriptionsService } from "../../services/subscriptionsService";
+import DocumentViewer from "./DocumentViewer";
 
 interface DocumentDetailModalProps {
   doc: Document;
   catLabels: Record<string, string>;
   onClose: () => void;
   onShare?: () => void;
+  onEdit?: () => void;
 }
 
 export default function DocumentDetailModal({
@@ -17,26 +18,11 @@ export default function DocumentDetailModal({
   catLabels,
   onClose,
   onShare,
+  onEdit,
 }: DocumentDetailModalProps) {
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<"recto" | "verso">("recto");
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [rotation, setRotation] = useState(0);
-
-  const getImageUrl = (url?: string) => {
-    if (!url) return "";
-    if (url.startsWith("http") || url.startsWith("data:")) return url;
-    return `${window.location.origin}/${url.replace(/^\//, "")}`;
-  };
-
-  const currentImage = activeTab === "recto" ? getImageUrl(doc.photo_recto) : getImageUrl(doc.photo_verso);
-  const hasVerse = !!doc.photo_verso;
   const isPermanent = doc.validity_option === 'PERMANENT';
   const isExpired = !isPermanent && doc.date_expiration && new Date(doc.date_expiration) < new Date();
-
-  const rotateImage = () => {
-    setRotation((prev) => (prev + 90) % 360);
-  };
 
   const handleDownload = async () => {
     try {
@@ -57,6 +43,8 @@ export default function DocumentDetailModal({
     }
   };
 
+  const badgePosition = "absolute right-4 bottom-4 md:top-4 md:bottom-auto md:right-4";
+
   return createPortal(
     <>
       {/* Overlay - desktop only */}
@@ -69,118 +57,39 @@ export default function DocumentDetailModal({
       <div className="fixed inset-0 z-[211] flex items-end md:items-center justify-center p-0 md:p-4">
         <div className="w-full md:max-w-6xl md:rounded-3xl md:shadow-2xl bg-white flex flex-col md:flex-row h-full md:h-auto max-h-screen md:max-h-[90vh] overflow-hidden pb-0">
           {/* Left: Image Viewer - Mobile/Tablet Full Width First */}
-          <div className="relative w-full md:w-3/5 h-[45vh] md:h-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center group overflow-hidden">
-            {/* Background pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,.05)_25%,rgba(255,255,255,.05)_50%,transparent_50%,transparent_75%,rgba(255,255,255,.05)_75%,rgba(255,255,255,.05))] bg-[length:40px_40px]" />
-            </div>
-
-            {/* Image Container */}
-            <div className="relative w-full h-full flex items-center justify-center p-4 md:p-8 overflow-hidden">
-              {currentImage ? (
-                <div
-                  className="relative max-w-full max-h-full transition-all duration-300"
-                  style={{
-                    transform: `scale(${isZoomed ? 1.2 : 1}) rotate(${rotation}deg)`,
-                    cursor: isZoomed ? "zoom-out" : "zoom-in",
-                  }}
-                  onClick={() => setIsZoomed(!isZoomed)}
-                >
-                  <img
-                    src={currentImage}
-                    className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
-                    alt={`Document ${activeTab}`}
-                  />
-                  {isZoomed && (
-                    <div className="absolute inset-0 border-2 border-primary/50 rounded-lg" />
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3 text-slate-400">
-                  <i className="fa-solid fa-image text-4xl md:text-6xl" />
-                  <p className="text-xs md:text-sm font-medium">
-                    {activeTab === "recto"
-                      ? t("detail_no_image_recto")
-                      : t("detail_no_image_verso")}
-                  </p>
-                </div>
-              )}
-            </div>
+          <div className="relative w-full md:w-3/5 h-[45vh] md:h-auto overflow-hidden">
+            <DocumentViewer recto={doc.photo_recto} verso={doc.photo_verso} title={doc.nom_sur_doc || undefined} />
 
             {/* Close Button - Mobile Only */}
             <button
               onClick={onClose}
-              className="md:hidden absolute top-4 right-4 w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-slate-900 hover:bg-white transition-all z-10 shadow-lg"
+              aria-label={t("detail_close")}
+              className="md:hidden absolute top-4 right-4 w-11 h-11 bg-white/90 rounded-xl flex items-center justify-center text-slate-900 hover:bg-white transition-colors z-10 shadow-lg"
             >
               <i className="fa-solid fa-xmark text-lg" />
             </button>
 
-            {/* Image Controls */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 md:bottom-6 md:left-6 flex items-center gap-2 bg-slate-900/80 backdrop-blur border border-white/10 rounded-2xl p-2 md:p-3">
-              <button
-                onClick={rotateImage}
-                className="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
-                title="Rotate"
-              >
-                <i className="fa-solid fa-rotate-right text-sm md:text-base" />
-              </button>
-
-              <div className="w-px h-6 bg-white/10" />
-
-              <span className="text-xs md:text-sm font-medium text-white px-2">
-                {isZoomed ? t("detail_dezoom") : t("detail_zoom")}
-              </span>
-            </div>
-
-            {/* Badge - Recto/Verso */}
-            {hasVerse && (
-              <div className="absolute top-4 left-4 flex gap-2">
-                <button
-                  onClick={() => setActiveTab("recto")}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
-                    activeTab === "recto"
-                      ? "bg-primary text-white shadow-lg shadow-primary/50"
-                      : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
-                  }`}
-                >
-                  <i className="fa-solid fa-rectangle-portrait mr-1.5" />
-                  {t("detail_recto")}
-                </button>
-                <button
-                  onClick={() => setActiveTab("verso")}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
-                    activeTab === "verso"
-                      ? "bg-primary text-white shadow-lg shadow-primary/50"
-                      : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
-                  }`}
-                >
-                  <i className="fa-solid fa-rectangle-landscape mr-1.5" />
-                  {t("detail_verso")}
-                </button>
-              </div>
-            )}
-
             {/* Validity Badge */}
             {isPermanent && (
-              <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 rounded-full backdrop-blur">
-                <i className="fa-solid fa-infinity text-[10px] md:text-xs text-blue-400" />
-                <span className="text-[10px] md:text-xs font-bold text-blue-400 uppercase tracking-widest">
+              <div className={`${badgePosition} flex items-center gap-2 px-3 py-1.5 bg-white/15 rounded-full backdrop-blur`}>
+                <i className="fa-solid fa-infinity text-[10px] md:text-xs text-white" />
+                <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-widest">
                   {t("detail_permanent")}
                 </span>
               </div>
             )}
             {isExpired && (
-              <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded-full backdrop-blur">
-                <i className="fa-solid fa-clock text-[10px] md:text-xs text-orange-400" />
-                <span className="text-[10px] md:text-xs font-bold text-orange-400 uppercase tracking-widest">
+              <div className={`${badgePosition} flex items-center gap-2 px-3 py-1.5 bg-white/15 rounded-full backdrop-blur`}>
+                <i className="fa-solid fa-clock text-[10px] md:text-xs text-white" />
+                <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-widest">
                   {t("detail_expired")}
                 </span>
               </div>
             )}
             {!isPermanent && !isExpired && doc.validity_option === 'EXPIRING' && (
-              <div className="absolute top-4 right-4 md:top-6 md:right-6 flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full backdrop-blur">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] md:text-xs font-bold text-emerald-400 uppercase tracking-widest">
+              <div className={`${badgePosition} flex items-center gap-2 px-3 py-1.5 bg-white/15 rounded-full backdrop-blur`}>
+                <div className="w-1.5 h-1.5 rounded-full bg-green-light" />
+                <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-widest">
                   {t("detail_securise")}
                 </span>
               </div>
@@ -371,13 +280,22 @@ export default function DocumentDetailModal({
 
               {/* Action Buttons - scroll with content on mobile */}
               <div className="pt-6 flex flex-col gap-2">
-                <button onClick={handleDownload} className="w-full h-10 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:from-slate-800 hover:to-slate-700 transition-all active:scale-[0.98]">
+                {onEdit && (
+                  <button
+                    onClick={onEdit}
+                    className="w-full h-11 bg-white border border-borderMain text-textMain rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-surface2 transition-colors active:scale-[0.98]"
+                  >
+                    <i className="fa-solid fa-pen" /> {t("detail_edit")}
+                  </button>
+                )}
+
+                <button onClick={handleDownload} className="w-full h-11 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors active:scale-[0.98]" style={{ background: "#1E3A2F" }}>
                   <i className="fa-solid fa-download" /> {t("detail_telecharger")}
                 </button>
 
                 <button
                   onClick={() => { onClose(); onShare?.(); }}
-                  className="w-full h-10 bg-white border-2 border-primary text-primary rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all active:scale-[0.98]"
+                  className="w-full h-11 bg-white border border-borderMain text-textMain rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-surface2 transition-colors active:scale-[0.98]"
                 >
                   <i className="fa-solid fa-share-nodes" /> {t("detail_partager")}
                 </button>

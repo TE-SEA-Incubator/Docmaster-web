@@ -3,9 +3,12 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useI18n } from "../context/I18nContext";
 import { usePromo } from "../hooks/usePromo";
+import { useConversationUnread } from "../hooks/useConversationUnread";
 import { getPhotoUrl } from "../utils/image";
 import VipAvatar, { isVipUser } from "../components/ui/VipBadge";
 import { Avatar, Group, Text, UnstyledButton, Modal, Stack, Title, Button } from "@mantine/core";
+
+type SidebarNavItem = { to: string; icon: string; label: string; badge?: number };
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -13,13 +16,14 @@ export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { promo } = usePromo();
+  const { unreadTotal: unreadMessages } = useConversationUnread();
   const [open, setOpen] = useState(() => window.innerWidth >= 900);
   const [userClosed, setUserClosed] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const isLargeScreen = () => window.innerWidth >= 900;
 
-  const navItems = [
+  const navItems: { section: string; items: SidebarNavItem[] }[] = [
     {
       section: t("sidebar_primary"),
       items: [
@@ -32,7 +36,12 @@ export default function Sidebar() {
       section: t("sidebar_account"),
       items: [
         { to: "/mes-declarations", icon: "fa-solid fa-clock-rotate-left", label: t("sidebar_declarations") },
-        { to: "/messagerie", icon: "fa-solid fa-message", label: "Messagerie" },
+        {
+          to: "/messagerie",
+          icon: "fa-solid fa-message",
+          label: "Messagerie",
+          badge: unreadMessages,
+        },
         { to: "/mes-gains", icon: "fa-solid fa-wallet", label: t("sidebar_earnings") },
         { to: "/parrainage", icon: "fa-solid fa-gift", label: t("sidebar_referral") },
         { to: "/abonnement", icon: "fa-solid fa-crown", label: t("sidebar_subscription") },
@@ -107,6 +116,14 @@ export default function Sidebar() {
                         <i className={`${item.icon}`} />
                       </div>
                       {item.label}
+                      {!!item.badge && (
+                        <span
+                          title={`${item.badge} message(s) non lu(s)`}
+                          className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center"
+                        >
+                          {item.badge > 9 ? "9+" : item.badge}
+                        </span>
+                      )}
                     </Link>
                 ))}
               </nav>

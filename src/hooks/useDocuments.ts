@@ -50,9 +50,9 @@ export function useDocuments() {
     }
   }, [toast]);
 
-  const reportLost = useCallback(async (id: string) => {
+  const reportLost = useCallback(async (id: string, password?: string) => {
     try {
-      const res = await documentsService.reportLost(id);
+      const res = await documentsService.reportLost(id, password);
       toast.success("Document signalé comme perdu");
       await fetch();
       return res;

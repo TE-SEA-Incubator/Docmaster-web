@@ -2,9 +2,10 @@ import { Request, Response } from 'express';
 import { DeclarationService } from '../services/declaration.service.ts';
 import { PdfService } from '../services/pdf.service.ts';
 import { activityLogService } from '../services/activity-log.service.ts';
-import { CreateDeclarationDTO, RequestDeleteDeclarationDTO } from '../dtos/declaration.dto.ts';
+import { CreateDeclarationDTO, RequestDeleteDeclarationDTO, UpdateDeclarationDTO } from '../dtos/declaration.dto.ts';
 import { validateDTO, mapFormDataToObject, formatValidationErrors } from '../utils/validation.utils.ts';
 import { DocumentRepository } from '../repositories/document.repository.ts';
+import { DocumentDeclaration } from '../types/database.ts';
 import pool from '../database/db.js';
 
 const declarationService = new DeclarationService();
@@ -74,9 +75,13 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
     // Link wallet document if provided
     const sourceDocumentId = req.body.source_document_id;
     if (sourceDocumentId && typeof sourceDocumentId === 'string') {
-      documentRepository.updateLostStatus(sourceDocumentId, userId, true, result.id).catch((e: any) => {
+      // Attendu : sans await, le client affiche « document perdu » alors que l'écriture
+      // n'est pas encore passée, et son rechargement peut relire l'ancien état.
+      try {
+        await documentRepository.updateLostStatus(sourceDocumentId, userId, true, result.id);
+      } catch (e) {
         console.error('⚠️ Could not link declaration to wallet document:', e);
-      });
+      }
     }
 
     res.status(201).json({
@@ -480,5 +485,112 @@ export const deleteDeclaration = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: error.message });
     }
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// status, doc_type et transactions_id sont volontairement hors liste : l'état d'une
+// déclaration s'accorde par les parcours dédiés (matching, récupération, paiement),
+// un PATCH ne doit pas permettre à un client de se déclarer lui-même « restitué ».
+const UPDATABLE_DECLARATION_FIELDS: (keyof UpdateDeclarationDTO)[] = [
+  'owner_name',
+  'document_number',
+  'ville',
+  'pays',
+  'region',
+  'quartier',
+  'description',
+  'etat_physique',
+  'urgence_niveau',
+  'recompense_montant',
+  'mode_contact',
+  'telephone_contact',
+  'email_contact',
+  'date_expiration',
+  'date_perte',
+  'date_naissance',
+  'found_location',
+];
+
+export const updateDeclaration = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Non authentifié' });
+    }
+
+    const validationErrors = await validateDTO(req.body, UpdateDeclarationDTO);
+    if (validationErrors) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation échouée',
+        errors: validationErrors,
+      });
+    }
+
+    const data: Partial<DocumentDeclaration> = {};
+    for (const field of UPDATABLE_DECLARATION_FIELDS) {
+      if (req.body[field] !== undefined) {
+        (data as any)[field] = req.body[field];
+      }
+    }
+
+    // Le formulaire est envoyé en JSON par le web, en chaîne par les clients qui
+    // sérialisent à la main ; le repository re- stringify, donc on normalise ici.
+    if (typeof (data as any).found_location === 'string') {
+      try {
+        (data as any).found_location = JSON.parse((data as any).found_location);
+      } catch (e) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation échouée',
+          errors: { found_location: ['found_location doit être un objet JSON'] },
+        });
+      }
+    }
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Aucun champ modifiable dans la requête',
+      });
+    }
+
+    const updated = await declarationService.updateDeclaration(
+      id as string,
+      userId,
+      data,
+    );
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: 'Déclaration introuvable ou non autorisée',
+      });
+    }
+
+    activityLogService.log({
+      user_id: userId,
+      action_type: 'UPDATE_DECLARATION',
+      entity_type: 'declaration',
+      entity_id: id as string,
+      description: `Complément de déclaration (${Object.keys(data).join(', ')})`,
+      metadata: { fields: Object.keys(data) },
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent'],
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      message: 'Déclaration mise à jour',
+      data: updated,
+    });
+  } catch (error: any) {
+    console.error('❌ Erreur mise à jour déclaration:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la mise à jour de la déclaration',
+    });
   }
 };

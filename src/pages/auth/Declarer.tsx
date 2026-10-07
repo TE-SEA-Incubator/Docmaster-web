@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
+import { documentsService } from "../../services/documentsService";
 import DatePicker from "../../components/ui/DatePicker";
 
 import apiClient from "../../services/api";
@@ -91,6 +92,14 @@ export default function Declarer() {
 
   const MAX_DOCS = 5;
 
+  // Graine de pré-remplissage : /declarer?from=<déclaration de trouvaille>&vault=<document enregistré>.
+  // Le vault porte les infos du client ; la trouvaille ne fait que désigner le type de document.
+  const [searchParams] = useSearchParams();
+  const seedFoundId = searchParams.get("from") ?? "";
+  const seedVaultId = searchParams.get("vault") ?? "";
+  const seededRef = useRef(false);
+  const [sourceDocumentId, setSourceDocumentId] = useState("");
+
   // Custom states matching the HTML inputs
   const [lossDate, setLossDate] = useState("");
   const [lossTime, setLossTime] = useState("");
@@ -150,7 +159,8 @@ export default function Declarer() {
     const addr = item.address || {};
     const city = addr.city || addr.town || addr.village || addr.municipality || "";
     if (city) {
-      setVille(city);
+      // La ville déclarée est l'étage administratif le plus fin du sélecteur (cf. soumission).
+      setLocation((prev) => ({ ...prev, department: city }));
       setFieldErrors((prev) => ({ ...prev, ville: "" }));
     }
     const quartier = addr.suburb || addr.quarter || addr.neighbourhood || addr.region || "";
@@ -220,6 +230,58 @@ export default function Declarer() {
     fillOwnerName(docId, key);
     setSelectedDocs((prev) => [...prev, { key, docId }]);
   };
+
+  const docTypeOfSeed = (declDocType?: string, vaultTypeDoc?: string): DocTypeCatalog | undefined => {
+    // `declarations.doc_type` stockle l'id du catalogue, `my_documents.type_doc` son code : les deux graines sont acceptées.
+    for (const value of [declDocType, vaultTypeDoc]) {
+      const needle = (value ?? "").toLowerCase();
+      if (!needle) continue;
+      const match = docTypes.find(
+        (d) => d.id.toLowerCase() === needle || d.code.toLowerCase() === needle || d.nom.toLowerCase() === needle
+      );
+      if (match) return match;
+    }
+    return undefined;
+  };
+
+  /** On ne redemande pas ce que la plateforme sait déjà : titulaire, numéro, dates et type sont repris. */
+  const applySeed = async () => {
+    const [foundRes, vaultRes] = await Promise.all([
+      seedFoundId ? declarationsService.getById(seedFoundId).catch(() => null) : Promise.resolve(null),
+      seedVaultId ? documentsService.getById(seedVaultId).catch(() => null) : Promise.resolve(null),
+    ]);
+    const found = foundRes?.data;
+    const vault = vaultRes?.data;
+    const docType = docTypeOfSeed(found?.doc_type, vault?.type_doc);
+    if (!docType) return;
+
+    const instanceKey = createInstanceKey(docType.id);
+    const dayOf = (value?: string) => (value ? String(value).split("T")[0] : "");
+    const profileName = [user?.prenom, user?.nom].filter(Boolean).join(" ").trim();
+    const titulaire = vault?.nom_sur_doc || found?.owner_name || profileName;
+    const numero = vault?.numero_doc || found?.document_number || "";
+    const delivrance = dayOf(vault?.date_delivrance);
+    const expiration = dayOf(vault?.date_expiration) || dayOf(found?.date_expiration);
+    const naissance = dayOf(found?.date_naissance);
+
+    setOwnerType((current) => current ?? "me");
+    setSelectedDocs((current) => (current.length ? current : [{ key: instanceKey, docId: docType.id }]));
+    setSourceDocumentId(seedVaultId);
+    setFormData((current) => ({
+      ...current,
+      ...(titulaire ? { [`titulaire_${instanceKey}`]: current[`titulaire_${instanceKey}`] || titulaire } : {}),
+      ...(numero ? { [`numero_${instanceKey}`]: current[`numero_${instanceKey}`] || numero } : {}),
+      ...(naissance ? { [`date_naissance_${instanceKey}`]: naissance } : {}),
+      ...(delivrance ? { [`date_delivrance_${instanceKey}`]: delivrance } : {}),
+      ...(expiration ? { [`date_expiration_${instanceKey}`]: expiration } : {}),
+    }));
+  };
+
+  useEffect(() => {
+    if (seededRef.current || loading || (!seedFoundId && !seedVaultId)) return;
+    seededRef.current = true;
+    void applySeed();
+  }, [loading, seedFoundId, seedVaultId]);
 
   const removeDocInstance = (instanceKey: string) => {
     setSelectedDocs((prev) => prev.filter((s) => s.key !== instanceKey));
@@ -427,6 +489,7 @@ export default function Declarer() {
         fd.append("doc_type", inst.docId);
         fd.append("owner_name", ownerName || t("declarer_owner_unknown"));
         if (docNum) fd.append("document_number", docNum);
+        if (sourceDocumentId) fd.append("source_document_id", sourceDocumentId);
         fd.append("ville", (location.arrondissement || location.department) || t("declarer_not_specified"));
         if (quartier) fd.append("quartier", quartier);
         fd.append("region", location.region || t("declarer_region_centre"));
@@ -507,7 +570,8 @@ export default function Declarer() {
     setOwnerType(null);
     setLossDate("");
     setLossTime("");
-    setVille("");
+    setLocation({ region: "", department: "", arrondissement: "" });
+    setPlaceQuery("");
     setQuartier("");
     setLieuPrecis("");
     setCircumstances("");

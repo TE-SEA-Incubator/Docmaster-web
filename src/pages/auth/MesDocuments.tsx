@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Modal, Loader, SimpleGrid, Paper, Text, Group, TextInput, Title, Card, Stepper, Button, Select, Stack, Checkbox, Radio } from "@mantine/core";
+import { Modal, Loader, Paper, Text, Group, TextInput, Card, Stepper, Button, Select, Stack, Checkbox, Radio } from "@mantine/core";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { documentTypesService } from "../../services/declarationsService";
+import { documentsService } from "../../services/documentsService";
 import { useDocuments } from "../../hooks/useDocuments";
 import { useI18n } from "../../context/I18nContext";
 import { useTopbar } from "../../hooks/useTopbar";
@@ -10,6 +11,7 @@ import apiClient from "../../services/api";
 
 import DocumentCard from "../../components/cards/DocumentCard";
 import DocumentDetailModal from "../../components/ui/DocumentDetailModal";
+import ResponsiveSheet from "../../components/ui/ResponsiveSheet";
 import ShareModal from "../../components/modals/Sharemodal";
 import ReportLostModal from "../../components/ui/ReportLostModal";
 import DatePicker from "../../components/ui/DatePicker";
@@ -22,6 +24,12 @@ function addMonths(dateStr: string, months: number): string {
   d.setMonth(d.getMonth() + months);
   if (d.getDate() !== day) d.setDate(0);
   return d.toISOString().split("T")[0];
+}
+
+function toMediaUrl(url?: string | null): string {
+  if (!url) return "";
+  if (url.startsWith("http") || url.startsWith("data:")) return url;
+  return `${window.location.origin}/${url.replace(/^\//, "")}`;
 }
 
 export default function MesDocuments() {
@@ -39,6 +47,7 @@ export default function MesDocuments() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLostModal, setShowLostModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -49,6 +58,7 @@ export default function MesDocuments() {
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
+  const [editingDoc, setEditingDoc] = useState<Document | null>(null);
   const [customTypeName, setCustomTypeName] = useState("");
   const rectoOpenRef = useRef<() => void>(null);
   const versoOpenRef = useRef<() => void>(null);
@@ -76,8 +86,7 @@ export default function MesDocuments() {
     }).catch(() => {});
   }, []);
 
-  const verifiedCount = docs.filter((d) => d.is_verified).length;
-  const pendingCount = docs.filter((d) => !d.is_verified).length;
+  const archivedCount = docs.filter((d) => d.is_archived).length;
 
   const showArchived = filterCat === "__archived";
   const filtered = docs.filter((d) => {
@@ -97,13 +106,37 @@ export default function MesDocuments() {
     setVersoFile(null);
     setConsent(false);
     setCustomTypeName("");
+    setEditingDoc(null);
   }
 
   function closeAddModal() { setShowAddModal(false); resetForm(); }
   function goStep(s: number) { setStep(s); }
 
+  function openEditModal(doc: Document) {
+    setSelectedDoc(doc);
+    setEditingDoc(doc);
+    setValidityOption(doc.validity_option === 'PERMANENT' ? 'PERMANENT' : 'EXPIRING');
+    setSelectedType(doc.type_doc || null);
+    setCustomTypeName("");
+    setForm({
+      name: doc.nom_sur_doc || "",
+      number: doc.numero_doc || "",
+      issued: doc.date_delivrance ? String(doc.date_delivrance).slice(0, 10) : "",
+      expiry: doc.date_expiration ? String(doc.date_expiration).slice(0, 10) : "",
+      authority: doc.nom_autorite || "",
+      notes: doc.notes || "",
+    });
+    setRectoFile(null);
+    setVersoFile(null);
+    setConsent(false);
+    setStep(1);
+    setShowAddModal(true);
+  }
+
   async function handleSubmit() {
-    if (!consent || !selectedType || (selectedType === 'AUTRES' && !customTypeName.trim()) || !form.name || !rectoFile) return;
+    const hasRecto = !!rectoFile || (!!editingDoc?.photo_recto);
+    if (!selectedType || (selectedType === 'AUTRES' && !customTypeName.trim()) || !form.name || !hasRecto) return;
+    if (!editingDoc && !consent) return;
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -114,8 +147,11 @@ export default function MesDocuments() {
       if (isCustom) fd.append("custom_type_name", customTypeName.trim());
       fd.append("validity_option", validityOption);
       if (validityOption === 'PERMANENT') {
-        fd.append("date_expiration", "");
-        fd.append("date_delivrance", "");
+        // Le PUT applique un COALESCE : on n'envoie des dates vides qu'à la création.
+        if (!editingDoc) {
+          fd.append("date_expiration", "");
+          fd.append("date_delivrance", "");
+        }
       } else {
         if (form.issued) fd.append("date_delivrance", form.issued);
         if (form.expiry) fd.append("date_expiration", form.expiry);
@@ -125,7 +161,13 @@ export default function MesDocuments() {
       if (rectoFile) fd.append("photo_recto", rectoFile);
       if (versoFile) fd.append("photo_verso", versoFile);
 
-      await apiClient.post("documents", fd);
+      if (editingDoc) {
+        await documentsService.update(editingDoc.id, fd);
+        setSuccessMsg(t("mesdocuments_edit_success_msg"));
+      } else {
+        await apiClient.post("documents", fd);
+        setSuccessMsg(t("mesdocuments_success_msg"));
+      }
       await fetchDocs();
       setSubmitting(false);
       setShowAddModal(false);
@@ -158,8 +200,12 @@ export default function MesDocuments() {
     setShowDeleteModal(false);
   }
 
-  async function handleLostModalClose() {
+  async function handleLostModalClose(submitted?: { refs: string[] }) {
     setShowLostModal(false);
+    // La liste relit le serveur : le badge « perdu » n'apparaît que si l'écriture a été accordée.
+    await fetchDocs();
+    if (!submitted) return;
+    setSuccessMsg(t("reportlost_success_title"));
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 5000);
   }
@@ -209,37 +255,16 @@ export default function MesDocuments() {
           </Paper>
         )}
 
-        {/* Stats row */}
-        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm" className="max-sm:hidden">
-          <Paper withBorder p="md" radius="md">
-            <Paper style={{ background: "rgba(217,138,48,0.1)", width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="fa-solid fa-folder-open text-primary text-sm" />
-            </Paper>
-            <Text fz={24} fw={800} mt="sm" className="font-bricolage">{docs.length}</Text>
-            <Text size="sm" c="dimmed" fw={500}>{t("mesdocuments_total_registered")}</Text>
-          </Paper>
-          <Paper withBorder p="md" radius="md">
-            <Paper style={{ background: "#e6f7ed", width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="fa-solid fa-shield-check text-green-mid text-sm" />
-            </Paper>
-            <Text fz={24} fw={800} mt="sm" className="font-bricolage">{verifiedCount}</Text>
-            <Text size="sm" c="dimmed" fw={500}>{t("mesdocuments_verified")}</Text>
-          </Paper>
-          <Paper withBorder p="md" radius="md">
-            <Paper style={{ background: "#fef3c7", width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="fa-solid fa-clock text-amber-500 text-sm" />
-            </Paper>
-            <Text fz={24} fw={800} mt="sm" className="font-bricolage">{pendingCount}</Text>
-            <Text size="sm" c="dimmed" fw={500}>{t("mesdocuments_pending")}</Text>
-          </Paper>
-          <Paper withBorder p="md" radius="md">
-            <Paper style={{ background: "#eff6ff", width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <i className="fa-solid fa-cloud-arrow-up text-blue-500 text-sm" />
-            </Paper>
-            <Text fz={24} fw={800} mt="sm" className="font-bricolage">94%</Text>
-            <Text size="sm" c="dimmed" fw={500}>{t("mesdocuments_profile_completed")}</Text>
-          </Paper>
-        </SimpleGrid>
+        {/* Compteurs */}
+        <Group gap="md" align="center" wrap="wrap">
+          <Text fz={14} fw={700}>
+            <i className="fa-solid fa-folder-open text-primary mr-2" style={{ fontSize: 12 }} />
+            {docs.length} {t("mesdocuments_total_registered")}
+          </Text>
+          <Text fz={13} c="dimmed">
+            {archivedCount} {t("mesdocuments_count_archived")}
+          </Text>
+        </Group>
 
         {/* Filters + search */}
         <Group gap="sm" wrap="wrap">
@@ -287,6 +312,7 @@ export default function MesDocuments() {
               doc={doc}
               catLabels={catLabelsT}
               onView={openViewModal}
+              onEdit={openEditModal}
               onShare={openShareModal}
               onDelete={handleDelete}
               onReportLost={(d) => { setSelectedDoc(d); setShowLostModal(true); }}
@@ -306,76 +332,82 @@ export default function MesDocuments() {
         </Paper>
       </div>
 
-      {/* ── ADD DOCUMENT MODAL ── */}
-      <Modal opened={showAddModal} onClose={closeAddModal} size="lg" padding="lg">
-        <Title order={2} className="font-bricolage" fz={20} mb={2}>{t("mesdocuments_modal_title")}</Title>
-        <Text size="sm" c="dimmed" mb="lg">{t("mesdocuments_step")} {step} {t("mesdocuments_of")} 3</Text>
-
-        <Stepper active={step - 1} mb="xl" size="sm" allowNextStepsSelect={false}>
-          <Stepper.Step label={t("mesdocuments_step_type")} />
-          <Stepper.Step label={t("mesdocuments_step_info")} />
-          <Stepper.Step label={t("mesdocuments_step_photos")} />
-        </Stepper>
-
-        {/* Step 1: Validity Option */}
-        {step === 1 && (
-          <div>
-            <Text fw={600} mb="md">{t("mesdocuments_validity_option")}</Text>
-            <Stack gap="md" mb="lg">
-              <Card
-                withBorder p="lg" radius="md"
-                style={{
-                  borderColor: validityOption === 'EXPIRING' ? "#E8923A" : undefined,
-                  background: validityOption === 'EXPIRING' ? 'rgba(254,240,220,0.4)' : undefined,
-                  cursor: "pointer",
-                  transform: validityOption === 'EXPIRING' ? 'scale(1.01)' : undefined,
-                  boxShadow: validityOption === 'EXPIRING' ? '0 8px 24px rgba(217,138,48,0.1)' : undefined,
-                }}
-                onClick={() => { setValidityOption('EXPIRING'); setSelectedType(null); }}
-              >
-                <Group gap="md">
-                  <Paper style={{ width: 48, height: 48, borderRadius: 14, background: validityOption === 'EXPIRING' ? '#E8923A' : '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: validityOption === 'EXPIRING' ? 'white' : '#d97706' }}>
-                    <i className="fa-solid fa-calendar-clock text-xl" />
-                  </Paper>
-                  <div style={{ flex: 1 }}>
-                    <Group gap="sm">
-                      <Radio checked={validityOption === 'EXPIRING'} />
-                      <Text fz={15} fw={800}>{t("mesdocuments_option_expiring")}</Text>
-                    </Group>
-                    <Text size="sm" c="dimmed" mt={4} ml={28}>{t("mesdocuments_option_expiring_desc")}</Text>
-                  </div>
-                </Group>
-              </Card>
-
-              <Card
-                withBorder p="lg" radius="md"
-                style={{
-                  borderColor: validityOption === 'PERMANENT' ? "#E8923A" : undefined,
-                  background: validityOption === 'PERMANENT' ? 'rgba(254,240,220,0.4)' : undefined,
-                  cursor: "pointer",
-                  transform: validityOption === 'PERMANENT' ? 'scale(1.01)' : undefined,
-                  boxShadow: validityOption === 'PERMANENT' ? '0 8px 24px rgba(217,138,48,0.1)' : undefined,
-                }}
-                onClick={() => { setValidityOption('PERMANENT'); setSelectedType(null); }}
-              >
-                <Group gap="md">
-                  <Paper style={{ width: 48, height: 48, borderRadius: 14, background: validityOption === 'PERMANENT' ? '#E8923A' : '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: validityOption === 'PERMANENT' ? 'white' : '#2563eb' }}>
-                    <i className="fa-solid fa-infinity text-xl" />
-                  </Paper>
-                  <div style={{ flex: 1 }}>
-                    <Group gap="sm">
-                      <Radio checked={validityOption === 'PERMANENT'} />
-                      <Text fz={15} fw={800}>{t("mesdocuments_option_permanent")}</Text>
-                    </Group>
-                    <Text size="sm" c="dimmed" mt={4} ml={28}>{t("mesdocuments_option_permanent_desc")}</Text>
-                  </div>
-                </Group>
-              </Card>
-            </Stack>
-            <Button onClick={() => goStep(2)} color="gold" fullWidth size="md" rightSection={<i className="fa-solid fa-arrow-right" />}>
+      {/* ── ADD / EDIT DOCUMENT SHEET ── */}
+      <ResponsiveSheet
+        opened={showAddModal}
+        onClose={closeAddModal}
+        closeLabel={t("detail_close")}
+        title={t(editingDoc ? "mesdocuments_edit_modal_title" : "mesdocuments_modal_title")}
+        subtitle={<Text size="sm" c="dimmed">{t("mesdocuments_step")} {step} {t("mesdocuments_of")} 3</Text>}
+        onBack={step > 1 ? () => goStep(step - 1) : undefined}
+        backLabel={t("mesdocuments_back")}
+        progress={
+          <Stepper active={step - 1} size="xs" allowNextStepsSelect={false}>
+            <Stepper.Step label={t("mesdocuments_step_type")} />
+            <Stepper.Step label={t("mesdocuments_step_info")} />
+            <Stepper.Step label={t("mesdocuments_step_photos")} />
+          </Stepper>
+        }
+        footer={
+          step === 3 ? (
+            <Button
+              color="green" fullWidth size="lg" onClick={handleSubmit}
+              disabled={(!editingDoc && !consent) || submitting}
+              loading={submitting}
+              leftSection={!submitting && <i className="fa-solid fa-shield-halved" />}
+            >
+              {t(editingDoc ? "mesdocuments_update_secure" : "mesdocuments_save_secure")}
+            </Button>
+          ) : (
+            <Button
+              color="gold" fullWidth size="lg" onClick={() => goStep(step + 1)}
+              disabled={step === 2 && (
+                !selectedType
+                || (selectedType === 'AUTRES' && !customTypeName.trim())
+                || !form.name
+                || !form.number
+                || (hasExpiration && !form.issued)
+                || (hasExpiration && !isAutoExpiry && !form.expiry)
+              )}
+              rightSection={<i className="fa-solid fa-arrow-right" />}
+            >
               {t("mesdocuments_continue")}
             </Button>
-          </div>
+          )
+        }
+      >
+        {/* Step 1: Validity Option */}
+        {step === 1 && (
+          <Radio.Group
+            label={t("mesdocuments_validity_option")}
+            value={validityOption}
+            onChange={(value) => { setValidityOption(value as "EXPIRING" | "PERMANENT"); setSelectedType(null); }}
+          >
+            <Stack gap="sm">
+              {([
+                { value: "EXPIRING", icon: "fa-calendar-clock", label: t("mesdocuments_option_expiring"), desc: t("mesdocuments_option_expiring_desc") },
+                { value: "PERMANENT", icon: "fa-infinity", label: t("mesdocuments_option_permanent"), desc: t("mesdocuments_option_permanent_desc") },
+              ] as const).map((option) => (
+                <Paper
+                  key={option.value}
+                  withBorder
+                  radius="md"
+                  p="md"
+                  onClick={() => { setValidityOption(option.value); setSelectedType(null); }}
+                  style={{ cursor: "pointer", background: validityOption === option.value ? "var(--mantine-color-gray-0)" : undefined }}
+                >
+                  <Group gap="md" align="flex-start" wrap="nowrap">
+                    <Radio value={option.value} size="lg" />
+                    <i className={`fa-solid ${option.icon} text-lg ${validityOption === option.value ? "text-green-dark" : "text-textMuted"}`} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Text fz={15} fw={700}>{option.label}</Text>
+                      <Text size="sm" c="dimmed" mt={2}>{option.desc}</Text>
+                    </div>
+                  </Group>
+                </Paper>
+              ))}
+            </Stack>
+          </Radio.Group>
         )}
 
         {/* Step 2: Type + Info */}
@@ -427,9 +459,9 @@ export default function MesDocuments() {
                 placeholder={t("mesdocuments_placeholder_number")} required
               />
               {hasExpiration ? (
-                <Group gap="sm" grow>
-                  <DatePicker value={form.issued} onChange={updateIssued} label={<>{t("mesdocuments_issue_date")} <R /></>} placeholder={t("mesdocuments_placeholder_date")} />
-                  <DatePicker value={form.expiry} onChange={(v) => setForm({ ...form, expiry: v })} label={t("mesdocuments_expiry_date")} placeholder={t("mesdocuments_placeholder_date")} disabled={isAutoExpiry} />
+                <Group gap="sm" wrap="wrap">
+                  <DatePicker className="grow basis-[200px]" value={form.issued} onChange={updateIssued} label={<>{t("mesdocuments_issue_date")} <R /></>} placeholder={t("mesdocuments_placeholder_date")} />
+                  <DatePicker className="grow basis-[200px]" value={form.expiry} onChange={(v) => setForm({ ...form, expiry: v })} label={t("mesdocuments_expiry_date")} placeholder={t("mesdocuments_placeholder_date")} disabled={isAutoExpiry} />
                 </Group>
               ) : (
                 <DatePicker value={form.issued} onChange={(v) => setForm({ ...form, issued: v })} label={t("mesdocuments_issue_date")} placeholder={t("mesdocuments_placeholder_date")} />
@@ -441,19 +473,6 @@ export default function MesDocuments() {
                 placeholder={t("mesdocuments_placeholder_authority")}
               />
             </Stack>
-
-            <Group gap="sm" mt="lg">
-              <Button variant="default" onClick={() => goStep(1)} leftSection={<i className="fa-solid fa-arrow-left" />}>
-                {t("mesdocuments_back")}
-              </Button>
-              <Button
-                color="gold" onClick={() => goStep(3)}
-                disabled={!selectedType || (selectedType === 'AUTRES' && !customTypeName.trim()) || !form.name || !form.number || (hasExpiration && !form.issued) || (hasExpiration && !isAutoExpiry && !form.expiry)}
-                rightSection={<i className="fa-solid fa-arrow-right" />}
-              >
-                {t("mesdocuments_continue")}
-              </Button>
-            </Group>
           </div>
         )}
 
@@ -464,6 +483,14 @@ export default function MesDocuments() {
               {/* Recto dropzone */}
               <div>
                 <Text fw={500} size="sm" mb={4}>{t("mesdocuments_photo_recto")} <R /></Text>
+                {editingDoc?.photo_recto && !rectoFile && (
+                  <Paper withBorder p="sm" radius="md" mb="xs">
+                    <Group gap="sm" wrap="nowrap">
+                      <img src={toMediaUrl(editingDoc.photo_recto)} alt="" style={{ width: 64, height: 48, objectFit: "cover", borderRadius: 8 }} />
+                      <Text size="xs" c="dimmed" fw={600} style={{ flex: 1 }} truncate>{t("mesdocuments_current_photo")}</Text>
+                    </Group>
+                  </Paper>
+                )}
                 {rectoFile ? (
                   <Paper withBorder p="sm" radius="md">
                     <Group gap="sm">
@@ -508,6 +535,14 @@ export default function MesDocuments() {
               {/* Verso dropzone */}
               <div>
                 <Text fw={500} size="sm" mb={4}>{t("mesdocuments_photo_verso")} <Text span c="dimmed" fw={400} size="xs">— {t("mesdocuments_optional")}</Text></Text>
+                {editingDoc?.photo_verso && !versoFile && (
+                  <Paper withBorder p="sm" radius="md" mb="xs">
+                    <Group gap="sm" wrap="nowrap">
+                      <img src={toMediaUrl(editingDoc.photo_verso)} alt="" style={{ width: 64, height: 48, objectFit: "cover", borderRadius: 8 }} />
+                      <Text size="xs" c="dimmed" fw={600} style={{ flex: 1 }} truncate>{t("mesdocuments_current_photo")}</Text>
+                    </Group>
+                  </Paper>
+                )}
                 {versoFile ? (
                   <Paper withBorder p="sm" radius="md">
                     <Group gap="sm">
@@ -569,29 +604,16 @@ export default function MesDocuments() {
               </Stack>
             </Paper>
 
-            <Checkbox
-              label={t("mesdocuments_consent")}
-              checked={consent}
-              onChange={(e) => setConsent(e.currentTarget.checked)}
-              mb="lg"
-            />
-
-            <Group gap="sm">
-              <Button variant="default" onClick={() => goStep(2)} leftSection={<i className="fa-solid fa-arrow-left" />}>
-                {t("mesdocuments_back")}
-              </Button>
-              <Button
-                color="green" onClick={handleSubmit}
-                disabled={!consent || submitting}
-                loading={submitting}
-                leftSection={<i className="fa-solid fa-shield-halved" />}
-              >
-                {t("mesdocuments_save_secure")}
-              </Button>
-            </Group>
+            {!editingDoc && (
+              <Checkbox
+                label={t("mesdocuments_consent")}
+                checked={consent}
+                onChange={(e) => setConsent(e.currentTarget.checked)}
+              />
+            )}
           </div>
         )}
-      </Modal>
+      </ResponsiveSheet>
 
       {/* ── VIEW MODAL ── */}
       {showViewModal && selectedDoc && (
@@ -599,6 +621,7 @@ export default function MesDocuments() {
           doc={selectedDoc}
           catLabels={catLabelsT}
           onClose={() => setShowViewModal(false)}
+          onEdit={() => { const d = selectedDoc; setShowViewModal(false); if (d) openEditModal(d); }}
           onShare={() => { setShowViewModal(false); setShowShareModal(true); }}
         />
       )}
@@ -648,7 +671,7 @@ export default function MesDocuments() {
           <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
             <i className="fa-solid fa-check text-[10px]" />
           </div>
-          <span className="text-[13px] font-medium whitespace-nowrap">{t("mesdocuments_success_msg")}</span>
+          <span className="text-[13px] font-medium whitespace-nowrap">{successMsg}</span>
         </div>
       )}
     </div>

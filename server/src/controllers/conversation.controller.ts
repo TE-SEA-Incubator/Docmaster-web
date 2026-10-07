@@ -10,8 +10,13 @@ const unauthorized = (res: Response) =>
 
 const fail = (res: Response, error: any) => {
   const status = typeof error?.status === 'number' ? error.status : 500;
-  if (status === 500) console.error('[Conversations]', error);
-  return res.status(status).json({ success: false, message: error?.message || 'Erreur interne.' });
+  // Seules les 4xx sont rédigées pour le client. Une erreur technique (Postgres, dépendance)
+  // divulgue le SQL et le schéma internes : elle reste dans les logs, le client n'a qu'un message générique.
+  if (status < 400 || status > 499) {
+    console.error('[Conversations]', error);
+    return res.status(500).json({ success: false, message: 'Une erreur est survenue. Réessayez dans un instant.' });
+  }
+  return res.status(status).json({ success: false, message: error?.message || 'Requête invalide.' });
 };
 
 const readFilter = (raw: unknown): ConversationFilter =>

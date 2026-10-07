@@ -183,6 +183,21 @@ export class UpdateDeclarationDTO {
 
   @IsString()
   @IsOptional()
+  @IsDateString({}, { message: 'date_perte doit être au format ISO 8601' })
+  date_perte?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsDateString({}, { message: 'date_naissance doit être au format ISO 8601' })
+  date_naissance?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  quartier?: string;
+
+  @IsString()
+  @IsOptional()
   description?: string;
 
   @IsString()

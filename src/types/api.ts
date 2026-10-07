@@ -121,6 +121,7 @@ export interface Declaration {
   photo_verso?: string;
   etat_physique?: string;
   date_expiration?: string;
+  date_naissance?: string;
   document_number?: string;
   docTypeInfo?: { nom: string; code?: string; prix_retrouvaille?: number; finder_percent?: number; points_recompense?: number; icone?: string };
   // Declaration form fields

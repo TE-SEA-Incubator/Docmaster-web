@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Alert } from "@mantine/core";
 import { InputTooltip } from "../../components/auth/InputTooltip";
 import { GoogleButton, FacebookButton } from "../../components/auth/SocialButtons/SocialButtons";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../context/I18nContext";
 import { useGoogleOneTap } from "../../hooks/useGoogleOneTap";
+import { postAuthRedirect } from "../../utils/postAuthRedirect";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api/";
 
@@ -14,8 +15,9 @@ export default function Login() {
   const { login, loginWithGoogle, user } = useAuth();
   useGoogleOneTap();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const redirectUrl = searchParams.get("redirect");
+  const loginRedirect = postAuthRedirect(location, searchParams);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [loginError, setLoginError] = useState("");
@@ -29,9 +31,9 @@ export default function Login() {
 
   useEffect(() => {
     if (user) {
-      navigate(redirectUrl || "/dashboard", { replace: true });
+      navigate(loginRedirect, { replace: true });
     }
-  }, [user, navigate, redirectUrl]);
+  }, [user, navigate, loginRedirect]);
 
   useEffect(() => {
     if (showForgot && forgotRef.current) {
@@ -56,7 +58,7 @@ export default function Login() {
     const result = await loginWithGoogle();
     setLoginLoading(false);
     if (result.success) {
-      navigate("/dashboard");
+      navigate(loginRedirect, { replace: true });
     } else {
       setLoginError(result.message);
     }

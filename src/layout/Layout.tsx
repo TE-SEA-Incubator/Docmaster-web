@@ -52,6 +52,8 @@ function LayoutInner() {
   }, [navigate]);
 
   const isAuthPage = authPages.some((p) => path.startsWith(p));
+  const isFullscreenRoute = path.startsWith("/messagerie");
+  const hasBottomOverlay = ["/messagerie", "/rendre", "/recuperer", "/remise"].some((p) => path.startsWith(p));
   const isPublicHome = path === "/";
   const showFooter = isPublicHome || path === "/rechercher" || path === "/conditions" || path === "/confidentialite";
 
@@ -68,7 +70,7 @@ function LayoutInner() {
         </>
       ) : null}
 
-      <main className={isAuthPage && user ? `ml-[var(--sidebar)] max-md:ml-0 ${path.startsWith("/messagerie") ? "" : "pb-[70px]"} md:pb-0 transition-all duration-300 flex flex-col h-screen` : ""}>
+      <main className={isAuthPage && user ? `ml-[var(--sidebar)] max-md:ml-0 ${isFullscreenRoute ? "" : "pb-[70px]"} md:pb-0 transition-all duration-300 flex flex-col h-dvh` : ""}>
         {/* Topbar global — visible sur toutes les pages auth */}
         {isAuthPage && user && (
           <Topbar title={title} breadcrumbs={breadcrumbs} />
@@ -105,7 +107,9 @@ function LayoutInner() {
 
         <motion.div
           key={location.pathname}
-          className="flex-1 overflow-auto relative z-10"
+          className={isFullscreenRoute && isAuthPage && user
+            ? "flex-1 min-h-0 overflow-hidden flex flex-col relative z-10 pb-[70px] md:pb-0"
+            : "flex-1 overflow-auto relative z-10"}
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
@@ -117,8 +121,8 @@ function LayoutInner() {
       {isAuthPage && <MobileNav />}
       {showFooter && !isAuthPage && <Footer />}
       {notifModalOpen && <NotificationModal onClose={() => setNotifModalOpen(false)} />}
-      <PlayStoreBanner />
-      <ChatWidget />
+      {!isAuthPage && !hasBottomOverlay && <PlayStoreBanner />}
+      {!hasBottomOverlay && <ChatWidget />}
     </div>
   );
 }

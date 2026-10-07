@@ -7,12 +7,13 @@ interface DocumentCardProps {
   doc: Document;
   catLabels: Record<string, string>;
   onView: (doc: Document) => void;
+  onEdit: (doc: Document) => void;
   onShare: (doc: Document) => void;
   onDelete: (doc: Document) => void;
   onReportLost: (doc: Document) => void;
 }
 
-export default function DocumentCard({ doc, catLabels, onView, onShare, onDelete, onReportLost }: DocumentCardProps) {
+export default function DocumentCard({ doc, catLabels, onView, onEdit, onShare, onDelete, onReportLost }: DocumentCardProps) {
   const { t } = useI18n();
   const getPhotoUrl = (url?: string) => {
     if (!url) return "";
@@ -73,6 +74,9 @@ export default function DocumentCard({ doc, catLabels, onView, onShare, onDelete
             <Menu.Dropdown>
               <Menu.Item leftSection={<i className="fa-solid fa-eye" style={{ fontSize: 10 }} />} onClick={() => onView(doc)}>
                 {t("doccard_view")}
+              </Menu.Item>
+              <Menu.Item leftSection={<i className="fa-solid fa-pen" style={{ fontSize: 10 }} />} onClick={() => onEdit(doc)}>
+                {t("doccard_edit")}
               </Menu.Item>
               <Menu.Item leftSection={<i className="fa-solid fa-share-nodes" style={{ fontSize: 10 }} />} onClick={() => onShare(doc)}>
                 {t("doccard_share")}

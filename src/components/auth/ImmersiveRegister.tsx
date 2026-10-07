@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams, Link } from "react-router-dom";
 import { Anchor, Button, Paper, Text, Title, TextInput, PasswordInput, Alert, Group, Loader } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import PhoneInput from "react-phone-input-2";
@@ -11,6 +11,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../context/I18nContext";
 import { useGoogleOneTap } from "../../hooks/useGoogleOneTap";
 import { authService } from "../../services/authService";
+import { postAuthRedirect } from "../../utils/postAuthRedirect";
 import {
   registerSchema,
   registerDefaultValues,
@@ -44,7 +45,9 @@ export default function ImmersiveRegister() {
   const { register, loginWithGoogle } = useAuth();
   useGoogleOneTap();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+  const authRedirect = postAuthRedirect(location, searchParams);
 
   const [langStep, setLangStep] = useState(true);
   const [step, setStep] = useState(1);
@@ -311,7 +314,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
     if (result.success) {
       localStorage.removeItem("dm_referral_code");
       localStorage.removeItem("dm_referral_locked");
-      navigate("/dashboard", { replace: true });
+      navigate(authRedirect, { replace: true });
     } else {
       setRegError(result.message);
     }
@@ -357,7 +360,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
     setRegLoading(true);
     const result = await loginWithGoogle();
     setRegLoading(false);
-    if (result.success) navigate("/dashboard");
+    if (result.success) navigate(authRedirect, { replace: true });
     else setRegError(result.message);
   };
 

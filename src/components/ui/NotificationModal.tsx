@@ -5,6 +5,14 @@ import { useNotifications } from "../../hooks/useNotifications";
 import { socketService } from "../../services/socket";
 import { notificationsService } from "../../services/notificationsService";
 import { emitToast } from "../../utils/toastEmitter";
+import { matchRecoveryTarget } from "../../utils/notificationTargets";
+import SmsAlertUpsell from "../subscription/SmsAlertUpsell";
+
+const MATCH_TYPES = [
+  "MATCH_FOUND", "match_found",
+  "MATCH_POTENTIAL", "match_potential",
+  "VAULT_MATCH_PENDING", "vault_match_pending",
+];
 
 export default function NotificationModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
@@ -56,6 +64,10 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
     ...liveNotifs.map((n: any) => ({ ...n, is_read: false, lue: false, _live: true })),
     ...notifications,
   ].slice(0, 20);
+
+  const firstMatchIdx = allNotifs.findIndex(
+    (n: any) => MATCH_TYPES.includes(String(n.type || n.notification_type))
+  );
 
   const getMeta = (type?: string) => {
     switch (type) {
@@ -147,6 +159,7 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
                 const typeMeta = getMeta(n.type || n.notification_type);
                 const key = n.id || n._id || `notif-${idx}`;
                 const nType = n.type || n.notification_type;
+                const isMatchNotif = MATCH_TYPES.includes(String(nType));
                 const notifMeta = parseMetadata(n.metadata);
                 const isVaultMatch = nType === "VAULT_MATCH_PENDING" || nType === "vault_match_pending";
                 const isResponding = respondingId === key;
@@ -186,6 +199,11 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
                     onClick={() => {
                       if (isVaultMatch) return;
                       if (!n._live && !n.is_read && !n.lue) markAsRead(n.id);
+                      const recoveryTarget = matchRecoveryTarget(nType, notifMeta);
+                      if (recoveryTarget) {
+                        onClose();
+                        navigate(recoveryTarget);
+                      }
                     }}
                     className={`flex gap-3 px-5 py-3.5 hover:bg-surface2 transition-colors relative ${
                       !isVaultMatch ? "cursor-pointer" : ""
@@ -221,6 +239,11 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
                           >
                             Non, ce n'est pas le mien
                           </button>
+                        </div>
+                      )}
+                      {isMatchNotif && idx === firstMatchIdx && (
+                        <div className="mt-2.5">
+                          <SmsAlertUpsell spot="notifications" />
                         </div>
                       )}
                     </div>

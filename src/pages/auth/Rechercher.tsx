@@ -363,7 +363,7 @@ export default function Rechercher() {
                         ) : (
                           <Button
                             component={Link}
-                            to="/declarer"
+                            to={`/declarer?from=${encodeURIComponent(doc.id)}`}
                             fullWidth
                             variant="outline"
                             radius="xl"

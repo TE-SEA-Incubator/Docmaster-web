@@ -1,131 +1,235 @@
-# Implementation Plan — 2-Step Payment Modal
+# Plan d'implémentation — Refonte sections Coffre-fort et Protection Documents
 
-## Context & Findings
+## Contexte
 
-**File to modify:** `src/components/modals/PaymentModal.tsx` (single source of truth, used by 5 callers)
+La page d'accueil (`src/pages/public/Home.tsx`) contient actuellement une section `VaultDeviceSection` (lignes 795-934) qui affiche une mosaïque de 6 photos de documents avec texte détaillé sur le côté droit.
 
-**Callers (all pass the same props — no caller changes needed):**
-- `src/pages/auth/Abonnement.tsx` — passes `children` with plan summary
-- `src/pages/auth/AcheterPoints.tsx` — basic usage
-- `src/pages/auth/Recuperer.tsx` — basic usage
-- `src/components/ui/PromoBanner.tsx` — basic usage
-- `src/components/ui/PromoPopup.tsx` — basic usage
-
-**Props interface stays the same** — `isOpen`, `onClose`, `onPay`, `amount`, `title`, `description`, `termsText`, `processing`, `error`, `children`, `submitLabel`. No caller needs to change.
-
-**Current method IDs:** `"orange"` | `"mtn"` | `"points"` — these are passed to `onPay()`, must stay unchanged.
-
-**Saved payment methods:** already loaded inside `PaymentModal` from `paymentsService.getPaymentMethods()`. Keep this logic, moved to Step 2.
-
-**Mantine version:** ^9.4.2 — `Stepper` from `@mantine/core` is available, but the project already has a custom `src/components/modals/Stepper.tsx` (horizontal + vertical, plain CSS). **Use local state (step: 1 | 2) + the project's own `<Stepper>` component** for consistency — no Mantine Stepper needed.
-
-**Logo assets:** No Orange Money / MTN / Moov logos in `src/assets/images/`. Use styled circles with initials: orange `O`, yellow `M`, teal `V`.
-
-**Design rules (AGENTS.md):**
-- No colored backgrounds on icon wrappers → use border trick for selected state only
-- No gradients
-- Selected card border: `border: "2px solid #2D5A42"` (green-dark) via inline style
-- Unselected card border: `borderColor: "var(--mantine-color-default-border)"` or Tailwind `border-borderMain`
-- Primary button: `style={{ backgroundColor: "#2D5A42" }}`
-- No `bg-orange-500`, `bg-yellow-500`, `bg-green-500` icon wrapper divs
-
-**Colors from tailwind.config.js:** `green-dark: #2D5A42`, `borderMain: #EAE3D8`, `bgMain: #FFFFFF`, `textMain: #1A1A1A`, `textMuted: #6B7280`, `primary: #F5A64B`
+**Objectif :** Remplacer cette section par **2 cartes horizontales côte à côte** inspirées d'un design minimaliste, respectant strictement les contraintes AGENTS.md (pas de fond coloré sur icônes, pas de gradients, pas de bordures colorées).
 
 ---
 
-## Plan
+## Fichiers à modifier
 
-- [ ] 1. Refactor `PaymentModal.tsx` into a 2-step flow using local state.
-
-  **Step logic:**
-  - `step` state: `1 | 2`, initialized to `1` on every open (`useEffect` on `isOpen`).
-  - `selectedMethod` state: `"orange" | "mtn" | "points" | ""`, reset on open.
-  - Reset phone/saved method state when going back to step 1.
-
-  **Step 1 — Method selection:**
-  - Render the existing project `<Stepper>` component (from `../../components/modals/Stepper`) in horizontal mode with 2 steps: `["Méthode de paiement", "Confirmation"]`, `currentStep={1}`.
-  - Display `title` prop (or fallback `t("payment_title")`).
-  - Display `children` prop here (plan summary injected by Abonnement).
-  - Amount summary block (same as current `p-4 bg-bgMain rounded-[16px]` block) — keep exact same markup.
-  - Three method cards (Orange Money, MTN Mobile Money, Points) + disabled PayPoint card:
-    - Each card: `<div>` with `cursor-pointer`, `rounded-[14px]`, `p-4`, `border border-borderMain` when not selected, `border-2 style={{ borderColor: "#2D5A42" }}` when selected.
-    - **Icon circle** (AGENTS.md compliant — no colored bg):
-      - Orange: `<div className="w-10 h-10 rounded-full border-2 border-borderMain flex items-center justify-center"><span className="font-bricolage font-black text-base" style={{ color: "#F97316" }}>O</span></div>` — just text, no bg fill.
-      - MTN: same structure, letter `M`, color `#EAB308`.
-      - Moov Money (new): letter `V`, color `#0D9488` (teal — brand color). Method id: `"moov"` — **but `onPay` only accepts `"orange" | "mtn" | "points"`**. Moov is currently not supported by the backend (`paymentsService` only has `MTN` and `ORANGE` types). **Decision: show Moov Money card as "Bientôt disponible" / disabled**, same as PayPoint. Keep the three active methods as `orange`, `mtn`, `points`.
-      - Points: `<i className="fa-solid fa-star" style={{ color: "#F5A64B" }} />` inside the circle.
-    - Section headers `"Mobile Money"` and `"Autres"` in `text-[10px] uppercase font-bold text-textMuted`.
-  - "Continuer" button at the bottom: `disabled` when `!selectedMethod`, `style={{ backgroundColor: "#2D5A42" }}`, `onClick={() => setStep(2)}`.
-
-  **Step 2 — Phone + Confirm:**
-  - Render `<Stepper>` with `currentStep={2}`.
-  - Back button (`variant="subtle"` or a text link) → `setStep(1)`.
-  - Show selected method name + icon (no colored background on icon, just the letter).
-  - Amount display block (same markup as Step 1 — repeat it here too for clarity).
-  - Phone input section (conditional on `payMethod !== "points"`): exact same input markup and saved-methods toggle as the current code.
-  - `termsText` rendered below phone input if provided.
-  - Pay button: `style={{ backgroundColor: "#2D5A42" }}`, `disabled` logic unchanged from current `handleSubmit` guard.
-  - `error` alert block: same markup as current.
-  - `processing` spinner: same as current.
-
-  **State resets:**
-  ```ts
-  useEffect(() => {
-    if (isOpen) {
-      setStep(1);
-      setPayMethod("");
-      setPayPhone("");
-      setPhoneErr("");
-      setUseSaved(false);
-      setSelectedSaved(null);
-    }
-  }, [isOpen]);
-  ```
-
-  **Files:**
-  - Modify: `src/components/modals/PaymentModal.tsx`
-  - Read (do not modify): `src/components/modals/Stepper.tsx` (import it)
-
-  **Verify:** `npm run build` in `/home/ruxel/Docmaster/Docmaster-web` — must exit 0 with no TypeScript errors.
+1. **`src/pages/public/Home.tsx`** — Section `VaultDeviceSection` (lignes 795-934)
+2. **`src/js/i18n/fr.ts`** — Ajout/modification des clés i18n
+3. **`src/js/i18n/en.ts`** — Ajout/modification des clés i18n (traductions EN)
+4. **`src/js/i18n/ar.ts`** — Ajout/modification des clés i18n (traductions AR)
 
 ---
 
-## Design rules checklist for the implementer
+## Étapes d'implémentation
 
-| Rule | Application in this component |
-|---|---|
-| No colored icon backgrounds | Icon circles use `border-borderMain` + colored text/icon only. No `bg-orange-500`, `bg-yellow-500`, etc. |
-| No gradients | No `bg-gradient-*` anywhere |
-| Selected card border | `style={{ borderColor: "#2D5A42", borderWidth: 2 }}` on selected card only |
-| Unselected card border | `className="border border-borderMain"` (Tailwind) |
-| Primary button | `style={{ backgroundColor: "#2D5A42" }}` |
-| Danger/secondary button | Back button: `variant="subtle"` or plain text, no filled red |
-| No bright filled badges/alerts | Error shown as `Alert color="red" variant="light"` or the existing red `<div>` |
+- [ ] **1. Modifier les clés i18n pour les 2 nouvelles cartes**
 
-## Props interface — no changes
+   **Fichiers :** `src/js/i18n/fr.ts`, `src/js/i18n/en.ts`, `src/js/i18n/ar.ts`
+   
+   **Actions :**
+   - Dans `fr.ts` (ligne ~739-749), remplacer les clés existantes `home_vault_*` et `home_device_*` par :
+     ```typescript
+     // Carte 1 — Enregistrement appareil
+     home_card_device_title: "Enregistrez votre appareil",
+     home_card_device_desc: "En cas de vol après signalement, vous êtes immédiatement notifié et protégé",
+     home_card_device_link: "En savoir plus",
+     
+     // Carte 2 — Partage documents
+     home_card_docs_title: "Partagez vos documents",
+     home_card_docs_desc: "Accédez à vos documents médicaux même quand vous ne les avez pas physiquement sur vous",
+     home_card_docs_link: "En savoir plus",
+     ```
+   - Ajouter les traductions équivalentes en anglais dans `en.ts`
+   - Ajouter les traductions équivalentes en arabe dans `ar.ts`
+   
+   **Vérification :** 
+   ```bash
+   npm run dev
+   # Vérifier que les clés s'affichent correctement dans la console (pas d'erreur i18n)
+   # Tester le changement de langue (FR/EN/AR) et confirmer que les nouvelles clés sont bien traduites
+   ```
 
-```ts
-interface PaymentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onPay: (method: "orange" | "mtn" | "points", phone: string) => Promise<void>;
-  amount: number;
-  title?: string;
-  description?: string;
-  termsText?: React.ReactNode;
-  processing: boolean;
-  error: string;
-  children?: React.ReactNode;
-  submitLabel?: string;
-}
+---
+
+- [ ] **2. Remplacer la section `VaultDeviceSection` dans Home.tsx**
+
+   **Fichier :** `src/pages/public/Home.tsx` (lignes 795-934)
+   
+   **Actions :**
+   - Supprimer entièrement la fonction `VaultDeviceSection` existante (lignes 795-934) incluant :
+     - L'array `vaultCards` avec les 6 images Unsplash
+     - L'array `vaultFeatures` avec les 5 features
+     - La grille mosaïque gauche + texte droit
+   
+   - Créer une nouvelle fonction `VaultDeviceSection` avec cette structure :
+   
+   ```tsx
+   function VaultDeviceSection({ t }) {
+     return (
+       <section className="py-20 px-5 bg-white">
+         <div className="max-w-6xl mx-auto">
+           {/* Grid 2 colonnes desktop, 1 colonne mobile */}
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+             
+             {/* ── Carte 1 : Enregistrement Appareil ── */}
+             <div className="bg-[#FAFAFA] rounded-3xl p-8 border border-[#EAE3D8] flex flex-col justify-between min-h-[280px]">
+               <div className="flex-1">
+                 <h3 className="font-bricolage text-[1.5rem] font-bold text-textMain mb-3 leading-tight">
+                   {t("home_card_device_title")}
+                 </h3>
+                 <p className="text-textMuted text-[14px] leading-relaxed mb-6">
+                   {t("home_card_device_desc")}
+                 </p>
+               </div>
+               
+               <div className="flex items-end justify-between">
+                 <a
+                   href="#"
+                   className="inline-flex items-center gap-2 text-primary font-semibold text-[13px] hover:gap-3 transition-all"
+                 >
+                   {t("home_card_device_link")}
+                   <i className="fa-solid fa-arrow-right text-[11px]" />
+                 </a>
+                 
+                 {/* Icône minimaliste à droite, SANS fond coloré */}
+                 <i className="fa-solid fa-mobile-screen-button text-green-dark text-5xl opacity-20" />
+               </div>
+             </div>
+             
+             {/* ── Carte 2 : Partage Documents ── */}
+             <div className="bg-[#FAFAFA] rounded-3xl p-8 border border-[#EAE3D8] flex flex-col justify-between min-h-[280px]">
+               <div className="flex-1">
+                 <h3 className="font-bricolage text-[1.5rem] font-bold text-textMain mb-3 leading-tight">
+                   {t("home_card_docs_title")}
+                 </h3>
+                 <p className="text-textMuted text-[14px] leading-relaxed mb-6">
+                   {t("home_card_docs_desc")}
+                 </p>
+               </div>
+               
+               <div className="flex items-end justify-between">
+                 <a
+                   href="#"
+                   className="inline-flex items-center gap-2 text-primary font-semibold text-[13px] hover:gap-3 transition-all"
+                 >
+                   {t("home_card_docs_link")}
+                   <i className="fa-solid fa-arrow-right text-[11px]" />
+                 </a>
+                 
+                 {/* Icône minimaliste à droite, SANS fond coloré */}
+                 <i className="fa-solid fa-share-nodes text-green-dark text-5xl opacity-20" />
+               </div>
+             </div>
+             
+           </div>
+         </div>
+       </section>
+     );
+   }
+   ```
+   
+   **Points de vigilance :**
+   - ✅ **PAS** de `bg-green-light`, `bg-primary-light`, `bg-red-100` autour des icônes
+   - ✅ **PAS** de `bg-gradient-to-r` ou autre gradient
+   - ✅ **PAS** de `border-green-500` ou bordure colorée — uniquement `border-[#EAE3D8]`
+   - ✅ Icônes seules avec couleur : `text-green-dark` avec `opacity-20` pour effet subtil
+   - ✅ Fond des cartes : `bg-[#FAFAFA]` (gris très clair)
+   - ✅ `rounded-3xl` pour les cartes (arrondi généreux)
+   - ✅ Liens avec flèche animée au hover (`hover:gap-3`)
+   
+   **Vérification :**
+   ```bash
+   npm run dev
+   # Ouvrir http://localhost:3003
+   # Scroll jusqu'à la section "Mieux vaut prévenir que guérir" (remplacée)
+   # Desktop : vérifier que les 2 cartes sont côte à côte
+   # Mobile : vérifier que les 2 cartes sont empilées verticalement
+   # Vérifier que les icônes N'ONT PAS de fond coloré
+   # Vérifier que les liens "En savoir plus →" fonctionnent au hover
+   ```
+
+---
+
+- [ ] **3. Vérification finale cross-browser et responsive**
+
+   **Actions :**
+   - Tester sur desktop (1920px, 1366px)
+   - Tester sur tablette (768px)
+   - Tester sur mobile (375px, 390px)
+   - Vérifier que les cartes ne débordent pas
+   - Vérifier que les textes ne sont pas tronqués
+   - Vérifier que les icônes sont bien visibles et proportionnées
+   - Tester les 3 langues (FR, EN, AR) et confirmer que les layouts restent cohérents
+   
+   **Vérification :**
+   ```bash
+   npm run build
+   # Confirmer que le build se termine sans erreur
+   # Ouvrir l'application en mode production (npm run preview)
+   # Re-tester toutes les tailles d'écran
+   ```
+
+---
+
+## Notes importantes
+
+### Design minimaliste de référence
+- Fond blanc ou gris très clair (`#FAFAFA`)
+- Pas de fond coloré sur les icônes (contrainte stricte AGENTS.md)
+- Icônes grandes (text-5xl) avec opacité réduite (`opacity-20`) pour effet watermark subtil
+- Liens avec animation au hover (espacement de la flèche)
+- Border radius généreux (`rounded-3xl`)
+- Padding généreux (`p-8`)
+- Hauteur minimale (`min-h-[280px]`) pour uniformité
+
+### Contraintes AGENTS.md à respecter
+```
+❌ INTERDIT :
+- <div className="w-8 h-8 bg-green-light flex items-center justify-center">
+- bg-gradient-to-r from-green-dark to-green-mid
+- border-2 border-green-500
+
+✅ AUTORISÉ :
+- <i className="fa-solid fa-key text-green-dark" />
+- bg-white ou bg-[#FAFAFA]
+- border border-[#EAE3D8]
 ```
 
-All 5 callers remain untouched.
+### Stack utilisé
+- React + TypeScript + Vite
+- Tailwind CSS (config custom dans `tailwind.config.js`)
+- FontAwesome (icônes via `fa-solid fa-...`)
+- i18n via `useI18n()` hook
+- Pas de Mantine UI dans cette section (Tailwind pur)
 
-## Build verification
-
+### Commandes de vérification
+```bash
+npm run dev          # Lancer le serveur de dev (port 3003)
+npm run build        # Build de production
+npm run preview      # Preview du build
 ```
-cd /home/ruxel/Docmaster/Docmaster-web && npm run build
-```
 
-Expected: exit 0, no TS errors, `dist/` produced.
+---
+
+## Résumé des changements
+
+| Fichier | Lignes modifiées | Type de modification |
+|---------|------------------|---------------------|
+| `src/js/i18n/fr.ts` | ~739-749 | Remplacement clés i18n |
+| `src/js/i18n/en.ts` | ~739-749 | Ajout traductions EN |
+| `src/js/i18n/ar.ts` | ~739-749 | Ajout traductions AR |
+| `src/pages/public/Home.tsx` | 795-934 | Remplacement section complète |
+
+**Total :** ~140 lignes supprimées, ~60 lignes ajoutées (réduction nette de code)
+
+---
+
+## Checklist finale
+
+- [ ] Les 2 cartes s'affichent côte à côte sur desktop
+- [ ] Les 2 cartes s'empilent verticalement sur mobile
+- [ ] Les icônes N'ONT PAS de fond coloré
+- [ ] Les cartes ont un fond gris très clair (`#FAFAFA`)
+- [ ] Les bordures sont neutres (`#EAE3D8`)
+- [ ] Les liens "En savoir plus" ont une animation au hover
+- [ ] Les textes sont traduits en FR/EN/AR
+- [ ] Le build se termine sans erreur
+- [ ] La page se charge sans erreur console
+- [ ] Le design respecte AGENTS.md (pas de violations)

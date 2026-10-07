@@ -1,11 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Modal, Stepper } from "@mantine/core";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useI18n } from "../../context/I18nContext";
-import type { Document } from "../../types/api";
-import { declarationsService } from "../../services/declarationsService";
-import { documentsService } from "../../services/documentsService";
+import { useAuth } from "../../context/AuthContext";
+import type { DocTypeCatalog, Document } from "../../types/api";
+import { declarationsService, documentTypesService } from "../../services/declarationsService";
+import {
+  CODE_SYNONYMS,
+  buildLostDeclarationBody,
+  walletTypeId,
+  type LostDeclarationContext,
+} from "../../utils/lostDeclarationPayload";
 import { generateDeclarationPDF } from "../../utils/pdf";
 import DatePicker from "./DatePicker";
 
@@ -19,8 +25,8 @@ interface DocFormData {
 
 interface ReportLostModalProps {
   doc: Document;
-  catLabels: Record<string, string>;
-  onClose: () => void;
+  catLabels?: Record<string, string>;
+  onClose: (submitted?: { refs: string[] }) => void;
 }
 
 function addMonths(dateStr: string, months: number): string {
@@ -32,8 +38,9 @@ function addMonths(dateStr: string, months: number): string {
   return d.toISOString().split("T")[0];
 }
 
-export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostModalProps) {
+export default function ReportLostModal({ doc, onClose }: ReportLostModalProps) {
   const { t } = useI18n();
+  const { user } = useAuth();
 
   const docTypes = [
     { id: "cni", icon: "fa-solid fa-id-card", label: t("reportlost_doc_cni"), delai_expiration_mois: 120 },
@@ -66,10 +73,11 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [successData, setSuccessData] = useState<{ ref: string } | null>(null);
+  const [successData, setSuccessData] = useState<{ refs: string[] } | null>(null);
+  const [catalog, setCatalog] = useState<DocTypeCatalog[]>([]);
 
   const [pourSoi, setPourSoi] = useState(true);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([doc.type_doc || "cni"]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([walletTypeId(doc.type_doc)]);
   const [docForms, setDocForms] = useState<Record<string, DocFormData>>({});
   const [lieu, setLieu] = useState("");
   const [datePerte, setDatePerte] = useState(new Date().toISOString().split("T")[0]);
@@ -84,7 +92,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
   useEffect(() => {
     if (doc) {
       setDocForms({
-        [doc.type_doc || "cni"]: {
+        [walletTypeId(doc.type_doc)]: {
           nom_complet: doc.nom_sur_doc || "",
           numero_doc: doc.numero_doc || "",
           date_delivrance: doc.date_delivrance ? doc.date_delivrance.split("T")[0] : "",
@@ -94,6 +102,28 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
       });
     }
   }, [doc]);
+
+  useEffect(() => {
+    let cancelled = false;
+    documentTypesService
+      .getActive()
+      .then((res) => { if (!cancelled) setCatalog(res.data || []); })
+      .catch(() => { if (!cancelled) setCatalog([]); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const catalogByCode = useMemo(() => {
+    const map: Record<string, DocTypeCatalog> = {};
+    for (const entry of catalog) map[String(entry.code).toUpperCase()] = entry;
+    return map;
+  }, [catalog]);
+
+  // declarations.doc_type attend une entrée du catalogue document_types, jamais un id local.
+  const resolveCatalogType = (typeId: string): DocTypeCatalog | undefined =>
+    catalogByCode[typeId.toUpperCase()] ?? catalogByCode[CODE_SYNONYMS[typeId] ?? ""];
+
+  const labelOf = (typeId: string) =>
+    docTypes.find((d) => d.id === typeId)?.label ?? resolveCatalogType(typeId)?.nom ?? typeId;
 
   const toggleType = (id: string) => {
     setSelectedTypes((prev) =>
@@ -109,7 +139,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
       const updated = { ...(f[type] || {}), [field]: value };
       if (field === "date_delivrance" && value) {
         const dt = docTypes.find((d) => d.id === type);
-        const expMoins = dt?.delai_expiration_mois ?? 0;
+        const expMoins = dt?.delai_expiration_mois ?? resolveCatalogType(type)?.delai_expiration_mois ?? 0;
         if (expMoins > 0) {
           updated.date_expiration = addMonths(value, expMoins);
         }
@@ -131,15 +161,23 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
   };
 
   const handleSubmit = async () => {
+    const profileName = `${user?.prenom || ""} ${user?.nom || ""}`.trim();
+    const resolved = selectedTypes.map((typeId) => ({ typeId, catalogType: resolveCatalogType(typeId) }));
+    // Sans entrée catalogue, la déclaration serait refusée : on n'envoie rien plutôt qu'un half-send.
+    if (resolved.some((r) => !r.catalogType)) {
+      setError(t("reportlost_submit_error"));
+      return;
+    }
+
     setSubmitting(true);
     setError("");
     try {
-      const docsData = selectedTypes.map((typeId) => {
-        const dt = docTypes.find((t) => t.id === typeId);
+      const docsData = resolved.map(({ typeId, catalogType }) => {
         const f = docForms[typeId] || {};
         return {
           type_doc: typeId,
-          label: dt?.label || typeId,
+          catalog_id: String(catalogType?.id || ""),
+          label: labelOf(typeId),
           nom_complet: f.nom_complet,
           numero_doc: f.numero_doc,
           date_delivrance: f.date_delivrance,
@@ -148,29 +186,37 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
         };
       });
 
-      const description = `[${t("reportlost_desc_urgence")}: ${urgencyLevels.find((u) => u.id === urgence)?.label}] ${t("reportlost_desc_lieu")}: ${lieu}. ${circonstances}${rewardEnabled && reward ? ` | ${t("reportlost_desc_recompense")}: ${reward} FCFA` : ""}`;
+      const ctx: LostDeclarationContext = {
+        ownerName: doc.nom_sur_doc || profileName || t("declarer_owner_unknown"),
+        ville: (user?.ville || "").trim() || t("declarer_not_specified"),
+        lieu,
+        lieuLabel: t("reportlost_desc_lieu"),
+        delivranceLabel: t("reportlost_date_delivrance"),
+        datePerte,
+        urgence,
+        telephone,
+        email,
+        circonstances,
+        rewardEnabled,
+        reward,
+      };
+
+      const walletCode = String(doc.type_doc || "").toUpperCase();
+      const refs: string[] = [];
 
       for (const d of docsData) {
-        await declarationsService.createLost({
-          document_id: doc.id,
-          numero_document: d.numero_doc || undefined,
-          type_document: d.type_doc,
-          nom_complet: d.nom_complet || undefined,
-          date_perte: datePerte,
-          lieu_perte: lieu,
-          description,
-          date_delivrance: d.date_delivrance || undefined,
-          date_expiration: d.date_expiration || undefined,
-        });
+        const isWalletDoc = walletCode === d.type_doc.toUpperCase() || docsData.length === 1;
+        const res = await declarationsService.createLost(
+          buildLostDeclarationBody(d.catalog_id, d, ctx, isWalletDoc ? doc.id : undefined)
+        );
+        const created = res?.data;
+        if (!created?.id) throw new Error(res?.message || t("reportlost_submit_error"));
+        if (created.identifiant_doc_dm) refs.push(created.identifiant_doc_dm);
       }
 
-      await documentsService.reportLost(doc.id);
-
-      const refNum = `DOC-${Date.now().toString(36).toUpperCase()}`;
-      setSuccessData({ ref: refNum });
-
+      setSuccessData({ refs });
       generateDeclarationPDF({
-        ref: refNum,
+        ref: refs.join(", "),
         date: new Date().toLocaleDateString("fr-FR"),
         proprietaire: docForms[selectedTypes[0]]?.nom_complet || doc.nom_sur_doc || "",
         pour_soi: pourSoi,
@@ -190,35 +236,47 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
         certifie: false,
       });
     } catch (e: unknown) {
-      const err = e as { response?: { data?: { error?: string } }; message?: string };
-      setError(err?.response?.data?.error || err?.message || t("reportlost_submit_error"));
+      const data = (e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
+      if (data?.errors) {
+        const details = Object.entries(data.errors)
+          .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(", ")}`)
+          .join(" · ");
+        setError(`${data.message || t("reportlost_submit_error")} — ${details}`);
+      } else {
+        const err = e as { message?: string };
+        setError(data?.message || err?.message || t("reportlost_submit_error"));
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   if (successData) {
+    // Cette écorce n'existe qu'après un 201 serveur : la quitter vaut confirmation côté liste.
+    const done = () => onClose({ refs: successData.refs });
+    const refLabel = successData.refs.join(", ");
     return (
-      <Modal opened onClose={onClose} size="sm" withCloseButton={false} padding="xl">
+      <Modal opened onClose={done} size="sm" withCloseButton={false} padding="xl">
         <div className="text-center">
           <div className="w-20 h-20 rounded-full bg-green-light flex items-center justify-center mx-auto mb-4">
             <i className="fa-solid fa-check text-green-dark text-3xl" />
           </div>
           <h2 className="font-bricolage text-xl font-extrabold text-textMain mb-2">{t("reportlost_success_title")}</h2>
           <p className="text-[13px] text-textMuted mb-4">{t("reportlost_success_desc")}</p>
-          <div className="inline-block px-5 py-2 bg-bgMain rounded-xl font-bricolage font-extrabold text-lg text-green-dark tracking-wider mb-4">
-            {successData.ref}
-          </div>
+          {refLabel && (
+            <div className="inline-block px-5 py-2 bg-bgMain rounded-xl font-bricolage font-extrabold text-lg text-green-dark tracking-wider mb-4">
+              {refLabel}
+            </div>
+          )}
           <p className="text-[11px] text-textMuted mb-5">{t("reportlost_success_ref_desc")}</p>
           <div className="flex gap-3">
             <button onClick={() => {
               const docData = selectedTypes.map((id) => {
-                const dt = docTypes.find((t) => t.id === id);
                 const f = docForms[id] || {};
-                return { label: dt?.label || id, nom_complet: f.nom_complet, numero: f.numero_doc, date_delivrance: f.date_delivrance, date_expiration: f.date_expiration };
+                return { label: labelOf(id), nom_complet: f.nom_complet, numero: f.numero_doc, date_delivrance: f.date_delivrance, date_expiration: f.date_expiration };
               });
               generateDeclarationPDF({
-                ref: successData.ref,
+                ref: refLabel,
                 date: new Date().toLocaleDateString("fr-FR"),
                 proprietaire: docForms[selectedTypes[0]]?.nom_complet || doc.nom_sur_doc || "",
                 pour_soi: pourSoi,
@@ -235,7 +293,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
               className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-[13px] hover:bg-primary-dark transition-all flex items-center justify-center gap-2">
               <i className="fa-solid fa-file-pdf" /> {t("reportlost_download_pdf")}
             </button>
-            <button onClick={onClose}
+            <button onClick={done}
               className="flex-1 py-3 rounded-xl bg-green-dark text-white font-bold text-[13px] hover:bg-green-mid transition-all">
               {t("reportlost_my_documents")}
             </button>
@@ -307,7 +365,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
                   const dt = docTypes.find((d) => d.id === id);
                   return (
                     <span key={id} className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-dark text-white rounded-full text-[10px] font-semibold">
-                      <i className={dt?.icon || ""} /> {dt?.label || id}
+                      <i className={dt?.icon || ""} /> {labelOf(id)}
                       <button onClick={() => toggleType(id)} className="opacity-70 hover:opacity-100"><i className="fa-solid fa-xmark text-[8px]" /></button>
                     </span>
                   );
@@ -329,7 +387,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
                       <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs">
                         <i className={dt?.icon || "fa-solid fa-file"} />
                       </div>
-                      <span className="font-bold text-[13px] text-textMain">{dt?.label || id}</span>
+                      <span className="font-bold text-[13px] text-textMain">{labelOf(id)}</span>
                     </div>
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-3">
@@ -515,7 +573,7 @@ export default function ReportLostModal({ doc, catLabels, onClose }: ReportLostM
       </div>
 
       <div className="p-4 bg-bgMain border-t border-borda flex items-center justify-between gap-3">
-        <button onClick={step === 1 ? onClose : prevStep} disabled={submitting}
+        <button onClick={step === 1 ? () => onClose() : prevStep} disabled={submitting}
           className="px-4 py-2.5 rounded-xl border border-borda bg-white text-textMain text-[12px] font-semibold hover:bg-surface2 transition-all disabled:opacity-40 flex items-center gap-1.5">
           <i className="fa-solid fa-arrow-left text-[10px]" /> {step === 1 ? t("reportlost_cancel") : t("reportlost_previous")}
         </button>

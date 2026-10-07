@@ -11,6 +11,7 @@ import PaymentModal from "../../components/modals/PaymentModal";
 import ActionSuccessModal from "../../components/modals/ActionSuccessModal";
 import type { Plan, Transaction } from "../../types/api";
 import { usePromo } from "../../hooks/usePromo";
+import { seedSmsUpsell } from "../../hooks/useSmsUpsell";
 import { useToast } from "../../context/ToastContext";
 import PromoBanner from "../../components/ui/PromoBanner";
 import PollingModal from "../../components/modals/PollingModal";
@@ -92,6 +93,7 @@ export default function Abonnement() {
       ]);
       if (plansRes.success && plansRes.data) setPlans(plansRes.data);
       if (usageRes.success && usageRes.data) setUsage(usageRes.data);
+      seedSmsUpsell(usageRes?.data, plansRes?.data ?? []);
       if ((txRes as { success: boolean; data?: Transaction[] }).success && (txRes as { success: boolean; data?: Transaction[] }).data)
         setTransactions((txRes as { success: boolean; data?: Transaction[] }).data!);
     } catch (e: any) {

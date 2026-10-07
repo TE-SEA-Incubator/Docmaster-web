@@ -33,13 +33,24 @@ export const documentsService = {
     return res.data;
   },
 
+  async getById(id: string) {
+    const res = await apiClient.get<ApiResponse<Document>>(`documents/${id}`);
+    return res.data;
+  },
+
+  async update(id: string, data: FormData) {
+    const res = await apiClient.put<ApiResponse<Document>>(`documents/${id}`, data);
+    return res.data;
+  },
+
   async delete(id: string) {
     const res = await apiClient.delete<ApiResponse>(`documents/${id}`);
     return res.data;
   },
 
-  async reportLost(id: string) {
-    const res = await apiClient.patch<ApiResponse>(`documents/${id}/report-lost`);
+  // La route serveur est PATCH /documents/:id/lost ; le mot de passe y est vérifié quand il est fourni.
+  async reportLost(id: string, password?: string) {
+    const res = await apiClient.patch<ApiResponse<Document>>(`documents/${id}/lost`, { password });
     return res.data;
   },
 

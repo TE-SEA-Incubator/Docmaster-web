@@ -8,6 +8,7 @@ import { useDeclarations } from "../../hooks/useDeclarations";
 import { useDevices } from "../../hooks/useDevices";
 import { useGlobalStats, useStatsByType, useActiveDocumentTypes } from "../../hooks/useStats";
 import { usePromo } from "../../hooks/usePromo";
+import { useSmsUpsell } from "../../hooks/useSmsUpsell";
 import { useToast } from "../../context/ToastContext";
 import { subscriptionsService } from "../../services/subscriptionsService";
 import apiClient from "../../services/api";
@@ -83,6 +84,7 @@ export default function Dashboard() {
   const { stats: perfStats, loading: perfLoading, fetch: fetchPerfStats } = useStatsByType("month");
   const { types: catalogTypes, loading: catalogLoading, error: catalogError } = useActiveDocumentTypes();
   const { promo, loading: promoLoading, subscribing, subscribe: promoSubscribe, dismiss: dismissPromo, isDismissed } = usePromo();
+  const smsUpsell = useSmsUpsell();
   const toast = useToast();
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -501,12 +503,16 @@ export default function Dashboard() {
                 </div>
               )}
               <Stack gap="xs" mb="md" style={{ position: "relative", zIndex: 10 }}>
-                <FeatureRow icon="fa-solid fa-check" text={t("dashboard_feature_sms")} color="text-primary" />
+                {smsUpsell.show ? (
+                  <FeatureRow icon="fa-solid fa-xmark" text={t("dashboard_feature_sms_locked", { plan: smsUpsell.planName })} muted />
+                ) : (
+                  <FeatureRow icon="fa-solid fa-check" text={t("dashboard_feature_sms")} color="text-primary" />
+                )}
                 <FeatureRow icon="fa-solid fa-check" text={t("dashboard_feature_tracking")} color="text-primary" />
                 <FeatureRow icon="fa-solid fa-lock" text={t("dashboard_feature_geo")} color="text-white/30" muted />
               </Stack>
               <Button onClick={() => navigate("/abonnement")} color="gold" fullWidth leftSection={<i className="fa-solid fa-rocket" />}>
-                {t("dashboard_upgrade_plan")}
+                {smsUpsell.show ? t("upsell_sms_cta", { plan: smsUpsell.planName }) : t("dashboard_upgrade_plan")}
               </Button>
             </Card>
           </div>
@@ -601,7 +607,7 @@ function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; nav
 
   const viewPotentialMatches = () => {
     const ids = allMatches.filter((m) => m.status === "PENDING").map((m) => m.found_declaration_id);
-    navigate("/rechercher", { state: { potentialIds: ids } });
+    navigate("/rechercher", { state: { potentialIds: ids, lostDeclarationId: decl.id } });
   };
 
   return (

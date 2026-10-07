@@ -13,7 +13,8 @@ import {
   validateRecovery,
   initiateRecovery,
   generatePdf,
-  deleteDeclaration
+  deleteDeclaration,
+  updateDeclaration
 } from '../controllers/declaration.controller.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
 import { upload } from '../utils/upload.utils.ts';
@@ -494,6 +495,53 @@ router.post('/recover', authMiddleware, initiateRecovery);
  *         description: Erreur serveur
  */
 router.get('/:id/pdf', authMiddleware, generatePdf);
+
+/**
+ * @swagger
+ * /declarations/{id}:
+ *   patch:
+ *     summary: Compléter les informations manquantes d'une déclaration
+ *     description: >
+ *       Mise à jour restreinte aux champs descriptive du propriétaire.
+ *       status, doc_type et transactions_id ne sont pas modifiables ici.
+ *     tags: [Declarations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               owner_name: { type: string, example: "Jean Dupont" }
+ *               document_number: { type: string, example: "123456789" }
+ *               ville: { type: string, example: "Douala" }
+ *               quartier: { type: string, example: "Akwa" }
+ *               date_perte: { type: string, format: date }
+ *               date_expiration: { type: string, format: date }
+ *               description: { type: string }
+ *               telephone_contact: { type: string }
+ *               recompense_montant: { type: number, example: 5000 }
+ *     responses:
+ *       200:
+ *         description: Déclaration mise à jour
+ *         content:
+ *           application/json:
+ *             example: { success: true, message: "Déclaration mise à jour", data: { id: "uuid" } }
+ *       400:
+ *         description: Validation échouée ou aucun champ modifiable fourni
+ *       401:
+ *         description: Non authentifié
+ *       404:
+ *         description: Déclaration introuvable ou non autorisée
+ */
+router.patch('/:id', authMiddleware, updateDeclaration);
 
 /**
  * @swagger
