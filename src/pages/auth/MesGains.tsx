@@ -13,9 +13,8 @@ import { useToast } from "../../context/ToastContext";
 import type { Transaction, EarningsRecord, Declaration } from "../../types/api";
 import {
   Paper, Title, Text, Group, Stack, SimpleGrid,
-  Progress, Badge, Loader, Modal, Tabs, Pagination,
+  Progress, Badge, Loader, Modal, Tabs, Pagination, Select,
 } from "@mantine/core";
-import { Select } from "antd";
 import apiClient from "../../services/api";
 
 function fmtAmount(n: number) {
@@ -725,16 +724,17 @@ function TransactionsCard({ transactions, loading, fmtAmount, fmtDate, t }: any)
 
 function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }: any) {
   // State for full history tab
+  const [activeTab, setActiveTab] = useState<string | null>("recent");
   const [pointsHistory, setPointsHistory] = useState<any[]>([]);
   const [pointsHistoryLoading, setPointsHistoryLoading] = useState(false);
-  const [pointsHistoryFilter, setPointsHistoryFilter] = useState<string | undefined>(undefined);
+  const [pointsHistoryFilter, setPointsHistoryFilter] = useState<string | null>(null);
   const [pointsHistoryTotal, setPointsHistoryTotal] = useState(0);
   const [pointsHistoryPage, setPointsHistoryPage] = useState(1);
 
-  async function fetchPointsHistory(type?: string, page = 1) {
+  async function fetchPointsHistory(type?: string | null, page = 1) {
     setPointsHistoryLoading(true);
     try {
-      const res = await authService.getEarningsHistory({ type, page, limit: 10 });
+      const res = await authService.getEarningsHistory({ type: type || undefined, page, limit: 10 });
       if (res.success && res.data) {
         const raw = res.data as any;
         setPointsHistory(Array.isArray(raw) ? raw : raw.data || []);
@@ -743,6 +743,13 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
     } catch {}
     finally { setPointsHistoryLoading(false); }
   }
+
+  // Fetch data when history tab becomes active
+  useEffect(() => {
+    if (activeTab === 'history' && pointsHistory.length === 0) {
+      fetchPointsHistory(pointsHistoryFilter, 1);
+    }
+  }, [activeTab]);
 
   return (
     <Paper className="border border-borda" style={{ borderRadius: 18, overflow: "hidden" }}>
@@ -753,7 +760,7 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
         </Group>
       </Group>
 
-      <Tabs defaultValue="recent" onChange={(key) => { if (key === 'history' && pointsHistory.length === 0) fetchPointsHistory(pointsHistoryFilter, 1); }}>
+      <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List style={{ paddingLeft: '1.25rem', paddingRight: '1.25rem', paddingTop: '0.5rem' }}>
           <Tabs.Tab value="recent">
             Gains récents
@@ -807,15 +814,15 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
             <Group justify="space-between" mb="md">
               <Select
                 placeholder="Filtrer par type"
-                allowClear
-                style={{ width: 220 }}
+                clearable
+                w={220}
                 value={pointsHistoryFilter}
                 onChange={(value) => {
                   setPointsHistoryFilter(value);
                   setPointsHistoryPage(1);
                   fetchPointsHistory(value, 1);
                 }}
-                options={[
+                data={[
                   { label: 'Déclarations', value: 'DECLARATION' },
                   { label: 'Parrainages', value: 'REFERRAL' },
                   { label: 'Matchs', value: 'MATCH' },
@@ -825,6 +832,12 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
                   { label: 'Remboursements', value: 'WITHDRAWAL_REFUND' },
                   { label: 'Ajustements', value: 'ADJUSTMENT' },
                 ]}
+                styles={{
+                  input: {
+                    borderColor: '#EAE3D8',
+                    borderRadius: '12px',
+                  }
+                }}
               />
               <Text size="xs" fw={500} c="dimmed">
                 {pointsHistoryTotal} transaction(s)
