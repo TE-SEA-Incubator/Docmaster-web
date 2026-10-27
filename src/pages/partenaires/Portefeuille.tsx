@@ -7,10 +7,12 @@ import {
   Modal,
   Progress,
   Row,
+  Select,
   Space,
   Spin,
   Statistic,
   Table,
+  Tabs,
   Tag,
   Typography,
   message,
@@ -64,6 +66,10 @@ export default function Portefeuille() {
   const [history, setHistory] = useState<PartenaireWalletTransaction[]>([]);
   const [earningsStats, setEarningsStats] = useState<PartenaireEarningsStats | null>(null);
   const [earningsHistory, setEarningsHistory] = useState<PartenaireEarning[]>([]);
+  const [pointsHistory, setPointsHistory] = useState<PartenaireEarning[]>([]);
+  const [pointsHistoryTotal, setPointsHistoryTotal] = useState(0);
+  const [pointsHistoryFilter, setPointsHistoryFilter] = useState<string | null>(null);
+  const [pointsHistoryLoading, setPointsHistoryLoading] = useState(false);
   const [potential, setPotential] = useState(0);
   const [potentialPts, setPotentialPts] = useState(0);
   const [potentialCount, setPotentialCount] = useState(0);
@@ -135,6 +141,26 @@ export default function Portefeuille() {
   useEffect(() => {
     fetchWallet();
   }, [fetchWallet]);
+
+  const fetchPointsHistory = useCallback(async (type?: string | null) => {
+    setPointsHistoryLoading(true);
+    try {
+      const res = await partenairesService.getPointsHistory({
+        limit: 50,
+        type: type || undefined,
+      });
+      if (res.data.success && res.data.data) {
+        setPointsHistory(res.data.data.history || []);
+        setPointsHistoryTotal(res.data.data.total || 0);
+      }
+    } catch (err) {
+      console.error("Erreur chargement historique:", err);
+      setPointsHistory([]);
+      setPointsHistoryTotal(0);
+    } finally {
+      setPointsHistoryLoading(false);
+    }
+  }, []);
 
   const pointsBreakdown = earningsStats?.points_breakdown ?? {
     declarations: { points: 0, count: 0, pts_per_unit: 5 },
@@ -470,15 +496,70 @@ export default function Portefeuille() {
           </Typography.Text>
         }
         style={{ marginBottom: 20, borderRadius: 10, border: `1px solid ${partenairePalette.border}` }}
-        styles={{ body: { padding: 0 } }}
       >
-        <Table
-          rowKey="id"
-          dataSource={earningsHistory}
-          columns={earningsColumns}
-          scroll={{ x: 560 }}
-          pagination={{ pageSize: 10, hideOnSinglePage: true }}
-          locale={{ emptyText: t("mesgains_no_earnings") }}
+        <Tabs
+          defaultActiveKey="recent"
+          onChange={(key) => {
+            if (key === "history" && pointsHistory.length === 0) {
+              fetchPointsHistory();
+            }
+          }}
+          items={[
+            {
+              key: "recent",
+              label: "Gains récents",
+              children: (
+                <Table
+                  rowKey="id"
+                  dataSource={earningsHistory}
+                  columns={earningsColumns}
+                  scroll={{ x: 560 }}
+                  pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                  locale={{ emptyText: t("mesgains_no_earnings") }}
+                />
+              ),
+            },
+            {
+              key: "history",
+              label: "Historique complet",
+              children: (
+                <div>
+                  <Space style={{ marginBottom: 16 }}>
+                    <Select
+                      placeholder="Filtrer par type"
+                      style={{ width: 200 }}
+                      allowClear
+                      value={pointsHistoryFilter}
+                      onChange={(value) => {
+                        setPointsHistoryFilter(value);
+                        fetchPointsHistory(value);
+                      }}
+                      options={[
+                        { value: "DECLARATION", label: "Déclarations" },
+                        { value: "REFERRAL", label: "Parrainages" },
+                        { value: "MATCH", label: "Matchs" },
+                        { value: "CONVERSION", label: "Conversions" },
+                        { value: "WITHDRAWAL", label: "Retraits" },
+                        { value: "BONUS", label: "Bonus" },
+                      ]}
+                    />
+                    <Typography.Text type="secondary">
+                      {pointsHistoryTotal} transaction{pointsHistoryTotal > 1 ? "s" : ""}
+                    </Typography.Text>
+                  </Space>
+                  <Table
+                    rowKey="id"
+                    dataSource={pointsHistory}
+                    columns={earningsColumns}
+                    loading={pointsHistoryLoading}
+                    scroll={{ x: 560 }}
+                    pagination={{ pageSize: 10, hideOnSinglePage: false }}
+                    locale={{ emptyText: t("mesgains_no_earnings") }}
+                  />
+                </div>
+              ),
+            },
+          ]}
         />
       </Card>
 

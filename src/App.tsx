@@ -75,7 +75,6 @@ const PartenaireDashboard = lazy(() => import("./pages/partenaires/Dashboard"));
 const PartenaireDeclarations = lazy(() => import("./pages/partenaires/Declarations"));
 const PartenaireDeclarerTrouvaille = lazy(() => import("./pages/partenaires/DeclarerTrouvaille"));
 const PartenairePortefeuille = lazy(() => import("./pages/partenaires/Portefeuille"));
-const PartenaireMesGains = lazy(() => import("./pages/partenaires/MesGains"));
 const PartenaireRetraits = lazy(() => import("./pages/partenaires/Retraits"));
 const PartenaireProfil = lazy(() => import("./pages/partenaires/Profil"));
 const PartenaireMessagerie = lazy(() => import("./pages/partenaires/Messagerie"));
@@ -197,7 +196,6 @@ export default function App() {
             <Route path="declarer" element={<LazyPage Component={PartenaireDeclarerTrouvaille} />} />
             <Route path="rendre" element={<LazyPage Component={PartenaireRendre} />} />
             <Route path="portefeuille" element={<LazyPage Component={PartenairePortefeuille} />} />
-            <Route path="mes-gains" element={<LazyPage Component={PartenaireMesGains} />} />
             <Route path="retraits" element={<LazyPage Component={PartenaireRetraits} />} />
             <Route path="messagerie" element={<LazyPage Component={PartenaireMessagerie} />} />
             <Route path="profil" element={<LazyPage Component={PartenaireProfil} />} />
