@@ -2,6 +2,7 @@
 import { DocumentService } from '../services/document.service.ts';
 import { subscriptionService } from '../services/subscription.service.ts';
 import { readFileAsBase64, fileExists, toDataUrl } from '../utils/media.utils.ts';
+import { errorStatus } from '../utils/http-error.ts';
 
 const documentService = new DocumentService();
 
@@ -48,7 +49,7 @@ export const registerMyDocument = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('❌ Erreur lors de l\'enregistrement du document:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: error.message || 'Erreur lors de l\'enregistrement du document'
     });
@@ -75,7 +76,7 @@ export const getMyDocuments = async (req: Request, res: Response) => {
       data: result
     });
   } catch (error: any) {
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: error.message || 'Erreur lors de la récupération des documents'
     });
@@ -98,7 +99,7 @@ export const getMyDocumentById = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: doc });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message || 'Erreur lors de la récupération du document' });
+    res.status(errorStatus(error)).json({ success: false, message: error.message || 'Erreur lors de la récupération du document' });
   }
 };
 
@@ -128,7 +129,7 @@ export const deleteDocument = async (req: Request, res: Response) => {
       });
     }
   } catch (error: any) {
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: error.message || 'Erreur lors de la suppression'
     });
@@ -158,7 +159,7 @@ export const reportDocumentLost = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('❌ Erreur déclaration perte:', error);
-    res.status(400).json({
+    res.status(errorStatus(error, 400)).json({
       success: false,
       message: error.message || 'Erreur lors de la déclaration de perte'
     });
@@ -188,7 +189,7 @@ export const archiveDocument = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('❌ Erreur archivage document:', error);
-    res.status(500).json({ success: false, message: error.message || 'Erreur lors de l\'archivage' });
+    res.status(errorStatus(error)).json({ success: false, message: error.message || 'Erreur lors de l\'archivage' });
   }
 };
 
@@ -217,7 +218,7 @@ export const getDocumentMedia = async (req: Request, res: Response) => {
     return res.json({ success: true, data: { filename: file.filename, mime: file.mime, base64: file.base64, dataUrl: toDataUrl(file.base64, file.mime) } });
   } catch (error: any) {
     console.error('❌ Erreur getDocumentMedia:', error);
-    res.status(500).json({ success: false, message: error.message || 'Erreur lors de la récupération du média' });
+    res.status(errorStatus(error)).json({ success: false, message: error.message || 'Erreur lors de la récupération du média' });
   }
 };
 
@@ -258,7 +259,7 @@ export const updateMyDocument = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('❌ Erreur lors de la modification du document:', error);
-    res.status(500).json({
+    res.status(errorStatus(error)).json({
       success: false,
       message: error.message || 'Erreur lors de la modification du document'
     });

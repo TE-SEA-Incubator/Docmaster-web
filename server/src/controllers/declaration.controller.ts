@@ -4,6 +4,7 @@ import { PdfService } from '../services/pdf.service.ts';
 import { activityLogService } from '../services/activity-log.service.ts';
 import { CreateDeclarationDTO, RequestDeleteDeclarationDTO, UpdateDeclarationDTO } from '../dtos/declaration.dto.ts';
 import { validateDTO, mapFormDataToObject, formatValidationErrors } from '../utils/validation.utils.ts';
+import { errorStatus } from '../utils/http-error.ts';
 import { DocumentRepository } from '../repositories/document.repository.ts';
 import { DocumentDeclaration } from '../types/database.ts';
 import pool from '../database/db.js';
@@ -68,6 +69,7 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
       ...req.body,
       declaration_type: 'LOST',
       reporter_id: userId,
+      client_request_id: typeof req.headers['idempotency-key'] === 'string' ? req.headers['idempotency-key'] : undefined,
       photo_recto,
       photo_verso
     });
@@ -103,7 +105,7 @@ export const createLostDeclaration = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('❌ Erreur création déclaration perte:', error);
     const msg = error.message || '';
-    const status = msg.includes('Limite') || msg.includes('plan') ? 403 : 500;
+    const status = msg.includes('Limite') || msg.includes('plan') ? 403 : errorStatus(error);
     res.status(status).json({ success: false, message: msg });
   }
 };
@@ -190,6 +192,7 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
       ...req.body,
       declaration_type: 'FOUND',
       reporter_id: userId,
+      client_request_id: typeof req.headers['idempotency-key'] === 'string' ? req.headers['idempotency-key'] : undefined,
       photo_recto,
       photo_verso
     });
@@ -213,7 +216,7 @@ export const createFoundDeclaration = async (req: Request, res: Response) => {
     console.error('🔴 [Controller] === ERREUR ===');
     console.error('🔴 [Controller] Message:', error.message);
     const msg = error.message || '';
-    const status = msg.includes('Limite') || msg.includes('plan') ? 403 : 500;
+    const status = msg.includes('Limite') || msg.includes('plan') ? 403 : errorStatus(error);
     res.status(status).json({ success: false, message: msg });
   }
 };
@@ -227,7 +230,7 @@ export const getMyDeclarations = async (req: Request, res: Response) => {
     const result = await declarationService.getUserDeclarations(userId);
     res.json({ success: true, count: result.length, data: result });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: error.message });
   }
 };
 
@@ -241,50 +244,73 @@ export const searchDeclarations = async (req: Request, res: Response) => {
     const result = await declarationService.searchDeclarations(filters);
     res.json({ success: true, count: result.data.length, total: result.total, data: result.data });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: error.message });
   }
 };
 
 export const getGlobalStats = async (req: Request, res: Response) => {
   try {
     const stats = await declarationService.getGlobalStats();
+    res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=60");
     res.json({ success: true, data: stats });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: error.message });
   }
 };
 
 export const getPerformanceStats = async (req: Request, res: Response) => {
   try {
     const { period } = req.query; // day, week, month, year
-    const stats = await declarationService.getPerformanceStats(period as string);
+    const stats = await declarationService.getPerformanceStats(
+      typeof period === "string" ? period : undefined,
+    );
+    res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=300");
     res.json({ success: true, data: stats });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: error.message });
   }
 };
 
 export const getStatsByType = async (req: Request, res: Response) => {
   try {
     const { period } = req.query; // day, week, month, year
-    const stats = await declarationService.getStatsByType((period as string) || "month");
+    const stats = await declarationService.getStatsByType(
+      typeof period === "string" ? period : "month",
+    );
+    res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=300");
     res.json({ success: true, data: stats });
   } catch (error: any) {
     console.error('❌ [getStatsByType] ERREUR:', error.message);
     console.error('❌ [getStatsByType] Stack:', error.stack);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: error.message });
   }
 };
 
 export const searchPublicFound = async (req: Request, res: Response) => {
   try {
-    const { q } = req.query;
+    const q = typeof req.query.q === "string" ? req.query.q : "";
+    const type = typeof req.query.type === "string" ? req.query.type : "";
     // Let the service decide what to do when `q` is empty.
     // service.searchPublicFound handles empty queries by returning all AVAILABLE FOUND declarations.
-    const result = await declarationService.searchPublicFound((q as string) || "");
+    const result = await declarationService.searchPublicFound(q, type);
+    res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=30");
     res.json({ success: true, count: result.length, data: result });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: error.message });
+  }
+};
+
+export const publicRecentFound = async (req: Request, res: Response) => {
+  try {
+    const type = typeof req.query.type === "string" ? req.query.type : "";
+    const limitRaw = Number(req.query.limit);
+    const limit =
+      Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(Math.floor(limitRaw), 20) : 8;
+    const result = await declarationService.publicRecentByType(type, limit);
+    res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=30");
+    res.json({ success: true, count: result.length, data: result });
+  } catch (error: any) {
+    res.status(errorStatus(error)).json({ success: false, message: error.message });
   }
 };
 
@@ -339,7 +365,7 @@ export const getDeclarationById = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: minimal });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: error.message });
   }
 };
 
@@ -371,7 +397,7 @@ export const getRenderContext = async (req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error: any) {
     console.error('❌ Erreur getRenderContext:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: error.message });
   }
 };
 
@@ -458,7 +484,7 @@ export const generatePdf = async (req: Request, res: Response) => {
     await pdfService.generateDeclarationPdf(declaration, res);
   } catch (error: any) {
     console.error('❌ Erreur génération PDF:', error);
-    res.status(500).json({ success: false, message: 'Erreur lors de la génération du PDF' });
+    res.status(errorStatus(error)).json({ success: false, message: error.message || 'Erreur lors de la génération du PDF' });
   }
 };
 
@@ -484,7 +510,7 @@ export const deleteDeclaration = async (req: Request, res: Response) => {
     if (error.message === 'Déclaration déjà supprimée') {
       return res.status(400).json({ success: false, message: error.message });
     }
-    res.status(500).json({ success: false, message: error.message });
+    res.status(errorStatus(error)).json({ success: false, message: error.message });
   }
 };
 
@@ -588,9 +614,12 @@ export const updateDeclaration = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('❌ Erreur mise à jour déclaration:', error);
-    return res.status(500).json({
+    const status = errorStatus(error);
+    return res.status(status).json({
       success: false,
-      message: 'Erreur lors de la mise à jour de la déclaration',
+      message: status >= 500
+        ? 'Erreur lors de la mise à jour de la déclaration'
+        : error.message || 'Erreur lors de la mise à jour de la déclaration',
     });
   }
 };

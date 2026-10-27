@@ -1,5 +1,6 @@
 import { pool } from '../database/db.ts';
 import { User, PasswordResetToken } from '../types/database.ts';
+import { TIMING } from '../config/timing.ts';
 import crypto from 'crypto';
 
 export class UserRepository {
@@ -72,9 +73,9 @@ export class UserRepository {
   async checkRecentlyVerified(email: string): Promise<boolean> {
     const query = `
       SELECT id FROM verification_codes 
-      WHERE email = $1 AND used = true AND created_at > NOW() - INTERVAL '15 minutes'
+      WHERE email = $1 AND used = true AND created_at > NOW() - make_interval(mins => $2::int)
       LIMIT 1`;
-    const { rows } = await pool.query(query, [email]);
+    const { rows } = await pool.query(query, [email, TIMING.emailVerificationTtlMinutes]);
     return rows.length > 0;
   }
 
@@ -326,7 +327,7 @@ export class UserRepository {
   /**
    * Store a verification code
    */
-  async storeVerificationCode(email: string, code: string, expiresInMinutes: number = 10): Promise<void> {
+  async storeVerificationCode(email: string, code: string, expiresInMinutes: number = TIMING.emailVerificationTtlMinutes): Promise<void> {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + expiresInMinutes);
     

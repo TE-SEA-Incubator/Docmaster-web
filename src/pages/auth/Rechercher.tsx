@@ -74,6 +74,7 @@ export default function Rechercher() {
   const [results, setResults] = useState<ResultDoc[]>([]);
   const [loading, setLoading] = useState(false);
   const [docTypes, setDocTypes] = useState<DocTypeCatalog[]>([]);
+  const [selectedDocType, setSelectedDocType] = useState("");
 
   const docTypeMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -127,15 +128,26 @@ export default function Rechercher() {
 
   // Charger toutes les déclarations FOUND par défaut
   useEffect(() => {
+    if (potentialIds && potentialIds.length > 0) return;
     setLoading(true);
     declarationsService.searchPublic("") // On charge tout
       .then((res) => {
         if (res.data) setResults(res.data as ResultDoc[]);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [potentialIds]);
 
   const handleSearch = () => performSearch(query.trim());
+
+  const visibleResults = useMemo(() => {
+    if (!selectedDocType) return results;
+    return results.filter((doc) => {
+      const selected = docTypes.find((type) => type.id === selectedDocType);
+      const typeInfo = doc.docTypeInfo as { code?: string; nom?: string } | undefined;
+      const candidates = [doc.doc_type, doc.document_type, typeInfo?.code, typeInfo?.nom];
+      return candidates.some((value) => value === selectedDocType || value === selected?.code || value === selected?.nom);
+    });
+  }, [results, selectedDocType, docTypes]);
 
   const quickFilters = ["CNI", "Passeport", "Permis", "Diplôme"];
 
@@ -239,6 +251,17 @@ export default function Rechercher() {
                   </Badge>
                 ))}
               </Group>
+              <select
+                value={selectedDocType}
+                onChange={(event) => setSelectedDocType(event.target.value)}
+                aria-label={t("rechercher_types_title")}
+                className="mt-3 w-full rounded-xl border border-borderMain bg-white px-3 py-2.5 text-sm"
+              >
+                <option value="">{t("rechercher_types_title")}</option>
+                {docTypes.map((type) => (
+                  <option key={type.id} value={type.id}>{type.nom}</option>
+                ))}
+              </select>
             </Paper>
           )}
 
@@ -256,7 +279,7 @@ export default function Rechercher() {
                 </Card>
               ))}
             </SimpleGrid>
-          ) : results.length === 0 ? (
+          ) : visibleResults.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <Paper
                 w={80}
@@ -295,7 +318,7 @@ export default function Rechercher() {
             </div>
           ) : (
             <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing="md">
-              {results.map((doc) => {
+              {visibleResults.map((doc) => {
                 const photoUrl = getFullImageUrl(doc.photo_recto);
                 const displayName = typeof doc.owner_name === "string" ? doc.owner_name : t("rechercher_owner");
                 const dateField = typeof doc.date_trouvaille === "string" ? doc.date_trouvaille : typeof doc.date_perte === "string" ? doc.date_perte : typeof doc.created_at === "string" ? doc.created_at : "";
@@ -305,9 +328,13 @@ export default function Rechercher() {
                   if (raw && typeof raw === "object" && "nom" in raw && typeof (raw as Record<string, unknown>).nom === "string") return (raw as Record<string, unknown>).nom as string;
                   if (doc.doc_type && docTypeMap[doc.doc_type]) return docTypeMap[doc.doc_type];
                   if (doc.document_type && docTypeMap[doc.document_type]) return docTypeMap[doc.document_type];
-                  return doc.document_type || doc.doc_type || t("rechercher_document");
+                  const fallback = doc.document_type || doc.doc_type || "";
+                  if (/^[0-9a-f]{8}-/i.test(fallback) || /^[0-9a-f]{24}$/i.test(fallback) || /^\d+$/.test(fallback)) {
+                    return t("rechercher_document");
+                  }
+                  return fallback || t("rechercher_document");
                 })();
-                const showFull = isMatchView;
+                const showFull = Boolean(user) && isMatchView;
 
                 return (
                   <Card key={doc.id} radius="xl" withBorder overflow="hidden" p={0}>
@@ -358,7 +385,7 @@ export default function Rechercher() {
                             leftSection={<i className="fa-solid fa-hand-holding-heart" />}
                             style={{ backgroundColor: "#E8923A" }}
                           >
-                            {t("rechercher_its_mine")}
+                            {t("dashboard_recover_document")}
                           </Button>
                         ) : (
                           <Button
@@ -370,7 +397,7 @@ export default function Rechercher() {
                             size="sm"
                             leftSection={<i className="fa-solid fa-file-circle-plus" />}
                           >
-                            {t("rechercher_declare_to_see")}
+                            {user ? t("rechercher_its_mine") : t("rechercher_declare_to_see")}
                           </Button>
                         )}
                       </div>

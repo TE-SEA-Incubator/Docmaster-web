@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Select } from "@mantine/core";
 import {
   useLocations,
@@ -9,6 +10,8 @@ interface LocationSelectProps {
   onChange: (value: LocationState) => void;
   showArrondissement?: boolean;
   error?: string;
+  /** Commune sortie d'un épinglage sur la carte : elle préremplit l'arrondissement tant que rien n'est choisi. */
+  autoCity?: string;
 }
 
 export default function LocationSelect({
@@ -16,6 +19,7 @@ export default function LocationSelect({
   onChange,
   showArrondissement = true,
   error,
+  autoCity,
 }: LocationSelectProps) {
   const {
     regions,
@@ -61,9 +65,21 @@ export default function LocationSelect({
     emitChange(region, department, a);
   };
 
+  // Le champ reste vide alors qu'une commune est connue : c'est un rechargement de
+  // liste (region ou department vient de changer) ou le premier épinglage sur la carte.
+  useEffect(() => {
+    if (!autoCity || arrondissement) return;
+    setArrondissement(autoCity);
+    emitChange(region, department, autoCity);
+  }, [autoCity, arrondissement]);
+
   const regionData = regions.map((r) => ({ value: r.region, label: r.region }));
   const deptData = departments.map((d) => ({ value: d.name, label: d.name }));
-  const arrData = arrondissements.map((a) => ({ value: a, label: a }));
+  // La commune géocodée n'est pas toujours une découpe administrative du référentiel :
+  // elle est ajoutée aux options pour rester affichable et modifiable.
+  const arrData = (
+    autoCity && !arrondissements.includes(autoCity) ? [...arrondissements, autoCity] : arrondissements
+  ).map((a) => ({ value: a, label: a }));
 
   const selectStyles = {
     input: {

@@ -30,6 +30,18 @@ router.get('/', SettingController.getSettings);
 
 /**
  * @swagger
+ * /settings/timing:
+ *   get:
+ *     summary: Délais partagés (polling, matching, expiration des codes)
+ *     tags: [Settings]
+ *     responses:
+ *       200:
+ *         description: Contrat de timing public
+ */
+router.get('/timing', SettingController.getTiming);
+
+/**
+ * @swagger
  * /settings/{key}:
  *   get:
  *     summary: Récupérer un paramètre par sa clé

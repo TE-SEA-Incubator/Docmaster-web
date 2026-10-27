@@ -3,6 +3,8 @@ import { matchingService } from '../services/matching.service.ts';
 import { expirationService } from '../services/expiration.service.ts';
 import { paymentReconciliationService } from '../services/payment-reconciliation.service.ts';
 import { payoutPollerService } from './payout-poller.ts';
+import { storageCleanupService } from '../services/storage-cleanup.service.ts';
+import { TIMING } from '../config/timing.ts';
 
 /**
  * Initialize all background cron jobs
@@ -15,7 +17,7 @@ export const initCronJobs = () => {
   matchingService.runFullMatchingCycle().catch(err => console.error('❌ Error during startup matching:', err));
 
   // 1. Matching Worker - Runs every 30 seconds
-  cron.schedule('*/30 * * * * *', () => {
+  cron.schedule(TIMING.matchingCron, () => {
     matchingService.runFullMatchingCycle();
   });
 
@@ -44,5 +46,14 @@ export const initCronJobs = () => {
     payoutPollerService.pollPendingPayouts();
   });
 
-  console.log('✅ Background Cron Jobs scheduled (matching: 30s, payout-poll: 2min, reconciliation: 15min, expiration: daily).');
+  // 6. Storage Cleanup - Runs daily at 3:00 AM
+  //    Supprime les photos/pèces non référencées en base après la rétention.
+  cron.schedule('0 3 * * *', () => {
+    console.log('🧹 Running orphan uploads cleanup...');
+    storageCleanupService.purgeOrphanFiles().catch((err) =>
+      console.error('❌ Storage cleanup failed:', err),
+    );
+  });
+
+  console.log('✅ Background Cron Jobs scheduled (matching: 30s, payout-poll: 2min, reconciliation: 15min, expiration: daily, storage-cleanup: 3AM).');
 };

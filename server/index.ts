@@ -16,7 +16,9 @@ import dotenv from "dotenv";
 import * as swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./src/config/swagger.js";
 import cookieParser from "cookie-parser";
+import multer from "multer";
 import { pool } from "./src/database/db.js";
+import { errorStatus } from "./src/utils/http-error.ts";
 import authRoutes from "./src/routes/auth.routes.js";
 import documentRoutes from "./src/routes/document.routes.js";
 import shareRoutes from "./src/routes/share.routes.js";
@@ -321,10 +323,25 @@ export function createApp(): Application {
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     console.error("❌ [Global Error Handler]", err.message || err);
-    const statusCode = err.statusCode || 500;
+
+    // Multer errors carry no status: translate them into readable 400s.
+    if (err instanceof multer.MulterError) {
+      const message =
+        err.code === "LIMIT_FILE_SIZE"
+          ? "Fichier trop volumineux : 5 Mo maximum."
+          : err.code === "LIMIT_UNEXPECTED_FILE"
+            ? "Champ de fichier inattendu."
+            : err.message;
+      return res.status(400).json({ success: false, message });
+    }
+
+    const statusCode = errorStatus(err);
     res.status(statusCode).json({
       success: false,
-      message: err.message || "Internal server error",
+      message:
+        statusCode >= 500 && process.env.NODE_ENV === "production"
+          ? "Erreur interne du serveur."
+          : err.message || "Internal server error",
       ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
     });
   });

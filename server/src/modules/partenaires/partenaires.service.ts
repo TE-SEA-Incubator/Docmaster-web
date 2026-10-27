@@ -615,6 +615,54 @@ export class PartenaireService {
     return partenaireEarningsService.getPartenaireEarnings(partenaireId, limit, offset);
   }
 
+  /**
+   * Get complete points history (gains, conversions, withdrawals)
+   */
+  async getPointsHistory(partenaireId: string, filters: any = {}) {
+    const limit = Math.min(100, Math.max(1, Number(filters.limit) || 50));
+    const offset = Math.max(0, Number(filters.offset) || 0);
+    const { startDate, endDate, type } = filters;
+
+    const query = `
+      SELECT 
+        id,
+        type,
+        amount,
+        currency,
+        description,
+        metadata,
+        created_at
+      FROM partenaire_earnings_history
+      WHERE partenaire_id = $1
+        AND ($2::timestamp IS NULL OR created_at >= $2)
+        AND ($3::timestamp IS NULL OR created_at <= $3)
+        AND ($4::varchar IS NULL OR type = $4)
+      ORDER BY created_at DESC
+      LIMIT $5 OFFSET $6
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM partenaire_earnings_history
+      WHERE partenaire_id = $1
+        AND ($2::timestamp IS NULL OR created_at >= $2)
+        AND ($3::timestamp IS NULL OR created_at <= $3)
+        AND ($4::varchar IS NULL OR type = $4)
+    `;
+
+    const [historyRes, countRes] = await Promise.all([
+      pool.query(query, [partenaireId, startDate || null, endDate || null, type || null, limit, offset]),
+      pool.query(countQuery, [partenaireId, startDate || null, endDate || null, type || null])
+    ]);
+
+    return {
+      history: historyRes.rows,
+      total: parseInt(countRes.rows[0].total, 10),
+      limit,
+      offset
+    };
+  }
+
   async convertPoints(partenaireId: string, amountPoints: number) {
     const { partenairePointsService } = await import('../../services/partenaire-points.service.ts');
     return partenairePointsService.convertPointsToWallet(partenaireId, amountPoints);

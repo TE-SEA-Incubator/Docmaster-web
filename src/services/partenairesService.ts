@@ -295,6 +295,24 @@ export const partenairesService = {
     );
   },
 
+  getPointsHistory(params?: { 
+    limit?: number; 
+    offset?: number;
+    startDate?: string;
+    endDate?: string;
+    type?: string;
+  }) {
+    return partenairesApi.get<{ 
+      success: boolean; 
+      data: { 
+        history: PartenaireEarning[]; 
+        total: number; 
+        limit: number; 
+        offset: number;
+      } 
+    }>("/points/history", { params });
+  },
+
   getPointsRate() {
     return partnerGeneralApi.get<{ success: boolean; rate: number }>("points/rate");
   },

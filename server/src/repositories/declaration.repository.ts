@@ -1,5 +1,7 @@
 import pool from "../database/db.js";
 import { DocumentDeclaration } from "../types/database.ts";
+import { bumpCacheVersion } from "../cache/cache.ts";
+import { PUBLIC_SEARCH_VERSION } from "../cache/keys.ts";
 
 export class DeclarationRepository {
   /**
@@ -15,9 +17,11 @@ export class DeclarationRepository {
         fingerprint, found_location, etat_physique, photo_recto, 
         photo_verso, description, date_expiration, mode_contact, 
         payment_status, transactions_id, date_naissance, urgence_niveau, recompense_montant, date_perte,
-        telephone_contact, email_contact, quartier, metadata, department, arrondissement
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31)
-      RETURNING *
+        telephone_contact, email_contact, quartier, metadata, department, arrondissement, client_request_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
+      ON CONFLICT (reporter_id, client_request_id) WHERE client_request_id IS NOT NULL
+      DO UPDATE SET client_request_id = EXCLUDED.client_request_id
+      RETURNING *, (xmax = 0) AS __was_created
     `;
 
     const values = [
@@ -52,10 +56,20 @@ export class DeclarationRepository {
       data.metadata ? JSON.stringify(data.metadata) : null,
       data.department || null,
       data.arrondissement || null,
+      data.client_request_id || null,
     ];
 
     const { rows } = await pool.query(query, values);
+    await bumpCacheVersion(PUBLIC_SEARCH_VERSION);
     return rows[0];
+  }
+
+  async findByClientRequestId(reporterId: string, clientRequestId: string): Promise<DocumentDeclaration | null> {
+    const { rows } = await pool.query(
+      'SELECT * FROM declarations WHERE reporter_id = $1 AND client_request_id = $2 LIMIT 1',
+      [reporterId, clientRequestId],
+    );
+    return rows[0] || null;
   }
 
   /**
@@ -88,6 +102,58 @@ export class DeclarationRepository {
   }
 
   /**
+   * Find public FOUND declarations (limit prevents huge public responses).
+   */
+  async findPublicFound(limit = Number(process.env.PUBLIC_SEARCH_LIMIT || 100), docTypeKey = ""): Promise<DocumentDeclaration[]> {
+    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(Math.floor(limit), 500) : 100;
+    const query = `
+      SELECT d.*,
+             normalize_doc_type(d.doc_type) AS doc_type_id,
+             json_build_object('nom', dt.nom, 'code', dt.code) AS "docTypeInfo"
+      FROM declarations d
+      LEFT JOIN document_types dt ON dt.id = normalize_doc_type(d.doc_type)
+      WHERE d.declaration_type = 'FOUND' AND d.status = 'AVAILABLE'
+        AND ($2 = '' OR normalize_doc_type(d.doc_type) = (
+          SELECT id FROM document_types
+          WHERE id::text = $2 OR UPPER(code) = UPPER($2) OR UPPER(nom) = UPPER($2)
+          LIMIT 1
+        ))
+      ORDER BY d.created_at DESC
+      LIMIT $1
+    `;
+    const { rows } = await pool.query(query, [safeLimit, docTypeKey]);
+    return rows;
+  }
+
+  /**
+   * Derniers documents trouvés publics d'un type, tous statuts sauf CANCELLED.
+   * `docTypeKey` accepte un id, un code ou un libellé : normalize_doc_type() canonise.
+   * Contrairement à findPublicFound, on n'exige pas AVAILABLE : la page détail d'un
+   * type doit aussi montrer les documents déjà appariés ou retournés.
+   */
+  async findPublicFoundByDocType(docTypeKey: string, limit = 8) {
+    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(Math.floor(limit), 500) : 8;
+    const query = `
+      SELECT d.*,
+             normalize_doc_type(d.doc_type) AS doc_type_id,
+             json_build_object('nom', dt.nom, 'code', dt.code) AS "docTypeInfo"
+      FROM declarations d
+      LEFT JOIN document_types dt ON dt.id = normalize_doc_type(d.doc_type)
+      WHERE d.declaration_type = 'FOUND'
+        AND d.status <> 'CANCELLED'
+        AND normalize_doc_type(d.doc_type) = (
+          SELECT id FROM document_types
+          WHERE id::text = $1 OR UPPER(code) = UPPER($1) OR UPPER(nom) = UPPER($1)
+          LIMIT 1
+        )
+      ORDER BY d.created_at DESC
+      LIMIT $2
+    `;
+    const { rows } = await pool.query(query, [docTypeKey, safeLimit]);
+    return rows;
+  }
+
+  /**
    * Find by ID
    */
   async findById(id: string): Promise<DocumentDeclaration | null> {
@@ -106,6 +172,7 @@ export class DeclarationRepository {
     const query =
       "UPDATE declarations SET status = $1 WHERE id = $2 RETURNING *";
     const { rows } = await pool.query(query, [status, id]);
+    if (rows[0]) await bumpCacheVersion(PUBLIC_SEARCH_VERSION);
     return rows[0] || null;
   }
 
@@ -191,18 +258,33 @@ export class DeclarationRepository {
   /**
    * Public fuzzy search for FOUND documents
    */
-  async searchPublicFound(searchText: string): Promise<DocumentDeclaration[]> {
+  async searchPublicFound(searchText: string, docTypeKey = ""): Promise<DocumentDeclaration[]> {
     const query = `
-      SELECT *, 
-             similarity(owner_name, $1) as score
-      FROM declarations 
-      WHERE declaration_type = 'FOUND' 
-      AND status = 'AVAILABLE'
-      AND (owner_name % $1 OR document_number % $1 OR identifiant_doc_dm % $1)
+      SELECT d.*,
+             similarity(d.owner_name, $1) as score,
+             normalize_doc_type(d.doc_type) AS doc_type_id,
+             json_build_object('nom', dt.nom, 'code', dt.code) AS "docTypeInfo"
+      FROM declarations d
+      LEFT JOIN document_types dt ON dt.id = normalize_doc_type(d.doc_type)
+      WHERE d.declaration_type = 'FOUND'
+      AND d.status = 'AVAILABLE'
+      AND (
+        d.owner_name % $1
+        OR d.document_number % $1
+        OR d.identifiant_doc_dm % $1
+        OR UPPER(COALESCE(dt.code, '')) = UPPER($1)
+        OR similarity(COALESCE(dt.nom, ''), $1) >= 0.2
+        OR similarity(COALESCE(dt.code, ''), $1) >= 0.2
+      )
+      AND ($2 = '' OR normalize_doc_type(d.doc_type) = (
+        SELECT id FROM document_types
+        WHERE id::text = $2 OR UPPER(code) = UPPER($2) OR UPPER(nom) = UPPER($2)
+        LIMIT 1
+      ))
       ORDER BY score DESC
       LIMIT 20
     `;
-    const { rows } = await pool.query(query, [searchText]);
+    const { rows } = await pool.query(query, [searchText, docTypeKey]);
     return rows;
   }
 
@@ -308,6 +390,7 @@ export class DeclarationRepository {
       reporterId,
     ]);
 
+    if (rows[0]) await bumpCacheVersion(PUBLIC_SEARCH_VERSION);
     return rows[0] || null;
   }
 
@@ -320,6 +403,7 @@ export class DeclarationRepository {
   ): Promise<boolean> {
     const query = "DELETE FROM declarations WHERE id = $1 AND reporter_id = $2";
     const { rowCount } = await pool.query(query, [id, reporterId]);
+    if ((rowCount ?? 0) > 0) await bumpCacheVersion(PUBLIC_SEARCH_VERSION);
     return (rowCount ?? 0) > 0;
   }
 
@@ -415,7 +499,7 @@ export class DeclarationRepository {
   }
 
   /**
-   * KPIs par type de document canonique (LOST + FOUND)
+   * KPIs par type de document canonique pour les documents trouvés (FOUND)
    * Normalise declarations.doc_type (uuid, code, nom en clair, variantes)
    * vers les types de document_types, puis agrège les KPIs par type.
    * @param period 'day', 'week', 'month', 'year'
@@ -439,12 +523,13 @@ export class DeclarationRepository {
       current_period AS (
         SELECT
           doc_type_id,
-          COUNT(*) AS total,
-          COUNT(*) FILTER (WHERE declaration_type = 'LOST') AS lost,
-          COUNT(*) FILTER (WHERE declaration_type = 'FOUND') AS found,
+          COUNT(*) FILTER (WHERE declaration_type = 'FOUND' AND status <> 'CANCELLED') AS total,
+          0 AS lost,
+          COUNT(*) FILTER (WHERE declaration_type = 'FOUND' AND status <> 'CANCELLED') AS found,
           COUNT(*) FILTER (WHERE status = 'RETURNED') AS returned
         FROM normalized_docs
         WHERE created_at >= NOW() - $1::interval
+          AND declaration_type = 'FOUND' AND status <> 'CANCELLED'
         GROUP BY doc_type_id
       ),
       previous_period AS (
@@ -452,6 +537,7 @@ export class DeclarationRepository {
         FROM normalized_docs
         WHERE created_at >= NOW() - ($1::interval * 2)
           AND created_at < NOW() - $1::interval
+          AND declaration_type = 'FOUND' AND status <> 'CANCELLED'
         GROUP BY doc_type_id
       ),
       items_list AS (
@@ -468,6 +554,7 @@ export class DeclarationRepository {
           ) AS items
         FROM normalized_docs
         WHERE created_at >= NOW() - $1::interval
+          AND declaration_type = 'FOUND' AND status <> 'CANCELLED'
         GROUP BY doc_type_id
       )
       SELECT

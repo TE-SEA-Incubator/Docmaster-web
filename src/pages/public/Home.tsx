@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import { useToast } from "../../context/ToastContext";
 import { subscriptionsService } from "../../services/subscriptionsService";
+import { useGlobalStats } from "../../hooks/useGlobalStats";
 import { useAuth } from "../../context/AuthContext";
 import { useGoogleOneTap } from "../../hooks/useGoogleOneTap";
 import { ProtectedDocumentImage } from "../../components/ui/ProtectedDocumentImage";
+import { formatRetrouveTimeAgo } from "../../utils/dateHelpers";
 
 import type { Plan } from "../../types/api";
 
@@ -82,6 +84,13 @@ const tips = [
   { icon: "fa-solid fa-phone-alt", titleKey: "home_tip_contacts", descKey: "home_tip_contacts_desc" },
 ];
 
+const RADAR_NODE_POSITIONS = [
+  "top-[-8px] left-1/2 -translate-x-1/2",
+  "right-[-8px] top-1/2 -translate-y-1/2",
+  "bottom-[-8px] left-1/2 -translate-x-1/2",
+  "left-[-8px] top-1/2 -translate-y-1/2",
+];
+
 export default function Home() {
   const { t, lang } = useI18n();
   const toast = useToast();
@@ -89,6 +98,7 @@ export default function Home() {
   useGoogleOneTap();
 
   const [plans, setPlans] = useState<Plan[]>([]);
+  const globalStats = useGlobalStats();
 
   useEffect(() => {
     subscriptionsService.getAllPlans().then((res) => {
@@ -97,20 +107,21 @@ export default function Home() {
   }, []);
 
   const statCounters = [
-    { target: 2847, labelKey: "stat_declared", suffix: "" },
-    { target: 2156, labelKey: "stat_recovered_label", suffix: "" },
-    { target: 1523, labelKey: "stat_members", suffix: "" },
+    { target: globalStats?.declared ?? 0, labelKey: "stat_declared", suffix: "", icon: "fa-solid fa-file-lines" },
+    { target: globalStats?.recovered ?? 0, labelKey: "stat_recovered_label", suffix: "", icon: "fa-solid fa-magnifying-glass" },
+    { target: globalStats?.rate ?? 0, labelKey: "stat_rate", suffix: "%", icon: "fa-solid fa-handshake" },
   ];
 
   return (
     <>
-      <HeroSection t={t} />
+      <HeroSection t={t} stats={globalStats} />
       <RecentDocsSection t={t} />
       <HowItWorksSection t={t} />
       <MatchingSection t={t} />
       <WhyDocmasterSection t={t} />
       <VaultDeviceSection t={t} />
-      <StatsSection t={t} statCounters={statCounters} />
+      {/* Les compteurs n'existent que si la base repond : aucun chiffre n'est avance sans lui. */}
+      {globalStats && <StatsSection t={t} statCounters={statCounters} />}
       <WalletRewardsSection t={t} />
       <ReferralSection t={t} />
        <SubscriptionsTeaser t={t} plans={plans} />
@@ -192,7 +203,7 @@ function VerticalImgCarousel({ items, duration = 30, reversed = false }: {
   );
 }
 
-function HeroSection({ t }) {
+function HeroSection({ t, stats }) {
   const svgBg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Cpath fill='%23e8923a' fill-opacity='0.18' d='M600 325.1v-1.17c-6.5 3.83-13.06 7.64-14.68 8.64-10.6 6.56-18.57 12.56-24.68 19.09-5.58 5.95-12.44 10.06-22.42 14.15-1.45.6-2.96 1.2-4.83 1.9l-4.75 1.82c-9.78 3.75-14.8 6.27-18.98 10.1-4.23 3.88-9.65 6.6-16.77 8.84-1.95.6-3.99 1.17-6.47 1.8l-6.14 1.53c-5.29 1.35-8.3 2.37-10.54 3.78-3.08 1.92-6.63 3.26-12.74 5.03a384.1 384.1 0 0 1-4.82 1.36c-2.04.58-3.6 1.04-5.17 1.52a110.03 110.03 0 0 0-11.2 4.05c-2.7 1.15-5.5 3.93-8.78 8.4a157.68 157.68 0 0 0-6.15 9.2c-5.75 9.07-7.58 11.74-10.24 14.51a50.97 50.97 0 0 1-4.6 4.22c-2.33 1.9-10.39 7.54-11.81 8.74a14.68 14.68 0 0 0-3.67 4.15c-1.24 2.3-1.9 4.57-2.78 8.87-2.17 10.61-3.52 14.81-8.2 22.1-4.07 6.33-6.8 9.88-9.83 12.99-.47.48-.95.96-1.5 1.48l-3.75 3.56c-1.67 1.6-3.18 3.12-4.86 4.9a42.44 42.44 0 0 0-9.89 16.94c-2.5 8.13-2.72 15.47-1.76 27.22.47 5.82.51 6.36.51 8.18 0 10.51.12 17.53.63 25.78.24 4.05.56 7.8.97 11.22h.9c-1.13-9.58-1.5-21.83-1.5-37 0-1.86-.04-2.4-.52-8.26-.94-11.63-.72-18.87 1.73-26.85a41.44 41.44 0 0 1 9.65-16.55c1.67-1.76 3.18-3.27 4.83-4.85.63-.6 3.13-2.96 3.75-3.57a71.6 71.6 0 0 0 1.52-1.5c3.09-3.16 5.86-6.76 9.96-13.15 4.77-7.42 6.15-11.71 8.34-22.44.86-4.21 1.5-6.4 2.68-8.6.68-1.25 1.79-2.48 3.43-3.86 1.38-1.15 9.43-6.8 11.8-8.72 1.71-1.4 3.26-2.81 4.7-4.3 2.72-2.85 4.56-5.54 10.36-14.67a156.9 156.9 0 0 1 6.1-9.15c3.2-4.33 5.9-7.01 8.37-8.07 3.5-1.5 7.06-2.77 11.1-4.02a233.84 233.84 0 0 1 7.6-2.2l2.38-.67c6.19-1.79 9.81-3.16 12.98-5.15 2.14-1.33 5.08-2.33 10.27-3.65l6.14-1.53c2.5-.63 4.55-1.2 6.52-1.82 7.24-2.27 12.79-5.06 17.15-9.05 4.05-3.72 9-6.2 18.66-9.9l4.75-1.82c1.87-.72 3.39-1.31 4.85-1.91 10.1-4.15 17.07-8.32 22.76-14.4 6.05-6.45 13.95-12.4 24.49-18.92 1.56-.96 7.82-4.6 14.15-8.33v-64.58c-4 8.15-8.52 14.85-12.7 17.9-2.51 1.82-5.38 4.02-9.04 6.92a1063.87 1063.87 0 0 0-6.23 4.98l-1.27 1.02a2309.25 2309.25 0 0 1-4.87 3.9c-7.55 6-12.9 10.05-17.61 13.19-3.1 2.06-3.86 2.78-8.06 7.13-5.84 6.07-11.72 8.62-29.15 10.95-11.3 1.5-20.04 4.91-30.75 11.07-1.65.94-7.27 4.27-6.97 4.1-2.7 1.58-4.69 2.69-6.64 3.66-5.63 2.8-10.47 4.17-15.71 4.17-17.13 0-41.44 11.51-51.63 22.83-12.05 13.4-31.42 27.7-45.25 31.16-7.4 1.85-11.85 7.05-14.04 14.69-1.26 4.4-1.58 8.28-1.58 13.82 0 .82.01.98.24 3.63.45 5.18.35 8.72-.77 13.26-1.53 6.2-4.89 12.6-10.59 19.43-13.87 16.65-22.88 46.58-22.88 71.68 0 2.39.02 4.26.06 8.75.12 10.8.1 15.8-.22 21.95-.56 11.18-2.09 20.73-5 29.3h-1.05c2.94-8.56 4.49-18.12 5.05-29.35.31-6.13.34-11.1.22-21.9-.04-4.48-.06-6.36-.06-8.75 0-25.32 9.07-55.47 23.12-72.32 5.6-6.72 8.88-12.99 10.38-19.03 1.09-4.4 1.18-7.85.74-12.93-.23-2.7-.24-2.86-.24-3.72 0-5.62.32-9.57 1.62-14.1 2.28-7.95 6.97-13.44 14.76-15.39 13.6-3.4 32.82-17.59 44.75-30.84C409 360.14 433.58 348.5 451 348.5c5.07 0 9.77-1.33 15.26-4.07 1.93-.96 3.9-2.05 6.58-3.62-.3.18 5.33-3.16 6.98-4.11 10.82-6.21 19.66-9.67 31.11-11.2 17.23-2.3 22.9-4.75 28.57-10.64 4.25-4.41 5.04-5.16 8.22-7.28 4.68-3.11 10.01-7.14 17.55-13.14a1113.33 1113.33 0 0 0 4.86-3.89l1.28-1.02a4668.54 4668.54 0 0 1 6.23-4.98c3.67-2.9 6.55-5.12 9.07-6.95 4.37-3.19 9.16-10.56 13.29-19.4v66.9zm0-116.23c-.62.01-1.27.06-1.95.13-6.13.63-13.83 3.45-21.83 7.45-3.64 1.82-8.46 2.67-14.17 2.71-4.7.04-9.72-.47-14.73-1.33-1.7-.3-3.26-.61-4.67-.93a31.55 31.55 0 0 0-3.55-.57 273.4 273.4 0 0 0-16.66-.88c-10.42-.16-17.2.74-17.97 2.73-.38.97.6 2.55 3.03 4.87 1.01.97 2.22 2.03 4.04 3.55a1746.07 1746.07 0 0 0 4.79 4.02c1.39 1.2 3.1 1.92 5.5 2.5.7.16.86.2 2.64.54 3.53.7 5.03 1.25 6.15 2.63 1.41 1.76 1.4 4.54-.15 8.88-2.44 6.83-5.72 10.05-10.19 10.33-3.63.23-7.6-1.29-14.52-5.06-4.53-2.47-6.82-7.3-8.32-15.26-.17-.87-.32-1.78-.5-2.86l-.43-2.76c-1.05-6.58-1.9-9.2-3.73-10.11-.81-.4-1.59-.74-2.36-1-2.27-.77-4.6-1.02-8.1-.92-2.29.07-14.7 1-13.77.93-20.55 1.37-28.8 5.05-37.09 14.99a133.07 133.07 0 0 0-4.25 5.44l-2.3 3.09-2.51 3.32c-4.1 5.36-7.06 8.48-10.39 11.12-.65.52-1.33 1.04-2.13 1.62l-4.11 2.94a106.8 106.8 0 0 0-5.16 3.99c-4.55 3.74-9.74 8.6-16.25 15.38-8.25 8.58-11.78 13.54-11.7 15.95.07 1.65 1.64 2.11 6.79 2.38 1.61.09 2.15.12 2.98.2 2.95.24 5.09.73 6.81 1.68 7.48 4.15 11.63 7.26 13.95 11.58 3.3 6.15.8 12.88-8.89 20.26-8.28 6.3-11.1 10.37-11.31 14.96-.06 1.17 0 1.93.26 4.43.69 6.47.25 10.65-2.8 17.42a44.23 44.23 0 0 1-4.16 7.53c-2.82 3.97-5.47 5.74-10.6 7.69-.43.16-3.34 1.23-4.27 1.59-1.8.68-3.38 1.36-5.01 2.14-4.18 2-8.4 4.6-13.1 8.24-8.44 6.51-13.23 14.56-15.98 25.06-1.1 4.2-1.55 6.81-2.8 15.21-1.26 8.6-2.17 12.64-4.08 16.55-2.1 4.28-11.93 26.59-12.97 28.88a382.7 382.7 0 0 1-6.37 13.41c-4.07 8.11-7.61 14.07-10.73 17.81-5.38 6.46-8.98 14.37-13.77 28.42a810.14 810.14 0 0 0-1.89 5.6c-1.8 5.35-2.96 8.6-4.26 11.85-6.13 15.32-25.43 26.31-46.46 26.31-11.2 0-20.58-2.74-31.02-8.55-5.6-3.13-4.55-2.42-22.26-14.54-14.33-9.8-17.7-10.73-20.47-6.9-.37.5-1.81 2.74-1.83 2.77a52.24 52.24 0 0 1-4.94 5.9c-.73.79-5.52 5.87-6.97 7.45-2.38 2.6-4.3 4.81-5.98 6.93a45.6 45.6 0 0 0-5.08 7.66c-1.29 2.57-1.9 5.25-2.66 10.6a997.6 997.6 0 0 1-.46 3.18h-1l.47-3.32c.77-5.45 1.4-8.2 2.75-10.9a46.54 46.54 0 0 1 5.2-7.84c1.7-2.14 3.63-4.38 6.03-6.98 1.45-1.59 6.24-6.68 6.96-7.46a51.58 51.58 0 0 0 4.84-5.78s1.47-2.26 1.86-2.8c3.25-4.5 7.08-3.44 21.84 6.67 17.67 12.08 16.62 11.38 22.19 14.48 10.3 5.73 19.5 8.43 30.53 8.43 20.65 0 39.57-10.77 45.54-25.69a219.7 219.7 0 0 0 4.24-11.8 6752.32 6752.32 0 0 0 1.88-5.6c4.83-14.16 8.47-22.14 13.96-28.73 3.05-3.66 6.56-9.57 10.6-17.61 1.97-3.93 4.04-8.31 6.35-13.38 1.03-2.28 10.88-24.61 12.98-28.91 1.85-3.79 2.75-7.76 4-16.25 1.24-8.44 1.7-11.07 2.81-15.32 2.8-10.7 7.71-18.94 16.33-25.6a73.18 73.18 0 0 1 13.29-8.35c1.66-.8 3.27-1.48 5.08-2.18.94-.36 3.86-1.43 4.28-1.59 4.95-1.88 7.44-3.55 10.14-7.33 1.35-1.9 2.68-4.3 4.06-7.37 2.97-6.58 3.39-10.59 2.72-16.9a27.13 27.13 0 0 1-.27-4.58c.22-4.94 3.21-9.24 11.7-15.7 9.33-7.11 11.66-13.34 8.62-19-2.2-4.09-6.25-7.12-13.55-11.17-1.57-.88-3.6-1.33-6.42-1.57-.8-.07-1.34-.1-2.95-.19-5.77-.3-7.63-.85-7.72-3.34-.1-2.81 3.5-7.87 11.97-16.69 6.53-6.8 11.75-11.69 16.33-15.45 1.79-1.47 3.42-2.72 5.2-4.03l4.12-2.94c.79-.58 1.46-1.08 2.1-1.59 3.26-2.6 6.16-5.65 10.21-10.94a383.2 383.2 0 0 0 2.5-3.32l2.31-3.09c1.8-2.39 3.04-4 4.29-5.48 8.47-10.17 16.98-13.96 37.27-15.3-.44.02 12-.9 14.32-.98 3.62-.1 6.05.16 8.46.98.8.27 1.62.62 2.47 1.04 2.27 1.14 3.17 3.87 4.27 10.85l.44 2.76c.17 1.07.33 1.97.5 2.83 1.44 7.69 3.62 12.29 7.8 14.57 6.76 3.68 10.6 5.15 13.99 4.94 4-.25 6.99-3.17 9.3-9.67 1.45-4.04 1.46-6.49.32-7.92-.9-1.12-2.28-1.62-5.57-2.27a55.8 55.8 0 0 1-2.67-.55c-2.54-.6-4.39-1.4-5.93-2.71a252.63 252.63 0 0 0-4.78-4.01 84.35 84.35 0 0 1-4.08-3.6c-2.73-2.6-3.86-4.43-3.28-5.95 1.02-2.64 7.82-3.54 18.93-3.37a230.56 230.56 0 0 1 16.73.88c2.76.39 3.2.49 3.68.6 1.4.3 2.95.62 4.62.91a82.9 82.9 0 0 0 14.56 1.32c5.56-.04 10.24-.86 13.73-2.6 8.1-4.05 15.89-6.9 22.17-7.56.7-.07 1.4-.11 2.05-.13v1zm0-100.94v1.5c-8.62 16.05-17.27 29.55-23.65 35.92-3.19 3.2-7.62 4.9-13.54 5.56-4.45.48-8.28.4-19.18-.2-9.91-.55-15.32-.44-20.52.78a84.05 84.05 0 0 1-15 2.11l-2.25.14c-12.49.75-19.37 1.78-32.72 5.74-4.5 1.33-9.27 2.49-14.3 3.48a246.27 246.27 0 0 1-32.6 3.97c-7.56.45-13.21.57-20.24.57-5.4 0-11.9 1.61-18 5.18-8.3 4.87-15.06 12.87-19.53 24.5a68.57 68.57 0 0 1-4.56 9.8c-3.6 6.2-6.92 8.99-13.38 12.18l-4.03 1.96a64.48 64.48 0 0 0-15.16 10.25c-8.2 7.33-13.72 16.63-22.54 35.6l-2.08 4.49c-7.3 15.7-11.5 23.3-17.35 29.87-7.7 8.66-20.25 14.42-40.31 20.08-4.37 1.23-19.04 5.08-19.24 5.13-6.92 1.87-11.68 3.34-15.63 4.92-10.55 4.22-18.71 10.52-36.38 26.52l-1.7 1.54c-8.58 7.76-13.41 11.9-18.81 15.88-3.95 2.9-8 5.67-12.97 8.91-2.06 1.34-10.3 6.6-12.33 7.94-11.52 7.5-18.53 13.04-24.62 20.08a62.01 62.01 0 0 0-6.44 8.85c-4.13 6.91-6.27 13.15-9.2 25.11l-1.54 6.26c-.6 2.45-1.15 4.54-1.72 6.58-2.97 10.7-6.9 17.36-14.78 26.91L69.6 491a148.51 148.51 0 0 0-4.19 5.3 23.9 23.9 0 0 0-3.44 6.28c-1.16 3.23-1.52 5.9-1.87 11.94-.58 10.05-1.42 15.04-4.63 22.67-1.57 3.72-5.66 14.02-6.41 15.8a73.46 73.46 0 0 1-3.57 7.4c-2.88 5.14-6.71 10.12-13.12 16.95-5.96 6.36-8.87 10.9-10.61 16a56.88 56.88 0 0 0-1.38 4.82l-.46 1.84h-1.03l.52-2.08c.52-2.09.92-3.49 1.4-4.9 1.8-5.25 4.78-9.9 10.84-16.36 6.35-6.78 10.13-11.7 12.97-16.77a72.5 72.5 0 0 0 3.52-7.29c.75-1.76 4.84-12.06 6.4-15.8 3.17-7.5 3.99-12.4 4.56-22.33.35-6.14.72-8.88 1.93-12.23a24.9 24.9 0 0 1 3.58-6.54c1.27-1.7 2.6-3.37 4.22-5.34l4.11-4.95c7.8-9.46 11.66-16 14.59-26.54.56-2.04 1.1-4.12 1.71-6.56l1.53-6.26c2.96-12.04 5.13-18.36 9.32-25.39 1.84-3.08 4-6.05 6.54-8.99 6.17-7.12 13.24-12.7 24.83-20.26 2.05-1.33 10.28-6.6 12.33-7.94 4.96-3.22 9-5.98 12.92-8.87 5.37-3.95 10.19-8.08 18.74-15.82l1.7-1.54c17.76-16.09 25.98-22.43 36.67-26.7 4-1.6 8.8-3.09 15.75-4.96.21-.06 14.87-3.9 19.22-5.13 19.9-5.61 32.32-11.31 39.85-19.78 5.76-6.48 9.93-14.02 17.18-29.64l2.09-4.5c8.87-19.07 14.44-28.46 22.77-35.9a65.48 65.48 0 0 1 15.38-10.4l4.04-1.97c6.3-3.1 9.47-5.77 12.96-11.77a67.6 67.6 0 0 0 4.48-9.67c4.56-11.84 11.47-20.02 19.97-25 6.25-3.66 12.93-5.32 18.5-5.32 7.01 0 12.65-.12 20.17-.57a245.3 245.3 0 0 0 32.47-3.96c5-.98 9.75-2.13 14.22-3.45 13.43-3.98 20.38-5.02 32.94-5.78l2.24-.14c5.76-.37 9.8-.9 14.85-2.09 5.31-1.25 10.79-1.35 22.6-.7 9.04.5 12.84.58 17.21.1 5.71-.62 9.94-2.26 12.95-5.26 6.44-6.45 15.3-20.37 24.35-36.72zm0 450.21c-1.28-4.6-2.2-10.55-3.33-20.25l-.24-2.04-.23-2.03c-1.82-15.7-3.07-21.98-5.55-24.47-2.46-2.46-3.04-5.03-2.52-8.64.1-.6.18-1.1.39-2.15.69-3.54.77-5.04.08-6.84-.91-2.38-3.31-4.41-7.79-6.26-5.08-2.09-6.52-4.84-4.89-8.44.66-1.45 1.79-3.02 3.52-5.01 1.04-1.2 5.48-5.96 5.08-5.53 6.15-6.7 8.98-11.34 8.98-16.48a15.2 15.2 0 0 1 6.5-12.89v1.26a14.17 14.17 0 0 0-5.5 11.63c0 5.47-2.93 10.29-9.24 17.16.38-.42-4.04 4.33-5.07 5.5-1.67 1.93-2.75 3.43-3.36 4.77-1.37 3.04-.23 5.22 4.36 7.1 4.71 1.95 7.32 4.16 8.34 6.83.78 2.04.7 3.67-.03 7.4-.2 1.03-.3 1.51-.38 2.09-.48 3.33.03 5.59 2.23 7.8 2.74 2.74 3.98 8.96 5.84 25.06l.24 2.03.23 2.04c.82 7.01 1.53 12.06 2.34 16.03v4.33zm0-62.16c-1.4-3.13-4.43-9.9-4.95-11.17-1.02-2.53-1.25-3.8-.91-5.18.2-.84 2.05-4.68 2.32-5.33a70.79 70.79 0 0 0 3.54-11.2v3.99a62.82 62.82 0 0 1-2.62 7.6c-.31.75-2.09 4.46-2.27 5.18-.28 1.12-.08 2.22.87 4.57.41 1.02 2.5 5.7 4.02 9.09v2.45zm0-85.09c-1.65 1.66-3.66 2.9-6.4 4.13-.25.1-13.97 5.47-20.4 8.43-9.35 4.32-16.7 5.9-23.03 5.25-5.08-.53-9.02-2.25-14.77-5.92l-3.2-2.07a77.4 77.4 0 0 0-5.44-3.27c-4.05-2.18-3.25-5.8 1.47-10.47 3.71-3.68 9.6-7.93 18.73-13.8l4.46-2.82c17.95-11.33 18.22-11.5 22.27-14.74 11.25-9 19.69-14.02 26.31-15.1v1.02c-6.37 1.1-14.62 6-25.69 14.86-4.1 3.28-4.34 3.44-22.36 14.8a652.4 652.4 0 0 0-4.45 2.83c-9.07 5.83-14.92 10.05-18.57 13.66-4.31 4.28-4.95 7.13-1.7 8.88 1.7.91 3.29 1.88 5.5 3.3l3.2 2.08c5.64 3.59 9.45 5.25 14.34 5.76 6.13.64 13.32-.9 22.52-5.15 6.46-2.98 20.18-8.35 20.4-8.44 3.04-1.37 5.1-2.71 6.81-4.69v1.47zm0-41.37v1c-6.56.26-12.11 3.13-19.71 9.08l-4.63 3.68a51.87 51.87 0 0 1-4.4 3.14c-.82.52-5.51 3.33-6.22 3.76-3.31 2-6.15 3.8-8.87 5.6a112.61 112.61 0 0 0-8.16 5.92c-4.61 3.72-7.4 6.9-7.97 9.35-.63 2.67 1.48 4.53 7.05 5.46 10.7 1.78 20.92-.05 30.45-4.65a61.96 61.96 0 0 0 17.1-12.2 41.8 41.8 0 0 0 5.36-7.42v1.92a38.94 38.94 0 0 1-4.64 6.19 62.95 62.95 0 0 1-17.39 12.41c-9.7 4.68-20.13 6.55-31.05 4.73-6.06-1-8.65-3.29-7.85-6.67.64-2.74 3.53-6.05 8.31-9.9 2.35-1.9 5.1-3.88 8.24-5.97 2.73-1.82 5.58-3.61 8.9-5.62.72-.44 5.4-3.24 6.22-3.75 1.26-.8 2.6-1.76 4.3-3.09.8-.62 3.9-3.1 4.63-3.67 7.77-6.1 13.49-9.04 20.33-9.3zm0-154.6v1c-1.75-.24-4.3.23-7.82 1.55-10.01 3.75-13.8 5.07-19.15 6.76-1.78.56-2.63.83-3.87 1.24-1.48.5-3.16.76-6.74 1.16a1550.34 1550.34 0 0 0-2.64.3c-7.8.94-11.28 2.47-11.28 6.07 0 4.45 2.89 13.18 7.96 25.81a57.34 57.34 0 0 1 2.33 7.6 258.32 258.32 0 0 1 .84 3.46c1.86 7.62 3.17 10.71 5.56 11.67 2.21.88 4.7.6 7.47-.72 3.48-1.69 7.22-4.94 11.2-9.47 1.52-1.7 2.97-3.49 4.59-5.57l3.16-4.1c2.59-3.23 6.07-12.21 8.39-20.23v3.45c-2.29 7.2-5.27 14.5-7.61 17.41-.44.55-2.67 3.46-3.15 4.09-1.63 2.1-3.1 3.9-4.62 5.62-4.08 4.61-7.9 7.94-11.53 9.7-2.99 1.44-5.77 1.75-8.28.74-2.84-1.13-4.2-4.34-6.15-12.35a2097.48 2097.48 0 0 1-.84-3.46c-.8-3.2-1.47-5.45-2.28-7.46-5.14-12.8-8.04-21.55-8.04-26.19 0-4.37 3.84-6.06 12.16-7.07a160.9 160.9 0 0 1 2.65-.3c3.5-.39 5.15-.64 6.53-1.1 1.26-.42 2.1-.7 3.88-1.26 5.34-1.68 9.11-3 19.1-6.74 3.53-1.32 6.22-1.84 8.18-1.61zM0 292c10.13-11.31 18.13-23.2 23.07-35.39 3.3-8.14 6.09-16.12 10.81-30.55l1.59-4.84c6.53-19.94 10.11-29.82 14.77-39.56 6.07-12.72 12.55-21.18 20.27-25.54 6.66-3.76 10.2-7.86 12.22-13.15a46.6 46.6 0 0 0 1.86-6.58c1.23-5.2 2.05-7.59 3.93-10.36 2.45-3.62 6.27-6.53 12.1-8.96 15.78-6.58 16.73-7.04 18.05-9.01.65-.98.83-2.15.74-4.51-.03-.73-.23-3.82-.24-4A93.8 93.8 0 0 1 119 94c0-10.04.18-11.37 2.37-13.15.52-.42 1.13-.8 2.07-1.3.27-.14 2.18-1.12 2.84-1.48a68.4 68.4 0 0 0 9.12-5.87c2.06-1.54 2.64-2.14 8.01-7.93 3.78-4.09 6.21-6.36 8.96-8.12 3.64-2.33 7.2-3.12 10.9-2.11 4.4 1.2 10.81 2 18.78 2.46 6.9.4 12.9.5 21.95.5 4.87 0 8.97.47 15.4 1.57 7.77 1.33 9.3 1.54 12.38 1.54 4.05 0 7.43-.88 10.68-2.95 5.06-3.22 8.11-4.67 11.2-5.2 3.62-.64 4.77-.46 16.55 2.06 17.26 3.7 30.85 1.36 41.06-9.7 5.1-5.53 5.48-8.9 3.48-14.8-.83-2.42-1.03-3.1-1.17-4.3-.29-2.52.5-4.71 2.71-6.93 2.65-2.65 4.72-9.17 6.22-18.29h2.03c-1.56 9.71-3.77 16.65-6.83 19.7-1.79 1.8-2.36 3.39-2.14 5.28.11 1 .3 1.63 1.07 3.9 2.22 6.53 1.76 10.66-3.9 16.8-10.77 11.66-25.07 14.13-42.95 10.3-11.42-2.45-12.55-2.62-15.78-2.06-2.77.48-5.62 1.84-10.47 4.92a20.93 20.93 0 0 1-11.76 3.27c-3.25 0-4.81-.22-12.73-1.57C212.74 59.46 208.73 59 204 59c-9.1 0-15.11-.1-22.07-.5-8.09-.47-14.62-1.29-19.2-2.54-5.62-1.53-10.17 1.38-17.85 9.66-5.5 5.94-6.08 6.53-8.28 8.18a70.38 70.38 0 0 1-9.38 6.03c-.68.37-2.58 1.35-2.84 1.49-.84.44-1.35.76-1.75 1.08C121.16 83.6 121 84.8 121 94c0 1.85.06 3.54.17 5.44 0 .17.2 3.28.24 4.03.1 2.75-.13 4.29-1.08 5.71-1.67 2.5-2.27 2.8-18.95 9.74-5.48 2.29-8.99 4.96-11.2 8.24-1.71 2.51-2.47 4.73-3.64 9.7-.83 3.5-1.21 4.92-1.94 6.83-2.18 5.73-6.05 10.19-13.1 14.18-7.3 4.12-13.55 12.28-19.46 24.66-4.6 9.64-8.17 19.46-14.67 39.32l-1.58 4.84c-4.75 14.47-7.54 22.48-10.86 30.69-5.28 13.01-13.95 25.65-24.93 37.6v-2.97z'%3E%3C/path%3E%3C/svg%3E")`;
 
   return (
@@ -277,13 +288,15 @@ function HeroSection({ t }) {
               </Link>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-6">
-              <MiniStat icon="fa-solid fa-file-lines" value="2 847" label={t("home_mini_declared")} />
-              <div className="w-px h-8 bg-borderMain" />
-              <MiniStat icon="fa-solid fa-search" value="2 156" label={t("home_mini_found")} />
-              <div className="w-px h-8 bg-borderMain" />
-              <MiniStat icon="fa-solid fa-users" value="1 523" label={t("home_mini_members")} />
-            </div>
+            {!!stats && (
+              <div className="flex flex-wrap items-center justify-center gap-6">
+                <MiniStat icon="fa-solid fa-file-lines" value={stats.declared.toLocaleString("fr-FR")} label={t("home_mini_declared")} />
+                <div className="w-px h-8 bg-borderMain" />
+                <MiniStat icon="fa-solid fa-magnifying-glass" value={stats.recovered.toLocaleString("fr-FR")} label={t("home_mini_found")} />
+                <div className="w-px h-8 bg-borderMain" />
+                <MiniStat icon="fa-solid fa-handshake" value={`${stats.rate}%`} label={t("stat_rate")} />
+              </div>
+            )}
           </div>
 
           {/* ── Colonne droite : carousel montant ── */}
@@ -327,15 +340,22 @@ interface RecentDoc {
   type_doc?: string;
   document_type?: string;
   doc_type?: string;
+  document_type_id?: string;
+  doc_type_id?: string;
+  docTypeInfo?: { nom: string; code?: string };
   nom_sur_doc?: string;
+  nom_complet?: string;
   owner_name?: string;
   document_owner?: string;
   numero_doc?: string;
   document_number?: string;
+  numero_document?: string;
   photo_recto?: string;
   photo?: string;
   image_url?: string;
   created_at?: string;
+  date_trouvee?: string;
+  date_trouvaille?: string;
   location?: string;
   ville?: string;
   city?: string;
@@ -345,12 +365,23 @@ interface RecentDoc {
   counterPart?: boolean;
 }
 
-function RecentDocsSection({ t }) {
+function RecentDocsSection({ t }: { t: (key: string, params?: any) => string }) {
+  const { lang } = useI18n();
   const { user } = useAuth();
   const [docs, setDocs] = useState<RecentDoc[]>([]);
   const [loading, setLoading] = useState(true);
+  const [docTypes, setDocTypes] = useState<any[]>([]);
 
   useEffect(() => {
+    fetch(`${API_BASE}document-types/active`, { headers: { Accept: "application/json" } })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          setDocTypes(data.data);
+        }
+      })
+      .catch(() => {});
+
     fetch(`${API_BASE}declarations/search-public`, { headers: { Accept: "application/json" } })
       .then((r) => r.json())
       .then((data) => setDocs((data.data || []).slice(0, 12)))
@@ -358,11 +389,80 @@ function RecentDocsSection({ t }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const getDocType = (doc: RecentDoc) =>
-    doc.document_type || doc.type_doc || doc.doc_type || t("rechercher_document");
+  const docTypeMap = useMemo(() => {
+    const map: Record<string, string> = {
+      cni: "Carte Nationale d'Identité",
+      passport: "Passeport",
+      permis: "Permis de conduire",
+      diplome: "Diplôme",
+      acte: "Acte de naissance",
+      acte_naissance: "Acte de naissance",
+      acte_mariage: "Acte de mariage",
+      carte_grise: "Carte grise",
+      carte_sejour: "Carte de séjour",
+      carte_vote: "Carte d'électeur",
+    };
+    docTypes.forEach((dt: any) => {
+      if (dt.id && dt.nom) map[dt.id] = dt.nom;
+      if (dt.code && dt.nom) {
+        map[dt.code] = dt.nom;
+        map[dt.code.toLowerCase()] = dt.nom;
+      }
+    });
+    return map;
+  }, [docTypes]);
+
+  const getDocType = (doc: RecentDoc): string => {
+    if (doc.docTypeInfo?.nom) return doc.docTypeInfo.nom;
+
+    const typeId = doc.document_type_id || doc.doc_type_id;
+    if (typeId && docTypeMap[typeId]) return docTypeMap[typeId];
+
+    const raw = doc.document_type || doc.type_doc || doc.doc_type || "";
+    if (!raw) return t("rechercher_document") || "Document";
+
+    if (docTypeMap[raw]) return docTypeMap[raw];
+    if (docTypeMap[raw.toLowerCase()]) return docTypeMap[raw.toLowerCase()];
+
+    // Ne jamais exposer d'ID brut (UUID, ObjectId ou identifiant numérique)
+    const isIdLike =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw) ||
+      /^[0-9a-f]{24}$/i.test(raw) ||
+      /^\d+$/.test(raw);
+
+    if (isIdLike) {
+      return t("rechercher_document") || "Document";
+    }
+
+    return raw;
+  };
+
   const getPhoto = (doc: RecentDoc) => doc.photo_recto || doc.photo || doc.image_url || "";
-  const getDate = (doc: RecentDoc) =>
-    doc.created_at ? new Date(doc.created_at).toLocaleDateString("fr-FR") : new Date().toLocaleDateString("fr-FR");
+
+  const getOwnerName = (doc: RecentDoc): string =>
+    doc.document_owner || doc.owner_name || doc.nom_sur_doc || doc.nom_complet || t("rechercher_owner_unknown") || "Propriétaire inconnu";
+
+  const getLocation = (doc: RecentDoc): string =>
+    doc.location || doc.ville || doc.city || t("rechercher_location_unknown") || "Lieu non spécifié";
+
+  const getCountry = (doc: RecentDoc): string =>
+    doc.country || doc.pays || "Cameroun";
+
+  const getDocNumber = (doc: RecentDoc): string => {
+    const num = doc.numero_doc || doc.document_number || doc.numero_document;
+    if (num && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(num) && !/^\d{20,}$/.test(num)) {
+      return num;
+    }
+    return "••••••••••";
+  };
+
+  const getRelativeDate = (doc: RecentDoc): string => {
+    const rawDate = doc.date_trouvee || doc.date_trouvaille || doc.created_at;
+    return formatRetrouveTimeAgo(rawDate, lang);
+  };
+
+  const getScore = (doc: RecentDoc): number =>
+    Math.round((doc.score || 0) * 100);
 
   return (
     <section id="recent-docs" className="py-20 px-5" style={{ backgroundColor: "#F7F7F7" }}>
@@ -383,29 +483,36 @@ function RecentDocsSection({ t }) {
         {loading ? (
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="flex-shrink-0 w-[280px] bg-white rounded-[20px] p-4 border border-borderMain">
-                <div className="h-40 w-full mb-3 rounded-xl bg-borderMain animate-pulse" />
-                <div className="h-3 w-3/4 mb-2 rounded bg-borderMain animate-pulse" />
-                <div className="h-3 w-1/2 rounded bg-borderMain animate-pulse" />
+              <div key={i} className="flex-shrink-0 w-[290px] sm:w-[310px] bg-white rounded-[24px] p-5 border border-borderMain">
+                <div className="h-44 w-full mb-4 rounded-xl bg-gray-200 animate-pulse" />
+                <div className="h-3 w-1/3 mb-3 rounded bg-gray-200 animate-pulse" />
+                <div className="h-5 w-3/4 mb-4 rounded bg-gray-200 animate-pulse" />
+                <div className="h-3 w-1/2 mb-2 rounded bg-gray-200 animate-pulse" />
+                <div className="h-3 w-2/3 mb-5 rounded bg-gray-200 animate-pulse" />
+                <div className="h-10 w-full rounded-[14px] bg-gray-200 animate-pulse" />
               </div>
             ))}
           </div>
         ) : (
           <div className="relative">
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+            <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
               {docs.map((doc, i) => {
                 const photo = getPhoto(doc);
                 const docType = getDocType(doc);
-                const dateText = getDate(doc);
+                const ownerName = getOwnerName(doc);
+                const locationText = getLocation(doc);
+                const countryText = getCountry(doc);
+                const docNumber = getDocNumber(doc);
+                const relativeDateText = getRelativeDate(doc);
+                const score = getScore(doc);
 
                 return (
-                  <Link
+                  <div
                     key={doc.id}
-                    to={user ? `/rechercher?id=${doc.id}` : "/login"}
-                    className="flex-shrink-0 w-[280px] snap-start group bg-white border border-borderMain rounded-[20px] overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                    className="flex-shrink-0 w-[290px] sm:w-[310px] snap-start doc-card group bg-white border border-borderMain rounded-[24px] overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 flex flex-col"
                   >
                     {/* Image avec ProtectedDocumentImage */}
-                    <div className="relative h-40 bg-surface2 flex items-center justify-center overflow-hidden">
+                    <div className="relative h-44 bg-surface2 flex items-center justify-center overflow-hidden">
                       <ProtectedDocumentImage
                         src={photo ? getFullImageUrl(photo) : undefined}
                         revealed={false}
@@ -415,29 +522,68 @@ function RecentDocsSection({ t }) {
                         lockHintKey="rechercher_public_locked_hint"
                         loginUrl={user ? undefined : "/login"}
                       />
-                      
+
                       {/* Badge type de document (par dessus) */}
-                      <div className="absolute top-3 left-3 px-3 py-1.5 bg-white/95 backdrop-blur rounded-full border border-borderMain z-10">
-                        <span className="text-[11px] font-black text-textMain uppercase tracking-wide">
+                      <div className="absolute top-3 left-3 z-10">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase border border-borderMain text-textMain shadow-sm">
+                          <i className="fa-solid fa-shield-halved text-primary" />{" "}
                           {docType}
                         </span>
                       </div>
+
+                      {score > 30 && (
+                        <div className="match-score-badge absolute bottom-[-10px] left-1/2 -translate-x-1/2 bg-primary text-black font-extrabold text-[10px] px-2 py-0.5 rounded-md shadow-lg z-10">
+                          {score}% MATCH
+                        </div>
+                      )}
                     </div>
 
-                    {/* Info */}
-                    <div className="p-4">
-                      <div className="flex items-center gap-2 text-[12px] text-textMuted">
-                        <i className="fa-solid fa-calendar text-[10px]" />
-                        <span>{dateText}</span>
+                    {/* Contenu de la carte - identique à la page recherche */}
+                    <div className="p-5 flex flex-col flex-1">
+                      <div className="flex items-center justify-between mb-3 gap-2">
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-widest whitespace-nowrap">
+                          {t("rechercher_found_doc")}
+                        </span>
+                        <span className="text-[10px] font-bold text-textMain text-right truncate">
+                          {relativeDateText}
+                        </span>
+                      </div>
+
+                      <h3 className="font-bricolage font-bold text-textMain text-[16px] mb-3 truncate" title={ownerName}>
+                        {ownerName}
+                      </h3>
+
+                      <div className="space-y-2 mb-4">
+                        <p className="text-[12px] text-textMuted flex items-center gap-1.5">
+                          <i className="fa-solid fa-hashtag text-[10px] text-primary/50" />
+                          <span className="blur-sm select-none font-mono text-[11px] opacity-80 pointer-events-none">
+                            {docNumber}
+                          </span>
+                        </p>
+                        <div className="flex items-center gap-2 py-2 border-y border-borderMain/50">
+                          <i className="fa-solid fa-location-dot text-primary text-[11px]" />
+                          <span className="blur-sm select-none text-[12px] font-medium opacity-80 pointer-events-none truncate">
+                            {locationText}, {countryText}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-auto pt-1">
+                        <Link
+                          to={user ? `/declarer?from=${encodeURIComponent(String(doc.id))}` : `/login?redirect=${encodeURIComponent(`/declarer?from=${doc.id}`)}`}
+                          className="flex items-center justify-center gap-2 w-full py-2.5 bg-primary text-white rounded-[14px] font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md shadow-primary/20 active:scale-95"
+                        >
+                          <i className="fa-solid fa-file-circle-plus text-xs" /> {t("rechercher_its_mine")}
+                        </Link>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 );
               })}
             </div>
 
             {/* Indication de scroll */}
-            {docs.length > 4 && (
+            {docs.length > 3 && (
               <div className="mt-4 text-center">
                 <p className="text-[12px] text-textMuted flex items-center justify-center gap-2">
                   <i className="fa-solid fa-arrow-left text-[10px]" />
@@ -457,6 +603,15 @@ function RecentDocsSection({ t }) {
         .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        .doc-card {
+          transition: transform 0.25s, box-shadow 0.25s;
+        }
+        .doc-card:hover {
+          transform: translateY(-4px);
+        }
+        .match-score-badge {
+          box-shadow: 0 4px 10px rgba(217,138,48,0.3);
         }
       `}</style>
     </section>
@@ -865,7 +1020,7 @@ function StatsSection({ t, statCounters }) {
     const needle = document.getElementById("radar-needle");
     const sweep = document.getElementById("sweep-arc");
     const nodes = document.querySelectorAll(".stat-node");
-    const angles = [0, 90, 180, 270];
+    const angles = Array.from({ length: nodes.length }, (_, i) => (360 / nodes.length) * i);
     let step = 0;
     let timer;
     let animId;
@@ -873,13 +1028,14 @@ function StatsSection({ t, statCounters }) {
     function animateCounter(el, target) {
       const start = performance.now();
       const duration = 1200;
+      const suffix = el.dataset.suffix || "";
       const init = parseInt(el.textContent?.replace(/\s/g, "") || "0", 10);
 
       function tick(now) {
         const t = Math.min((now - start) / duration, 1);
         const ease = 1 - Math.pow(1 - t, 3);
         const val = Math.round(init + (target - init) * ease);
-        el.textContent = val.toLocaleString("fr-FR");
+        el.textContent = val.toLocaleString("fr-FR") + suffix;
         if (t < 1) animId = requestAnimationFrame(tick);
       }
       animId = requestAnimationFrame(tick);
@@ -908,7 +1064,7 @@ function StatsSection({ t, statCounters }) {
         if (t >= 1) {
           sweep.style.opacity = "1";
           nodes.forEach((n, i) => {
-            if (i === si % 4) {
+            if (i === si % nodes.length) {
               n.classList.add("active");
               n.style.opacity = "1";
               const c = n.querySelector(".counter-radar");
@@ -920,7 +1076,7 @@ function StatsSection({ t, statCounters }) {
           });
           timer = setTimeout(() => {
             step++;
-            rotateTo(angles[step % 4], step);
+            rotateTo(angles[step % angles.length], step);
           }, 2200);
         } else {
           animId = requestAnimationFrame(tick);
@@ -987,21 +1143,14 @@ function StatsSection({ t, statCounters }) {
               <div className="w-2.5 h-2.5 bg-primary rounded-full" style={{ animation: "ping 1s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
             </div>
 
-            {[
-              { icon: "fa-solid fa-file-lines", target: 2847, labelKey: "home_mini_declared", pos: "top-[-8px] left-1/2 -translate-x-1/2", id: "stat-0" },
-              { icon: "fa-solid fa-search", target: 2156, labelKey: "home_mini_found", pos: "right-[-8px] top-1/2 -translate-y-1/2", id: "stat-1" },
-              { icon: "fa-solid fa-users", target: 1523, labelKey: "home_mini_members", pos: "bottom-[-8px] left-1/2 -translate-x-1/2", id: "stat-2" },
-              { icon: "fa-solid fa-star", target: "4.8★", labelKey: "stat_average_rating", pos: "left-[-8px] top-1/2 -translate-y-1/2", id: "stat-3" },
-            ].map((s, i) => (
-              <div key={i} id={s.id} className={`stat-node absolute ${s.pos} flex flex-col items-center gap-1 opacity-30`}>
+            {statCounters.map((s, i) => (
+              <div key={i} id={`stat-${i}`} className={`stat-node absolute ${RADAR_NODE_POSITIONS[i % RADAR_NODE_POSITIONS.length]} flex flex-col items-center gap-1 opacity-30`}>
                 <div className="stat-icon-box w-14 h-14 rounded-full bg-white border-2 border-primary/20 flex flex-col items-center justify-center shadow-md">
                   <i className={`${s.icon} text-primary text-base`} />
                 </div>
                 <div className="text-center mt-2">
-                  <div className={`font-bricolage text-xl font-black text-[#1A1A1A] ${typeof s.target === "number" ? "counter-radar" : ""}`}
-                    data-target={typeof s.target === "number" ? s.target : undefined}
-                  >
-                    {s.target}
+                  <div className="font-bricolage text-xl font-black text-[#1A1A1A] counter-radar" data-target={s.target} data-suffix={s.suffix}>
+                    {s.target.toLocaleString("fr-FR")}{s.suffix}
                   </div>
                   <p className="text-[9px] text-gray-400 uppercase font-bold leading-tight">{t(s.labelKey)}</p>
                 </div>
@@ -1010,26 +1159,17 @@ function StatsSection({ t, statCounters }) {
           </div>
 
           <div className="grid grid-cols-2 gap-5 w-full max-w-sm lg:max-w-xs">
-            <div className="bg-white border border-[#EAE3D8] rounded-[20px] p-5 text-center shadow-sm hover:border-primary transition-all hover:-translate-y-1 duration-200">
-              <div className="font-bricolage text-3xl font-black text-primary mb-1"><span ref={counterRefs[0]} data-target="2847" className="counter">2 847</span></div>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">{t("stat_declared")}</p>
-            </div>
-            <div className="bg-white border border-[#EAE3D8] rounded-[20px] p-5 text-center shadow-sm hover:border-primary transition-all hover:-translate-y-1 duration-200">
-              <div className="font-bricolage text-3xl font-black text-[#2D5A42] mb-1"><span ref={counterRefs[1]} data-target="2156" className="counter">2 156</span></div>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">{t("stat_recovered_label")}</p>
-            </div>
-            <div className="bg-white border border-[#EAE3D8] rounded-[20px] p-5 text-center shadow-sm hover:border-primary transition-all hover:-translate-y-1 duration-200">
-              <div className="font-bricolage text-3xl font-black text-primary mb-1"><span ref={counterRefs[2]} data-target="1523" className="counter">1 523</span></div>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">{t("stat_members")}</p>
-            </div>
-            <div className="bg-white border border-[#EAE3D8] rounded-[20px] p-5 text-center shadow-sm hover:border-primary transition-all hover:-translate-y-1 duration-200">
-              <div className="font-bricolage text-3xl font-black text-[#2D5A42] mb-1">4.8★</div>
-              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">{t("stat_average_rating")}</p>
-            </div>
-            <div className="col-span-2 bg-primary rounded-[20px] p-5 text-center shadow-lg shadow-primary/20">
-              <div className="font-bricolage text-3xl font-black text-white mb-1">75%</div>
-              <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider">{t("stat_rate")}</p>
-            </div>
+            {statCounters.map((s, i) => {
+              const isFull = i === statCounters.length - 1;
+              return (
+                <div key={s.labelKey} className={`rounded-[20px] p-5 text-center ${isFull ? "col-span-2 bg-primary shadow-lg shadow-primary/20" : "bg-white border border-[#EAE3D8] shadow-sm hover:border-primary transition-all hover:-translate-y-1 duration-200"}`}>
+                  <div className={`font-bricolage text-3xl font-black mb-1 ${isFull ? "text-white" : i === 0 ? "text-primary" : "text-[#2D5A42]"}`}>
+                    <span ref={counterRefs[i]} data-target={s.target} className="counter">{s.target.toLocaleString("fr-FR")}{s.suffix}</span>
+                  </div>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isFull ? "text-white/70" : "text-gray-400"}`}>{t(s.labelKey)}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

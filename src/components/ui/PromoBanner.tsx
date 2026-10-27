@@ -11,7 +11,7 @@ interface PromoBannerProps {
     duration_months: number;
     features: Record<string, unknown>;
   };
-  onSubscribe: (method: "orange" | "mtn" | "moov" | "points", phone: string) => Promise<void>;
+  onSubscribe: (method: "orange" | "mtn" | "points", phone: string) => Promise<void>;
   onDismiss?: () => void;
   processing?: boolean;
   pollingStatus?: string | null;
@@ -24,7 +24,7 @@ export default function PromoBanner({ plan, onSubscribe, onDismiss, processing, 
   const originalPrice = plan.original_price ?? 0;
   const discountPct = originalPrice > 0 ? Math.round((1 - plan.price / originalPrice) * 100) : 0;
 
-  const handlePay = async (method: "orange" | "mtn" | "moov" | "points", phone: string) => {
+  const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
     setPayError("");
     try {
       await onSubscribe(method, phone);

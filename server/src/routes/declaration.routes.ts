@@ -8,6 +8,7 @@ import {
   getPerformanceStats,
   getStatsByType,
   searchPublicFound,
+  publicRecentFound,
   getDeclarationById,
   getRenderContext,
   validateRecovery,
@@ -144,6 +145,38 @@ router.get('/stats-by-type', getStatsByType);
  *         description: Erreur serveur
  */
 router.get('/search-public', searchPublicFound);
+
+/**
+ * @swagger
+ * /declarations/public-recent:
+ *   get:
+ *     summary: Derniers documents trouvés publics d'un type
+ *     description: >
+ *       Contrairement à /search-public (documents AVAILABLE uniquement), cet endpoint
+ *       renvoie aussi les documents déjà appariés ou retournés, avec le même masquage
+ *       (nom partiel, photo verrouillée, contact invisible). Sert la page détail d'un type.
+ *     tags: [Declarations]
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Id, code ou libellé du type de document
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           maximum: 20
+ *           default: 8
+ *         description: Nombre maximum de documents
+ *     responses:
+ *       200:
+ *         description: Liste des documents récents du type
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/public-recent', publicRecentFound);
 
 /**
  * @swagger

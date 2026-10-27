@@ -1,6 +1,7 @@
 import { pool } from '../database/db.ts';
 import { nokashPayoutService } from '../services/nokash-payout.service.ts';
 import { withdrawalSettlementService } from '../services/withdrawal-settlement.service.ts';
+import { TIMING } from '../config/timing.ts';
 
 /**
  * Payout Poller — réconciliation des retraits en attente.
@@ -40,7 +41,7 @@ class PayoutPollerService {
          FROM withdrawals
          WHERE status = 'PROCESSING'
            AND created_at < NOW() - INTERVAL '2 minutes'
-           AND created_at > NOW() - INTERVAL '24 hours'
+           AND created_at > NOW() - INTERVAL '${TIMING.payoutMaxAgeHours} hours'
          ORDER BY created_at ASC
          LIMIT 20`
       );

@@ -6,6 +6,7 @@ import { paymentsService, type SavedPaymentMethod } from "../../services/payment
 import apiClient from "../../services/api";
 import { useI18n } from "../../context/I18nContext";
 import { useTopbar } from "../../hooks/useTopbar";
+import { useTimingConfig } from "../../hooks/useTimingConfig";
 
 import PaymentModal from "../../components/modals/PaymentModal";
 import ActionSuccessModal from "../../components/modals/ActionSuccessModal";
@@ -48,6 +49,7 @@ const METHOD_ICONS: Record<string, { icon: string; color: string; bg: string }> 
 export default function Abonnement() {
   const { user } = useAuth();
   const { t } = useI18n();
+  const timing = useTimingConfig();
   useTopbar(t("abonnement_title"), [{ label: t("abonnement_breadcrumb_home"), href: "/dashboard" }, { label: t("abonnement_breadcrumb_subscription") }]);
   const navigate = useNavigate();
   const { promo, loading: promoLoading, subscribing, subscribe: promoSubscribe, dismiss: dismissPromo, isDismissed } = usePromo();
@@ -174,9 +176,9 @@ export default function Abonnement() {
           return;
         }
 
-        if (elapsed > 120) {
+        if (elapsed > timing.paymentPhaseProcessingMs / 1000) {
           setPollingStatus("Le paiement est en cours de traitement. Vous recevrez une notification dès confirmation. Vous pouvez fermer cette page.");
-        } else if (elapsed > 60) {
+        } else if (elapsed > timing.paymentPhaseOperatorMs / 1000) {
           setPollingStatus("Confirmation en cours auprès de votre opérateur... Cette opération peut prendre jusqu'à 2 minutes.");
         } else {
           setPollingStatus(t("abonnement_payment_pending"));
@@ -184,18 +186,17 @@ export default function Abonnement() {
       } catch (e: any) {
         console.error("[Abonnement] polling error:", e?.response?.data || e);
       }
-    }, 5000);
+    }, timing.paymentPollIntervalMs);
 
     setTimeout(() => {
       if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-    }, 300000);
+    }, timing.paymentPollTimeoutMs);
   };
 
-  const handlePromoSubscribe = async (method: "orange" | "mtn" | "moov" | "points", phone: string) => {
+  const handlePromoSubscribe = async (method: "orange" | "mtn" | "points", phone: string) => {
     let paymentMethod = "";
     if (method === "orange") paymentMethod = "ORANGE_MONEY";
     else if (method === "mtn") paymentMethod = "MTN_MOMO";
-    else if (method === "moov") paymentMethod = "MOOV_MONEY";
     else paymentMethod = "POINTS";
 
     setProcessingPayment(true);
@@ -242,14 +243,13 @@ export default function Abonnement() {
     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
   };
 
-  const handlePay = async (method: "orange" | "mtn" | "moov" | "points", phone: string) => {
+  const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
     setProcessing(true);
     setPayError("");
     try {
       let paymentMethod = "";
       if (method === "orange") paymentMethod = "ORANGE_MONEY";
       else if (method === "mtn") paymentMethod = "MTN_MOMO";
-      else if (method === "moov") paymentMethod = "MOOV_MONEY";
       else paymentMethod = "POINTS";
 
       const months = billingPeriod === "annual" ? 12 : 1;

@@ -115,6 +115,7 @@ export function ProtectedDocumentImage({
               {loginUrl && (
                 <Link
                   to={loginUrl}
+                  onClick={(event) => event.stopPropagation()}
                   className="mt-1 inline-flex items-center gap-1 px-3 py-1 bg-primary text-white rounded-full text-[9px] font-bold hover:bg-primary-dark transition-all shadow-sm"
                 >
                   <i className="fa-solid fa-right-to-bracket text-[8px]" />

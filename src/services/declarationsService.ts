@@ -1,4 +1,5 @@
 import apiClient from "./api";
+import type { AxiosRequestConfig } from "axios";
 import type { ApiResponse, Declaration, DocTypeCatalog } from "../types/api";
 
 export type { Declaration };
@@ -11,13 +12,13 @@ export const documentTypesService = {
 };
 
 export const declarationsService = {
-  async createLost(data: Record<string, any> | FormData) {
-    const res = await apiClient.post<ApiResponse<Declaration>>("declarations/lost", data);
+  async createLost(data: Record<string, any> | FormData, config?: AxiosRequestConfig) {
+    const res = await apiClient.post<ApiResponse<Declaration>>("declarations/lost", data, config);
     return res.data;
   },
 
-  async createFound(data: Record<string, any> | FormData) {
-    const res = await apiClient.post<ApiResponse<Declaration>>("declarations/found", data);
+  async createFound(data: Record<string, any> | FormData, config?: AxiosRequestConfig) {
+    const res = await apiClient.post<ApiResponse<Declaration>>("declarations/found", data, config);
     return res.data;
   },
 

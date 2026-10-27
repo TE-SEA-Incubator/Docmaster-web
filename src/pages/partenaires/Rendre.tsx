@@ -28,9 +28,8 @@ import { partenairesService } from "../../services/partenairesService";
 import { useI18n } from "../../context/I18nContext";
 import { partenairePalette } from "../../theme/partenaires";
 import { computeDeclarationReward } from "../../utils/partnerPotentialEarnings";
+import { useTimingConfig } from "../../hooks/useTimingConfig";
 import type { DocTypeCatalog } from "../../types/api";
-
-const POLL_INTERVAL = 5000;
 
 function isOwnerPaid(doc: Record<string, any> | null) {
   if (!doc) return false;
@@ -51,6 +50,7 @@ function isReturned(doc: Record<string, any> | null, validated: boolean) {
 }
 
 export default function PartenaireRendre() {
+  const timing = useTimingConfig();
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -119,9 +119,9 @@ export default function PartenaireRendre() {
       } catch {
         /* silent poll */
       }
-    }, POLL_INTERVAL);
+    }, timing.paymentPollIntervalMs);
     return () => clearInterval(interval);
-  }, [ownerPaid, validated, docId]);
+  }, [ownerPaid, validated, docId, timing.paymentPollIntervalMs]);
 
   const docTypeLabel =
     doc?.docTypeInfo?.nom || doc?.doc_type_name || doc?.doc_type || t("partenaire_dashboard_doc_default");

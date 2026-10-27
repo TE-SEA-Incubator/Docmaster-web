@@ -11,6 +11,8 @@ import { ReferralRepository } from '../repositories/referral.repository.ts';
 import { SettingRepository } from '../repositories/setting.repository.ts';
 import { DocumentTypeRepository } from '../repositories/document-type.repository.ts';
 import { encodeMediaFields } from '../utils/media.utils.ts';
+import { bumpCacheVersion } from '../cache/cache.ts';
+import { PUBLIC_SEARCH_VERSION } from '../cache/keys.ts';
 
 export class UserService {
   private userRepository = new UserRepository();
@@ -243,6 +245,7 @@ export class UserService {
       const { rowCount } = await client.query('DELETE FROM users WHERE id = $1', [userId]);
 
       await client.query('COMMIT');
+      if ((rowCount ?? 0) > 0) await bumpCacheVersion(PUBLIC_SEARCH_VERSION);
       return (rowCount ?? 0) > 0;
     } catch (err) {
       await client.query('ROLLBACK');

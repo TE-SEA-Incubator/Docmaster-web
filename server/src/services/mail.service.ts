@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import { TIMING } from '../config/timing.ts';
 import { partnerLinks } from '../utils/partnerLinks.ts';
 import {
   buildEmailLayout,
@@ -167,7 +168,7 @@ export class MailService {
         ${emailParagraph('Merci de vous être inscrit sur DocMaster. Utilisez le code ci-dessous pour activer votre compte :')}
         ${emailPinCode(pin)}
       `,
-      footerNote: 'Ce code expire dans 10 minutes. Si vous n\'avez pas créé de compte, ignorez cet email.',
+      footerNote: `Ce code expire dans ${TIMING.emailVerificationTtlMinutes} minutes. Si vous n'avez pas créé de compte, ignorez cet email.`,
     });
 
     await this.sendMail(to, 'Code de vérification | DocMaster', html, { logLabel: 'Code de vérification' });

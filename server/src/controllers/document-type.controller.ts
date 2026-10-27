@@ -1,5 +1,10 @@
 import { Request, Response } from 'express';
 import { DocumentTypeRepository } from '../repositories/document-type.repository.ts';
+import { bumpCacheVersion, cacheTtl, getOrSet } from '../cache/cache.ts';
+import {
+  buildPublicDocumentTypesCacheKey,
+  PUBLIC_DOC_TYPES_VERSION,
+} from '../cache/keys.ts';
 
 const docTypeRepo = new DocumentTypeRepository();
 
@@ -21,7 +26,13 @@ export class DocumentTypeController {
    */
   async getActive(req: Request, res: Response) {
     try {
-      const types = await docTypeRepo.findAllActive();
+      const cacheKey = await buildPublicDocumentTypesCacheKey();
+      const types = await getOrSet(
+        cacheKey,
+        cacheTtl.documentTypes,
+        () => docTypeRepo.findAllActive(),
+      );
+      res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
       res.json({ success: true, data: types });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
@@ -34,6 +45,7 @@ export class DocumentTypeController {
   async create(req: Request, res: Response) {
     try {
       const newType = await docTypeRepo.create(req.body);
+      await bumpCacheVersion(PUBLIC_DOC_TYPES_VERSION);
       res.status(201).json({ success: true, data: newType });
     } catch (error: any) {
       res.status(400).json({ success: false, error: error.message });
@@ -50,6 +62,7 @@ export class DocumentTypeController {
       if (!updatedType) {
         return res.status(404).json({ success: false, error: 'Document type not found' });
       }
+      await bumpCacheVersion(PUBLIC_DOC_TYPES_VERSION);
       res.json({ success: true, data: updatedType });
     } catch (error: any) {
       res.status(400).json({ success: false, error: error.message });
@@ -66,6 +79,7 @@ export class DocumentTypeController {
       if (!deleted) {
         return res.status(404).json({ success: false, error: 'Document type not found' });
       }
+      await bumpCacheVersion(PUBLIC_DOC_TYPES_VERSION);
       res.json({ success: true, message: 'Document type deleted successfully' });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
@@ -82,6 +96,7 @@ export class DocumentTypeController {
       if (!updatedType) {
         return res.status(404).json({ success: false, error: 'Document type not found' });
       }
+      await bumpCacheVersion(PUBLIC_DOC_TYPES_VERSION);
       res.json({ success: true, data: updatedType });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });

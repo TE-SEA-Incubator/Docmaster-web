@@ -5,10 +5,14 @@ import "react-phone-input-2/lib/style.css";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
 
 import { useI18n } from "../../context/I18nContext";
+import { useAuth } from "../../context/AuthContext";
 import { useTopbar } from "../../hooks/useTopbar";
+import { useWarnOnUnsavedWork } from "../../hooks/useWarnOnUnsavedWork";
 import InfoAlert from "../../components/ui/InfoAlert";
 import DatePicker from "../../components/ui/DatePicker";
 import LocationSelect from "../../components/ui/LocationSelect";
+import { describeValidationErrors } from "../../utils/declarationFieldLabels";
+import { todayISO } from "../../utils/dateHelpers";
 
 interface DocTypeItem {
   id: string;
@@ -16,6 +20,7 @@ interface DocTypeItem {
   nom: string;
   icone: string;
   delai_expiration_mois: number;
+  points_recompense?: number;
 }
 
 interface LocationData {
@@ -26,10 +31,14 @@ interface LocationData {
 
 const STEP_LABELS = ["trouver_step_type", "trouver_step_infos", "trouver_step_location", "trouver_step_photos", "trouver_step_contact"];
 
+/** Limite d'acceptation du serveur (`upload.utils.ts`) : 5 Mo par photo. */
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
 export default function Trouver() {
   const { t } = useI18n();
   useTopbar(t("trouver_title"), [{ label: t("trouver_breadcrumb_found") }, { label: t("trouver_success") }]);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [step, setStep] = useState(1);
   const [docTypes, setDocTypes] = useState<DocTypeItem[]>([]);
@@ -42,7 +51,7 @@ export default function Trouver() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [location, setLocation] = useState<{ region: string; department: string; arrondissement: string }>({ region: "", department: "", arrondissement: "" });
-  const [dateFound, setDateFound] = useState(() => new Date().toISOString().split("T")[0]);
+  const [dateFound, setDateFound] = useState(() => todayISO());
   const [dateExpirationTrouve, setDateExpirationTrouve] = useState("");
   const [rewardChoice, setRewardChoice] = useState("NON_MERCI");
   const [locationData, setLocationData] = useState<LocationData | null>(null);
@@ -51,7 +60,8 @@ export default function Trouver() {
   const [previewRecto, setPreviewRecto] = useState<string | null>(null);
   const [previewVerso, setPreviewVerso] = useState<string | null>(null);
   const [contactTel, setContactTel] = useState("");
-  const [contactMode, setContactMode] = useState("APP_CHAT");
+  const [contactModes, setContactModes] = useState<string[]>(["APP_CHAT"]);
+  const [contactEmail, setContactEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -59,8 +69,13 @@ export default function Trouver() {
   const [refNumber, setRefNumber] = useState("");
   const [alertMsg, setAlertMsg] = useState<string | null>(null);
 
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const hasDraft = !success && (
+    !!selectedType || !!autreType.trim() || !!ownerName.trim() || !!docNum.trim() || !!details.trim() ||
+    tags.length > 0 || !!location.department || !!location.arrondissement || !!dateExpirationTrouve || !!fileRecto || !!fileVerso || !!contactTel.trim() || !!contactEmail.trim()
+  );
+  useWarnOnUnsavedWork(hasDraft);
+
+  const mapContainerRef = useRef<HTMLDivElement>(null);  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const mapInitRef = useRef(false);
@@ -90,7 +105,6 @@ export default function Trouver() {
         "";
       data.city = city;
       setLocationData({ ...data });
-      if (city) setVille(city);
     } catch {
       // silent
     }
@@ -241,6 +255,12 @@ export default function Trouver() {
         }
       }
     }
+    if (n > step && step === 4 && n === 5) {
+      if (!fileRecto) {
+        setAlertMsg(t("trouver_recto_required"));
+        return;
+      }
+    }
     setStep(n);
     const panel = document.getElementById("panel-area");
     if (panel) panel.scrollTo({ top: 0, behavior: "smooth" });
@@ -264,9 +284,23 @@ export default function Trouver() {
   const handleFileSelect = (
     file: File | null,
     setFile: (f: File | null) => void,
-    setPreview: (s: string | null) => void
+    setPreview: (s: string | null) => void,
+    otherSide?: File | null
   ) => {
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setAlertMsg(t("trouver_photo_not_image"));
+      return;
+    }
+    // La limite multer côté serveur est de 5 Mo par pièce ; au-delà la requête revient en erreur.
+    if (file.size > MAX_PHOTO_BYTES) {
+      setAlertMsg(t("trouver_photo_too_large"));
+      return;
+    }
+    if (otherSide && otherSide.name === file.name && otherSide.size === file.size) {
+      setAlertMsg(t("trouver_photo_duplicate"));
+      return;
+    }
     setFile(file);
     const reader = new FileReader();
     reader.onload = (e) => setPreview(e.target?.result as string);
@@ -276,13 +310,19 @@ export default function Trouver() {
   const handleDrop = (
     e: React.DragEvent,
     setFile: (f: File | null) => void,
-    setPreview: (s: string | null) => void
+    setPreview: (s: string | null) => void,
+    otherSide?: File | null
   ) => {
     e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file?.type.startsWith("image/")) {
-      handleFileSelect(file, setFile, setPreview);
-    }
+    handleFileSelect(e.dataTransfer.files[0] || null, setFile, setPreview, otherSide);
+  };
+
+  /** Plusieurs canaux peuvent etre coches en meme temps ; celui envoyé en `mode_contact` reste le premier coche. */
+  const toggleContactMode = (value: string) => {
+    setContactModes((prev) =>
+      prev.includes(value) ? prev.filter((m) => m !== value) : [...prev, value]
+    );
+    if (value === "EMAIL" && !contactEmail && user?.email) setContactEmail(String(user.email));
   };
 
   const useCurrentLocation = () => {
@@ -329,23 +369,42 @@ export default function Trouver() {
         return;
       }
     }
+    // Le serveur ne garde qu'un canal préféré, mais il a une colonne par coordonnée :
+    // ce qui est coché doit donc être joignable, sinon la ligne serait rejetée.
+    if (contactModes.length === 0) {
+      setAlertMsg(t("trouver_contact_at_least_one"));
+      return;
+    }
+    if (contactModes.includes("PHONE") && contactTel.replace(/\D/g, "").length < 9) {
+      setAlertMsg(t("trouver_phone_required"));
+      return;
+    }
+    if (contactModes.includes("EMAIL") && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(contactEmail.trim())) {
+      setAlertMsg(t("trouver_email_invalid"));
+      return;
+    }
 
     setSubmitting(true);
 
     const formData = new FormData();
     formData.append("doc_type", selectedType);
     formData.append("owner_name", ownerName);
-    formData.append("document_number", docNum);
+    // Un champ vide envoyé au serveur vaut une erreur de validation : `@IsOptional()` ne saute pas
+    // la contrainte sur une chaîne vide, donc ce qui n'est pas renseigné n'est pas envoyé.
+    if (docNum) formData.append("document_number", docNum);
     formData.append("etat_physique", etat);
-    formData.append("ville", (location.arrondissement || location.department) || "");
+    const ville = location.arrondissement || location.department;
+    if (ville) formData.append("ville", ville);
     formData.append("region", location.region || t("trouver_region_not_specified"));
     if (location.department) formData.append("department", location.department);
     if (location.arrondissement) formData.append("arrondissement", location.arrondissement);
     formData.append("pays", t("trouver_country_cameroon"));
-    formData.append("date_perte", dateFound);
+    if (dateFound) formData.append("date_perte", dateFound);
     if (dateExpirationTrouve) formData.append("date_expiration", dateExpirationTrouve);
-    formData.append("mode_contact", contactMode);
-    formData.append("telephone_contact", contactTel);
+    const preferredMode = ["APP_CHAT", "PHONE", "EMAIL"].find((m) => contactModes.includes(m)) || "APP_CHAT";
+    formData.append("mode_contact", preferredMode);
+    if (contactModes.includes("PHONE") && contactTel) formData.append("telephone_contact", contactTel);
+    if (contactModes.includes("EMAIL")) formData.append("email_contact", contactEmail.trim());
 
     let description = details;
     if (tags.length > 0) {
@@ -359,8 +418,14 @@ export default function Trouver() {
     if (fileVerso) formData.append("photo_verso", fileVerso);
 
     if (locationData) {
-      formData.append("found_location", `${locationData.lat},${locationData.lng}`);
-      formData.append("found_location_city", locationData.city || (location.arrondissement || location.department));
+      formData.append(
+        "found_location",
+        JSON.stringify({
+          city: locationData.city || (location.arrondissement || location.department),
+          lat: locationData.lat,
+          long: locationData.lng,
+        })
+      );
     }
 
     const metadata = {
@@ -370,30 +435,28 @@ export default function Trouver() {
     };
     formData.append("metadata", JSON.stringify(metadata));
 
-    let p = 0;
-    const interval = setInterval(() => {
-      p += 10;
-      if (p > 90) clearInterval(interval);
-      setProgress(p);
-    }, 200);
-
     try {
-      const result = await declarationsService.createFound(formData);
-      clearInterval(interval);
+      const result = await declarationsService.createFound(formData, {
+        onUploadProgress: (event) => {
+          if (event.total) setProgress(Math.round((event.loaded / event.total) * 100));
+        },
+      });
       setProgress(100);
 
       if (result.success) {
-        setRefNumber(result.data?.identifiant_doc_dm || "DOC-FND-SUCCESS");
+        setRefNumber(result.data?.identifiant_doc_dm || "");
         setSuccess(true);
       } else {
-        setAlertMsg(result.message || t("trouver_publish_error"));
+        const reasons = describeValidationErrors((result as { errors?: unknown }).errors, t);
+        setAlertMsg([result.message || t("trouver_publish_error"), ...reasons].join("\n"));
         setSubmitting(false);
         setProgress(0);
       }
     } catch (e: any) {
-      clearInterval(interval);
-      const msg = e.response?.data?.message || e.response?.data?.error || t("trouver_server_error");
-      setAlertMsg(msg);
+      const data = e.response?.data;
+      const reasons = describeValidationErrors(data?.errors, t);
+      const base = data?.message || data?.error || t("trouver_server_error");
+      setAlertMsg([base, ...reasons].filter(Boolean).join("\n"));
       setSubmitting(false);
       setProgress(0);
     }
@@ -402,6 +465,7 @@ export default function Trouver() {
   const photoCount = [fileRecto, fileVerso].filter(Boolean).length;
 
   const selectedDoc = docTypes.find((d) => d.id === selectedType);
+  const bonusPoints = Number(selectedDoc?.points_recompense ?? 0);
 
   const getIconStyle = (icone: string) => {
     if (icone === "id-card") return { cls: "text-green-mid", bg: "bg-green-light" };
@@ -427,19 +491,23 @@ export default function Trouver() {
                 <p className="text-[10px] font-bold text-textMuted uppercase mb-1.5">
                   {t("trouver_declaration_number")}
                 </p>
-                <div className="flex items-center gap-2">
-                  <span className="font-bricolage text-lg font-extrabold text-textMain tracking-widest flex-1">
-                    {refNumber}
-                  </span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(refNumber);
-                    }}
-                    className="px-2.5 py-1.5 bg-primary text-white text-[11px] font-bold rounded-[7px] hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95"
-                  >
-                    {t("trouver_copy")}
-                  </button>
-                </div>
+                {refNumber ? (
+                  <div className="flex items-center gap-2">
+                    <span className="font-bricolage text-lg font-extrabold text-textMain tracking-widest flex-1">
+                      {refNumber}
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(refNumber);
+                      }}
+                      className="px-2.5 py-1.5 bg-primary text-white text-[11px] font-bold rounded-[7px] hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95"
+                    >
+                      {t("trouver_copy")}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-textMuted">{t("trouver_ref_pending")}</p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -652,7 +720,7 @@ export default function Trouver() {
                       <DatePicker
                         value={dateExpirationTrouve}
                         onChange={(v) => setDateExpirationTrouve(v)}
-                        placeholder="AAAA-MM-JJ"
+                        placeholder="jj/mm/aaaa"
                         className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(217,138,48,0.1)]"
                       />
                     </div>
@@ -788,7 +856,7 @@ export default function Trouver() {
                   <label className="text-[11px] font-bold text-textMuted mb-1 block tracking-[0.3px]">
                     {t("trouver_city_district")} <span className="text-textMuted font-normal">({t("trouver_auto_filled")})</span>
                   </label>
-                  <LocationSelect value={location} onChange={setLocation} />
+                  <LocationSelect value={location} onChange={setLocation} autoCity={locationData?.city || ""} />
                 </div>
                 <div>
                   <label className="text-[11px] font-bold text-textMuted mb-1 block tracking-[0.3px]">
@@ -797,7 +865,8 @@ export default function Trouver() {
                   <DatePicker
                     value={dateFound}
                     onChange={(v) => setDateFound(v)}
-                    placeholder="AAAA-MM-JJ"
+                    placeholder="jj/mm/aaaa"
+                    maxDate={todayISO()}
                     className="w-full p-[10px_13px] border-[1.5px] border-[#eae3d8] rounded-[11px] text-[13px] text-textMain bg-[#faf7f2] outline-none focus:border-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(217,138,48,0.1)]"
                   />
                 </div>
@@ -906,7 +975,7 @@ export default function Trouver() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
-                    {t("trouver_photo_recto")}
+                    {t("trouver_photo_recto")} <span className="text-textMuted font-normal">({t("trouver_required")})</span>
                   </label>
                   <div
                     className="border-2 border-dashed border-[#eae3d8] rounded-[12px] p-4 text-center cursor-pointer hover:border-primary hover:bg-[#fef0dc] transition-all"
@@ -921,7 +990,7 @@ export default function Trouver() {
                     onDrop={(e) => {
                       e.preventDefault();
                       e.currentTarget.classList.remove("border-primary", "bg-[#fef0dc]");
-                      handleDrop(e, setFileRecto, setPreviewRecto);
+                      handleDrop(e, setFileRecto, setPreviewRecto, fileVerso);
                     }}
                   >
                     <input
@@ -930,7 +999,7 @@ export default function Trouver() {
                       accept="image/*"
                       className="hidden"
                       onChange={(e) =>
-                        handleFileSelect(e.target.files?.[0] || null, setFileRecto, setPreviewRecto)
+                        handleFileSelect(e.target.files?.[0] || null, setFileRecto, setPreviewRecto, fileVerso)
                       }
                     />
                     {previewRecto ? (
@@ -966,7 +1035,7 @@ export default function Trouver() {
                     onDrop={(e) => {
                       e.preventDefault();
                       e.currentTarget.classList.remove("border-primary", "bg-[#fef0dc]");
-                      handleDrop(e, setFileVerso, setPreviewVerso);
+                      handleDrop(e, setFileVerso, setPreviewVerso, fileRecto);
                     }}
                   >
                     <input
@@ -975,7 +1044,7 @@ export default function Trouver() {
                       accept="image/*"
                       className="hidden"
                       onChange={(e) =>
-                        handleFileSelect(e.target.files?.[0] || null, setFileVerso, setPreviewVerso)
+                        handleFileSelect(e.target.files?.[0] || null, setFileVerso, setPreviewVerso, fileRecto)
                       }
                     />
                     {previewVerso ? (
@@ -1026,65 +1095,77 @@ export default function Trouver() {
               </div>
 
               <div className="flex flex-col gap-3 mb-4">
-                <PhoneInput
-                  country={"cm"}
-                  value={contactTel}
-                  onChange={(phone) => setContactTel(phone)}
-                  placeholder={t("trouver_phone_placeholder")}
-                  enableSearch
-                  searchPlaceholder="Rechercher un pays..."
-                  containerStyle={{ width: "100%" }}
-                  inputStyle={{
-                    width: "100%",
-                    height: "42px",
-                    fontSize: "13px",
-                    borderRadius: "11px",
-                    border: "1.5px solid #eae3d8",
-                    background: "#faf7f2",
-                    color: "#1A1A1A",
-                    paddingLeft: "56px",
-                  }}
-                  buttonStyle={{
-                    borderRadius: "11px 0 0 11px",
-                    border: "1.5px solid #eae3d8",
-                    borderRight: "none",
-                    background: "#faf7f2",
-                  }}
-                />
-
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-1 block tracking-[0.3px]">
                     {t("trouver_contact_mode")}
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {[
                       { value: "APP_CHAT", label: t("trouver_contact_app") },
                       { value: "PHONE", label: t("trouver_contact_phone") },
+                      { value: "EMAIL", label: t("trouver_contact_email") },
                     ].map((opt) => (
                       <div key={opt.value} className="radio-pill">
                         <input
-                          type="radio"
-                          name="contact-mode"
+                          type="checkbox"
                           id={`cm-${opt.value}`}
-                          value={opt.value}
-                          checked={contactMode === opt.value}
-                          onChange={() => setContactMode(opt.value)}
+                          checked={contactModes.includes(opt.value)}
+                          onChange={() => toggleContactMode(opt.value)}
                           className="hidden"
                         />
                         <label
                           htmlFor={`cm-${opt.value}`}
                           className={`flex items-center gap-[6px] p-[8px_12px] border-[1.5px] border-[#eae3d8] rounded-[20px] cursor-pointer text-[12px] font-semibold text-[#4b5563] transition-all duration-180 bg-white ${
-                            contactMode === opt.value
+                            contactModes.includes(opt.value)
                               ? "!border-primary !bg-[#fef0dc] !text-[#d98a30]"
                               : ""
                           }`}
                         >
+                          <i className={`fa-solid ${contactModes.includes(opt.value) ? "fa-check" : "fa-plus"} text-[10px]`}></i>
                           {opt.label}
                         </label>
                       </div>
                     ))}
                   </div>
                 </div>
+
+                {contactModes.includes("PHONE") && (
+                  <PhoneInput
+                    country={"cm"}
+                    value={contactTel}
+                    onChange={(phone) => setContactTel(phone)}
+                    placeholder={t("trouver_phone_placeholder")}
+                    enableSearch
+                    searchPlaceholder="Rechercher un pays..."
+                    containerStyle={{ width: "100%" }}
+                    inputStyle={{
+                      width: "100%",
+                      height: "42px",
+                      fontSize: "13px",
+                      borderRadius: "11px",
+                      border: "1.5px solid #eae3d8",
+                      background: "#faf7f2",
+                      color: "#1A1A1A",
+                      paddingLeft: "56px",
+                    }}
+                    buttonStyle={{
+                      borderRadius: "11px 0 0 11px",
+                      border: "1.5px solid #eae3d8",
+                      borderRight: "none",
+                      background: "#faf7f2",
+                    }}
+                  />
+                )}
+
+                {contactModes.includes("EMAIL") && (
+                  <input
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder={t("declarer_placeholder_email")}
+                    className="w-full h-[42px] px-3 rounded-[11px] border-[1.5px] border-borderMain bg-surface2 text-[13px] text-textMain"
+                  />
+                )}
 
                 <div className="p-3 bg-bgMain border border-borderMain rounded-[12px]">
                   <p className="text-[10px] font-bold text-textMuted uppercase mb-2">
@@ -1118,13 +1199,21 @@ export default function Trouver() {
 
                 <div>
                   <label className="text-[11px] font-bold text-[#4b5563] mb-2 block uppercase tracking-[0.3px]">
-                    Souhaitez-vous une récompense ?
+                    {t("trouver_reward_question")}
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
-                      { id: "NON_MERCI", label: "Non merci 🙅‍♂️", desc: "Geste gratuit" },
-                      { id: "POINTS", label: "Points DocMaster 🌟", desc: "+50 pts bonus" },
-                      { id: "GRE", label: "Gré du propriétaire 💰", desc: "À sa discrétion" },
+                      { id: "NON_MERCI", label: t("trouver_reward_none"), desc: t("trouver_reward_none_desc") },
+                      {
+                        id: "POINTS",
+                        label: t("trouver_reward_points"),
+                        // Le bareme est porte par le type de document cote serveur : sans lui, aucun chiffre ne sort d'ici.
+                        desc:
+                          bonusPoints > 0
+                            ? t("trouver_reward_points_desc", { pts: bonusPoints })
+                            : t("trouver_reward_points_default"),
+                      },
+                      { id: "GRE", label: t("trouver_reward_gre"), desc: t("trouver_reward_gre_desc") },
                     ].map((opt) => (
                       <div
                         key={opt.id}
@@ -1163,10 +1252,11 @@ export default function Trouver() {
                 <div className="mb-3">
                   <div className="h-[4px] bg-[#eae3d8] rounded-[10px] overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-green-500 to-green-mid rounded-[10px] transition-all duration-350"
+                      className="h-full bg-green-dark rounded-[10px] transition-all duration-300"
                       style={{ width: `${progress}%` }}
                     ></div>
                   </div>
+                  <p className="text-[11px] text-textMuted mt-1.5">{t("trouver_publishing")} {progress}%</p>
                 </div>
               )}
 
@@ -1176,7 +1266,7 @@ export default function Trouver() {
                   disabled={submitting}
                   className="px-4 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  <i className="fa-solid fa-arrow-left text-[11px]"></i> Retour
+                  <i className="fa-solid fa-arrow-left text-[11px]"></i> {t("trouver_back")}
                 </button>
                 <button
                   onClick={submitDeclaration}

@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { useI18n } from "../context/I18nContext";
+import { useGlobalStats } from "../hooks/useGlobalStats";
 
 export default function Footer() {
   const { t } = useI18n();
+  const stats = useGlobalStats();
 
   return (
     <footer className="bg-green-dark text-white relative overflow-hidden">
@@ -14,17 +16,19 @@ export default function Footer() {
             <p className="text-white/50 text-[13px] leading-relaxed mb-6 max-w-xs">
               {t("footer_desc")}
             </p>
-            <div className="flex gap-3 mb-6">
-              <div className="text-center">
-                <div className="font-bricolage text-2xl font-black text-primary">2000+</div>
-                <div className="text-[10px] text-white/40 font-bold uppercase">{t("stat_recovered_label")}</div>
+            {!!stats && (
+              <div className="flex gap-3 mb-6">
+                <div className="text-center">
+                  <div className="font-bricolage text-2xl font-black text-primary">{stats.declared.toLocaleString("fr-FR")}</div>
+                  <div className="text-[10px] text-white/40 font-bold uppercase">{t("stat_declared")}</div>
+                </div>
+                <div className="w-px bg-white/10 mx-2" />
+                <div className="text-center">
+                  <div className="font-bricolage text-2xl font-black text-primary">{stats.recovered.toLocaleString("fr-FR")}</div>
+                  <div className="text-[10px] text-white/40 font-bold uppercase">{t("stat_recovered_label")}</div>
+                </div>
               </div>
-              <div className="w-px bg-white/10 mx-2" />
-              <div className="text-center">
-                <div className="font-bricolage text-2xl font-black text-primary">1500+</div>
-                <div className="text-[10px] text-white/40 font-bold uppercase">{t("stat_members")}</div>
-              </div>
-            </div>
+            )}
           </div>
 
           <div>

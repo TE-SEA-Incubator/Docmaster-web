@@ -12,16 +12,17 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useI18n } from "../../context/I18nContext";
 import { useTopbar } from "../../hooks/useTopbar";
+import { useTimingConfig } from "../../hooks/useTimingConfig";
 import { FlowCard, FlowFact, FlowNotice, FlowStepper } from "../../components/recuperation/FlowUI";
 import CompleteDeclarationModal from "../../components/ui/CompleteDeclarationModal";
 import { declarationGaps } from "../../utils/declarationGaps";
 
-const POLL_INTERVAL = 5000;
 const FALLBACK_LAT = 3.8480;
 const FALLBACK_LNG = 11.5021;
 
 export default function Recuperer() {
   const { t, lang } = useI18n();
+  const timing = useTimingConfig();
   useTopbar(t("recuperer_title"), [
     { label: t("recuperer_breadcrumb_search"), href: "/rechercher" },
     { label: t("recuperer_breadcrumb_recovery") },
@@ -128,9 +129,9 @@ export default function Recuperer() {
       } catch {
         // le cycle suivant réessaie
       }
-    }, POLL_INTERVAL);
+    }, timing.paymentPollIntervalMs);
     return () => clearInterval(interval);
-  }, [step, docId, foundMatchId, pickupCode]);
+  }, [step, docId, foundMatchId, pickupCode, timing.paymentPollIntervalMs]);
 
   // Le PATCH renvoie la ligne telle que la base l'a écrite : on n'affiche pas un état non accordé.
   const handleCompleted = (updated: Declaration) => {
@@ -336,9 +337,9 @@ export default function Recuperer() {
           }
         }
 
-        if (elapsed > 120) {
+        if (elapsed > timing.paymentPhaseProcessingMs / 1000) {
           setPollingStatus(t("flow_poll_processing"));
-        } else if (elapsed > 60) {
+        } else if (elapsed > timing.paymentPhaseOperatorMs / 1000) {
           setPollingStatus(t("flow_poll_operator"));
         } else {
           setPollingStatus(t("flow_poll_validate"));
@@ -346,11 +347,11 @@ export default function Recuperer() {
       } catch (e) {
         console.error("[Recuperer] Polling error:", e);
       }
-    }, 5000);
+    }, timing.paymentPollIntervalMs);
 
     setTimeout(() => {
       if (recoveryPollingRef.current) clearInterval(recoveryPollingRef.current);
-    }, 300000);
+    }, timing.paymentPollTimeoutMs);
   };
 
   const handleManualCheck = async () => {
@@ -382,12 +383,12 @@ export default function Recuperer() {
     }
   };
 
-  const handlePay = async (method: "orange" | "mtn" | "moov" | "points", phone: string) => {
+  const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
     if (!docId) return;
     setPayProcessing(true);
     setPayError("");
     try {
-      const pm = method === "orange" ? "ORANGE_MONEY" : method === "mtn" ? "MTN_MOMO" : method === "moov" ? "MOOV_MONEY" : "POINTS";
+      const pm = method === "orange" ? "ORANGE_MONEY" : method === "mtn" ? "MTN_MOMO" : "POINTS";
       const res = await declarationsService.payRecoveryFee({ docId, paymentMethod: pm, phone });
       setPayProcessing(false);
 

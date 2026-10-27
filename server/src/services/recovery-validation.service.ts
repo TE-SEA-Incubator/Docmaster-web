@@ -4,6 +4,8 @@ import { MatchRepository } from '../repositories/match.repository.ts';
 import { DocumentTypeRepository } from '../repositories/document-type.repository.ts';
 import { DeclarationService } from './declaration.service.ts';
 import { resolveLostFoundPair } from '../utils/recovery.utils.ts';
+import { HttpError } from '../utils/http-error.ts';
+import { TIMING } from '../config/timing.ts';
 
 const claimRepo = new ClaimRepository();
 const declRepo = new DeclarationRepository();
@@ -44,27 +46,38 @@ async function findPaidClaim(docId: string) {
  */
 export async function validateRecoveryCode(docId: string, userId: string, code: string) {
   if (!docId || !code) {
-    throw new Error('Document ID et code de vérification requis.');
+    throw new HttpError(400, 'Document ID et code de vérification requis.');
   }
 
   const claim = await findPaidClaim(docId);
   if (!claim) {
-    throw new Error(
+    throw new HttpError(
+      409,
       'Aucune réclamation payée trouvée. Le propriétaire doit d\'abord régler les frais de récupération.'
     );
   }
 
+  // Le code de remise expire désormais comme les autres délais : la même
+  // durée est servie au front par GET /settings/timing.
+  const claimAgeMs = Date.now() - new Date(claim.created_at).getTime();
+  if (Number.isFinite(claimAgeMs) && claimAgeMs > TIMING.claimCodeTtlHours * 60 * 60 * 1000) {
+    throw new HttpError(
+      410,
+      `Ce code de remise a expiré (validité ${TIMING.claimCodeTtlHours} h). Demandez un nouveau code au propriétaire.`,
+    );
+  }
+
   if (claim.finder_id && claim.finder_id !== userId) {
-    throw new Error('Seul le trouveur peut valider le code de remise.');
+    throw new HttpError(403, 'Seul le trouveur peut valider le code de remise.');
   }
 
   if (claim.attempts >= 5) {
-    throw new Error('Trop de tentatives échouées. Contactez le support.');
+    throw new HttpError(429, 'Trop de tentatives échouées. Contactez le support.');
   }
 
   if (claim.verification_code !== code) {
     const newAttempts = await claimRepo.incrementAttempts(claim.id);
-    throw new Error(`Code de vérification invalide. (${Math.max(0, 5 - newAttempts)} tentative(s) restante(s))`);
+    throw new HttpError(400, `Code de vérification invalide. (${Math.max(0, 5 - newAttempts)} tentative(s) restante(s))`);
   }
 
   const lostId = claim.doc_id;

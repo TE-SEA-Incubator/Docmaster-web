@@ -7,6 +7,7 @@ import { UserRepository } from '../repositories/auth.repository.ts';
 import { DeclarationService } from './declaration.service.ts';
 import argon2 from 'argon2';
 import { encodeMediaFields } from '../utils/media.utils.ts';
+import { HttpError } from '../utils/http-error.ts';
 
 export class DocumentService {
   private documentRepository: DocumentRepository;
@@ -29,7 +30,7 @@ export class DocumentService {
     if (data.user_id) {
       const validation = await subscriptionService.validateAction(data.user_id, 'REGISTER_OBJECT');
       if (!(validation as any).allowed) {
-        throw new Error((validation as any).reason);
+        throw new HttpError(403, (validation as any).reason);
       }
     }
 
@@ -48,7 +49,7 @@ export class DocumentService {
       // Check if user's plan allows expiration management
       const planCheck = await subscriptionService.validateAction(data.user_id, 'EXPIRATION_MGMT');
       if (!(planCheck as any).allowed) {
-        throw new Error('Votre abonnement ne permet pas la gestion des dates d\'expiration. Passez à une offre supérieure ou choisissez l\'option "Permanent".');
+        throw new HttpError(403, 'Votre abonnement ne permet pas la gestion des dates d\'expiration. Passez à une offre supérieure ou choisissez l\'option "Permanent".');
       }
     }
 
@@ -177,16 +178,16 @@ export class DocumentService {
     // 1. Find document
     const doc = await this.documentRepository.findById(id);
     if (!doc || doc.user_id !== userId) {
-      throw new Error('Document introuvable ou accès non autorisé');
+      throw new HttpError(404, 'Document introuvable ou accès non autorisé');
     }
 
     // 2. Verify password if provided (for security)
     if (password) {
       const user = await this.userRepository.findById(userId);
-      if (!user) throw new Error('Utilisateur introuvable');
-      
+      if (!user) throw new HttpError(404, 'Utilisateur introuvable');
+
       const isMatch = await argon2.verify(user.mot_de_passe, password);
-      if (!isMatch) throw new Error('Mot de passe incorrect');
+      if (!isMatch) throw new HttpError(401, 'Mot de passe incorrect');
     }
 
     // 3. Create the public declaration automatically

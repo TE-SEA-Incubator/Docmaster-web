@@ -14,6 +14,7 @@ import {
 } from "../../utils/lostDeclarationPayload";
 import { generateDeclarationPDF } from "../../utils/pdf";
 import DatePicker from "./DatePicker";
+import { todayISO } from "../../utils/dateHelpers";
 
 interface DocFormData {
   nom_complet: string;
@@ -410,7 +411,7 @@ export default function ReportLostModal({ doc, onClose }: ReportLostModalProps) 
                             <div className="grid grid-cols-2 gap-3">
                               <div>
                                 <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_delivrance")}</label>
-                                <DatePicker value={f.date_delivrance} onChange={(v) => updateDocForm(id, "date_delivrance", v)}
+                                <DatePicker value={f.date_delivrance} onChange={(v) => updateDocForm(id, "date_delivrance", v)} maxDate={todayISO()}
                                   className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_date_placeholder")} />
                               </div>
                               <div>
@@ -424,7 +425,7 @@ export default function ReportLostModal({ doc, onClose }: ReportLostModalProps) 
                         return (
                           <div>
                             <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_delivrance")}</label>
-                            <DatePicker value={f.date_delivrance} onChange={(v) => updateDocForm(id, "date_delivrance", v)}
+                            <DatePicker value={f.date_delivrance} onChange={(v) => updateDocForm(id, "date_delivrance", v)} maxDate={todayISO()}
                               className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder={t("reportlost_date_placeholder")} />
                           </div>
                         );
@@ -448,7 +449,7 @@ export default function ReportLostModal({ doc, onClose }: ReportLostModalProps) 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-bold text-textMuted uppercase tracking-wider block mb-1">{t("reportlost_date_perte")}</label>
-                  <DatePicker value={datePerte} onChange={(v) => setDatePerte(v)}
+                  <DatePicker value={datePerte} onChange={(v) => setDatePerte(v)} maxDate={todayISO()}
                     className="w-full px-3 py-2.5 bg-white border border-borda rounded-xl text-[13px] outline-none focus:border-primary transition-colors" placeholder="jj/mm/aaaa" />
                 </div>
                 <div>

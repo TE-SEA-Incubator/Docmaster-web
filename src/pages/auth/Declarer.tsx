@@ -9,6 +9,7 @@ import DatePicker from "../../components/ui/DatePicker";
 import apiClient from "../../services/api";
 import { useI18n } from "../../context/I18nContext";
 import { useTopbar } from "../../hooks/useTopbar";
+import { useWarnOnUnsavedWork } from "../../hooks/useWarnOnUnsavedWork";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -46,7 +47,8 @@ import DeclarerStepper from "../../components/auth/Declarer/DeclarerStepper";
 import ConfirmDeclarationModal from "../../components/auth/Declarer/ConfirmDeclarationModal";
 import SuccessDeclarationModal from "../../components/auth/Declarer/SuccessDeclarationModal";
 import { DOC_META, PLACE_KEYS, type DocumentMetadata } from "../../components/auth/Declarer/docMeta";
-import { addMonths } from "../../utils/dateHelpers";
+import { addMonths, todayISO } from "../../utils/dateHelpers";
+import { describeValidationErrors } from "../../utils/declarationFieldLabels";
 import LocationSelect from "../../components/ui/LocationSelect";
 
 interface DocTypeCatalog {
@@ -113,10 +115,11 @@ export default function Declarer() {
   const [rewardEnabled, setRewardEnabled] = useState(false);
   const [rewardAmount, setRewardAmount] = useState<number | string>("");
   const [certified, setCertified] = useState(false);
-  const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [pdfDownloading, setPdfDownloading] = useState(false);
+  const [submitDone, setSubmitDone] = useState(0);
+  const [submitProgress, setSubmitProgress] = useState(0);
 
   // Instant place search (Nominatim / OpenStreetMap, no map)
   const [placeQuery, setPlaceQuery] = useState("");
@@ -202,12 +205,26 @@ export default function Declarer() {
 
   const getDocIdOf = (instanceKey: string) => selectedDocs.find((s) => s.key === instanceKey)?.docId;
 
-  const fillOwnerName = (docId: string, instanceKey: string) => {
-    const fullName = ownerType === "me" ? [user?.prenom, user?.nom].filter(Boolean).join(" ").trim() : "";
-    if (fullName) {
-      const key = `titulaire_${instanceKey}`;
-      setFormData((prevData) => ({ ...prevData, [key]: fullName }));
+  /** Colonne `date_naissance` du profil, ramenée en YYYY-MM-DD (le serveur peut rendre une date UTC). */
+  const profileBirthDate = user?.date_naissance ? String(user.date_naissance).split("T")[0] : "";
+
+  /** Pour une déclaration « pour moi », le profil fournit déjà le titulaire et la date de naissance. */
+  const fillFromProfile = (docId: string, instanceKey: string, isMine: boolean) => {
+    if (!isMine) return;
+    const fullName = [user?.prenom, user?.nom].filter(Boolean).join(" ").trim();
+    const fromProfile: Record<string, string> = {};
+    if (fullName) fromProfile[`titulaire_${instanceKey}`] = fullName;
+    if (profileBirthDate && getDocMeta(docId).fields.some((f) => f.id === "date_naissance")) {
+      fromProfile[`date_naissance_${instanceKey}`] = profileBirthDate;
     }
+    setFormData((prevData) => {
+      const next = { ...prevData };
+      // Ce qui a déjà été saisi sur cette instance reste la valeur de l'utilisateur.
+      for (const [key, value] of Object.entries(fromProfile)) {
+        if (!next[key]) next[key] = value;
+      }
+      return next;
+    });
   };
 
   const createInstanceKey = (docId: string) => `${docId}-${++instanceCounterRef.current}`;
@@ -216,7 +233,7 @@ export default function Declarer() {
     setSelectedDocs((prev) => {
       if (prev.some((s) => s.docId === docId)) return prev.filter((s) => s.docId !== docId);
       const key = createInstanceKey(docId);
-      fillOwnerName(docId, key);
+      fillFromProfile(docId, key, ownerType === "me");
       return [...prev, { key, docId }];
     });
   };
@@ -227,7 +244,7 @@ export default function Declarer() {
       return;
     }
     const key = createInstanceKey(docId);
-    fillOwnerName(docId, key);
+    fillFromProfile(docId, key, ownerType === "me");
     setSelectedDocs((prev) => [...prev, { key, docId }]);
   };
 
@@ -426,11 +443,6 @@ export default function Declarer() {
   };
 
   const validateAndSubmit = async () => {
-    if (!password.trim()) {
-      setPasswordError(true);
-      return;
-    }
-
     for (const inst of selectedDocs) {
       const docNum = getFormValue(inst.key, "numero");
       if (docNum && !/\d/.test(docNum)) {
@@ -467,17 +479,17 @@ export default function Declarer() {
       }
     }
 
-    setPasswordError(false);
     confirmHandlers.close();
     setSubmitting(true);
+    setSubmitDone(0);
+    setSubmitProgress(0);
+
+    const createdRefs: string[] = [];
+    let lastId = "";
 
     try {
-      let createdRefs: string[] = [];
-      let lastId = "";
-
-      for (const inst of selectedDocs) {
-        const meta = getDocMeta(inst.docId);
-
+      for (let index = 0; index < selectedDocs.length; index += 1) {
+        const inst = selectedDocs[index];
         // Build document fields
         const ownerName = getFormValue(inst.key, "titulaire");
         const docNum = getFormValue(inst.key, "numero");
@@ -516,11 +528,21 @@ export default function Declarer() {
         if (quartier) metadata["Quartier"] = quartier;
         if (Object.keys(metadata).length > 0) fd.append("metadata", JSON.stringify(metadata));
 
-        const res = await declarationsService.createLost(fd);
+        const res = await declarationsService.createLost(fd, {
+          // Progression réelle de l'upload : plusieurs documents = une part chacun.
+          onUploadProgress: (event) => {
+            const share = 100 / selectedDocs.length;
+            const ratio = event.total ? event.loaded / event.total : 0;
+            setSubmitProgress(Math.min(99, index * share + ratio * share));
+          },
+        });
         if (res.success && res.data) {
-          createdRefs.push(res.data.identifiant_doc_dm || "DOC-XXXX");
+          const ref = res.data.identifiant_doc_dm || res.data.id;
+          if (ref) createdRefs.push(ref);
           lastId = res.data.id;
         }
+        setSubmitDone((done) => done + 1);
+        setSubmitProgress(((index + 1) / selectedDocs.length) * 100);
       }
 
       setLastDeclarationRef(createdRefs.join(", "));
@@ -528,21 +550,20 @@ export default function Declarer() {
       successHandlers.open();
     } catch (e: any) {
       const data = e.response?.data;
-      if (data?.errors) {
-        const details = Object.entries(data.errors)
-          .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(", ")}`)
-          .join("\n");
-        toast.error((data?.message || t("declarer_alert_validation_failed")) + "\n\n" + details);
-      } else {
-        toast.error(data?.message || t("declarer_alert_error"));
-      }
+      const reasons = describeValidationErrors(data?.errors, t);
+      const base = data?.message || t("declarer_alert_error");
+      const partial = createdRefs.length > 0 ? t("declarer_partial_saved", { done: createdRefs.length }) : "";
+      toast.error([partial, base, ...reasons].filter(Boolean).join("\n"));
     } finally {
       setSubmitting(false);
+      setSubmitDone(0);
+      setSubmitProgress(0);
     }
   };
 
   const handleDownloadPdf = async () => {
-    if (!lastDeclarationId) return;
+    if (!lastDeclarationId || pdfDownloading) return;
+    setPdfDownloading(true);
     try {
       const res = await apiClient.get(`declarations/${lastDeclarationId}/pdf`, {
         responseType: "blob",
@@ -559,6 +580,8 @@ export default function Declarer() {
       console.error("Failed to download PDF:", e);
       const msg = e.response?.data?.message || e.response?.data?.error || t("declarer_alert_pdf_error");
       toast.error(msg);
+    } finally {
+      setPdfDownloading(false);
     }
   };
 
@@ -581,14 +604,14 @@ export default function Declarer() {
     setRewardEnabled(false);
     setRewardAmount("");
     setCertified(false);
-    setPassword("");
     successHandlers.close();
   };
 
-  const ownerFullName = useMemo(
-    () => [user?.prenom, user?.nom].filter(Boolean).join(" ").trim(),
-    [user?.prenom, user?.nom]
+  const hasDraft = !successOpened && (
+    selectedDocs.length > 0 || !!lossDate || !!location.department || !!contactPhone ||
+    !!quartier.trim() || !!lieuPrecis.trim() || !!circumstances.trim()
   );
+  useWarnOnUnsavedWork(hasDraft);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -661,12 +684,7 @@ export default function Declarer() {
                       onClick={() => {
                         setOwnerType(opt.value);
                         if (opt.value === "me") {
-                          if (ownerFullName) {
-                            selectedDocs.forEach((inst) => {
-                              const key = `titulaire_${inst.key}`;
-                              setFormData((prev) => ({ ...prev, [key]: ownerFullName }));
-                            });
-                          }
+                          selectedDocs.forEach((inst) => fillFromProfile(inst.docId, inst.key, true));
                           if (user?.email) setContactEmail(user.email);
                         }
                       }}
@@ -788,7 +806,7 @@ export default function Declarer() {
                     const hasExp = expMoins > 0;
                     const hasDateDelivranceField = meta.fields.some((f) => f.id === "date_delivrance");
                     const hasDateExpirationField = meta.fields.some((f) => f.id === "date_expiration");
-                    const isComplete = getFormValue(inst.key, "titulaire") && getFormValue(inst.key, "numero");
+                    const isComplete = !!getFormValue(inst.key, "titulaire").trim();
                     const sameTypeCount = selectedDocs.filter((s) => s.docId === inst.docId).length;
                     const sameTypeIndex = selectedDocs.filter((s) => s.docId === inst.docId).findIndex((s) => s.key === inst.key) + 1;
 
@@ -851,11 +869,17 @@ export default function Declarer() {
                                     autosize
                                   />
                                 ) : field.type === "date" ? (
-                                  <DatePicker
-                                    value={getFormValue(inst.key, field.id)}
-                                    onChange={(v) => { updateFormField(inst.key, field.id, v); setFieldErrors((prev) => ({ ...prev, [field.id + "_" + inst.key]: "" })); }}
-                                    placeholder={t("declarer_date_format")}
-                                  />
+                                  <>
+                                    <DatePicker
+                                      value={getFormValue(inst.key, field.id)}
+                                      onChange={(v) => { updateFormField(inst.key, field.id, v); setFieldErrors((prev) => ({ ...prev, [field.id + "_" + inst.key]: "" })); }}
+                                      placeholder={t("declarer_date_format")}
+                                      maxDate={field.id === "date_expiration" ? undefined : todayISO()}
+                                    />
+                                    {field.id === "date_naissance" && ownerType === "me" && !!profileBirthDate && getFormValue(inst.key, field.id) === profileBirthDate && (
+                                      <Text size="xs" c="dimmed" mt={4}>{t("declarer_birth_from_profile")}</Text>
+                                    )}
+                                  </>
                                 ) : (
                                   <TextInput
                                     type={field.type}
@@ -876,6 +900,7 @@ export default function Declarer() {
                                   value={getFormValue(inst.key, "date_delivrance")}
                                   onChange={(v) => { updateFormField(inst.key, "date_delivrance", v); setFieldErrors((prev) => ({ ...prev, ["date_delivrance_" + inst.key]: "" })); }}
                                   placeholder={t("declarer_date_format")}
+                                  maxDate={todayISO()}
                                 />
                                 {fieldErrors["date_delivrance_" + inst.key] && (
                                   <Text size="xs" c="red" mt={4}>{fieldErrors["date_delivrance_" + inst.key]}</Text>
@@ -946,6 +971,7 @@ export default function Declarer() {
                         value={lossDate}
                         onChange={(v) => { setLossDate(v); setFieldErrors((prev) => ({ ...prev, lossDate: "" })); }}
                         placeholder={t("declarer_date_format")}
+                        maxDate={todayISO()}
                       />
                       {fieldErrors.lossDate && <Text size="xs" c="red" mt={4}>{fieldErrors.lossDate}</Text>}
                     </Box>
@@ -1276,14 +1302,36 @@ export default function Declarer() {
         </SimpleGrid>
       </Box>
 
+      {submitting && (
+        <Box className="fixed inset-0 z-[200] flex items-center justify-center px-4" style={{ background: "rgba(26,26,26,0.35)" }}>
+          <Card padding="lg" radius="lg" withBorder style={{ width: "min(100%, 360px)", background: "white" }}>
+            <Stack gap="sm">
+              <Group justify="center" gap="xs">
+                <Loader size="sm" color="green" />
+                <Text size="sm" fw={600}>{t("declarer_submitting_title")}</Text>
+              </Group>
+              <Progress.Root size="sm" radius="xl" style={{ background: "var(--color-bgMain)" }}>
+                <Progress.Section
+                  value={submitProgress}
+                  color="green"
+                />
+              </Progress.Root>
+              <Text size="xs" c="dimmed" ta="center">
+                {t("declarer_progress_docs", {
+                  done: submitDone,
+                  total: selectedDocs.length,
+                })}
+              </Text>
+            </Stack>
+          </Card>
+        </Box>
+      )}
+
       <ConfirmDeclarationModal
         opened={confirmOpened}
         isMobile={isMobile}
-        password={password}
-        passwordError={passwordError}
         submitting={submitting}
-        onClose={() => { confirmHandlers.close(); setPasswordError(false); }}
-        onPasswordChange={(v) => { setPassword(v); setPasswordError(false); }}
+        onClose={confirmHandlers.close}
         onConfirm={validateAndSubmit}
       />
 
@@ -1291,6 +1339,7 @@ export default function Declarer() {
         opened={successOpened}
         isMobile={isMobile}
         refNumber={lastDeclarationRef}
+        isDownloading={pdfDownloading}
         onDownloadPdf={handleDownloadPdf}
         onNewDeclaration={resetForm}
         onMyDeclarations={() => navigate("/mes-declarations")}

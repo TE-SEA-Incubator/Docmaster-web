@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import { useTopbar } from "../../hooks/useTopbar";
+import { useTimingConfig } from "../../hooks/useTimingConfig";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 
@@ -39,6 +40,7 @@ const PACK_ICONS = ["fa-seedling", "fa-star", "fa-gem", "fa-crown", "fa-rocket"]
 
 export default function AcheterPoints() {
   const { t } = useI18n();
+  const timing = useTimingConfig();
   useTopbar("Acheter des points", [{ label: t("mesgains_breadcrumb_home"), href: "/dashboard" }, { label: "Acheter des points" }]);
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -128,9 +130,9 @@ export default function AcheterPoints() {
           return;
         }
 
-        if (elapsed > 120) {
+        if (elapsed > timing.paymentPhaseProcessingMs / 1000) {
           setPollingStatus("Le paiement est en cours de traitement. Vous recevrez vos points sous peu.");
-        } else if (elapsed > 60) {
+        } else if (elapsed > timing.paymentPhaseOperatorMs / 1000) {
           setPollingStatus("Confirmation en cours... Cette opération peut prendre jusqu'à 2 minutes.");
         } else {
           setPollingStatus("Veuillez valider le paiement sur votre téléphone...");
@@ -138,11 +140,11 @@ export default function AcheterPoints() {
       } catch (e) {
         console.error("[AcheterPoints] Polling error:", e);
       }
-    }, 5000);
+    }, timing.paymentPollIntervalMs);
 
     setTimeout(() => {
       if (pollingRef.current) clearInterval(pollingRef.current);
-    }, 300000);
+    }, timing.paymentPollTimeoutMs);
   };
 
   const handleManualCheck = async () => {
@@ -170,7 +172,7 @@ export default function AcheterPoints() {
     }
   };
 
-  const handlePay = async (method: "orange" | "mtn" | "moov" | "points", phone: string) => {
+  const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
     setProcessing(true);
     setPayError("");
 
@@ -181,7 +183,7 @@ export default function AcheterPoints() {
     }
 
     try {
-      const paymentMethod = method === "orange" ? "ORANGE_MONEY" : method === "moov" ? "MOOV_MONEY" : "MTN_MOMO";
+      const paymentMethod = method === "orange" ? "ORANGE_MONEY" : "MTN_MOMO";
       const res = await apiClient.post("points/purchase", {
         pointsAmount: selectedPack,
         phone,

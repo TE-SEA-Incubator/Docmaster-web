@@ -1,7 +1,17 @@
 import { Request, Response } from 'express';
 import { SettingRepository } from '../repositories/setting.repository.ts';
+import { getPublicTiming } from '../config/timing.ts';
 
 const settingRepo = new SettingRepository();
+
+/**
+ * Public timing contract. The front-end reads every polling interval and
+ * phase threshold from this endpoint instead of hard-coding its own clocks.
+ */
+export const getTiming = (_req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=300');
+  res.json({ success: true, data: getPublicTiming() });
+};
 
 export const getSettings = async (req: Request, res: Response) => {
   try {

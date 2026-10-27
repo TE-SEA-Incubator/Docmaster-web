@@ -5,6 +5,7 @@ interface SuccessDeclarationModalProps {
   opened: boolean;
   isMobile: boolean;
   refNumber: string;
+  isDownloading: boolean;
   onDownloadPdf: () => void;
   onNewDeclaration: () => void;
   onMyDeclarations: () => void;
@@ -13,6 +14,7 @@ interface SuccessDeclarationModalProps {
 export default function SuccessDeclarationModal({
   opened,
   refNumber,
+  isDownloading,
   onDownloadPdf,
   onNewDeclaration,
   onMyDeclarations,
@@ -25,15 +27,17 @@ export default function SuccessDeclarationModal({
       onClose={onMyDeclarations}
       title={t("declarer_success_title")}
       description={t("declarer_success_desc")}
-      badgeText="Déclaration"
+      badgeText={t("declarer_breadcrumb")}
       badgeColor="green"
       icon="fa-file-shield"
       highlightBox={{
         label: t("declarer_keep_reference"),
-        value: refNumber,
+        value: refNumber || t("declarer_ref_pending"),
       }}
       primaryAction={{
         label: t("declarer_download_pdf"),
+        loadingLabel: t("declarer_downloading_pdf"),
+        loading: isDownloading,
         icon: "fa-file-arrow-down",
         onClick: onDownloadPdf,
       }}

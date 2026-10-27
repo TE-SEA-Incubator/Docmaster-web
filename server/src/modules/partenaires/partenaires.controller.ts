@@ -282,6 +282,18 @@ export class PartenaireController {
     }
   };
 
+  /**
+   * GET /api/partenaires/points/history  (PARTNER) — complete points history
+   */
+  getPointsHistory = async (req: Request, res: Response) => {
+    try {
+      const result = await this.service.getPointsHistory((req as any).partenaire.id, req.query);
+      res.json({ success: true, data: result });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+
   convertPoints = async (req: Request, res: Response) => {
     try {
       const amountPoints = Number(req.body?.amountPoints);

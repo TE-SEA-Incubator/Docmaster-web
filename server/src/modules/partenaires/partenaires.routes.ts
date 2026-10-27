@@ -49,6 +49,8 @@ router.get('/wallet', partenaireAuthMiddleware, controller.getWallet);
 router.get('/earnings-stats', partenaireAuthMiddleware, controller.getEarningsStats);
 // GET /api/partenaires/earnings — points/money earnings history
 router.get('/earnings', partenaireAuthMiddleware, controller.getEarnings);
+// GET /api/partenaires/points/history — complete points history (gains, conversions, withdrawals)
+router.get('/points/history', partenaireAuthMiddleware, controller.getPointsHistory);
 // POST /api/partenaires/points/convert — convert points to wallet FCFA
 router.post('/points/convert', partenaireAuthMiddleware, controller.convertPoints);
 // POST /api/partenaires/withdrawals/request — request withdrawal

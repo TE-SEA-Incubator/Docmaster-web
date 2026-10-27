@@ -8,6 +8,8 @@ import { NotificationService } from '../../services/notification.service.ts';
 import { SocketService } from '../../services/socket.service.ts';
 import { LocationService } from '../../services/location.service.ts';
 import pool from '../../database/db.js';
+import { bumpCacheVersion } from '../../cache/cache.ts';
+import { PUBLIC_SEARCH_VERSION } from '../../cache/keys.ts';
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3003';
 
@@ -524,6 +526,7 @@ export class AutoriteService {
       [autorite.id, declarationId]
     );
     const updated = result.rows[0];
+    if (updated) await bumpCacheVersion(PUBLIC_SEARCH_VERSION);
 
     // Zone activity journal
     await this.logActivity(
@@ -617,6 +620,7 @@ export class AutoriteService {
     if (result.rows.length === 0) {
       throw new Error('Déclaration introuvable');
     }
+    await bumpCacheVersion(PUBLIC_SEARCH_VERSION);
 
     await this.logActivity(
       autorite,

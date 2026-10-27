@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Modal, Loader, Paper, Text, Group, TextInput, Card, Stepper, Button, Select, Stack, Checkbox, Radio } from "@mantine/core";
+import { Modal, Loader, Paper, Text, Group, TextInput, Card, Stepper, Button, Select, Stack, Checkbox, Radio, Alert, Progress } from "@mantine/core";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { documentTypesService } from "../../services/declarationsService";
 import { documentsService } from "../../services/documentsService";
@@ -15,6 +15,9 @@ import ResponsiveSheet from "../../components/ui/ResponsiveSheet";
 import ShareModal from "../../components/modals/Sharemodal";
 import ReportLostModal from "../../components/ui/ReportLostModal";
 import DatePicker from "../../components/ui/DatePicker";
+import { todayISO } from "../../utils/dateHelpers";
+import { extractApiError } from "../../utils/extractApiError";
+import { describeValidationErrors } from "../../utils/declarationFieldLabels";
 import type { Document, DocTypeCatalog } from "../../types/api";
 
 function addMonths(dateStr: string, months: number): string {
@@ -48,6 +51,8 @@ export default function MesDocuments() {
   const [showLostModal, setShowLostModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [uploadPct, setUploadPct] = useState(0);
 
   const [step, setStep] = useState(1);
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -109,7 +114,7 @@ export default function MesDocuments() {
     setEditingDoc(null);
   }
 
-  function closeAddModal() { setShowAddModal(false); resetForm(); }
+  function closeAddModal() { setShowAddModal(false); setErrorMsg(""); resetForm(); }
   function goStep(s: number) { setStep(s); }
 
   function openEditModal(doc: Document) {
@@ -135,9 +140,15 @@ export default function MesDocuments() {
 
   async function handleSubmit() {
     const hasRecto = !!rectoFile || (!!editingDoc?.photo_recto);
-    if (!selectedType || (selectedType === 'AUTRES' && !customTypeName.trim()) || !form.name || !hasRecto) return;
+    setErrorMsg("");
+    if (!selectedType || (selectedType === 'AUTRES' && !customTypeName.trim()) || !form.name) return;
+    if (!hasRecto) {
+      setErrorMsg(t("mesdocuments_recto_required"));
+      return;
+    }
     if (!editingDoc && !consent) return;
     setSubmitting(true);
+    setUploadPct(0);
     try {
       const fd = new FormData();
       const isCustom = selectedType === 'AUTRES' && customTypeName.trim();
@@ -162,10 +173,14 @@ export default function MesDocuments() {
       if (versoFile) fd.append("photo_verso", versoFile);
 
       if (editingDoc) {
-        await documentsService.update(editingDoc.id, fd);
+        await documentsService.update(editingDoc.id, fd, setUploadPct);
         setSuccessMsg(t("mesdocuments_edit_success_msg"));
       } else {
-        await apiClient.post("documents", fd);
+        await apiClient.post("documents", fd, {
+          onUploadProgress: (e) => {
+            if (e.total) setUploadPct(Math.round((e.loaded / e.total) * 100));
+          },
+        });
         setSuccessMsg(t("mesdocuments_success_msg"));
       }
       await fetchDocs();
@@ -174,8 +189,10 @@ export default function MesDocuments() {
       setShowSuccess(true);
       resetForm();
       setTimeout(() => setShowSuccess(false), 4000);
-    } catch {
+    } catch (e: any) {
       setSubmitting(false);
+      const reasons = describeValidationErrors(e?.response?.data?.errors, t);
+      setErrorMsg([extractApiError(e), ...reasons].filter(Boolean).join("\n"));
     }
   }
 
@@ -376,6 +393,26 @@ export default function MesDocuments() {
           )
         }
       >
+        {!!errorMsg && (
+          <Alert
+            color="red"
+            variant="light"
+            radius="md"
+            mb="md"
+            withCloseButton
+            onClose={() => setErrorMsg("")}
+          >
+            <span style={{ whiteSpace: "pre-line" }}>{errorMsg}</span>
+          </Alert>
+        )}
+
+        {submitting && (
+          <div className="mb-4">
+            <Progress value={uploadPct} size="xs" radius="xl" color="green" />
+            <Text size="xs" c="dimmed" mt={4}>{t("mesdocuments_uploading", { pct: uploadPct })}</Text>
+          </div>
+        )}
+
         {/* Step 1: Validity Option */}
         {step === 1 && (
           <Radio.Group
@@ -460,11 +497,11 @@ export default function MesDocuments() {
               />
               {hasExpiration ? (
                 <Group gap="sm" wrap="wrap">
-                  <DatePicker className="grow basis-[200px]" value={form.issued} onChange={updateIssued} label={<>{t("mesdocuments_issue_date")} <R /></>} placeholder={t("mesdocuments_placeholder_date")} />
+                  <DatePicker className="grow basis-[200px]" value={form.issued} onChange={updateIssued} label={<>{t("mesdocuments_issue_date")} <R /></>} placeholder={t("mesdocuments_placeholder_date")} maxDate={todayISO()} />
                   <DatePicker className="grow basis-[200px]" value={form.expiry} onChange={(v) => setForm({ ...form, expiry: v })} label={t("mesdocuments_expiry_date")} placeholder={t("mesdocuments_placeholder_date")} disabled={isAutoExpiry} />
                 </Group>
               ) : (
-                <DatePicker value={form.issued} onChange={(v) => setForm({ ...form, issued: v })} label={t("mesdocuments_issue_date")} placeholder={t("mesdocuments_placeholder_date")} />
+                <DatePicker value={form.issued} onChange={(v) => setForm({ ...form, issued: v })} label={t("mesdocuments_issue_date")} placeholder={t("mesdocuments_placeholder_date")} maxDate={todayISO()} />
               )}
               <TextInput
                 label={t("mesdocuments_issuing_authority")}

@@ -5,6 +5,7 @@ import { authService } from "../../services/authService";
 import { useI18n } from "../../context/I18nContext";
 import { useTopbar } from "../../hooks/useTopbar";
 import DatePicker from "../../components/ui/DatePicker";
+import { todayISO } from "../../utils/dateHelpers";
 import VipAvatar, { isVipUser } from "../../components/ui/VipBadge";
 import type { UserProfile } from "../../types/api";
 import {
@@ -342,7 +343,7 @@ export default function InfosProfil() {
                     />
                     <div>
                       <Text size="xs" fw={500} mb={4}>{t("profil_label_birthdate")}</Text>
-                      <DatePicker value={form.date_naissance} onChange={(v) => setForm({ ...form, date_naissance: v })} className="w-full" placeholder={t("profil_placeholder_date")} />
+                      <DatePicker value={form.date_naissance} onChange={(v) => setForm({ ...form, date_naissance: v })} className="w-full" placeholder={t("profil_placeholder_date")} maxDate={todayISO()} />
                     </div>
                   </SimpleGrid>
                   <Group gap="sm" mt="md">
@@ -382,7 +383,7 @@ export default function InfosProfil() {
                     <TextInput label={t("profil_label_birthplace")} value={form.lieu_naissance} onChange={(e) => setForm({ ...form, lieu_naissance: e.target.value })} radius="xl" size="sm" />
                     <div>
                       <Text size="xs" fw={500} mb={4}>{t("profil_label_birthdate")}</Text>
-                      <DatePicker value={form.date_naissance} onChange={(v) => setForm({ ...form, date_naissance: v })} className="w-full" placeholder={t("profil_placeholder_date")} />
+                      <DatePicker value={form.date_naissance} onChange={(v) => setForm({ ...form, date_naissance: v })} className="w-full" placeholder={t("profil_placeholder_date")} maxDate={todayISO()} />
                     </div>
                     <Select
                       label="Genre" value={form.genre} placeholder="Sélectionner"

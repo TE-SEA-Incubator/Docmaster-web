@@ -5,6 +5,8 @@ import { subscriptionService } from '../services/subscription.service.ts';
 import { notificationService } from '../services/notification.service.ts';
 import { nokashService } from '../services/nokash.service.ts';
 import { resolveLostFoundPair } from '../utils/recovery.utils.ts';
+import { bumpCacheVersion } from '../cache/cache.ts';
+import { PUBLIC_SEARCH_VERSION } from '../cache/keys.ts';
 
 const NOKASH_POLL_INTERVAL_MS = 5000;
 const NOKASH_POLL_TIMEOUT_MS = 5 * 60 * 1000;
@@ -419,6 +421,7 @@ export async function activateRecovery(userId: string, docId: string, transactio
             [pair.foundId]
           );
         }
+        await bumpCacheVersion(PUBLIC_SEARCH_VERSION);
 
         const { activityLogService } = await import('../services/activity-log.service.ts');
         activityLogService.log({

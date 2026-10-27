@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Modal } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import { useI18n } from '../../context/I18nContext';
 
 const BehavioralModals: React.FC = () => {
+  const { t } = useI18n();
   const [activeModal, setActiveModal] = useState<'statistique' | 'action' | null>(null);
 
   // Check if we can show a modal
@@ -107,7 +109,7 @@ const BehavioralModals: React.FC = () => {
                     <i className="fa-solid fa-check-circle text-green-600" />
                   </div>
                   <p className="text-[13.5px] leading-relaxed text-textMuted">
-                    Grâce à la communauté <strong className="text-textMain">74%</strong> retrouvent leur propriétaire en moins de <strong className="text-primary">48 heures</strong>.
+                    {t("behavioral_stat_matched")}
                   </p>
                </div>
             </div>

@@ -1,39 +1,27 @@
-import { Modal, Drawer, ThemeIcon, Title, Text, Paper, PasswordInput, Group, Button, Stack, Box } from "@mantine/core";
+import { Modal, Drawer, ThemeIcon, Title, Text, Paper, Group, Button, Stack, Box } from "@mantine/core";
 import { useI18n } from "../../../context/I18nContext";
 
 interface ConfirmDeclarationModalProps {
   opened: boolean;
   isMobile: boolean;
-  password: string;
-  passwordError: boolean;
   submitting: boolean;
   onClose: () => void;
-  onPasswordChange: (value: string) => void;
   onConfirm: () => void;
 }
 
 /**
- * Confirmation step before submitting a declaration. Shows a password prompt
- * to re-verify the user's identity.
+ * Confirmation step before submitting a declaration.
  *
  * Renders as a bottom-sheet Drawer on mobile and a centered Modal on desktop.
  */
 export default function ConfirmDeclarationModal({
   opened,
   isMobile,
-  password,
-  passwordError,
   submitting,
   onClose,
-  onPasswordChange,
   onConfirm,
 }: ConfirmDeclarationModalProps) {
   const { t } = useI18n();
-
-  const handleClose = () => {
-    onClose();
-    onPasswordChange("");
-  };
 
   const body = (
     <Stack align="center" gap="sm">
@@ -57,17 +45,8 @@ export default function ConfirmDeclarationModal({
           {t("declarer_cost_warning")}
         </Text>
       </Paper>
-      <PasswordInput
-        w="100%"
-        label={t("declarer_placeholder_password")}
-        value={password}
-        onChange={(e) => onPasswordChange(e.currentTarget.value)}
-        onKeyDown={(e) => e.key === "Enter" && password && !submitting && onConfirm()}
-        error={passwordError ? t("declarer_wrong_password") : undefined}
-        leftSection={<i className="fa-solid fa-lock" />}
-      />
       <Group w="100%" gap="sm" grow>
-        <Button variant="default" onClick={handleClose}>
+        <Button variant="default" onClick={onClose}>
           {t("declarer_cancel")}
         </Button>
         <Button
@@ -86,7 +65,7 @@ export default function ConfirmDeclarationModal({
     return (
       <Drawer
         opened={opened}
-        onClose={handleClose}
+        onClose={onClose}
         position="bottom"
         size="auto"
         withCloseButton={false}
@@ -103,7 +82,7 @@ export default function ConfirmDeclarationModal({
   return (
     <Modal
       opened={opened}
-      onClose={handleClose}
+      onClose={onClose}
       centered
       radius="lg"
       size="md"

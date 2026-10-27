@@ -15,8 +15,30 @@ import { v4 as uuidv4 } from "uuid";
 import { nokashService } from "./nokash.service.ts";
 import { startNokashPaymentPolling, activateRecovery } from "../controllers/payment.controller.ts";
 import { encodeMediaFields } from "../utils/media.utils.ts";
+import { HttpError } from "../utils/http-error.ts";
 import { numOr, resolveFinderRewardBasis } from "../utils/recovery.utils.ts";
+import { cacheTtl, getOrSet } from "../cache/cache.ts";
+import {
+  buildPublicSearchCacheKey,
+  normalizePublicSearchQuery,
+  normalizeStatsPeriod,
+} from "../cache/keys.ts";
 
+
+/**
+ * A loss/discovery date cannot be in the future. "Today" stays allowed
+ * (end of day), the past is untouched.
+ */
+function assertNotFutureDate(value: unknown): void {
+  if (value === null || value === undefined || value === '') return;
+  const date = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(date.getTime())) return;
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+  if (date.getTime() > endOfToday.getTime()) {
+    throw new HttpError(400, 'La date de perte ou de découverte ne peut pas être dans le futur.');
+  }
+}
 
 export class DeclarationService {
   private declarationRepository: DeclarationRepository;
@@ -46,7 +68,19 @@ export class DeclarationService {
   data: Partial<DocumentDeclaration>,
   options: { bypassLimits?: boolean } = {}
 ): Promise<DocumentDeclaration> {
-  
+  if (data.reporter_id && data.client_request_id) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.client_request_id)) {
+      throw new HttpError(400, 'Clé de requête invalide.');
+    }
+    const existing = await this.declarationRepository.findByClientRequestId(
+      data.reporter_id,
+      data.client_request_id,
+    );
+    if (existing) return existing;
+  }
+
+  assertNotFutureDate(data.date_perte);
+
   console.log('📝 [DeclarationService.createDeclaration] === DÉBUT ===');
   console.log('📝 [DeclarationService.createDeclaration] Données reçues:', JSON.stringify({
     doc_type: data.doc_type,
@@ -98,14 +132,14 @@ export class DeclarationService {
 
     if (!docType) {
       console.error(`🔴 [2] Type de document invalide: ${data.doc_type}`);
-      throw new Error(`Type de document invalide: ${data.doc_type}`);
+      throw new HttpError(400, `Type de document invalide: ${data.doc_type}`);
     }
 
     console.log(`🟢 [2] Type trouvé: ${docType.nom} (ID: ${docType.id})`);
     data.doc_type = docType.id;
   } else {
     console.log('🔴 [2] Pas de doc_type fourni');
-    throw new Error('doc_type est requis');
+    throw new HttpError(400, 'doc_type est requis');
   }
 
   // 2.5 Check Subscription Limits
@@ -122,7 +156,7 @@ export class DeclarationService {
 
       if (!(validation as any).allowed) {
         console.error(`🔴 [3] Action non autorisée: ${(validation as any).reason}`);
-        throw new Error((validation as any).reason);
+        throw new HttpError(403, (validation as any).reason);
       }
 
       if ((validation as any).useBenefit && (validation as any).subscriptionId) {
@@ -153,7 +187,8 @@ export class DeclarationService {
     );
     if (existing) {
       console.error(`🔴 [4] Doublon trouvé: ${existing.id}`);
-      throw new Error(
+      throw new HttpError(
+        409,
         `Une déclaration de type ${data.declaration_type === "LOST" ? "PERTE" : "TROUVAILLE"} existe déjà pour ce numéro.`,
       );
     }
@@ -175,6 +210,11 @@ export class DeclarationService {
   console.log('🔵 [6] Sauvegarde en base de données...');
   try {
     const declaration = await this.declarationRepository.create(data);
+    const wasCreated = (declaration as DocumentDeclaration & { __was_created?: boolean }).__was_created !== false;
+    delete (declaration as DocumentDeclaration & { __was_created?: boolean }).__was_created;
+    // A simultaneous retry can race the initial lookup; the unique index makes this
+    // upsert return the first declaration and prevents repeating notifications/rewards.
+    if (!wasCreated) return declaration;
     console.log(`🟢 [6] Déclaration créée avec ID: ${declaration.id}`);
     
     // 6. Notify user (only for user reporters; partners have their own portal)
@@ -566,6 +606,8 @@ export class DeclarationService {
     userId: string,
     data: Partial<DocumentDeclaration>,
   ): Promise<DocumentDeclaration | null> {
+    assertNotFutureDate(data.date_perte);
+
     const declaration = await this.declarationRepository.update(
       id,
       userId,
@@ -592,55 +634,107 @@ export class DeclarationService {
   }
 
   async getGlobalStats() {
-    return await this.declarationRepository.getGlobalStats();
+    return getOrSet(
+      "pub:stats:global",
+      cacheTtl.stats,
+      () => this.declarationRepository.getGlobalStats(),
+    );
   }
 
-  async getPerformanceStats(period: string) {
-    return await this.declarationRepository.getPerformanceStats(period);
+  async getPerformanceStats(period?: string) {
+    const normalizedPeriod = normalizeStatsPeriod(period);
+    return getOrSet(
+      `pub:stats:performance:${normalizedPeriod}`,
+      cacheTtl.statsPeriod,
+      () => this.declarationRepository.getPerformanceStats(normalizedPeriod),
+    );
   }
 
-  async getStatsByType(period: string) {
-    return await this.declarationRepository.getStatsByType(period);
+  async getStatsByType(period?: string) {
+    const normalizedPeriod = normalizeStatsPeriod(period);
+    return getOrSet(
+      `pub:stats:by-type:${normalizedPeriod}`,
+      cacheTtl.statsPeriod,
+      () => this.declarationRepository.getStatsByType(normalizedPeriod),
+    );
   }
 
   /**
    * Search for FOUND documents with public data masking
    */
-  async searchPublicFound(query: string) {
-    let results = [];
+  async searchPublicFound(query: string, docTypeKey = "") {
+    const normalizedQuery = normalizePublicSearchQuery(query);
+    const normalizedType = (docTypeKey || "").trim();
+    const cacheKey = await buildPublicSearchCacheKey(normalizedQuery, normalizedType);
 
-    if (!query || query.trim() === '') {
-      // No query provided: return all AVAILABLE found declarations
-      const all = await this.declarationRepository.findAllAvailable();
-      results = all.filter((d) => d.declaration_type === 'FOUND');
-    } else {
-      results = await this.declarationRepository.searchPublicFound(query);
-    }
-
-    return Promise.all(
-      results.map(async (doc) => {
-        const media = await encodeMediaFields({ photo_recto: doc.photo_recto });
-        return {
-          id: doc.id,
-          identifiant_doc_dm: doc.identifiant_doc_dm,
-          doc_type: doc.doc_type,
-          owner_name: this.maskName(doc.owner_name),
-          date_trouvaille: doc.date_perte,
-          date_perte: doc.date_perte,
-          created_at: doc.created_at,
-          ville: doc.ville,
-          region: doc.region,
-          pays: doc.pays,
-          found_location: doc.found_location,
-          status: doc.status,
-          declaration_type: doc.declaration_type,
-          photo_recto: media.photo_recto || null,
-          photo_verso: null,
-          has_photo: Boolean(media.photo_recto),
-          reporter_id: "HIDDEN",
-        };
-      }),
+    return getOrSet(cacheKey, cacheTtl.search, () =>
+      this.loadPublicFound(normalizedQuery, normalizedType),
     );
+  }
+
+  private async loadPublicFound(query: string, docTypeKey = "") {
+    const results = query
+      ? await this.declarationRepository.searchPublicFound(query, docTypeKey)
+      : await this.declarationRepository.findPublicFound(undefined, docTypeKey);
+
+    return Promise.all(results.map((doc) => this.mapPublicFound(doc)));
+  }
+
+  /**
+   * Derniers documents trouvés publics d'un type, tous statuts sauf CANCELLED.
+   * La page détail d'un type affiche aussi les documents appariés ou retournés
+   * (les compteurs publics les incluent déjà) : `search-public` ne couvrant que
+   * les AVAILABLE, une section « récents » limitée à cet endpoint reste vide.
+   */
+  async publicRecentByType(type: string, limit = 8) {
+    const normalized = (type || "").trim();
+    if (!normalized) return [];
+    const safeLimit =
+      Number.isFinite(limit) && limit > 0 ? Math.min(Math.floor(limit), 20) : 8;
+    return getOrSet(
+      `pub:recent:type:${normalized.toLowerCase()}:${safeLimit}`,
+      cacheTtl.search,
+      async () => {
+        const results = await this.declarationRepository.findPublicFoundByDocType(
+          normalized,
+          safeLimit,
+        );
+        return Promise.all(results.map((doc) => this.mapPublicFound(doc)));
+      },
+    );
+  }
+
+  /** Masquage commun aux écrans publics : nom partiel, photo encodée, contact invisible. */
+  private async mapPublicFound(doc: any) {
+    const media = await encodeMediaFields({ photo_recto: doc.photo_recto });
+    const docTypeInfo =
+      doc.docTypeInfo && typeof doc.docTypeInfo === "object"
+        ? {
+            nom: typeof doc.docTypeInfo.nom === "string" ? doc.docTypeInfo.nom : null,
+            code: typeof doc.docTypeInfo.code === "string" ? doc.docTypeInfo.code : null,
+          }
+        : null;
+    return {
+      id: doc.id,
+      identifiant_doc_dm: doc.identifiant_doc_dm,
+      doc_type: doc.doc_type,
+      doc_type_id: doc.doc_type_id ?? null,
+      docTypeInfo,
+      owner_name: this.maskName(doc.owner_name),
+      date_trouvaille: doc.date_perte,
+      date_perte: doc.date_perte,
+      created_at: doc.created_at,
+      ville: doc.ville,
+      region: doc.region,
+      pays: doc.pays,
+      found_location: doc.found_location,
+      status: doc.status,
+      declaration_type: doc.declaration_type,
+      photo_recto: media.photo_recto || null,
+      photo_verso: null,
+      has_photo: Boolean(media.photo_recto),
+      reporter_id: "HIDDEN",
+    };
   }
 
   private maskDeclarationForPublic(decl: any) {
@@ -700,7 +794,7 @@ export class DeclarationService {
     const declaration = pair.lostDecl;
 
     if (declaration.payment_status === 'PAID') {
-      throw new Error('Les frais de récupération ont déjà été payés pour ce document.');
+      throw new HttpError(409, 'Les frais de récupération ont déjà été payés pour ce document.');
     }
 
     // 2. Resolve Document Type for real price
@@ -758,11 +852,11 @@ export class DeclarationService {
    */
   async deleteDeclaration(declarationId: string, userId: string): Promise<{ success: boolean; message: string }> {
     const declaration = await this.declarationRepository.findById(declarationId);
-    if (!declaration) throw new Error("Déclaration introuvable");
-    if (declaration.reporter_id !== userId) throw new Error("Action non autorisée");
+    if (!declaration) throw new HttpError(404, "Déclaration introuvable");
+    if (declaration.reporter_id !== userId) throw new HttpError(403, "Action non autorisée");
 
     const deleted = await this.declarationRepository.hardDelete(declarationId, userId);
-    if (!deleted) throw new Error("Déclaration introuvable");
+    if (!deleted) throw new HttpError(404, "Déclaration introuvable");
 
     return { success: true, message: 'Déclaration supprimée définitivement' };
   }

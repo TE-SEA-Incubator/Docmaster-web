@@ -11,6 +11,9 @@ interface DatePickerProps {
   icon?: string;
   disabled?: boolean;
   label?: ReactNode;
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  /** Borne haute en YYYY-MM-DD : au-delà, la date n'est ni selectable ni saisissable. */
+  maxDate?: string;
 }
 
 function toDate(v: string): Date | null {
@@ -29,7 +32,7 @@ function toDateStr(d: Date | string | null): string {
   return `${y}-${m}-${day}`;
 }
 
-export default function DatePicker({ value, onChange, className, placeholder, icon, disabled, label }: DatePickerProps) {
+export default function DatePicker({ value, onChange, className, placeholder, icon, disabled, label, size, maxDate }: DatePickerProps) {
   const date = toDate(value);
 
   const handleChange = (d: Date | string | null) => onChange(toDateStr(d));
@@ -37,24 +40,23 @@ export default function DatePicker({ value, onChange, className, placeholder, ic
   return (
     <div>
       {label && <Text fw={500} size="sm" mb={4}>{label}</Text>}
-      <div className="relative">
-        {icon && (
-          <i className={`${icon} absolute left-[13px] top-0 bottom-0 flex items-center text-textMuted text-[13px] pointer-events-none z-10`} />
-        )}
-        <DateInput
-          value={date}
-          onChange={handleChange}
-          placeholder={placeholder || "Sélectionner une date"}
-          locale="fr"
-          valueFormat="DD/MM/YYYY"
-          clearable
-          disabled={disabled}
-          className={className}
-          classNames={{
-            input: `bg-bgMain border-borda text-textMain text-[14px] rounded-xl focus:border-primary ${icon ? "pl-[38px]" : ""}`,
-          }}
-        />
-      </div>
+      <DateInput
+        value={date}
+        onChange={handleChange}
+        placeholder={placeholder || "Sélectionner une date"}
+        locale="fr"
+        valueFormat="DD/MM/YYYY"
+        maxDate={toDate(maxDate || "") || undefined}
+        clearable
+        disabled={disabled}
+        size={size}
+        leftSection={icon ? <i className={`${icon} text-textMuted text-[13px]`} /> : undefined}
+        leftSectionPointerEvents="none"
+        className={className}
+        classNames={{
+          input: "bg-bgMain border-borda text-textMain text-[14px] rounded-xl focus:border-primary",
+        }}
+      />
     </div>
   );
 }

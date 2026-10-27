@@ -58,6 +58,7 @@ export interface DocumentDeclaration {
     declaration_type: DeclarationType;
     status: DocumentStatus;
     reporter_id: string;
+    client_request_id?: string | null;
     reporter_type?: 'USER' | 'PARTENAIRE';
     ville: string;
     region: string;

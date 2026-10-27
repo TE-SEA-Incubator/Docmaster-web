@@ -8,12 +8,11 @@ import Stepper from "./Stepper";
 import api from "../../services/api";
 import orangeMoneyLogo from "../../assets/images/orange-money.svg";
 import mtnMomoLogo from "../../assets/images/mtn-momo.svg";
-import moovMoneyLogo from "../../assets/images/moov-money.svg";
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPay: (method: "orange" | "mtn" | "moov" | "points", phone: string) => Promise<void>;
+  onPay: (method: "orange" | "mtn" | "points", phone: string) => Promise<void>;
   amount: number;
   title?: string;
   description?: string;
@@ -32,7 +31,6 @@ const STEPPER_STEPS = [
 const METHOD_LABELS: Record<string, string> = {
   orange: "Orange Money",
   mtn: "MTN Mobile Money",
-  moov: "Moov Money",
   points: "Points DocMaster",
 };
 
@@ -54,7 +52,7 @@ export default function PaymentModal({
 
   // Step state
   const [step, setStep] = useState<1 | 2>(1);
-  const [selectedMethod, setSelectedMethod] = useState<"orange" | "mtn" | "moov" | "points" | "">("");
+  const [selectedMethod, setSelectedMethod] = useState<"orange" | "mtn" | "points" | "">("");
 
   // Step 2 state
   const [payPhone, setPayPhone] = useState("");
@@ -102,7 +100,6 @@ export default function PaymentModal({
   const savedForMethod = savedMethods.filter((m) => {
     if (selectedMethod === "mtn") return m.method_type === "MTN";
     if (selectedMethod === "orange") return m.method_type === "ORANGE";
-    if (selectedMethod === "moov") return (m.method_type as string) === "MOOV";
     return false;
   });
 
@@ -136,7 +133,7 @@ export default function PaymentModal({
 
     if (!phone.trim()) return;
 
-    const operator = selectedMethod === "mtn" ? "MTN" : selectedMethod === "moov" ? "MOOV" : "ORANGE";
+    const operator = selectedMethod === "mtn" ? "MTN" : "ORANGE";
     const vErr = validatePhone(phone.trim(), operator);
     if (vErr) {
       setPhoneErr(vErr);
@@ -219,25 +216,6 @@ export default function PaymentModal({
             </div>
           </div>
 
-          {/* Moov Money */}
-          <div
-            className={cardBase}
-            style={selectedMethod === "moov" ? cardSelected : cardUnselected}
-            onClick={() => setSelectedMethod("moov")}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[10px] flex-shrink-0 overflow-hidden">
-                <img src={moovMoneyLogo} alt="Moov Money" className="w-full h-full object-contain" />
-              </div>
-              <div className="flex-1">
-                <p className="text-[13px] font-bold text-textMain">Moov Money</p>
-                <p className="text-[11px] text-textMuted">Paiement via Moov Africa</p>
-              </div>
-              {selectedMethod === "moov" && (
-                <i className="fa-solid fa-circle-check text-green-dark text-sm flex-shrink-0" />
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Autres */}
@@ -327,7 +305,6 @@ export default function PaymentModal({
           <div className="w-8 h-8 rounded-[8px] overflow-hidden flex-shrink-0">
             {selectedMethod === "orange" && <img src={orangeMoneyLogo} alt="Orange Money" className="w-full h-full object-contain" />}
             {selectedMethod === "mtn" && <img src={mtnMomoLogo} alt="MTN Mobile Money" className="w-full h-full object-contain" />}
-            {selectedMethod === "moov" && <img src={moovMoneyLogo} alt="Moov Money" className="w-full h-full object-contain" />}
             {selectedMethod === "points" && (
               <div className="w-full h-full border border-borderMain rounded-[8px] flex items-center justify-center">
                 <i className="fa-solid fa-star text-xs" style={{ color: "#F5A64B" }} />
@@ -419,9 +396,6 @@ export default function PaymentModal({
             )}
             {selectedMethod === "orange" && !useSaved && (
               <p className="text-[10px] text-textMuted mt-1">{t("payment_phone_orange_hint")}</p>
-            )}
-            {selectedMethod === "moov" && !useSaved && (
-              <p className="text-[10px] text-textMuted mt-1">Numéros Moov commençant par 66</p>
             )}
           </div>
         )}

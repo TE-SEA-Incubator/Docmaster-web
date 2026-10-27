@@ -20,6 +20,8 @@ export interface ActionSuccessModalProps {
     onClick: () => void;
     icon?: string;
     color?: string;
+    loading?: boolean;
+    loadingLabel?: string;
   };
   secondaryAction?: {
     label: string;
@@ -102,10 +104,13 @@ export default function ActionSuccessModal({
       <div className="space-y-2.5 pt-2">
         <button
           onClick={primaryAction.onClick}
-          className="w-full py-3.5 px-6 rounded-2xl bg-[#2D5A42] text-white font-bricolage font-bold text-sm hover:bg-[#152E22] transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/20 active:scale-[0.98]"
+          disabled={primaryAction.loading}
+          className="w-full py-3.5 px-6 rounded-2xl bg-[#2D5A42] text-white font-bricolage font-bold text-sm hover:bg-[#152E22] transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/20 active:scale-[0.98] disabled:opacity-60"
         >
-          {primaryAction.icon && <i className={`fa-solid ${primaryAction.icon}`} />}
-          {primaryAction.label}
+          <i className={`fa-solid ${primaryAction.loading ? "fa-spinner fa-spin" : primaryAction.icon || ""}`} />
+          {primaryAction.loading && primaryAction.loadingLabel
+            ? primaryAction.loadingLabel
+            : primaryAction.label}
         </button>
 
         {secondaryAction && (

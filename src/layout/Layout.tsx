@@ -58,7 +58,10 @@ function LayoutInner() {
   const showFooter = isPublicHome || path === "/rechercher" || path === "/conditions" || path === "/confidentialite";
 
   return (
-    <div className="min-h-screen bg-bgMain">
+    <div
+      className="min-h-screen bg-bgMain"
+      style={{ "--promo-offset": promoBarVisible ? "44px" : "0px" } as any}
+    >
       <TopProgressBar />
 
       {isAuthPage && user ? (

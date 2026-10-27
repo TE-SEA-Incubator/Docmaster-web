@@ -125,7 +125,12 @@ apiClient.interceptors.response.use(
     } else if (!error.response) {
       emitToast({ type: "error", message: "Erreur réseau. Vérifiez votre connexion internet." });
     } else if (error.response.status >= 500) {
-      emitToast({ type: "error", message: "Le serveur est temporairement indisponible. Veuillez réessayer." });
+      const payload = error.response.data as { message?: string; error?: string } | undefined;
+      const serverMessage = payload?.message || payload?.error;
+      emitToast({
+        type: "error",
+        message: serverMessage || "Le serveur est temporairement indisponible. Veuillez réessayer.",
+      });
     }
     return Promise.reject(error);
   }

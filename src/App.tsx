@@ -18,6 +18,7 @@ const Inscription = lazy(() => import("./pages/auth/Inscription"));
 const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 const RechercherPublic = lazy(() => import("./pages/public/Rechercher"));
+const DocTypeDetail = lazy(() => import("./pages/public/DocTypeDetail"));
 const RechercherAuth = lazy(() => import("./pages/auth/Rechercher"));
 const Declarer = lazy(() => import("./pages/auth/Declarer"));
 const Recuperer = lazy(() => import("./pages/auth/Recuperer"));
@@ -74,6 +75,7 @@ const PartenaireDashboard = lazy(() => import("./pages/partenaires/Dashboard"));
 const PartenaireDeclarations = lazy(() => import("./pages/partenaires/Declarations"));
 const PartenaireDeclarerTrouvaille = lazy(() => import("./pages/partenaires/DeclarerTrouvaille"));
 const PartenairePortefeuille = lazy(() => import("./pages/partenaires/Portefeuille"));
+const PartenaireMesGains = lazy(() => import("./pages/partenaires/MesGains"));
 const PartenaireRetraits = lazy(() => import("./pages/partenaires/Retraits"));
 const PartenaireProfil = lazy(() => import("./pages/partenaires/Profil"));
 const PartenaireMessagerie = lazy(() => import("./pages/partenaires/Messagerie"));
@@ -100,6 +102,7 @@ export default function App() {
           <Route path="/reset-password" element={<LazyPage Component={ResetPassword} />} />
           <Route path="/rechercher" element={<ProtectedRoute><LazyPage Component={RechercherAuth} /></ProtectedRoute>} />
           <Route path="/recherche-publique" element={<LazyPage Component={RechercherPublic} />} />
+          <Route path="/recherche-publique/type/:code" element={<LazyPage Component={DocTypeDetail} />} />
           <Route path="/declarer" element={<ProtectedRoute><LazyPage Component={Declarer} /></ProtectedRoute>} />
           <Route path="/recuperer" element={<ProtectedRoute><LazyPage Component={Recuperer} /></ProtectedRoute>} />
           <Route path="/trouver" element={<LazyPage Component={Trouver} />} />
@@ -194,6 +197,7 @@ export default function App() {
             <Route path="declarer" element={<LazyPage Component={PartenaireDeclarerTrouvaille} />} />
             <Route path="rendre" element={<LazyPage Component={PartenaireRendre} />} />
             <Route path="portefeuille" element={<LazyPage Component={PartenairePortefeuille} />} />
+            <Route path="mes-gains" element={<LazyPage Component={PartenaireMesGains} />} />
             <Route path="retraits" element={<LazyPage Component={PartenaireRetraits} />} />
             <Route path="messagerie" element={<LazyPage Component={PartenaireMessagerie} />} />
             <Route path="profil" element={<LazyPage Component={PartenaireProfil} />} />

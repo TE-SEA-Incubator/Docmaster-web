@@ -3,16 +3,16 @@ import type { ClipboardEvent as ReactClipboardEvent, KeyboardEvent as ReactKeybo
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Badge, Button } from "@mantine/core";
 import { useTopbar } from "../../hooks/useTopbar";
+import { useTimingConfig } from "../../hooks/useTimingConfig";
 import { declarationsService } from "../../services/declarationsService";
 import type { Declaration } from "../../types/api";
 import { useI18n } from "../../context/I18nContext";
 import { ProtectedDocumentImage } from "../../components/ui/ProtectedDocumentImage";
 import { FlowCard, FlowFact, FlowNotice, FlowStepper } from "../../components/recuperation/FlowUI";
 
-const POLL_INTERVAL = 5000;
-
 export default function Rendre() {
   const { t, lang } = useI18n();
+  const timing = useTimingConfig();
   useTopbar(t("rendre_title"), [
     { label: t("sidebar_dashboard"), href: "/dashboard" },
     { label: t("rendre_title") },
@@ -89,9 +89,9 @@ export default function Rendre() {
           }
         }
       } catch { /* le prochain cycle réessaie */ }
-    }, POLL_INTERVAL);
+    }, timing.paymentPollIntervalMs);
     return () => clearInterval(interval);
-  }, [ownerPaid, docId]);
+  }, [ownerPaid, docId, timing.paymentPollIntervalMs]);
 
   // ── Helpers ──────────────────────────────────────────────────────────
   const getDocType = () => (doc as any)?.docTypeInfo?.nom || (doc as any)?.doc_type || doc?.document_type || t("recuperer_type_found");

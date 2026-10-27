@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { HttpError } from './http-error.ts';
 
 // Ensure uploads directories exist
 const dirs = ['uploads/documents', 'uploads/profiles'];
@@ -35,7 +36,7 @@ const fileFilter = (req: any, file: any, cb: any) => {
   if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
     cb(null, true);
   } else {
-    cb(new Error('Format de fichier non supporté. Veuillez envoyer une image ou un PDF.'), false);
+    cb(new HttpError(400, 'Format de fichier non supporté. Veuillez envoyer une image ou un PDF.'), false);
   }
 };
 

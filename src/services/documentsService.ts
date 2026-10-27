@@ -38,8 +38,12 @@ export const documentsService = {
     return res.data;
   },
 
-  async update(id: string, data: FormData) {
-    const res = await apiClient.put<ApiResponse<Document>>(`documents/${id}`, data);
+  async update(id: string, data: FormData, onProgress?: (percent: number) => void) {
+    const res = await apiClient.put<ApiResponse<Document>>(`documents/${id}`, data, {
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100));
+      },
+    });
     return res.data;
   },
 

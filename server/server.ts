@@ -10,11 +10,14 @@ import { createApp } from './index.js';
 import { initCronJobs } from './src/utils/cron.utils.ts';
 import { matchingService } from './src/services/matching.service.ts';
 import { SocketService } from './src/services/socket.service.ts';
+import { closeCache, initCache } from './src/cache/cache.ts';
 
 async function start() {
   // Get configuration from environment
   const PORT = process.env.PORT || 5000;
 
+  // Initialize Redis cache (falls back to memory when unavailable)
+  await initCache();
 
   // Create the app (all middlewares and routes are set up in index.ts)
   const app = createApp();
@@ -42,6 +45,15 @@ async function start() {
       matchingService.runFullMatchingCycle();
     }, 30 * 1000);
   });
+
+  const shutdown = async () => {
+    await closeCache();
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 5_000).unref();
+  };
+
+  process.once('SIGINT', shutdown);
+  process.once('SIGTERM', shutdown);
 
   // Handle server errors
   server.on('error', (error: any) => {
