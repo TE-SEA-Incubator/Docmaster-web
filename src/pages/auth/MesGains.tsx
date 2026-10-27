@@ -13,8 +13,9 @@ import { useToast } from "../../context/ToastContext";
 import type { Transaction, EarningsRecord, Declaration } from "../../types/api";
 import {
   Paper, Title, Text, Group, Stack, SimpleGrid,
-  Progress, Badge, Loader, Modal,
+  Progress, Badge, Loader, Modal, Tabs, Pagination,
 } from "@mantine/core";
+import { Select } from "antd";
 import apiClient from "../../services/api";
 
 function fmtAmount(n: number) {
@@ -723,6 +724,26 @@ function TransactionsCard({ transactions, loading, fmtAmount, fmtDate, t }: any)
 /* ── Earnings History Card ── */
 
 function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }: any) {
+  // State for full history tab
+  const [pointsHistory, setPointsHistory] = useState<any[]>([]);
+  const [pointsHistoryLoading, setPointsHistoryLoading] = useState(false);
+  const [pointsHistoryFilter, setPointsHistoryFilter] = useState<string | undefined>(undefined);
+  const [pointsHistoryTotal, setPointsHistoryTotal] = useState(0);
+  const [pointsHistoryPage, setPointsHistoryPage] = useState(1);
+
+  async function fetchPointsHistory(type?: string, page = 1) {
+    setPointsHistoryLoading(true);
+    try {
+      const res = await authService.getEarningsHistory({ type, page, limit: 10 });
+      if (res.success && res.data) {
+        const raw = res.data as any;
+        setPointsHistory(Array.isArray(raw) ? raw : raw.data || []);
+        setPointsHistoryTotal(raw.total ?? raw.data?.length ?? 0);
+      }
+    } catch {}
+    finally { setPointsHistoryLoading(false); }
+  }
+
   return (
     <Paper className="border border-borda" style={{ borderRadius: 18, overflow: "hidden" }}>
       <Group px="lg" py="md" className="border-b border-borda" justify="space-between">
@@ -730,42 +751,132 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
           <i className="fa-solid fa-clock-rotate-left text-primary text-base" />
           <Title order={3} size={15}>{t("mesgains_earnings_history") || "Historique des gains"}</Title>
         </Group>
-        <Text size="xs" fw={500} c="dimmed">
-          {earningsHistory.length} {t("mesgains_entries") || "entrées"}
-        </Text>
       </Group>
 
-      {loading ? (
-        <Group justify="center" py="xl">
-          <Loader size="sm" color="gold" />
-        </Group>
-      ) : earningsHistory.length === 0 ? (
-        <Stack align="center" py="xl" gap="sm">
-          <i className="fa-solid fa-coins text-3xl opacity-20" />
-          <Text size="sm" c="dimmed">{t("mesgains_no_earnings") || "Aucun gain pour le moment"}</Text>
-        </Stack>
-      ) : (
-        <Stack gap={0} className="divide-y divide-borda">
-          {earningsHistory.map((entry: EarningsRecord) => {
-            const isPoints = entry.currency === "POINTS";
-            const meta = getEarningMeta(entry.type, t);
-            return (
-              <Group key={entry.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
-                <i className={`fa-solid ${meta.icon} ${meta.color} text-base flex-shrink-0`} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <Text size="sm" fw={600} truncate>{entry.description || meta.label}</Text>
-                  <Text size="xs" c="dimmed" mt={2}>{fmtDate(entry.created_at)}</Text>
-                </div>
-                <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
-                  <Text fw={800} className="font-bricolage" size="sm" c={isPoints ? "gold" : "green.6"}>
-                    +{fmtAmount(entry.amount)} {isPoints ? "pts" : "XAF"}
-                  </Text>
-                </Stack>
+      <Tabs defaultValue="recent" onChange={(key) => { if (key === 'history' && pointsHistory.length === 0) fetchPointsHistory(pointsHistoryFilter, 1); }}>
+        <Tabs.List style={{ paddingLeft: '1.25rem', paddingRight: '1.25rem', paddingTop: '0.5rem' }}>
+          <Tabs.Tab value="recent">
+            Gains récents
+          </Tabs.Tab>
+          <Tabs.Tab value="history">
+            Historique complet
+          </Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel value="recent">
+          {loading ? (
+            <Group justify="center" py="xl">
+              <Loader size="sm" color="gold" />
+            </Group>
+          ) : earningsHistory.length === 0 ? (
+            <Stack align="center" py="xl" gap="sm">
+              <i className="fa-solid fa-coins text-3xl opacity-20" />
+              <Text size="sm" c="dimmed">{t("mesgains_no_earnings") || "Aucun gain pour le moment"}</Text>
+            </Stack>
+          ) : (
+            <>
+              <Text size="xs" fw={500} c="dimmed" px="lg" pt="sm">
+                {earningsHistory.length} {t("mesgains_entries") || "entrées"}
+              </Text>
+              <Stack gap={0} className="divide-y divide-borda">
+                {earningsHistory.map((entry: EarningsRecord) => {
+                  const isPoints = entry.currency === "POINTS";
+                  const meta = getEarningMeta(entry.type, t);
+                  return (
+                    <Group key={entry.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
+                      <i className={`fa-solid ${meta.icon} ${meta.color} text-base flex-shrink-0`} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text size="sm" fw={600} truncate>{entry.description || meta.label}</Text>
+                        <Text size="xs" c="dimmed" mt={2}>{fmtDate(entry.created_at)}</Text>
+                      </div>
+                      <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
+                        <Text fw={800} className="font-bricolage" size="sm" c={isPoints ? "gold" : "green.6"}>
+                          +{fmtAmount(entry.amount)} {isPoints ? "pts" : "XAF"}
+                        </Text>
+                      </Stack>
+                    </Group>
+                  );
+                })}
+              </Stack>
+            </>
+          )}
+        </Tabs.Panel>
+
+        <Tabs.Panel value="history">
+          <div style={{ padding: '1rem 1.25rem 0.75rem' }}>
+            <Group justify="space-between" mb="md">
+              <Select
+                placeholder="Filtrer par type"
+                allowClear
+                style={{ width: 220 }}
+                value={pointsHistoryFilter}
+                onChange={(value) => {
+                  setPointsHistoryFilter(value);
+                  setPointsHistoryPage(1);
+                  fetchPointsHistory(value, 1);
+                }}
+                options={[
+                  { label: 'Déclarations', value: 'DECLARATION' },
+                  { label: 'Parrainages', value: 'REFERRAL' },
+                  { label: 'Matchs', value: 'MATCH' },
+                  { label: 'Bonus', value: 'BONUS' },
+                  { label: 'Conversions', value: 'CONVERSION' },
+                  { label: 'Retraits', value: 'WITHDRAWAL' },
+                  { label: 'Remboursements', value: 'WITHDRAWAL_REFUND' },
+                  { label: 'Ajustements', value: 'ADJUSTMENT' },
+                ]}
+              />
+              <Text size="xs" fw={500} c="dimmed">
+                {pointsHistoryTotal} transaction(s)
+              </Text>
+            </Group>
+          </div>
+
+          {pointsHistoryLoading ? (
+            <Group justify="center" py="xl">
+              <Loader size="sm" color="gold" />
+            </Group>
+          ) : pointsHistory.length === 0 ? (
+            <Stack align="center" py="xl" gap="sm">
+              <i className="fa-solid fa-coins text-3xl opacity-20" />
+              <Text size="sm" c="dimmed">{t("mesgains_no_earnings") || "Aucun gain pour le moment"}</Text>
+            </Stack>
+          ) : (
+            <>
+              <Stack gap={0} className="divide-y divide-borda">
+                {pointsHistory.map((entry: EarningsRecord) => {
+                  const isPoints = entry.currency === "POINTS";
+                  const meta = getEarningMeta(entry.type, t);
+                  return (
+                    <Group key={entry.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
+                      <i className={`fa-solid ${meta.icon} ${meta.color} text-base flex-shrink-0`} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text size="sm" fw={600} truncate>{entry.description || meta.label}</Text>
+                        <Text size="xs" c="dimmed" mt={2}>{fmtDate(entry.created_at)}</Text>
+                      </div>
+                      <Stack gap={4} align="flex-end" style={{ flexShrink: 0 }}>
+                        <Text fw={800} className="font-bricolage" size="sm" c={isPoints ? "gold" : "green.6"}>
+                          +{fmtAmount(entry.amount)} {isPoints ? "pts" : "XAF"}
+                        </Text>
+                      </Stack>
+                    </Group>
+                  );
+                })}
+              </Stack>
+              <Group justify="center" p="md">
+                <Pagination
+                  total={Math.ceil(pointsHistoryTotal / 10)}
+                  value={pointsHistoryPage}
+                  onChange={(p) => {
+                    setPointsHistoryPage(p);
+                    fetchPointsHistory(pointsHistoryFilter, p);
+                  }}
+                />
               </Group>
-            );
-          })}
-        </Stack>
-      )}
+            </>
+          )}
+        </Tabs.Panel>
+      </Tabs>
     </Paper>
   );
 }
