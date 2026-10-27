@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { usePartenaireAuth } from "../../context/PartenaireAuthContext";
+import { usePartenaire } from "../../context/PartenaireContext";
 import { useI18n } from "../../context/I18nContext";
 import { partenairesService, type PartenaireEarning } from "../../services/partenairesService";
 import {
@@ -52,7 +52,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function MesGains() {
   const { t } = useI18n();
-  const { partenaire, refreshProfile } = usePartenaireAuth();
+  const { partenaire, refresh } = usePartenaire();
   const toast = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -146,7 +146,7 @@ export default function MesGains() {
         toast.success(`${convertAmount} points convertis en ${convertedXaf} FCFA !`);
         setShowConvertModal(false);
         setConvertAmount(100);
-        await refreshProfile();
+        await refresh();
         await fetchData();
       }
     } catch (err: any) {
