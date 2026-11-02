@@ -38,7 +38,7 @@ function DetailRow({
   return (
     <div className="flex items-start justify-between gap-4 py-3">
       <dt className="flex items-center gap-2 shrink-0 text-[10px] font-bold uppercase tracking-wider text-textMuted">
-        <i className={`fa-solid ${icon} text-[11px]`} />
+        <i className={`${icon} text-[11px]`} />
         {label}
       </dt>
       <dd className="text-right text-[13px] font-semibold text-textMain break-words">{value}</dd>
@@ -105,7 +105,7 @@ export default function PublicDocumentDetailModal({
             aria-label={t("rechercher_close")}
             className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white border border-borderMain flex items-center justify-center text-textMain hover:bg-surface2 transition-colors"
           >
-            <i className="fa-solid fa-xmark" />
+            <i className="ph ph-x" />
           </button>
 
           {doc.score && doc.score > 0 ? (
@@ -137,31 +137,31 @@ export default function PublicDocumentDetailModal({
 
           <dl className="mt-5 border-y border-borderMain divide-y divide-borderMain">
             <DetailRow
-              icon="fa-calendar"
+              icon="ph ph-calendar"
               label={t("rechercher_date_label")}
               value={doc.dateRelative ? `${doc.dateText} · ${doc.dateRelative}` : doc.dateText}
             />
             <DetailRow
-              icon="fa-location-dot"
+              icon="ph ph-map-pin"
               label={t("rechercher_location_label")}
               value={`${doc.location}, ${doc.country}`}
             />
             {doc.reference && (
               <DetailRow
-                icon="fa-hashtag"
+                icon="ph ph-hash"
                 label={t("rechercher_reference")}
                 value={doc.reference}
               />
             )}
             <DetailRow
-              icon="fa-circle-check"
+              icon="ph ph-check-circle"
               label={t("rechercher_status_label")}
               value={doc.status}
             />
           </dl>
 
           <p className="mt-5 flex items-start gap-2 text-[11px] font-medium text-textMuted leading-relaxed">
-            <i className="fa-solid fa-shield-halved mt-0.5" />
+            <i className="ph ph-shield mt-0.5" />
             {t("rechercher_public_detail_hint")}
           </p>
 
@@ -181,7 +181,7 @@ export default function PublicDocumentDetailModal({
               radius="xl"
               size="md"
               fullWidth
-              leftSection={<i className="fa-solid fa-file-circle-plus text-xs" />}
+              leftSection={<i className="ph ph-file-plus text-xs" />}
               style={{ backgroundColor: "#2D5A42" }}
             >
               {t("rechercher_its_mine")}

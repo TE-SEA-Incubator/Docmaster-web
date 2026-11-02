@@ -25,11 +25,13 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [docId, amount, paymentMethod]
+ *             required: [docId, paymentMethod, matchId]
  *             properties:
  *               docId: { type: string, example: "uuid" }
+ *               matchId: { type: string, example: "uuid", description: "Correspondance confirmée par le propriétaire" }
  *               amount: { type: number, example: 5000 }
  *               paymentMethod: { type: string, example: "ORANGE_MONEY" }
+ *               phone: { type: string, example: "677000000" }
  *     responses:
  *       200:
  *         description: Paiement initié

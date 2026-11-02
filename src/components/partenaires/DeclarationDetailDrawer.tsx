@@ -118,14 +118,14 @@ export default function DeclarationDetailDrawer({
 
           {/* Details */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingTop: 4 }}>
-            <DetailRow icon="fa-regular fa-user" label={t("partenaire_detail_owner")} value={declaration.owner_name || t("partenaire_detail_owner_unknown")} />
+            <DetailRow icon="ph ph-user" label={t("partenaire_detail_owner")} value={declaration.owner_name || t("partenaire_detail_owner_unknown")} />
             <DetailRow
-              icon="fa-solid fa-hashtag"
+              icon="ph ph-hash"
               label={t("partenaire_detail_doc_number")}
               value={declaration.document_number || t("partenaire_detail_owner_unknown")}
             />
             <DetailRow
-              icon="fa-solid fa-location-dot"
+              icon="ph ph-map-pin"
               label={t("partenaire_detail_location")}
               value={[declaration.ville, declaration.quartier].filter(Boolean).join(", ") || t("partenaire_detail_owner_unknown")}
             />
@@ -167,7 +167,7 @@ export default function DeclarationDetailDrawer({
               type="primary"
               block
               size="large"
-              icon={<i className="fa-solid fa-hand-holding-dollar" />}
+              icon={<i className="ph ph-hand-coins" />}
               onClick={() => {
                 onClose();
                 navigate(`/partenaire/rendre?id=${declaration.id}`);
@@ -242,7 +242,7 @@ function ImageBox({ src, label }: { src: string | null; label: string }) {
         />
       ) : (
         <div style={{ textAlign: "center", color: partenairePalette.textMuted, opacity: 0.5 }}>
-          <i className="fa-solid fa-image" style={{ fontSize: 22, display: "block", marginBottom: 6 }} />
+          <i className="ph ph-image" style={{ fontSize: 22, display: "block", marginBottom: 6 }} />
           <span style={{ fontSize: 10 }}>{t("partenaire_detail_no_photo")}</span>
         </div>
       )}

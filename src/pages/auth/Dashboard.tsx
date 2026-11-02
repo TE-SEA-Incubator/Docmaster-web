@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Badge, Loader, Modal, Paper, SimpleGrid, Text, Group, Card, RingProgress, Title, Stack } from "@mantine/core";
+import { Button, Badge, Loader, Paper, SimpleGrid, Text, Group, Card, RingProgress, Title, Stack } from "@mantine/core";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody } from "../../components/ui/dialog";
 import { useAuth } from "../../context/AuthContext";
 import { useDocuments } from "../../hooks/useDocuments";
 import { useNotifications } from "../../hooks/useNotifications";
@@ -19,6 +20,7 @@ import { useTopbar } from "../../hooks/useTopbar";
 import PromoBanner from "../../components/ui/PromoBanner";
 import PromoPopup from "../../components/ui/PromoPopup";
 import PollingModal from "../../components/modals/PollingModal";
+import { activeRecoveryMatches, lostRecoveryTarget, type RecoveryMatchRef } from "../../utils/recoveryTargets";
 import type { Subscription, Declaration } from "../../types/api";
 
 const today = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
@@ -34,13 +36,13 @@ const typeLabels: Record<string, string> = { cni: "CNI", passport: "Passeport", 
 
 function getIconForType(type?: string) {
   const t = (type || "").toLowerCase();
-  if (t.includes("cni")) return "fa-id-card";
-  if (t.includes("pass")) return "fa-passport";
-  if (t.includes("permis")) return "fa-car";
-  if (t.includes("diplome")) return "fa-graduation-cap";
-  if (t.includes("acte")) return "fa-file-invoice";
-  if (t.includes("carte")) return "fa-credit-card";
-  return "fa-file-lines";
+  if (t.includes("cni")) return "ph ph-identification-card";
+  if (t.includes("pass")) return "ph ph-book-open";
+  if (t.includes("permis")) return "ph ph-car";
+  if (t.includes("diplome")) return "ph ph-graduation-cap";
+  if (t.includes("acte")) return "ph ph-invoice";
+  if (t.includes("carte")) return "ph ph-credit-card";
+  return "ph ph-file-text";
 }
 
 function statusText(status?: string) {
@@ -248,7 +250,7 @@ export default function Dashboard() {
           </div>
           <Group gap="xs">
             <Paper withBorder p="xs" radius="md" style={{ display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
-              <i className="fa-regular fa-calendar text-primary text-sm" />
+              <i className="ph ph-calendar text-primary text-sm" />
               <Text size="sm" c="dimmed">{today}</Text>
             </Paper>
           </Group>
@@ -271,7 +273,7 @@ export default function Dashboard() {
           <Paper withBorder p="md" radius="md">
             <Group justify="space-between">
               <Text size="xs" c="dimmed">{t("dashboard_badge_my_docs")}</Text>
-              <i className="fa-solid fa-file-circle-xmark text-amber-500 text-xl" />
+              <i className="ph ph-file-x text-amber-500 text-xl" />
             </Group>
             <Text fz={28} fw={800} mt="sm" className="font-bricolage">{lostCount}</Text>
             <Text size="xs" c="dimmed" mt={4}>{t("dashboard_label_declared_docs")}</Text>
@@ -279,7 +281,7 @@ export default function Dashboard() {
           <Paper withBorder p="md" radius="md" onClick={() => navigate("/mes-appareils")} style={{ cursor: "pointer" }}>
             <Group justify="space-between">
               <Badge size="sm" variant="light">{t("sidebar_devices")}</Badge>
-              <i className="fa-solid fa-mobile-screen-button text-blue-600 text-xl" />
+              <i className="ph ph-device-mobile text-blue-600 text-xl" />
             </Group>
             <Text fz={28} fw={800} mt="sm" className="font-bricolage">{devices.length}</Text>
             <Text size="xs" c="dimmed" mt={4}>{t("dashboard_label_devices")}</Text>
@@ -287,7 +289,7 @@ export default function Dashboard() {
           <Paper withBorder p="md" radius="md">
             <Group justify="space-between">
               <Text size="xs" c="dimmed">{t("dashboard_badge_platform")}</Text>
-              <i className="fa-solid fa-triangle-exclamation text-red-500 text-xl" />
+              <i className="ph ph-warning text-red-500 text-xl" />
             </Group>
             <Text fz={28} fw={800} mt="sm" className="font-bricolage">{globalStats?.total_lost ?? "—"}</Text>
             <Text size="xs" c="dimmed" mt={4}>{t("dashboard_label_global_lost")}</Text>
@@ -295,7 +297,7 @@ export default function Dashboard() {
           <Paper withBorder p="md" radius="md">
             <Group justify="space-between">
               <Text size="xs" c="dimmed">{t("dashboard_badge_platform")}</Text>
-              <i className="fa-solid fa-hand-holding-heart text-purple-600 text-xl" />
+              <i className="ph ph-hand-heart text-purple-600 text-xl" />
             </Group>
             <Text fz={28} fw={800} mt="sm" className="font-bricolage">{globalStats?.total_recovered ?? "—"}</Text>
             <Text size="xs" c="dimmed" mt={4}>{t("dashboard_label_global_recovered")}</Text>
@@ -311,7 +313,7 @@ export default function Dashboard() {
               {activeDecls.length === 0 ? (
                 <Paper withBorder p="xl" ta="center" style={{ borderStyle: "dashed" }}>
                   <div className="w-16 h-16 bg-surface2 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fa-solid fa-folder-open text-textMuted text-2xl" />
+                    <i className="ph ph-folder-open text-textMuted text-2xl" />
                   </div>
                   <Title order={3} className="font-bricolage">{t("dashboard_no_activity")}</Title>
                   <Text size="sm" c="dimmed" mt="xs">{t("dashboard_no_activity_desc")}</Text>
@@ -337,11 +339,11 @@ export default function Dashboard() {
             <Card withBorder radius="md" padding={0}>
               <Group justify="space-between" px="md" py="sm" style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}>
                 <Group gap="xs">
-                  <i className="fa-solid fa-clock-rotate-left text-primary text-sm" />
+                  <i className="ph ph-clock-counter-clockwise text-primary text-sm" />
                   <Text fw={700} className="font-bricolage">{t("dashboard_recent_activities")}</Text>
                 </Group>
                 <Text size="xs" fw={600} c="gold" style={{ cursor: "pointer" }}>
-                  {t("dashboard_see_all")} <i className="fa-solid fa-arrow-right text-[9px]" />
+                  {t("dashboard_see_all")} <i className="ph ph-arrow-right text-[9px]" />
                 </Text>
               </Group>
               <div>
@@ -351,14 +353,14 @@ export default function Dashboard() {
                   return (
                     <Group key={decl.id} gap="sm" px="md" py="sm" style={{ cursor: "pointer" }}>
                       <div className={`w-9 h-9 rounded-[10px] flex items-center justify-center text-sm flex-shrink-0`}>
-                        <i className={`fa-solid ${getIconForType(decl.doc_type)} ${isLost ? "text-primary-dark" : "text-blue-500"}`} />
+                        <i className={`${getIconForType(decl.doc_type)} ${isLost ? "text-primary-dark" : "text-blue-500"}`} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <Text size="sm" fw={600} truncate>
                           {decl.docTypeInfo?.nom || decl.doc_type || t("dashboard_document")} {isLost ? t("dashboard_lost") : t("dashboard_found")}
                         </Text>
                         <Text size="xs" c="dimmed" fs="italic">
-                          <i className="fa-solid fa-location-dot" style={{ fontSize: 9 }} /> {decl.ville || t("dashboard_not_specified")} · <i className="fa-regular fa-clock" style={{ fontSize: 9 }} /> {dateStr}
+                          <i className="ph ph-map-pin" style={{ fontSize: 9 }} /> {decl.ville || t("dashboard_not_specified")} · <i className="ph ph-clock" style={{ fontSize: 9 }} /> {dateStr}
                         </Text>
                       </div>
                       <Badge color={decl.status === "MATCHED" ? "green" : decl.status === "RETURNED" ? "gray" : decl.declaration_type === "LOST" ? "orange" : "blue"} size="sm" variant="light">
@@ -393,7 +395,7 @@ export default function Dashboard() {
                     </Button>
                   ))}
                   <Text size="xs" fw={700} c="gold" style={{ cursor: "pointer" }} onClick={() => setCatalogOpen(true)}>
-                    {t("dashboard_full_catalog")} <i className="fa-solid fa-chevron-right" style={{ fontSize: 9 }} />
+                    {t("dashboard_full_catalog")} <i className="ph ph-caret-right" style={{ fontSize: 9 }} />
                   </Text>
                 </Group>
               </Group>
@@ -418,7 +420,7 @@ export default function Dashboard() {
             {/* Donut */}
             <Card withBorder radius="md" padding={0}>
               <Group px="md" py="sm" style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }} gap="xs">
-                <i className="fa-solid fa-chart-pie text-primary text-sm" />
+                <i className="ph ph-chart-pie text-primary text-sm" />
                 <Text fw={700} className="font-bricolage">{t("dashboard_doc_stats")}</Text>
               </Group>
               <Stack align="center" p="md" gap="md">
@@ -449,10 +451,10 @@ export default function Dashboard() {
             <Card withBorder radius="md" padding={0}>
               <Group justify="space-between" px="md" py="sm" style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}>
                 <Group gap="xs">
-                  <i className="fa-solid fa-bell text-primary text-sm" />
+                  <i className="ph ph-bell text-primary text-sm" />
                   <Text fw={700} className="font-bricolage">{t("dashboard_notifications")}</Text>
                 </Group>
-                <Button onClick={() => (window as any).__openNotifModal?.()} variant="subtle" color="gold" size="compact-sm" rightSection={<i className="fa-solid fa-arrow-right text-[9px]" />}>
+                <Button onClick={() => (window as any).__openNotifModal?.()} variant="subtle" color="gold" size="compact-sm" rightSection={<i className="ph ph-arrow-right text-[9px]" />}>
                   {t("dashboard_see_all")}
                 </Button>
               </Group>
@@ -460,7 +462,7 @@ export default function Dashboard() {
                 {notifs.length > 0 ? notifs.slice(0, 2).map((n, i) => (
                   <Group key={n.id || i} gap="sm" px="md" py="sm" style={{ borderBottom: i < Math.min(notifs.length, 2) - 1 ? "1px solid var(--mantine-color-default-border)" : "none" }}>
                     {!n.is_read && !n.lue && <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", width: 6, height: 6, borderRadius: "50%", background: "#E8923A" }} />}
-                    <div className="w-9 h-9 rounded-[9px] flex items-center justify-center text-sm flex-shrink-0"><i className={`fa-solid ${n.icon || "fa-bell"} text-green-dark`} /></div>
+                    <div className="w-9 h-9 rounded-[9px] flex items-center justify-center text-sm flex-shrink-0"><i className={`${n.icon || "ph ph-bell"} text-green-dark`} /></div>
                     <div style={{ flex: 1 }}>
                       <Text size="sm" fs="italic"><strong>{n.titre || ""}</strong> {n.message}</Text>
                       <Text size="xs" c="dimmed" fs="italic" mt={2}>{timeAgo(n.created_at, t)}</Text>
@@ -476,7 +478,7 @@ export default function Dashboard() {
             <Card withBorder radius="md" p="lg" style={{ background: "#2D5A42", borderColor: "#2A4A3A", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(217,138,48,0.06)", bottom: -48, right: -40, pointerEvents: "none" }} />
               <Group gap="xs" style={{ background: "rgba(217,138,48,0.15)", border: "1px solid rgba(217,138,48,0.25)", borderRadius: 999, padding: "4px 10px", display: "inline-flex", marginBottom: 12 }}>
-                <i className="fa-solid fa-star text-primary" style={{ fontSize: 9 }} />
+                <i className="ph ph-star text-primary" style={{ fontSize: 9 }} />
                 <Text size="xs" fw={700} c="gold" tt="uppercase" style={{ letterSpacing: "0.05em" }}>{t("dashboard_current_plan")}</Text>
               </Group>
               <Text fz={18} fw={800} c="white" mb={4} className="font-bricolage">{planName}</Text>
@@ -503,14 +505,14 @@ export default function Dashboard() {
               )}
               <Stack gap="xs" mb="md" style={{ position: "relative", zIndex: 10 }}>
                 {smsUpsell.show ? (
-                  <FeatureRow icon="fa-solid fa-xmark" text={t("dashboard_feature_sms_locked", { plan: smsUpsell.planName })} muted />
+                  <FeatureRow icon="ph ph-x" text={t("dashboard_feature_sms_locked", { plan: smsUpsell.planName })} muted />
                 ) : (
-                  <FeatureRow icon="fa-solid fa-check" text={t("dashboard_feature_sms")} color="text-primary" />
+                  <FeatureRow icon="ph ph-check" text={t("dashboard_feature_sms")} color="text-primary" />
                 )}
-                <FeatureRow icon="fa-solid fa-check" text={t("dashboard_feature_tracking")} color="text-primary" />
-                <FeatureRow icon="fa-solid fa-lock" text={t("dashboard_feature_geo")} color="text-white/30" muted />
+                <FeatureRow icon="ph ph-check" text={t("dashboard_feature_tracking")} color="text-primary" />
+                <FeatureRow icon="ph ph-lock" text={t("dashboard_feature_geo")} color="text-white/30" muted />
               </Stack>
-              <Button onClick={() => navigate("/abonnement")} color="gold" fullWidth leftSection={<i className="fa-solid fa-rocket" />}>
+              <Button onClick={() => navigate("/abonnement")} color="gold" fullWidth leftSection={<i className="ph ph-rocket" />}>
                 {smsUpsell.show ? t("upsell_sms_cta", { plan: smsUpsell.planName }) : t("dashboard_upgrade_plan")}
               </Button>
             </Card>
@@ -579,7 +581,7 @@ function StepIndicator({ steps, current, color: theme }: { steps: string[]; curr
               border: `2px solid ${done ? "transparent" : active ? c.dot : c.line}`,
               color: done ? "white" : active ? c.text : c.faded,
             }}>
-              {done ? <i className="fa-solid fa-check" /> : <i className={`fa-solid ${i === 0 ? "fa-check" : i === 1 ? "fa-search" : i === 2 ? "fa-handshake" : "fa-check-double"}`} />}
+              {done ? <i className="ph ph-check" /> : <i className={`${i === 0 ? "ph ph-check" : i === 1 ? "ph ph-magnifying-glass" : i === 2 ? "ph ph-handshake" : "ph ph-checks"}`} />}
             </div>
             <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: -0.3, color: done || active ? c.text : c.faded }}>{step}</span>
           </div>
@@ -593,9 +595,23 @@ type CardTheme = "red" | "orange" | "green" | "blue";
 
 function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; navigate: (path: string, opts?: any) => void; userName?: string }) {
   const { t } = useI18n();
-  const hasMatch = decl.status === "MATCHED" || decl.status === "RETURNED";
-  const allMatches = (decl.matches as unknown as Array<{ status: string; found_declaration_id: string }> | undefined) || [];
-  const hasPotential = !hasMatch && allMatches.some((m) => m.status === "PENDING");
+  const activeMatches = activeRecoveryMatches(
+    (decl as unknown as { matches?: RecoveryMatchRef[] }).matches,
+  );
+  // Un match encore PENDING (score 50–79) est un potentiel : la carte reste
+  // orange tant que le propriétaire n'a pas confirmé une correspondance.
+  const hasConfirmedMatch = activeMatches.some(
+    (match) => String(match.status || "").toUpperCase() === "CONFIRMED",
+  );
+  const hasMatch =
+    decl.status === "RETURNED" ||
+    hasConfirmedMatch ||
+    (decl.status === "MATCHED" && activeMatches.length === 0);
+  const hasPotential = !hasMatch && activeMatches.length > 0;
+  const recoveryTarget = lostRecoveryTarget(decl.id, activeMatches);
+  const recoveryLabel = recoveryTarget.multiple
+    ? t("dashboard_view_matches")
+    : t("dashboard_recover_document");
   const colorKey: CardTheme = hasMatch ? "green" : hasPotential ? "orange" : "red";
   const c = stepColors[colorKey];
 
@@ -605,26 +621,25 @@ function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; nav
   if (decl.status === "RETURNED") step = 4;
 
   const viewPotentialMatches = () => {
-    const ids = allMatches.filter((m) => m.status === "PENDING").map((m) => m.found_declaration_id);
-    navigate("/rechercher", { state: { potentialIds: ids, lostDeclarationId: decl.id } });
+    navigate(recoveryTarget.href);
   };
 
   return (
     <Card withBorder padding={0} radius="lg" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
       <Group justify="space-between" px="md" py="sm" style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}>
         <Group gap="xs">
-          <i className={`fa-solid ${hasMatch ? "fa-check-double" : hasPotential ? "fa-magnifying-glass-chart" : "fa-triangle-exclamation"}`} style={{ color: c.text }} />
+          <i className={`${hasMatch ? "ph ph-checks" : hasPotential ? "ph ph-chart-line-up" : "ph ph-warning"}`} style={{ color: c.text }} />
           <Text size="sm" fw={700} style={{ color: c.text, fontFamily: "'Bricolage Grotesque', sans-serif" }}>
             {hasMatch ? t("dashboard_card_lost_matched") : hasPotential ? t("dashboard_card_lost_potential") : t("dashboard_card_lost_reported")}
           </Text>
         </Group>
         <Badge color={colorKey === "green" ? "green" : colorKey === "orange" ? "orange" : "red"} size="sm" variant="light">
-          {decl.status === "MATCHED" ? t("dashboard_badge_matched") : decl.status === "RETURNED" ? t("dashboard_badge_returned") : hasPotential ? t("dashboard_badge_potential") : t("dashboard_badge_lost")}
+          {decl.status === "RETURNED" ? t("dashboard_badge_returned") : hasMatch ? t("dashboard_badge_matched") : hasPotential ? t("dashboard_badge_potential") : t("dashboard_badge_lost")}
         </Badge>
       </Group>
       <div style={{ padding: "16px 20px" }}>
         <Group gap="sm" mb="md" align="flex-start">
-          <i className={`fa-solid ${getIconForType(decl.doc_type)}`} style={{ fontSize: 18, color: c.text, marginTop: 2 }} />
+          <i className={`${getIconForType(decl.doc_type)}`} style={{ fontSize: 18, color: c.text, marginTop: 2 }} />
           <div style={{ minWidth: 0 }}>
             <Text fz={13.5} fw={700}>{(decl as any).docTypeInfo?.nom || decl.doc_type || t("dashboard_document")} — {decl.nom_complet || decl.owner_name || userName || t("dashboard_user")}</Text>
             <Text size="xs" c="dimmed" fs="italic">{t("dashboard_ref")}: {decl.identifiant_doc_dm || decl.reference || "---"} · {t(statusText(decl.status))}</Text>
@@ -633,8 +648,8 @@ function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; nav
         <StepIndicator steps={[t("dashboard_step_submission"), t("dashboard_step_search"), t("dashboard_step_matching"), t("dashboard_step_recovered")]} current={step} color={colorKey} />
         {hasPotential && (
           <Group justify="flex-end" mt="lg">
-            <Button onClick={viewPotentialMatches} color="orange" variant="light" size="sm" leftSection={<i className="fa-solid fa-magnifying-glass-chart" />}>
-              {t("dashboard_view_matches")}
+            <Button onClick={viewPotentialMatches} color="orange" variant="light" size="sm" leftSection={<i className="ph ph-chart-line-up" />}>
+              {recoveryLabel}
             </Button>
           </Group>
         )}
@@ -642,12 +657,12 @@ function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; nav
           <Group justify="flex-end" mt="lg">
             <Button
               className="animate-vibrate"
-              onClick={() => navigate(`/recuperer?id=${decl.id}`)}
+              onClick={viewPotentialMatches}
               color="green"
               size="sm"
-              leftSection={<i className="fa-solid fa-handshake" />}
+              leftSection={<i className="ph ph-handshake" />}
             >
-              {t("dashboard_recover_document")}
+              {recoveryLabel}
             </Button>
           </Group>
         )}
@@ -658,7 +673,18 @@ function TrackingLostCard({ decl, navigate, userName }: { decl: Declaration; nav
 
 function TrackingFoundCard({ decl, navigate }: { decl: Declaration; navigate: (path: string, opts?: any) => void }) {
   const { t } = useI18n();
-  const colorKey: CardTheme = decl.status === "RETURNED" || decl.status === "MATCHED" ? "green" : "blue";
+  const activeMatches = activeRecoveryMatches(
+    (decl as unknown as { matches?: RecoveryMatchRef[] }).matches,
+  );
+  const hasConfirmedMatch = activeMatches.some(
+    (match) => String(match.status || "").toUpperCase() === "CONFIRMED",
+  );
+  const hasMatch =
+    decl.status === "RETURNED" ||
+    hasConfirmedMatch ||
+    (decl.status === "MATCHED" && activeMatches.length === 0);
+  const hasPotential = !hasMatch && activeMatches.length > 0;
+  const colorKey: CardTheme = hasMatch ? "green" : hasPotential ? "orange" : "blue";
   const c = stepColors[colorKey];
 
   let step = 1;
@@ -666,24 +692,36 @@ function TrackingFoundCard({ decl, navigate }: { decl: Declaration; navigate: (p
   if (decl.status === "MATCHED") step = 3;
   if (decl.status === "RETURNED") step = 4;
 
-  const headerLabel = decl.status === "RETURNED" ? t("dashboard_card_found_returned") : decl.status === "MATCHED" ? t("dashboard_card_found_matched") : t("dashboard_card_found_reported");
-  const headerIcon = decl.status === "RETURNED" ? "fa-circle-check" : decl.status === "MATCHED" ? "fa-handshake" : "fa-hand-holding-heart";
-  const badgeLabel = decl.status === "RETURNED" ? t("dashboard_badge_returned") : decl.status === "MATCHED" ? t("dashboard_badge_to_return") : t("dashboard_badge_reported");
+  const headerLabel = decl.status === "RETURNED"
+    ? t("dashboard_card_found_returned")
+    : hasMatch
+      ? t("dashboard_card_found_matched")
+      : hasPotential
+        ? t("dashboard_card_found_potential")
+        : t("dashboard_card_found_reported");
+  const headerIcon = decl.status === "RETURNED" ? "ph ph-check-circle" : hasMatch ? "ph ph-handshake" : hasPotential ? "ph ph-chart-line-up" : "ph ph-hand-heart";
+  const badgeLabel = decl.status === "RETURNED"
+    ? t("dashboard_badge_returned")
+    : hasMatch
+      ? t("dashboard_badge_to_return")
+      : hasPotential
+        ? t("dashboard_badge_potential")
+        : t("dashboard_badge_reported");
 
   return (
     <Card withBorder padding={0} radius="lg" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
       <Group justify="space-between" px="md" py="sm" style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}>
         <Group gap="xs">
-          <i className={`fa-solid ${headerIcon}`} style={{ color: c.text }} />
+          <i className={`${headerIcon}`} style={{ color: c.text }} />
           <Text size="sm" fw={700} style={{ color: c.text, fontFamily: "'Bricolage Grotesque', sans-serif" }}>
             {headerLabel}
           </Text>
         </Group>
-        <Badge color={colorKey === "green" ? "green" : "blue"} size="sm" variant="light">{badgeLabel}</Badge>
+        <Badge color={colorKey === "green" ? "green" : colorKey === "orange" ? "orange" : "blue"} size="sm" variant="light">{badgeLabel}</Badge>
       </Group>
       <div style={{ padding: "16px 20px" }}>
         <Group gap="sm" mb="md" align="flex-start">
-          <i className={`fa-solid ${getIconForType(decl.doc_type)}`} style={{ fontSize: 18, color: c.text, marginTop: 2 }} />
+          <i className={`${getIconForType(decl.doc_type)}`} style={{ fontSize: 18, color: c.text, marginTop: 2 }} />
           <div style={{ minWidth: 0 }}>
             <Text fz={13.5} fw={700}>{(decl as any).docTypeInfo?.nom || decl.doc_type || t("dashboard_document")} — {decl.owner_name || t("dashboard_unknown")}</Text>
             <Text size="xs" c="dimmed" fs="italic">{t("dashboard_ref")}: {decl.identifiant_doc_dm || decl.reference || "---"} · {t(statusText(decl.status))}</Text>
@@ -692,14 +730,14 @@ function TrackingFoundCard({ decl, navigate }: { decl: Declaration; navigate: (p
         <StepIndicator steps={[t("dashboard_found_step_found"), t("dashboard_found_step_reported"), t("dashboard_found_step_owner"), t("dashboard_found_step_returned")]} current={step} color={colorKey} />
         {decl.status === "MATCHED" && (
           <Group justify="flex-end" mt="lg">
-            <Button onClick={() => navigate(`/rendre?id=${decl.id}`)} color="green" size="sm" leftSection={<i className="fa-solid fa-hand-holding-heart" />}>
+            <Button onClick={() => navigate(`/rendre?id=${decl.id}`)} color="green" size="sm" leftSection={<i className="ph ph-hand-heart" />}>
               {t("dashboard_return_document")}
             </Button>
           </Group>
         )}
         {decl.status !== "MATCHED" && decl.status !== "RETURNED" && (
           <Text mt="lg" size="xs" c="dimmed" fs="italic" ta="center">
-            <i className="fa-solid fa-clock-rotate-left" style={{ marginRight: 4 }} />
+            <i className="ph ph-clock-counter-clockwise" style={{ marginRight: 4 }} />
             {t("dashboard_waiting_confirmation")}
           </Text>
         )}
@@ -739,20 +777,20 @@ const typeImages: Record<string, string> = {
 };
 
 const typeConfigs: Record<string, { icon: string; color: string; label: string }> = {
-  CNI: { icon: "fa-id-card", color: "text-orange-600", label: "dashboard_label_cni" },
-  PASSPORT: { icon: "fa-passport", color: "text-blue-600", label: "dashboard_label_passeport" },
-  PERMIS: { icon: "fa-car", color: "text-green-600", label: "dashboard_label_permis" },
-  DIPLOME: { icon: "fa-graduation-cap", color: "text-purple-600", label: "dashboard_label_diplome" },
-  CARTE_BLUE: { icon: "fa-credit-card", color: "text-indigo-600", label: "dashboard_label_doc" },
-  CARTE_GRISE: { icon: "fa-file-invoice", color: "text-red-600", label: "dashboard_label_carte_grise" },
-  CARTE_SEJOUR: { icon: "fa-passport", color: "text-cyan-600", label: "dashboard_label_doc" },
-  CARTE_VOTE: { icon: "fa-check-to-slot", color: "text-lime-600", label: "dashboard_label_doc" },
-  ACTE_NAISSANCE: { icon: "fa-file-circle-plus", color: "text-teal-600", label: "dashboard_label_acte" },
-  ACTE_MARIAGE: { icon: "fa-ring", color: "text-pink-600", label: "dashboard_label_acte" },
-  ACTE_DECES: { icon: "fa-scroll", color: "text-stone-600", label: "dashboard_label_acte" },
-  TITRE_FINANCIER: { icon: "fa-house-chimney", color: "text-amber-600", label: "dashboard_label_doc" },
-  AUTRES: { icon: "fa-circle-question", color: "text-gray-600", label: "dashboard_label_doc" },
-  DEFAULT: { icon: "fa-file-lines", color: "text-gray-600", label: "dashboard_label_doc" },
+  CNI: { icon: "ph ph-identification-card", color: "text-orange-600", label: "dashboard_label_cni" },
+  PASSPORT: { icon: "ph ph-book-open", color: "text-blue-600", label: "dashboard_label_passeport" },
+  PERMIS: { icon: "ph ph-car", color: "text-green-600", label: "dashboard_label_permis" },
+  DIPLOME: { icon: "ph ph-graduation-cap", color: "text-purple-600", label: "dashboard_label_diplome" },
+  CARTE_BLUE: { icon: "ph ph-credit-card", color: "text-indigo-600", label: "dashboard_label_doc" },
+  CARTE_GRISE: { icon: "ph ph-invoice", color: "text-red-600", label: "dashboard_label_carte_grise" },
+  CARTE_SEJOUR: { icon: "ph ph-book-open", color: "text-cyan-600", label: "dashboard_label_doc" },
+  CARTE_VOTE: { icon: "ph ph-check-square", color: "text-lime-600", label: "dashboard_label_doc" },
+  ACTE_NAISSANCE: { icon: "ph ph-file-plus", color: "text-teal-600", label: "dashboard_label_acte" },
+  ACTE_MARIAGE: { icon: "ph ph-circle-dashed", color: "text-pink-600", label: "dashboard_label_acte" },
+  ACTE_DECES: { icon: "ph ph-scroll", color: "text-stone-600", label: "dashboard_label_acte" },
+  TITRE_FINANCIER: { icon: "ph ph-house-line", color: "text-amber-600", label: "dashboard_label_doc" },
+  AUTRES: { icon: "ph ph-question", color: "text-gray-600", label: "dashboard_label_doc" },
+  DEFAULT: { icon: "ph ph-file-text", color: "text-gray-600", label: "dashboard_label_doc" },
 };
 
 function PerfCard({ doc, onClick, period }: { doc: any; onClick?: () => void; period?: string }) {
@@ -775,13 +813,13 @@ function PerfCard({ doc, onClick, period }: { doc: any; onClick?: () => void; pe
           <img src={typeImages[code] || "/src/assets/images/devices_docs.png"} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.9 }} alt={doc.name} />
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.25)" }} />
           <Paper style={{ position: "absolute", top: 8, right: 8, padding: "2px 6px", borderRadius: 6, background: "rgba(255,255,255,0.9)", fontSize: 9, fontWeight: 700, color: isUp ? "#16a34a" : "#ef4444", display: "flex", alignItems: "center", gap: 2 }}>
-            <i className={`fa-solid ${isUp ? "fa-arrow-up" : "fa-arrow-down"}`} style={{ fontSize: 7 }} /> {Math.abs(trend)}%
+            <i className={`${isUp ? "ph ph-arrow-up" : "ph ph-arrow-down"}`} style={{ fontSize: 7 }} /> {Math.abs(trend)}%
           </Paper>
         </div>
       </Card.Section>
       <div style={{ padding: 12 }}>
         <Group gap="sm" mb={4}>
-          <i className={`fa-solid ${cfg.icon} ${cfg.color}`} style={{ fontSize: 13 }} />
+          <i className={`${cfg.icon} ${cfg.color}`} style={{ fontSize: 13 }} />
           <Text size="xs" fw={700} truncate>{doc.name || t(cfg.label)}</Text>
         </Group>
         <div>
@@ -791,14 +829,14 @@ function PerfCard({ doc, onClick, period }: { doc: any; onClick?: () => void; pe
           </Group>
           <Group gap={6} mt={4}>
             <Badge size="xs" variant="light" color="orange" style={{ fontSize: 8 }}>
-              <i className="fa-solid fa-arrow-down" style={{ fontSize: 7, marginRight: 3 }} /> {lost} {t("dashboard_perf_lost")}
+              <i className="ph ph-arrow-down" style={{ fontSize: 7, marginRight: 3 }} /> {lost} {t("dashboard_perf_lost")}
             </Badge>
             <Badge size="xs" variant="light" color="green" style={{ fontSize: 8 }}>
-              <i className="fa-solid fa-arrow-up" style={{ fontSize: 7, marginRight: 3 }} /> {found} {t("dashboard_perf_found")}
+              <i className="ph ph-arrow-up" style={{ fontSize: 7, marginRight: 3 }} /> {found} {t("dashboard_perf_found")}
             </Badge>
           </Group>
           <Paper style={{ fontSize: 8, color: "var(--mantine-color-dimmed)", marginTop: 4, background: "var(--mantine-color-surface2)", padding: "2px 6px", borderRadius: 6, width: "fit-content" }}>
-            <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 7, marginRight: 4 }} /> {activityText}
+            <i className="ph ph-clock-counter-clockwise" style={{ fontSize: 7, marginRight: 4 }} /> {activityText}
           </Paper>
         </div>
         <div style={{ marginTop: 8, width: "100%", height: 4, background: "var(--mantine-color-surface2)", borderRadius: 999, overflow: "hidden" }}>
@@ -841,22 +879,23 @@ function PerfModal({ doc, onClose, promo, isDismissed, onPromoSubscribe, onPromo
 
   return (
     <>
-      <Modal opened onClose={onClose} size="lg" padding={0} withCloseButton={false}>
-        <div style={{ position: "relative", height: 176, overflow: "hidden", flexShrink: 0 }}>
-          <img src={image} alt={doc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)" }} />
-          <Group style={{ position: "absolute", bottom: 12, left: 16 }} gap="sm">
-            <i className={`fa-solid ${cfg.icon} ${cfg.color} text-lg`} />
-            <div>
-              <Text c="white" fz={18} fw={800} className="font-bricolage">{doc.name || t(cfg.label)}</Text>
-              <Badge color={isUp ? "green" : "red"} size="sm" variant="light">
-                <i className={`fa-solid ${isUp ? "fa-arrow-up" : "fa-arrow-down"}`} style={{ fontSize: 8 }} /> {Math.abs(trend)}%
-              </Badge>
-            </div>
-          </Group>
-        </div>
+      <Dialog open onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-2xl p-0">
+          <div style={{ position: "relative", height: 176, overflow: "hidden", flexShrink: 0 }}>
+            <img src={image} alt={doc.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)" }} />
+            <Group style={{ position: "absolute", bottom: 12, left: 16 }} gap="sm">
+              <i className={`${cfg.icon} ${cfg.color} text-lg`} />
+              <div>
+                <Text c="white" fz={18} fw={800} className="font-bricolage">{doc.name || t(cfg.label)}</Text>
+                <Badge color={isUp ? "green" : "red"} size="sm" variant="light">
+                  <i className={`${isUp ? "ph ph-arrow-up" : "ph ph-arrow-down"}`} style={{ fontSize: 8 }} /> {Math.abs(trend)}%
+                </Badge>
+              </div>
+            </Group>
+          </div>
 
-        <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+          <DialogBody style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
           <SimpleGrid cols={3} spacing="sm">
             <Paper p="md" ta="center" style={{ background: "var(--mantine-color-surface2)" }}>
               <Text fz={20} fw={800} className="font-bricolage">{(parseInt(doc.total) || 0).toLocaleString()}</Text>
@@ -891,7 +930,7 @@ function PerfModal({ doc, onClose, promo, isDismissed, onPromoSubscribe, onPromo
           {recentItems.length > 0 && (
             <div>
               <Group gap="xs" mb="sm">
-                <i className="fa-solid fa-clock-rotate-left text-primary" style={{ fontSize: 11 }} />
+                <i className="ph ph-clock-counter-clockwise text-primary" style={{ fontSize: 11 }} />
                 <Text fz={13} fw={700} className="font-bricolage">{t("dashboard_perf_recent")}</Text>
               </Group>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 192, overflowY: "auto" }}>
@@ -900,14 +939,14 @@ function PerfModal({ doc, onClose, promo, isDismissed, onPromoSubscribe, onPromo
                   const dateStr = item.date ? new Date(item.date).toLocaleDateString("fr-FR") : "";
                   return (
                     <Group key={item.id || i} gap="sm" p="sm" style={{ background: "var(--mantine-color-surface2)", borderRadius: 12 }}>
-                      <i className={`fa-solid ${isLost ? "fa-arrow-down text-amber-600" : "fa-arrow-up text-green-600"} text-xs flex-shrink-0`} />
+                      <i className={`${isLost ? "ph ph-arrow-down text-amber-600" : "ph ph-arrow-up text-green-600"} text-xs flex-shrink-0`} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <Text size="sm" fw={600} truncate>
                           {isLost ? t("dashboard_perf_lost") : t("dashboard_perf_found")}
                         </Text>
                         <Text size="xs" c="dimmed" fs="italic">
-                          {item.ville && <><i className="fa-solid fa-location-dot" style={{ fontSize: 8 }} /> {item.ville} · </>}
-                          <i className="fa-regular fa-clock" style={{ fontSize: 8 }} /> {dateStr}
+                          {item.ville && <><i className="ph ph-map-pin" style={{ fontSize: 8 }} /> {item.ville} · </>}
+                          <i className="ph ph-clock" style={{ fontSize: 8 }} /> {dateStr}
                         </Text>
                       </div>
                     </Group>
@@ -919,17 +958,18 @@ function PerfModal({ doc, onClose, promo, isDismissed, onPromoSubscribe, onPromo
 
           {recentItems.length === 0 && (
             <Text ta="center" py="lg" size="xs" c="dimmed" fs="italic">
-              <i className="fa-solid fa-inbox text-2xl" style={{ color: "#e5e7eb", display: "block", marginBottom: 8 }} /> {t("dashboard_perf_no_activity")}
+              <i className="ph ph-tray text-2xl" style={{ color: "#e5e7eb", display: "block", marginBottom: 8 }} /> {t("dashboard_perf_no_activity")}
             </Text>
           )}
-        </div>
+          </DialogBody>
 
-        <Group justify="flex-end" p="md" style={{ borderTop: "1px solid var(--mantine-color-default-border)", flexShrink: 0 }}>
-          <Button onClick={() => { onClose(); navigate("/mes-declarations"); }} color="gold" size="sm" rightSection={<i className="fa-solid fa-arrow-right text-[9px]" />}>
-            {t("dashboard_perf_view_all")}
-          </Button>
-        </Group>
-      </Modal>
+          <Group justify="flex-end" p="md" style={{ borderTop: "1px solid var(--mantine-color-default-border)", flexShrink: 0 }}>
+            <Button onClick={() => { onClose(); navigate("/mes-declarations"); }} color="gold" size="sm" rightSection={<i className="ph ph-arrow-right text-[9px]" />}>
+              {t("dashboard_perf_view_all")}
+            </Button>
+          </Group>
+        </DialogContent>
+      </Dialog>
 
       {promo && !isDismissed && (
         <PromoPopup
@@ -953,17 +993,20 @@ function CatalogModal({ types, loading, error, onClose }: {
   const { t } = useI18n();
 
   return (
-    <Modal
-      opened
-      onClose={onClose}
-      size="lg"
-      title={
-        <Group gap="sm">
-          <i className="fa-solid fa-book text-primary" />
-          <Text fw={700} className="font-bricolage">{t("dashboard_catalog_title")}</Text>
-        </Group>
-      }
+    <Dialog
+      open
+      onOpenChange={onClose}
     >
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>
+            <Group gap="sm">
+              <i className="ph ph-book text-primary" />
+              <Text fw={700} className="font-bricolage">{t("dashboard_catalog_title")}</Text>
+            </Group>
+          </DialogTitle>
+        </DialogHeader>
+        <DialogBody>
       <Text size="xs" c="dimmed" mb="md">{t("dashboard_catalog_desc")}</Text>
 
       {loading && (
@@ -980,7 +1023,7 @@ function CatalogModal({ types, loading, error, onClose }: {
 
       {!loading && !error && (!Array.isArray(types) || types.length === 0) && (
         <Text ta="center" py="lg" size="xs" c="dimmed" fs="italic">
-          <i className="fa-solid fa-inbox text-2xl" style={{ color: "#e5e7eb", display: "block", marginBottom: 8 }} />
+          <i className="ph ph-tray text-2xl" style={{ color: "#e5e7eb", display: "block", marginBottom: 8 }} />
           {t("dashboard_catalog_empty")}
         </Text>
       )}
@@ -993,7 +1036,7 @@ function CatalogModal({ types, loading, error, onClose }: {
             return (
               <Card key={type.id || code} withBorder radius="md" p="sm">
                 <Group gap="sm" align="flex-start" wrap="nowrap">
-                  <i className={`fa-solid ${cfg.icon} ${cfg.color}`} style={{ fontSize: 15, flexShrink: 0 }} />
+                  <i className={`${cfg.icon} ${cfg.color}`} style={{ fontSize: 15, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <Group gap={6} wrap="nowrap">
                       <Text fz={13} fw={700} truncate>{type.nom}</Text>
@@ -1014,6 +1057,8 @@ function CatalogModal({ types, loading, error, onClose }: {
           })}
         </SimpleGrid>
       )}
-    </Modal>
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -11,6 +11,7 @@ import SmsAlertUpsell from "../subscription/SmsAlertUpsell";
 const MATCH_TYPES = [
   "MATCH_FOUND", "match_found",
   "MATCH_POTENTIAL", "match_potential",
+  "MATCH_CLOSED", "match_closed",
   "VAULT_MATCH_PENDING", "vault_match_pending",
 ];
 
@@ -72,19 +73,23 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
   const getMeta = (type?: string) => {
     switch (type) {
       case "MATCH_FOUND": case "match_found":
-        return { icon: "fa-solid fa-handshake", bg: "bg-green-100", color: "text-green-700" };
+        return { icon: "ph ph-handshake", bg: "bg-green-100", color: "text-green-700" };
+      case "MATCH_POTENTIAL": case "match_potential":
+        return { icon: "ph ph-chart-line-up", bg: "bg-amber-50", color: "text-amber-600" };
+      case "MATCH_CLOSED": case "match_closed":
+        return { icon: "ph ph-info", bg: "bg-gray-100", color: "text-gray-600" };
       case "LOST_SUBMITTED": case "lost_submitted":
-        return { icon: "fa-solid fa-file-circle-exclamation", bg: "bg-amber-50", color: "text-amber-600" };
+        return { icon: "ph ph-seal-warning", bg: "bg-amber-50", color: "text-amber-600" };
       case "FOUND_SUBMITTED": case "found_submitted":
-        return { icon: "fa-solid fa-hand-holding-heart", bg: "bg-blue-50", color: "text-blue-600" };
+        return { icon: "ph ph-hand-heart", bg: "bg-blue-50", color: "text-blue-600" };
       case "DOC_ADDED": case "doc_added":
-        return { icon: "fa-solid fa-shield-halved", bg: "bg-purple-50", color: "text-purple-600" };
+        return { icon: "ph ph-shield", bg: "bg-purple-50", color: "text-purple-600" };
       case "PAYMENT_RECEIVED": case "payment_received":
-        return { icon: "fa-solid fa-money-bill-wave", bg: "bg-green-100", color: "text-green-700" };
+        return { icon: "ph ph-money-wavy", bg: "bg-green-100", color: "text-green-700" };
       case "VAULT_MATCH_PENDING": case "vault_match_pending":
-        return { icon: "fa-solid fa-file-search", bg: "bg-amber-50", color: "text-amber-600" };
+        return { icon: "ph ph-file-magnifying-glass", bg: "bg-amber-50", color: "text-amber-600" };
       default:
-        return { icon: "fa-solid fa-bell", bg: "bg-primary-light", color: "text-primary-dark" };
+        return { icon: "ph ph-bell", bg: "bg-primary-light", color: "text-primary-dark" };
     }
   };
 
@@ -117,7 +122,7 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
         <div className="px-5 py-4 border-b border-borda flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-[9px] bg-primary-light flex items-center justify-center">
-              <i className="fa-solid fa-bell text-primary text-sm" />
+              <i className="ph ph-bell text-primary text-sm" />
             </div>
             <div>
               <h2 className="font-bricolage text-[15px] font-bold text-textMain leading-tight">{t("notification_title")}</h2>
@@ -137,7 +142,7 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
               onClick={onClose}
               className="w-8 h-8 rounded-full bg-surface2 flex items-center justify-center text-textMuted hover:text-red-500 transition-colors"
             >
-              <i className="fa-solid fa-xmark text-sm" />
+              <i className="ph ph-x text-sm" />
             </button>
           </div>
         </div>
@@ -150,7 +155,7 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
             </div>
           ) : allNotifs.length === 0 ? (
             <div className="py-10 text-center text-textMuted">
-              <i className="fa-regular fa-bell-slash text-3xl opacity-30 mb-3" />
+              <i className="ph ph-bell-slash text-3xl opacity-30 mb-3" />
               <p className="text-sm font-medium">{t("notification_empty")}</p>
             </div>
           ) : (
@@ -176,11 +181,18 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
 
                     if (response === "yes" && result?.success) {
                       const lostId = (result as any).lost_declaration_id;
-                      const foundId = (result as any).found_declaration_id || notifMeta.declaration_id;
+                      const foundId =
+                        (result as any).found_declaration_id ||
+                        (result as any).match?.found_declaration_id;
+                      const matchId = (result as any).match?.id;
                       emitToast({ type: "success", message: result.message || "Correspondance confirmée." });
                       onClose();
                       if (lostId) {
-                        navigate(`/recuperer?id=${lostId}${foundId ? `&found=${foundId}` : ""}`);
+                        navigate(
+                          matchId && foundId
+                            ? `/recuperer?id=${encodeURIComponent(lostId)}&match=${encodeURIComponent(matchId)}&found=${encodeURIComponent(foundId)}`
+                            : `/correspondances?id=${encodeURIComponent(lostId)}`
+                        );
                       }
                     } else if (response === "no" && result?.success) {
                       emitToast({ type: "success", message: result.message || "Réponse enregistrée." });
@@ -230,7 +242,7 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
                             onClick={(e) => { e.stopPropagation(); handleVaultResponse("yes"); }}
                             className="flex-1 py-1.5 bg-primary hover:bg-primary-dark disabled:opacity-50 text-white text-[11px] font-bold rounded-[8px] transition-all active:scale-[.97]"
                           >
-                            {isResponding ? <i className="fa-solid fa-spinner fa-spin" /> : "Oui, c'est le mien"}
+                            {isResponding ? <i className="ph ph-spinner animate-spin" /> : "Oui, c'est le mien"}
                           </button>
                           <button
                             disabled={isResponding}
@@ -260,7 +272,7 @@ export default function NotificationModal({ onClose }: { onClose: () => void }) 
             onClick={fetch}
             className="text-[11.5px] font-semibold text-primary hover:underline"
           >
-            <i className="fa-solid fa-rotate mr-1" /> {t("notification_refresh")}
+            <i className="ph ph-arrow-clockwise mr-1" /> {t("notification_refresh")}
           </button>
         </div>
       </div>

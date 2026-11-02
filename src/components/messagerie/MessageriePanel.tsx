@@ -87,7 +87,7 @@ function DossierContext({ conversation, theme, lang, t }: {
         className="w-full flex items-center justify-between gap-2 text-left"
       >
         <span className="flex items-center gap-2 min-w-0">
-          <i className="fa-regular fa-folder-open text-xs flex-shrink-0" style={{ color: theme.accent }} />
+          <i className="ph ph-folder-open text-xs flex-shrink-0" style={{ color: theme.accent }} />
           <span className="text-xs font-semibold truncate" style={{ color: theme.textMain }}>
             {conversation.doc_type_nom || t("messagerie_document")}
           </span>
@@ -98,7 +98,7 @@ function DossierContext({ conversation, theme, lang, t }: {
           )}
         </span>
         <i
-          className={`fa-solid ${open ? "fa-chevron-up" : "fa-chevron-down"} text-[10px] flex-shrink-0`}
+          className={`${open ? "ph ph-caret-up" : "ph ph-caret-down"} text-[10px] flex-shrink-0`}
           style={{ color: theme.textMuted }}
         />
       </button>
@@ -113,7 +113,7 @@ function DossierContext({ conversation, theme, lang, t }: {
           </div>
           <div className="flex items-center justify-between gap-3 mt-3">
             <p className="text-[11px] leading-snug min-w-0" style={{ color: theme.textMuted }}>
-              <i className="fa-solid fa-triangle-exclamation mr-1.5" />
+              <i className="ph ph-warning mr-1.5" />
               {iAmFinder ? t("messagerie_context_finder_note") : t("messagerie_code_warning")}
             </p>
             <Link
@@ -385,7 +385,7 @@ export default function MessageriePanel({ api, theme, portal }: Props) {
 
           {!loadingList && visible.length === 0 && (
             <div className="p-6 text-center">
-              <i className="fa-regular fa-message text-2xl" style={{ color: theme.accent }} />
+              <i className="ph ph-chat-circle text-2xl" style={{ color: theme.accent }} />
               <h3 className="text-sm font-semibold mt-3" style={{ color: theme.textMain }}>
                 {t("messagerie_empty_title")}
               </h3>
@@ -401,7 +401,7 @@ export default function MessageriePanel({ api, theme, portal }: Props) {
       <section className={`flex-1 flex-col min-w-0 ${selectedId ? "flex" : "hidden md:flex"}`}>
         {!selected ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8 text-center">
-            <i className="fa-regular fa-comments text-4xl" style={{ color: theme.accent }} />
+            <i className="ph ph-chats text-4xl" style={{ color: theme.accent }} />
             <h2 className="text-base font-semibold" style={{ color: theme.textMain }}>
               {t("messagerie_welcome_title")}
             </h2>
@@ -421,7 +421,7 @@ export default function MessageriePanel({ api, theme, portal }: Props) {
                   className="md:hidden text-xs mb-1 flex items-center gap-1"
                   style={{ color: theme.textMuted }}
                 >
-                  <i className="fa-solid fa-arrow-left" /> {t("messagerie_back")}
+                  <i className="ph ph-arrow-left" /> {t("messagerie_back")}
                 </button>
                 <h3 className="text-sm font-semibold truncate" style={{ color: theme.textMain }}>
                   {selected.counterpart_name || t("messagerie_unknown_counterpart")}
@@ -437,7 +437,7 @@ export default function MessageriePanel({ api, theme, portal }: Props) {
                   className="w-8 h-8 rounded-full flex items-center justify-center"
                   style={{ border: `1px solid ${theme.border}`, color: theme.textMuted }}
                 >
-                  <i className="fa-solid fa-box-archive text-xs" />
+                  <i className="ph ph-archive text-xs" />
                 </button>
                 {selected.status === "OPEN" && (
                   <button
@@ -446,7 +446,7 @@ export default function MessageriePanel({ api, theme, portal }: Props) {
                     className="w-8 h-8 rounded-full flex items-center justify-center"
                     style={{ border: `1px solid ${theme.border}`, color: theme.textMuted }}
                   >
-                    <i className="fa-solid fa-check text-xs" />
+                    <i className="ph ph-check text-xs" />
                   </button>
                 )}
               </div>

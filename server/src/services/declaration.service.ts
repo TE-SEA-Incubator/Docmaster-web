@@ -16,7 +16,14 @@ import { nokashService } from "./nokash.service.ts";
 import { startNokashPaymentPolling, activateRecovery } from "../controllers/payment.controller.ts";
 import { encodeMediaFields } from "../utils/media.utils.ts";
 import { HttpError } from "../utils/http-error.ts";
-import { numOr, resolveFinderRewardBasis } from "../utils/recovery.utils.ts";
+import {
+  numOr,
+  resolveFinderRewardBasis,
+  assertOwnerCanPayRecovery,
+  acquireRecoveryReservation,
+  releaseRecoveryReservation,
+  attachTransactionToReservation,
+} from "../utils/recovery.utils.ts";
 import { cacheTtl, getOrSet } from "../cache/cache.ts";
 import {
   buildPublicSearchCacheKey,
@@ -29,6 +36,9 @@ import {
  * A loss/discovery date cannot be in the future. "Today" stays allowed
  * (end of day), the past is untouched.
  */
+const FOUND_DECLARATION_WINDOW_MINUTES = 10;
+const FOUND_DECLARATION_MAX_PER_WINDOW = 2;
+
 function assertNotFutureDate(value: unknown): void {
   if (value === null || value === undefined || value === '') return;
   const date = value instanceof Date ? value : new Date(String(value));
@@ -66,7 +76,7 @@ export class DeclarationService {
    */
  async createDeclaration(
   data: Partial<DocumentDeclaration>,
-  options: { bypassLimits?: boolean } = {}
+  options: { bypassLimits?: boolean; skipActiveCheck?: boolean } = {}
 ): Promise<DocumentDeclaration> {
   if (data.reporter_id && data.client_request_id) {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.client_request_id)) {
@@ -142,6 +152,34 @@ export class DeclarationService {
     throw new HttpError(400, 'doc_type est requis');
   }
 
+  // 2.4 Vérification globale : un seul type de document actif à la fois.
+  // Tant qu'une déclaration LOST n'est pas résolue (RETURNED/CANCELLED/CLAIMED),
+  // l'utilisateur ne peut pas en déclarer un autre, quel que soit son type.
+  // S'applique même avec `bypassLimits` (flux portefeuille) : c'est une règle
+  // métier globale, pas une quota d'abonnement. Seul `skipActiveCheck` l'édite.
+  if (data.reporter_id && !options.skipActiveCheck && data.declaration_type === 'LOST') {
+    console.log('🔵 [2.4] Vérification déclarations actives (globale)...');
+    const activeCheck = await pool.query(
+      `SELECT doc_type, status FROM declarations
+       WHERE reporter_id = $1
+         AND declaration_type = 'LOST'
+         AND status NOT IN ('RETURNED', 'CANCELLED', 'CLAIMED')
+       LIMIT 1`,
+      [data.reporter_id],
+    );
+    if (activeCheck.rows.length > 0) {
+      const active = activeCheck.rows[0];
+      const activeTypeName = await this.getDocTypeName(active.doc_type);
+      console.error(`🔴 [2.4] Déclaration active trouvée: ${activeTypeName} (${active.status})`);
+      throw new HttpError(
+        409,
+        `Vous avez déjà une déclaration active (${activeTypeName}). ` +
+        `Veuillez d'abord la résoudre avant d'en déclarer un autre.`,
+      );
+    }
+    console.log('🟢 [2.4] Aucune déclaration active, autorisé');
+  }
+
   // 2.5 Check Subscription Limits
   console.log('🔵 [3] Vérification limites abonnement...');
   if (data.reporter_id && !options.bypassLimits && data.declaration_type === 'LOST') {
@@ -197,6 +235,24 @@ export class DeclarationService {
     console.log('🟡 [4] Skip fingerprint (docType ou document_number manquant)');
   }
 
+  // 3.5 Anti-abus : une même personne ne peut déposer que 2 trouvailles par
+  // fenêtre de 10 minutes. Les partenaires et les créations internes passent
+  // par `bypassLimits`.
+  if (!options.bypassLimits && data.reporter_id && data.declaration_type === 'FOUND') {
+    const { count, oldest } = await this.declarationRepository.countRecentFoundByReporter(
+      data.reporter_id,
+      FOUND_DECLARATION_WINDOW_MINUTES,
+    );
+    if (count >= FOUND_DECLARATION_MAX_PER_WINDOW && oldest) {
+      const retryAt = new Date(oldest).getTime() + FOUND_DECLARATION_WINDOW_MINUTES * 60_000;
+      const waitMinutes = Math.max(1, Math.ceil((retryAt - Date.now()) / 60_000));
+      throw new HttpError(
+        429,
+        `Limite atteinte : ${FOUND_DECLARATION_MAX_PER_WINDOW} trouvailles maximum toutes les ${FOUND_DECLARATION_WINDOW_MINUTES} minutes. Réessayez dans ${waitMinutes} minute(s).`,
+      );
+    }
+  }
+
   // 4. Set default status based on type
   console.log('🔵 [5] Définition du statut...');
   if (data.declaration_type === "LOST") {
@@ -209,7 +265,34 @@ export class DeclarationService {
   // 5. Save to DB
   console.log('🔵 [6] Sauvegarde en base de données...');
   try {
-    const declaration = await this.declarationRepository.create(data);
+    let declaration: DocumentDeclaration;
+    try {
+      declaration = await this.declarationRepository.create(data);
+    } catch (createError: any) {
+      // La contrainte unique partielle ferme la fenêtre de course entre la
+      // vérification applicative et l'insertion concurrente.
+      if (
+        createError?.code === '23505' &&
+        String(createError?.constraint || '').includes('uniq_declaration_fingerprint_type')
+      ) {
+        throw new HttpError(
+          409,
+          `Une déclaration de type ${data.declaration_type === "LOST" ? "PERTE" : "TROUVAILLE"} existe déjà pour ce numéro.`,
+        );
+      }
+      // Course entre la vérification « une seule déclaration active » et l'insertion :
+      // l'index partiel renvoie le même conflit qu'une déclaration déjà en cours.
+      if (
+        createError?.code === '23505' &&
+        String(createError?.constraint || '').includes('uniq_active_lost_per_reporter')
+      ) {
+        throw new HttpError(
+          409,
+          "Vous avez déjà une déclaration active. Veuillez d'abord la résoudre avant d'en déclarer un autre.",
+        );
+      }
+      throw createError;
+    }
     const wasCreated = (declaration as DocumentDeclaration & { __was_created?: boolean }).__was_created !== false;
     delete (declaration as DocumentDeclaration & { __was_created?: boolean }).__was_created;
     // A simultaneous retry can race the initial lookup; the unique index makes this
@@ -427,7 +510,7 @@ export class DeclarationService {
    */
   async getDeclarationById(
     id: string,
-    options?: { preferredMatchFoundId?: string },
+    options?: { preferredMatchFoundId?: string; preferredMatchId?: string },
   ): Promise<any | null> {
     const declaration = await this.declarationRepository.findById(id);
     if (!declaration) return null;
@@ -476,6 +559,11 @@ export class DeclarationService {
     const activeStatuses = ['PENDING', 'CONFIRMED', 'MATCHED'];
     let match = null as (typeof matches)[number] | null;
     if (matches && matches.length > 0) {
+      if (options?.preferredMatchId) {
+        match = matches.find(
+          (m) => m.id === options.preferredMatchId && activeStatuses.includes(m.status),
+        ) ?? null;
+      }
       if (options?.preferredMatchFoundId) {
         match = matches.find(
           (m) =>
@@ -493,6 +581,14 @@ export class DeclarationService {
     }
 
     if (match) {
+      enrichedData.match = match;
+      enrichedData.matchId = match.id;
+      enrichedData.matchStatus = match.status;
+      enrichedData.ownerConfirmedAt = match.owner_confirmed_at || null;
+      enrichedData.canPayRecovery = match.status === 'CONFIRMED'
+        && Boolean(match.owner_confirmed_at)
+        && !['RESERVED', 'CLAIMED', 'RETURNED', 'CANCELLED'].includes(String(declaration.status));
+
       const counterPartId = declaration.declaration_type === 'FOUND' 
         ? match.lost_declaration_id 
         : match.found_declaration_id;
@@ -540,6 +636,8 @@ export class DeclarationService {
         enrichedData.counterPartPhotoRecto = counterPartDecl.photo_recto;
         enrichedData.counterPartPhotoVerso = counterPartDecl.photo_verso;
         enrichedData.counterPartDeclaration = counterPartDecl; // Full finder declaration data
+        enrichedData.canPayRecovery = Boolean(enrichedData.canPayRecovery)
+          && !['RESERVED', 'CLAIMED', 'RETURNED', 'CANCELLED'].includes(String(counterPartDecl.status));
 
         // Nom du trouveur (pour une déclaration PERDUE) / du propriétaire (pour une TROUVÉE)
         if (declaration.declaration_type === 'LOST' && counterPartUser) {
@@ -563,6 +661,301 @@ export class DeclarationService {
     }
 
     return await encodeMediaFields(enrichedData);
+  }
+
+  /**
+   * All active candidate matches for a declaration the user owns.
+   * A FOUND can have several LOST candidates; a LOST only ever exposes one FOUND.
+   */
+  async getDeclarationMatches(declarationId: string, userId: string) {
+    const declaration = await this.declarationRepository.findById(declarationId);
+    if (!declaration) throw new HttpError(404, 'Déclaration introuvable.');
+    if (declaration.reporter_id !== userId) {
+      throw new HttpError(403, 'Action non autorisée.');
+    }
+
+    const matches = await this.matchRepository.findByDeclarationId(declarationId);
+    const active = matches
+      .filter((m: any) => ['PENDING', 'CONFIRMED'].includes(m.status))
+      .sort((a: any, b: any) => {
+        const confirmedDelta =
+          Number(Boolean(b.owner_confirmed_at)) - Number(Boolean(a.owner_confirmed_at));
+        if (confirmedDelta !== 0) return confirmedDelta;
+        if (b.score !== a.score) return b.score - a.score;
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
+    // Un LOST ne peut exposer qu'un seul FOUND actif. Les éventuels doublons
+    // historiques restent en base (clôturés par la migration) mais ne sont pas
+    // présentés au propriétaire.
+    const visible = declaration.declaration_type === 'LOST' ? active.slice(0, 1) : active;
+    const enriched = [];
+
+    for (const match of visible) {
+      const counterPartId = declaration.declaration_type === 'FOUND'
+        ? match.lost_declaration_id
+        : match.found_declaration_id;
+      const counterPart = await this.declarationRepository.findById(counterPartId);
+      if (!counterPart) continue;
+
+      const lostId = match.lost_declaration_id;
+      const foundId = match.found_declaration_id;
+      const paidClaim =
+        (await this.claimRepository.findPaidByLostId(lostId)) ||
+        (await this.claimRepository.findPaidByFoundId(foundId));
+
+      const reservation = await pool.query(
+        `SELECT id, status, expires_at FROM recovery_reservations
+         WHERE (lost_declaration_id = $1 OR found_declaration_id = $2)
+           AND status IN ('RESERVED', 'PAID')
+         ORDER BY created_at DESC LIMIT 1`,
+        [lostId, foundId],
+      );
+
+      // Le propriétaire voit toutes les informations du document trouvé.
+      // Le trouveur ne voit qu'un sous-ensemble des données du propriétaire
+      // jusqu'à la validation de la remise.
+      const limitedForFinder = declaration.declaration_type === 'FOUND';
+      const counterpartDocType = await this.getDocTypeName(counterPart.doc_type);
+
+      enriched.push({
+        matchId: match.id,
+        score: match.score,
+        status: match.status,
+        ownerConfirmedAt: match.owner_confirmed_at || null,
+        closedReason: match.closed_reason || null,
+        createdAt: match.created_at,
+        details: match.details || null,
+        claimStatus: paidClaim?.status || null,
+        reservationStatus: reservation.rows[0]?.status || null,
+        canPay: declaration.declaration_type === 'LOST'
+          && declaration.reporter_id === userId
+          && match.status === 'CONFIRMED'
+          && Boolean(match.owner_confirmed_at)
+          && !paidClaim
+          && !reservation.rows[0]
+          && !['RESERVED', 'CLAIMED', 'RETURNED', 'CANCELLED'].includes(String(counterPart.status)),
+        limited: limitedForFinder,
+        counterpart: {
+          id: counterPart.id,
+          identifiant_doc_dm: counterPart.identifiant_doc_dm,
+          declaration_type: counterPart.declaration_type,
+          doc_type: counterPart.doc_type,
+          doc_type_label: counterpartDocType,
+          owner_name: limitedForFinder
+            ? this.maskName(counterPart.owner_name)
+            : counterPart.owner_name,
+          document_number: limitedForFinder
+            ? this.maskNumber((counterPart as any).document_number || '')
+            : (counterPart as any).document_number || null,
+          ville: counterPart.ville,
+          region: (counterPart as any).region,
+          pays: (counterPart as any).pays,
+          quartier: counterPart.quartier,
+          department: (counterPart as any).department,
+          arrondissement: (counterPart as any).arrondissement,
+          found_location: (counterPart as any).found_location,
+          date_perte: counterPart.date_perte,
+          date_trouvaille: counterPart.declaration_type === 'FOUND'
+            ? (counterPart as any).date_trouvaille || counterPart.created_at
+            : null,
+          created_at: counterPart.created_at,
+          etat_physique: counterPart.etat_physique,
+          description: limitedForFinder ? null : counterPart.description,
+          photo_recto: limitedForFinder ? null : counterPart.photo_recto,
+          photo_verso: limitedForFinder ? null : counterPart.photo_verso,
+          telephone_contact: limitedForFinder
+            ? null
+            : (counterPart as any).telephone_contact,
+          email_contact: limitedForFinder
+            ? null
+            : (counterPart as any).email_contact,
+          reporter_type: counterPart.reporter_type,
+          status: counterPart.status,
+        },
+      });
+    }
+
+    enriched.sort((a, b) => {
+      const rank = (s: string) => (s === 'CONFIRMED' ? 0 : 1);
+      return rank(a.status) - rank(b.status) || b.score - a.score;
+    });
+
+    const declarationSummary = {
+      id: declaration.id,
+      identifiant_doc_dm: declaration.identifiant_doc_dm,
+      declaration_type: declaration.declaration_type,
+      status: declaration.status,
+      doc_type: declaration.doc_type,
+    };
+    const confirmedCount = enriched.filter((m) => m.status === 'CONFIRMED').length;
+    const pendingCount = enriched.filter((m) => m.status === 'PENDING').length;
+
+    // Le trouveur ne choisit pas de propriétaire : il n'a besoin que du nombre de
+    // déclarations liées et de l'état de la remise, pas des données des candidats.
+    if (declaration.declaration_type === 'FOUND') {
+      const handoverMatch = enriched.find((m) => m.claimStatus) ?? enriched[0] ?? null;
+      return {
+        declaration: declarationSummary,
+        count: enriched.length,
+        confirmed: confirmedCount,
+        pending: pendingCount,
+        handover: {
+          claimStatus: handoverMatch?.claimStatus ?? null,
+          reservationStatus: handoverMatch?.reservationStatus ?? null,
+        },
+        matches: [],
+      };
+    }
+
+    return {
+      declaration: declarationSummary,
+      count: enriched.length,
+      confirmed: confirmedCount,
+      pending: pendingCount,
+      matches: await encodeMediaFields(enriched),
+    };
+  }
+
+  /**
+   * Owner explicitly confirms one candidate before any payment can start.
+   */
+  async confirmDeclarationMatch(declarationId: string, matchId: string, userId: string) {
+    const declaration = await this.declarationRepository.findById(declarationId);
+    if (!declaration) throw new HttpError(404, 'Déclaration introuvable.');
+    if (declaration.declaration_type !== 'LOST') {
+      throw new HttpError(400, 'Seul le propriétaire d’une déclaration perdue peut confirmer.');
+    }
+    if (declaration.reporter_id !== userId) {
+      throw new HttpError(403, 'Action non autorisée.');
+    }
+
+    const match = await this.matchRepository.findById(matchId);
+    if (!match || match.lost_declaration_id !== declarationId) {
+      throw new HttpError(404, 'Correspondance introuvable.');
+    }
+    if (!['PENDING', 'CONFIRMED'].includes(match.status)) {
+      throw new HttpError(409, 'Cette correspondance n’est plus active.');
+    }
+
+    const found = await this.declarationRepository.findById(match.found_declaration_id);
+    if (!found) throw new HttpError(404, 'Déclaration trouvée introuvable.');
+    if (['RESERVED', 'CLAIMED', 'RETURNED', 'CANCELLED'].includes(String(found.status))) {
+      throw new HttpError(409, 'Ce document a déjà été traité ou est en cours de traitement.');
+    }
+
+    const paidClaim = await this.claimRepository.findPaidByFoundId(found.id);
+    if (paidClaim) {
+      throw new HttpError(409, 'Ce document a déjà été récupéré par un autre propriétaire.');
+    }
+
+    const updated = await this.matchRepository.setOwnerConfirmation(matchId, userId);
+    await this.matchRepository.closeOtherActiveForLost(
+      declarationId,
+      matchId,
+      'OTHER_DOCUMENT',
+    );
+    await this.declarationRepository.update(declarationId, userId, { status: 'MATCHED' });
+    if (found.reporter_id) {
+      await this.declarationRepository.update(found.id, found.reporter_id, { status: 'MATCHED' });
+    }
+
+    const docTypeName = await this.getDocTypeName(declaration.doc_type);
+    await this.notificationService.notifyMatchConfirmed(
+      found.reporter_id,
+      found.reporter_type,
+      declarationId,
+      found.id,
+      matchId,
+      docTypeName,
+    );
+
+    return {
+      success: true,
+      message: 'Correspondance confirmée. Vous pouvez maintenant procéder au paiement.',
+      match: updated,
+    };
+  }
+
+  /**
+   * Le propriétaire d'une LOST écarte un candidat qui n'est pas son document.
+   * Le rejet est définitif : le moteur ignore une paire REJECTED et le slot
+   * « un seul FOUND actif par LOST » est libéré pour un meilleur candidat.
+   */
+  async rejectDeclarationMatch(declarationId: string, matchId: string, userId: string) {
+    const declaration = await this.declarationRepository.findById(declarationId);
+    if (!declaration) throw new HttpError(404, 'Déclaration introuvable.');
+    if (declaration.declaration_type !== 'LOST') {
+      throw new HttpError(400, 'Seul le propriétaire d’une déclaration perdue peut écarter un candidat.');
+    }
+    if (declaration.reporter_id !== userId) {
+      throw new HttpError(403, 'Action non autorisée.');
+    }
+
+    const match = await this.matchRepository.findById(matchId);
+    if (!match || match.lost_declaration_id !== declarationId) {
+      throw new HttpError(404, 'Correspondance introuvable.');
+    }
+    if (!['PENDING', 'CONFIRMED'].includes(match.status)) {
+      throw new HttpError(409, 'Cette correspondance n’est plus active.');
+    }
+    if (match.owner_confirmed_at) {
+      throw new HttpError(409, 'Vous avez déjà confirmé ce document.');
+    }
+
+    const paidClaim =
+      (await this.claimRepository.findPaidByLostId(declarationId)) ||
+      (await this.claimRepository.findPaidByFoundId(match.found_declaration_id));
+    if (paidClaim) {
+      throw new HttpError(409, 'Ce document a déjà été récupéré.');
+    }
+    const reservation = await pool.query(
+      `SELECT id FROM recovery_reservations
+       WHERE (lost_declaration_id = $1 OR found_declaration_id = $2)
+         AND status IN ('RESERVED', 'PAID')
+       LIMIT 1`,
+      [declarationId, match.found_declaration_id],
+    );
+    if (reservation.rows.length > 0) {
+      throw new HttpError(409, 'Ce document est en cours de récupération.');
+    }
+
+    const rejected = await this.matchRepository.reject(matchId, 'OWNER_REJECTED');
+    if (!rejected) throw new HttpError(409, 'Correspondance déjà close.');
+
+    const lostActive = await pool.query(
+      `SELECT 1 FROM matches
+       WHERE lost_declaration_id = $1 AND status IN ('PENDING', 'CONFIRMED')
+       LIMIT 1`,
+      [declarationId],
+    );
+    await this.declarationRepository.update(declarationId, userId, {
+      status: lostActive.rows.length > 0 ? 'MATCHED' : 'SEARCHING',
+    });
+
+    const found = await this.declarationRepository.findById(match.found_declaration_id);
+    if (found) {
+      const foundActive = await pool.query(
+        `SELECT 1 FROM matches
+         WHERE found_declaration_id = $1 AND status IN ('PENDING', 'CONFIRMED')
+         LIMIT 1`,
+        [found.id],
+      );
+      await this.declarationRepository.update(found.id, found.reporter_id, {
+        status: foundActive.rows.length > 0 ? 'MATCHED' : 'AVAILABLE',
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Ce candidat a été écarté. Votre recherche continue.',
+      matchId,
+    };
+  }
+
+  async getDocTypeName(docType: string): Promise<string> {    const meta =
+      (await this.docTypeRepository.findById(docType)) ||
+      (await this.docTypeRepository.findByCode(docType));
+    return meta ? meta.nom : docType;
   }
 
   /**
@@ -786,10 +1179,10 @@ export class DeclarationService {
     userId: string,
     amount: number,
     method: string,
-    phone?: string
+    phone?: string,
+    matchId?: string,
   ) {
-    const { assertOwnerCanPayRecovery } = await import('../utils/recovery.utils.ts');
-    const pair = await assertOwnerCanPayRecovery(userId, declarationId);
+    const pair = await assertOwnerCanPayRecovery(userId, declarationId, matchId || null);
     const lostId = pair.lostId;
     const declaration = pair.lostDecl;
 
@@ -797,54 +1190,68 @@ export class DeclarationService {
       throw new HttpError(409, 'Les frais de récupération ont déjà été payés pour ce document.');
     }
 
-    // 2. Resolve Document Type for real price
     let docType = null;
     if (declaration.doc_type && this.isUuid(declaration.doc_type)) {
       docType = await this.docTypeRepository.findById(declaration.doc_type);
     }
     const finalAmount = docType ? Number(docType.prix_retrouvaille) : (amount || 5000);
 
-    // 3. Initiate Nokash Payment
-    const orderId = `REC-${uuidv4().substring(0, 8)}`;
-    const nokashRes = await nokashService.initiatePayment({
-      payment_method: method === 'ORANGE_MONEY' ? 'ORANGE_MONEY' : 'MTN_MOMO',
-      amount: finalAmount,
-      order_id: orderId,
-      user_phone: phone,
-      country: 'CM'
-    });
+    const reservation = await acquireRecoveryReservation(pair, userId);
+    try {
+      const orderId = `REC-${uuidv4().substring(0, 8)}`;
+      const nokashRes = await nokashService.initiatePayment({
+        payment_method: method === 'ORANGE_MONEY' ? 'ORANGE_MONEY' : 'MTN_MOMO',
+        amount: finalAmount,
+        order_id: orderId,
+        user_phone: phone,
+        country: 'CM'
+      });
 
-    if (nokashRes.status !== 'REQUEST_OK') {
-      throw new Error(`Nokash: ${nokashRes.message || 'Erreur lors de l\'initialisation'}`);
+      if (nokashRes.status !== 'REQUEST_OK') {
+        throw new Error(`Nokash: ${nokashRes.message || 'Erreur lors de l\'initialisation'}`);
+      }
+
+      const transaction = await this.transactionRepository.create({
+        user_id: userId,
+        amount: finalAmount,
+        status: "PENDING",
+        payment_method: method || "MOBILE_MONEY",
+        type: "recovery_fee",
+        external_ref: nokashRes.data.id,
+        metadata: {
+          docId: lostId,
+          matchId: pair.matchId,
+          foundId: pair.foundId,
+          reservationId: reservation.id,
+        },
+      });
+      await attachTransactionToReservation(reservation.id, transaction.id);
+
+      startNokashPaymentPolling({
+        externalRef: nokashRes.data.id,
+        onSuccess: async (transaction) => {
+          const metadata = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : transaction.metadata;
+          await activateRecovery(transaction.user_id, metadata.docId, transaction.id, {
+            matchId: metadata.matchId,
+            foundId: metadata.foundId,
+            reservationId: metadata.reservationId,
+          });
+        }
+      });
+
+      return {
+        success: true,
+        message: 'Paiement initié. Veuillez valider sur votre téléphone.',
+        data: {
+          nokashId: nokashRes.data.id,
+          orderId,
+          matchId: pair.matchId,
+        }
+      };
+    } catch (error) {
+      await releaseRecoveryReservation(reservation.id, 'CANCELLED');
+      throw error;
     }
-
-    // 4. Create PENDING Transaction
-    const transaction = await this.transactionRepository.create({
-      user_id: userId,
-      amount: finalAmount,
-      status: "PENDING",
-      payment_method: method || "MOBILE_MONEY",
-      type: "recovery_fee",
-      external_ref: nokashRes.data.id,
-      metadata: { docId: lostId },
-    });
-
-    startNokashPaymentPolling({
-      externalRef: nokashRes.data.id,
-      onSuccess: async (transaction) => {
-        const metadata = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : transaction.metadata;
-        await activateRecovery(transaction.user_id, metadata.docId, transaction.id);
-      }
-    });
-
-    return {
-      success: true,
-      message: 'Paiement initié. Veuillez valider sur votre téléphone.',
-      data: {
-        nokashId: nokashRes.data.id,
-        orderId
-      }
-    };
   }
 
   /**

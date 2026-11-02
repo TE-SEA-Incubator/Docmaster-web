@@ -29,7 +29,7 @@ export default function SuccessDeclarationModal({
       description={t("declarer_success_desc")}
       badgeText={t("declarer_breadcrumb")}
       badgeColor="green"
-      icon="fa-file-shield"
+      icon="ph ph-file-lock"
       highlightBox={{
         label: t("declarer_keep_reference"),
         value: refNumber || t("declarer_ref_pending"),
@@ -38,12 +38,12 @@ export default function SuccessDeclarationModal({
         label: t("declarer_download_pdf"),
         loadingLabel: t("declarer_downloading_pdf"),
         loading: isDownloading,
-        icon: "fa-file-arrow-down",
+        icon: "ph ph-file-arrow-down",
         onClick: onDownloadPdf,
       }}
       secondaryAction={{
         label: t("declarer_my_declarations"),
-        icon: "fa-folder-open",
+        icon: "ph ph-folder-open",
         onClick: onMyDeclarations,
       }}
     />

@@ -26,21 +26,21 @@ export default function SuccessModal({
       description={t("success_declaration_desc")}
       badgeText="Déclaration"
       badgeColor="green"
-      icon="fa-file-shield"
+      icon="ph ph-file-lock"
       highlightBox={{
         label: t("success_keep_reference"),
         value: refNumber,
       }}
       primaryAction={{
         label: t("success_download_pdf"),
-        icon: "fa-file-arrow-down",
+        icon: "ph ph-file-arrow-down",
         onClick: () => {
           if (onDownloadPdf) onDownloadPdf();
         },
       }}
       secondaryAction={{
         label: t("success_my_declarations"),
-        icon: "fa-folder-open",
+        icon: "ph ph-folder-open",
         onClick: onMyDeclarations,
       }}
     />

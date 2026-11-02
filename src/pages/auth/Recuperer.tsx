@@ -15,6 +15,10 @@ import { useTopbar } from "../../hooks/useTopbar";
 import { useTimingConfig } from "../../hooks/useTimingConfig";
 import { FlowCard, FlowFact, FlowNotice, FlowStepper } from "../../components/recuperation/FlowUI";
 import CompleteDeclarationModal from "../../components/ui/CompleteDeclarationModal";
+import ReportModal from "../../components/ui/ReportModal";
+import TestimonialModal from "../../components/ui/TestimonialModal";
+import { testimonialsService, type TestimonialEligibility } from "../../services/testimonialsService";
+import { levelFor } from "../../utils/testimonialLevels";
 import { declarationGaps } from "../../utils/declarationGaps";
 
 const FALLBACK_LAT = 3.8480;
@@ -38,6 +42,7 @@ export default function Recuperer() {
   const [searchParams] = useSearchParams();
   const docId = searchParams.get("id");
   const foundMatchId = searchParams.get("found");
+  const matchId = searchParams.get("match");
   const conversationHref = `/messagerie?doc=${docId}`;
 
   const [doc, setDoc] = useState<Declaration | null>(null);
@@ -59,6 +64,11 @@ export default function Recuperer() {
   const [ownerCoords, setOwnerCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [review, setReview] = useState<TestimonialEligibility | null>(null);
+  const [testimonialOpen, setTestimonialOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState("");
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -74,46 +84,98 @@ export default function Recuperer() {
   const paid = step >= 3;
   const collected = step >= 4;
 
+  const activeMatch = (doc as any)?.match as { id?: string } | undefined;
+  const isOwner = (doc?.declaration_type || "").toUpperCase() === "LOST";
+  const ownerConfirmed = Boolean((doc as any)?.ownerConfirmedAt);
+  const needsConfirmation =
+    isOwner && Boolean(activeMatch?.id) && !ownerConfirmed && !paid;
+
+  // On signale la trouvaille en cours ; sans correspondance, on retombe sur la déclaration.
+  const reportMatchTarget = matchId || foundMatchId || activeMatch?.id || (doc as any)?.matchId || null;
+  const reportTargetType = reportMatchTarget ? "MATCH" : "DECLARATION";
+  const reportTargetId = reportMatchTarget || docId;
+
   // ── Load declaration ──────────────────────────────────────────────────
-  useEffect(() => {
+  const loadDeclaration = useCallback(async () => {
     if (!docId) { setLoading(false); return; }
     setLoading(true);
-    declarationsService.getRenderContext(docId, foundMatchId || undefined)
-      .then((res) => {
-        if (res.success && res.data) {
-          const d = res.data;
-          // Une déclaration FOUND appartient au trouveur : c'est la page « Rendre » qui le guide.
-          if ((d.declaration_type || "").toUpperCase() === "FOUND") {
-            navigate(`/rendre?id=${docId}`, { replace: true });
-            return;
-          }
-          setDoc(d);
-          const ps = (d.payment_status || "").toUpperCase();
-          const ds = (d.status || "").toUpperCase();
-          setStep(
-            ds === "RETURNED" ? 4
-            : ps === "PAID" || ds === "PAID" || d.claim?.status === "PAID" || d.claim?.status === "VALIDATED" ? 3
-            : 1
-          );
-          if (ps === "PAID" || ds === "PAID" || ds === "RETURNED" || d.claim?.status === "PAID" || d.claim?.status === "VALIDATED") {
-            setPickupCode(d.claim?.verification_code || d.reference || "");
-          }
-        } else {
-          setError(t("recuperer_not_found"));
+    setError("");
+    try {
+      const res = await declarationsService.getRenderContext(docId, foundMatchId || undefined, matchId || undefined);
+      if (res.success && res.data) {
+        const d = res.data;
+        // Une déclaration FOUND appartient au trouveur : c'est la page « Rendre » qui le guide.
+        if ((d.declaration_type || "").toUpperCase() === "FOUND") {
+          navigate(`/rendre?id=${docId}`, { replace: true });
+          return;
         }
+        setDoc(d);
+        const ps = (d.payment_status || "").toUpperCase();
+        const ds = (d.status || "").toUpperCase();
+        setStep(
+          ds === "RETURNED" ? 4
+          : ps === "PAID" || ds === "PAID" || d.claim?.status === "PAID" || d.claim?.status === "VALIDATED" ? 3
+          : 1
+        );
+        if (ps === "PAID" || ds === "PAID" || ds === "RETURNED" || d.claim?.status === "PAID" || d.claim?.status === "VALIDATED") {
+          setPickupCode(d.claim?.verification_code || d.reference || "");
+        }
+      } else {
+        setError(t("recuperer_not_found"));
+      }
+    } catch (e: any) {
+      setError(e.response?.data?.message || e.response?.data?.error || t("recuperer_load_error"));
+    } finally {
+      setLoading(false);
+    }
+  }, [docId, foundMatchId, matchId, navigate, t]);
+
+  useEffect(() => {
+    loadDeclaration();
+  }, [loadDeclaration]);
+
+  // L'éligibilité à un avis est décidée par le serveur (document trouvé ou récupéré).
+  useEffect(() => {
+    if (!docId || !doc) return;
+    let alive = true;
+    testimonialsService
+      .getEligibility(docId)
+      .then((res) => {
+        if (alive && res.success && res.data) setReview(res.data);
       })
-      .catch((e: any) => {
-        setError(e.response?.data?.message || e.response?.data?.error || t("recuperer_load_error"));
-      })
-      .finally(() => setLoading(false));
-  }, [docId, foundMatchId, navigate, t]);
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [docId, doc]);
+
+  // Le propriétaire confirme le document trouvé avant de payer, même lorsqu'il
+  // n'y a qu'un seul candidat.
+  const handleConfirmDocument = async () => {
+    const activeId = (doc as any)?.matchId || activeMatch?.id;
+    if (!docId || !activeId || confirming) return;
+    setConfirming(true);
+    setConfirmError("");
+    try {
+      const res = await declarationsService.confirmMatch(docId, activeId);
+      if (!res.success) {
+        setConfirmError(res.message || t("recuperer_confirm_error"));
+        return;
+      }
+      await loadDeclaration();
+    } catch (e: any) {
+      setConfirmError(e?.response?.data?.message || t("recuperer_confirm_error"));
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   // ── Payment polling ───────────────────────────────────────────────────
   useEffect(() => {
     if (step >= 3 || !docId || pickupCode) return;
     const interval = setInterval(async () => {
       try {
-        const res = await declarationsService.getRenderContext(docId, foundMatchId || undefined);
+        const res = await declarationsService.getRenderContext(docId, foundMatchId || undefined, matchId || undefined);
         if (res.success && res.data) {
           const d = res.data;
           const ps = (d.payment_status || "").toUpperCase();
@@ -311,7 +373,7 @@ export default function Recuperer() {
             if (recoveryPollingRef.current) clearInterval(recoveryPollingRef.current);
             setPollingStatus(null);
             setStep(3);
-            const docRes = await declarationsService.getRenderContext(docId!, foundMatchId || undefined);
+            const docRes = await declarationsService.getRenderContext(docId!, foundMatchId || undefined, matchId || undefined);
             if (docRes.success && docRes.data) {
               setDoc(docRes.data);
               setPickupCode(docRes.data.claim?.verification_code || docRes.data.reference || "");
@@ -321,7 +383,7 @@ export default function Recuperer() {
           }
         }
 
-        const res = await declarationsService.getRenderContext(docId!, foundMatchId || undefined);
+        const res = await declarationsService.getRenderContext(docId!, foundMatchId || undefined, matchId || undefined);
         if (res.success && res.data) {
           const d = res.data;
           const ps = (d.payment_status || "").toUpperCase();
@@ -367,7 +429,7 @@ export default function Recuperer() {
         if (recoveryPollingRef.current) clearInterval(recoveryPollingRef.current);
         setPollingStatus(null);
         setStep(3);
-        const docRes = await declarationsService.getRenderContext(docId!, foundMatchId || undefined);
+        const docRes = await declarationsService.getRenderContext(docId!, foundMatchId || undefined, matchId || undefined);
         if (docRes.success && docRes.data) {
           setDoc(docRes.data);
           setPickupCode(docRes.data.claim?.verification_code || docRes.data.reference || "");
@@ -385,11 +447,15 @@ export default function Recuperer() {
 
   const handlePay = async (method: "orange" | "mtn" | "points", phone: string) => {
     if (!docId) return;
+    if (needsConfirmation) {
+      setPayError(t("recuperer_confirm_required"));
+      return;
+    }
     setPayProcessing(true);
     setPayError("");
     try {
       const pm = method === "orange" ? "ORANGE_MONEY" : method === "mtn" ? "MTN_MOMO" : "POINTS";
-      const res = await declarationsService.payRecoveryFee({ docId, paymentMethod: pm, phone });
+      const res = await declarationsService.payRecoveryFee({ docId, paymentMethod: pm, phone, matchId: matchId || undefined });
       setPayProcessing(false);
 
       if (res.success) {
@@ -527,12 +593,15 @@ export default function Recuperer() {
   // ── Render: Main ─────────────────────────────────────────────────────
   return (
     <div className="flex-1 px-4 sm:px-6 py-6 pb-24 lg:pb-6">
-      <div className="max-w-3xl mx-auto space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+
+        {/* ═══ Colonne action ═══ */}
+        <div className="flex flex-col gap-5 min-w-0">
 
         {/* ═══ Progression ═══ */}
         <FlowCard
           title={t("flow_progression")}
-          icon="fa-solid fa-list-check"
+          icon="ph ph-list-checks"
           aside={<Badge color={statusColor} variant="light" radius="xl" size="sm">{statusLabel}</Badge>}
         >
           <FlowStepper
@@ -544,7 +613,7 @@ export default function Recuperer() {
 
         {/* ═══ Informations manquantes ═══ */}
         {gaps.length > 0 && (
-          <FlowNotice tone="orange" icon="fa-solid fa-circle-info">
+          <FlowNotice tone="orange" icon="ph ph-info">
             <span className="font-bold">{t("recuperer_gaps_title")}</span> {t("recuperer_gaps_desc")}
             <button
               type="button"
@@ -557,17 +626,17 @@ export default function Recuperer() {
         )}
 
         {/* ═══ Action en cours ═══ */}
-        <FlowCard title={t("flow_to_do")} icon="fa-solid fa-bullseye">
+        <FlowCard title={t("flow_to_do")} icon="ph ph-target">
           {collected ? (
             <div className="flex flex-col gap-4 items-start">
-              <FlowNotice tone="green" icon="fa-solid fa-circle-check">
+              <FlowNotice tone="green" icon="ph ph-check-circle">
                 <span className="font-bold">{t("flow_done_title")}</span> {t("flow_done_desc")}
               </FlowNotice>
               <Button component={Link} to="/dashboard" radius="md">{t("flow_back_dashboard")}</Button>
             </div>
           ) : pickupCode ? (
             <div className="flex flex-col gap-4">
-              <FlowNotice tone="green" icon="fa-solid fa-badge-check">
+              <FlowNotice tone="green" icon="ph ph-seal-check">
                 <span className="font-bold">{t("flow_paid_confirmed")}</span> {t("flow_success_desc")}
               </FlowNotice>
 
@@ -582,13 +651,13 @@ export default function Recuperer() {
                     {pickupCode}
                   </span>
                   <span className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-textMuted uppercase tracking-wider">
-                    <i className={`fa-solid ${codeCopied ? "fa-check text-green-dark" : "fa-copy"}`} aria-hidden="true" />
+                    <i className={`${codeCopied ? "ph ph-check text-green-dark" : "ph ph-copy"}`} aria-hidden="true" />
                     {codeCopied ? t("flow_code_copied") : t("flow_copy_code")}
                   </span>
                 </button>
               </div>
 
-              <FlowNotice tone="orange" icon="fa-solid fa-triangle-exclamation">
+              <FlowNotice tone="orange" icon="ph ph-warning">
                 {t("messagerie_code_warning")}
               </FlowNotice>
 
@@ -597,7 +666,7 @@ export default function Recuperer() {
                   component={Link}
                   to={conversationHref}
                   radius="md"
-                  leftSection={<i className="fa-solid fa-comments text-xs" aria-hidden="true" />}
+                  leftSection={<i className="ph ph-chats text-xs" aria-hidden="true" />}
                 >
                   {t("messagerie_cta_from_payment")}
                 </Button>
@@ -605,6 +674,27 @@ export default function Recuperer() {
                   {t("flow_back_dashboard")}
                 </Button>
               </div>
+            </div>
+          ) : needsConfirmation ? (
+            <div className="flex flex-col gap-4">
+              <FlowNotice tone="orange" icon="ph ph-warning-circle">
+                <span className="font-bold">{t("recuperer_confirm_title")}</span> {t("recuperer_confirm_hint")}
+              </FlowNotice>
+              {confirmError && (
+                <FlowNotice tone="red" icon="ph ph-x-circle">
+                  {confirmError}
+                </FlowNotice>
+              )}
+              <Button
+                onClick={handleConfirmDocument}
+                loading={confirming}
+                radius="md"
+                size="lg"
+                fullWidth
+                leftSection={<i className="ph ph-check-circle text-xs" aria-hidden="true" />}
+              >
+                {t("recuperer_confirm_cta")}
+              </Button>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
@@ -618,7 +708,7 @@ export default function Recuperer() {
                 radius="md"
                 size="lg"
                 fullWidth
-                rightSection={<i className="fa-solid fa-arrow-right text-xs" aria-hidden="true" />}
+                rightSection={<i className="ph ph-arrow-right text-xs" aria-hidden="true" />}
               >
                 {t("flow_pay_cta")}
               </Button>
@@ -630,7 +720,7 @@ export default function Recuperer() {
         {/* ═══ Le document ═══ */}
         <FlowCard
           title={getDocTypeName()}
-          icon="fa-solid fa-id-card"
+          icon="ph ph-identification-card"
           aside={<span className="text-[11px] font-mono tabular-nums text-textMuted">{(doc as any)?.identifiant_doc_dm || doc?.reference || "—"}</span>}
         >
           <div className="grid grid-cols-1 sm:grid-cols-5 gap-5">
@@ -640,7 +730,7 @@ export default function Recuperer() {
                   <img src={getPhotoSrc()} alt={getDocTypeName()} className="w-full h-full object-contain" />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                    <i className="fa-solid fa-id-card text-3xl text-textMuted" aria-hidden="true" />
+                    <i className="ph ph-identification-card text-3xl text-textMuted" aria-hidden="true" />
                     <p className="text-[11px] text-textMuted">{t("flow_photo_empty")}</p>
                   </div>
                 )}
@@ -652,7 +742,7 @@ export default function Recuperer() {
                   radius="md"
                   size="xs"
                   onClick={() => window.open(getImageUrl(doc.photo_verso), "_blank")}
-                  leftSection={<i className="fa-solid fa-rotate text-[10px]" aria-hidden="true" />}
+                  leftSection={<i className="ph ph-arrow-clockwise text-[10px]" aria-hidden="true" />}
                 >
                   {t("flow_back_photo")}
                 </Button>
@@ -670,7 +760,7 @@ export default function Recuperer() {
         </FlowCard>
 
         {/* ═══ Le trouveur ═══ */}
-        <FlowCard title={t("flow_finder_title")} icon="fa-solid fa-user-check">
+        <FlowCard title={t("flow_finder_title")} icon="ph ph-user-check">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FlowFact
               label={t("flow_finder_name")}
@@ -689,7 +779,7 @@ export default function Recuperer() {
 
           {!paid ? (
             <div className="mt-4 pt-4 border-t border-borderMain">
-              <FlowNotice tone="orange" icon="fa-solid fa-lock">
+              <FlowNotice tone="orange" icon="ph ph-lock">
                 {t("recuperer_map_hint_unpaid")}
               </FlowNotice>
             </div>
@@ -702,7 +792,7 @@ export default function Recuperer() {
                     href={`tel:${getFinderPhone()}`}
                     radius="md"
                     variant="default"
-                    leftSection={<i className="fa-solid fa-phone text-xs" aria-hidden="true" />}
+                    leftSection={<i className="ph ph-phone text-xs" aria-hidden="true" />}
                   >
                     {t("rendre_call")}
                   </Button>
@@ -713,7 +803,7 @@ export default function Recuperer() {
                     rel="noreferrer"
                     radius="md"
                     variant="default"
-                    leftSection={<i className="fa-brands fa-whatsapp text-xs" aria-hidden="true" />}
+                    leftSection={<i className="ph ph-whatsapp-logo text-xs" aria-hidden="true" />}
                   >
                     WhatsApp
                   </Button>
@@ -724,19 +814,72 @@ export default function Recuperer() {
                 to={conversationHref}
                 radius="md"
                 variant="default"
-                leftSection={<i className="fa-solid fa-comments text-xs" aria-hidden="true" />}
+                leftSection={<i className="ph ph-chats text-xs" aria-hidden="true" />}
               >
                 {t("messagerie_cta_from_payment")}
               </Button>
             </div>
           )}
+
+          {!collected && (
+            <div className="mt-4 pt-4 border-t border-borderMain">
+              <Button
+                color="red"
+                variant="light"
+                radius="md"
+                size="sm"
+                onClick={() => setReportOpen(true)}
+                leftSection={<i className="ph ph-flag text-xs" aria-hidden="true" />}
+              >
+                {t("recuperer_report_cta")}
+              </Button>
+              <p className="mt-2 text-[11.5px] text-textMuted leading-relaxed">
+                {t("recuperer_report_hint")}
+              </p>
+            </div>
+          )}
         </FlowCard>
+
+        {/* ═══ Votre avis ═══ */}
+        {review?.eligible && (
+          <FlowCard title={t("testimonial_card_title")} icon="ph ph-star">
+            {review.testimonial ? (
+              <div className="flex items-start gap-3">
+                <span className="text-3xl leading-none" aria-hidden="true">
+                  {levelFor(review.testimonial.rating).emoji}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-bold text-textMain">{t("testimonial_card_thanks")}</p>
+                  <p className="mt-1 text-[12px] text-textMuted">
+                    {t(levelFor(review.testimonial.rating).labelKey)}
+                  </p>
+                  <p className="mt-2 text-[12.5px] text-textMain leading-relaxed italic">
+                    “{review.testimonial.comment}”
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+                <p className="text-[12.5px] text-textMuted leading-relaxed max-w-md">
+                  {t("testimonial_card_desc")}
+                </p>
+                <Button
+                  onClick={() => setTestimonialOpen(true)}
+                  radius="md"
+                  leftSection={<i className="ph ph-star text-xs" aria-hidden="true" />}
+                >
+                  {t("testimonial_card_cta")}
+                </Button>
+              </div>
+            )}
+          </FlowCard>
+        )}
 
         {/* ═══ Itinéraire ═══ */}
         <section id="finder-map-section" className="bg-surface border border-borderMain rounded-3xl overflow-hidden">
           <header className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-borderMain">
             <div className="flex items-center gap-2.5 min-w-0">
-              <i className="fa-solid fa-route text-textMuted text-sm" aria-hidden="true" />
+              <i className="ph ph-path text-textMuted text-sm" aria-hidden="true" />
               <div className="min-w-0">
                 <h2 className="font-bricolage text-[15px] sm:text-base font-bold text-textMain truncate">{t("flow_route_finder")}</h2>
                 <p className="text-[11px] text-textMuted" id="map-status-text">
@@ -753,7 +896,7 @@ export default function Recuperer() {
                   rel="noreferrer"
                   radius="md"
                   size="xs"
-                  leftSection={<i className="fa-solid fa-diamond-turn-right text-[10px]" aria-hidden="true" />}
+                  leftSection={<i className="ph ph-navigation-arrow text-[10px]" aria-hidden="true" />}
                 >
                   {t("flow_directions")}
                 </Button>
@@ -764,7 +907,7 @@ export default function Recuperer() {
                   title={t("flow_fullscreen")}
                   className="w-9 h-9 rounded-lg border border-borderMain bg-surface2 flex items-center justify-center text-textMuted hover:text-textMain transition-colors"
                 >
-                  <i className="fa-solid fa-expand text-[13px]" aria-hidden="true" />
+                  <i className="ph ph-arrows-out text-[13px]" aria-hidden="true" />
                 </button>
               </div>
             )}
@@ -775,11 +918,18 @@ export default function Recuperer() {
             {!paid && (
               <div className="absolute inset-0 bg-surface/85 flex items-center justify-center px-4">
                 <div className="text-center max-w-xs">
-                  <i className="fa-solid fa-lock text-textMuted text-2xl" aria-hidden="true" />
+                  <i className="ph ph-lock text-textMuted text-2xl" aria-hidden="true" />
                   <p className="mt-3 text-[14px] font-bold text-textMain">{t("flow_map_locked")}</p>
                   <p className="mt-1 text-[12px] text-textMuted leading-relaxed">{t("recuperer_map_hint_unpaid")}</p>
-                  <Button mt="md" radius="md" onClick={() => setShowPaymentModal(true)}>
-                    {t("flow_pay_locked_cta", { amount: formatCost(doc) })}
+                  <Button
+                    mt="md"
+                    radius="md"
+                    onClick={needsConfirmation ? handleConfirmDocument : () => setShowPaymentModal(true)}
+                    loading={needsConfirmation ? confirming : undefined}
+                  >
+                    {needsConfirmation
+                      ? t("recuperer_confirm_short")
+                      : t("flow_pay_locked_cta", { amount: formatCost(doc) })}
                   </Button>
                 </div>
               </div>
@@ -796,11 +946,11 @@ export default function Recuperer() {
         </section>
 
         {/* ═══ Protection ═══ */}
-        <FlowCard title={t("flow_protection_title")} icon="fa-solid fa-shield-halved">
+        <FlowCard title={t("flow_protection_title")} icon="ph ph-shield">
           <ul className="space-y-3">
             {[t("flow_protection_note"), t("messagerie_code_warning"), t("flow_safety_public")].map((rule) => (
               <li key={rule} className="flex items-start gap-2.5 text-[12.5px] text-textMain leading-relaxed">
-                <i className="fa-solid fa-check text-green-dark text-[11px] mt-1" aria-hidden="true" />
+                <i className="ph ph-check text-green-dark text-[11px] mt-1" aria-hidden="true" />
                 {rule}
               </li>
             ))}
@@ -810,6 +960,8 @@ export default function Recuperer() {
         <Button component={Link} to="/dashboard" radius="md" variant="default" fullWidth>
           {t("flow_back_dashboard")}
         </Button>
+        </div>
+        {/* Fin colonne action */}
       </div>
 
       {/* ═══ Barre d'action mobile ═══ */}
@@ -829,8 +981,13 @@ export default function Recuperer() {
                 {t("messagerie_cta_from_payment")}
               </Button>
             ) : (
-              <Button onClick={() => setShowPaymentModal(true)} radius="md" size="md">
-                {t("flow_pay_short")}
+              <Button
+                onClick={needsConfirmation ? handleConfirmDocument : () => setShowPaymentModal(true)}
+                loading={needsConfirmation ? confirming : undefined}
+                radius="md"
+                size="md"
+              >
+                {needsConfirmation ? t("recuperer_confirm_short") : t("flow_pay_short")}
               </Button>
             )}
           </div>
@@ -883,7 +1040,7 @@ export default function Recuperer() {
           description={t("flow_success_desc")}
           badgeText={t("flow_success_badge")}
           badgeColor="green"
-          icon="fa-shield-halved"
+          icon="ph ph-shield"
           highlightBox={{
             label: t("flow_success_code_label"),
             value: pickupCode || doc?.reference || "—",
@@ -896,7 +1053,7 @@ export default function Recuperer() {
           ]}
           primaryAction={{
             label: t("messagerie_cta_from_payment"),
-            icon: "fa-comments",
+            icon: "ph ph-chats",
             onClick: () => {
               setShowSuccessModal(false);
               navigate(conversationHref);
@@ -904,7 +1061,7 @@ export default function Recuperer() {
           }}
           secondaryAction={{
             label: t("flow_success_secondary"),
-            icon: "fa-location-dot",
+            icon: "ph ph-map-pin",
             onClick: () => setShowSuccessModal(false),
           }}
         />
@@ -917,6 +1074,24 @@ export default function Recuperer() {
           onSaved={handleCompleted}
         />
       )}
+
+      <ReportModal
+        opened={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType={reportTargetType}
+        targetId={reportTargetId}
+        title={t("recuperer_report_modal_title")}
+        intro={t("recuperer_report_modal_intro")}
+      />
+
+      <TestimonialModal
+        opened={testimonialOpen}
+        onClose={() => setTestimonialOpen(false)}
+        declarationId={docId}
+        onSubmitted={(testimonial) =>
+          setReview((current) => (current ? { ...current, testimonial } : current))
+        }
+      />
     </div>
   );
 }
@@ -925,7 +1100,7 @@ function FlowEmptyState({ title, message, cta }: { title: string; message: strin
   return (
     <div className="flex-1 flex items-center justify-center px-4 py-20">
       <div className="max-w-sm text-center">
-        <i className="fa-solid fa-file-circle-question text-textMuted text-3xl" aria-hidden="true" />
+        <i className="ph ph-seal-question text-textMuted text-3xl" aria-hidden="true" />
         <h1 className="mt-4 font-bricolage text-lg font-bold text-textMain">{title}</h1>
         <p className="mt-2 text-[13px] text-textMuted leading-relaxed">{message}</p>
         <Button
@@ -933,7 +1108,7 @@ function FlowEmptyState({ title, message, cta }: { title: string; message: strin
           to="/rechercher"
           radius="md"
           mt="md"
-          leftSection={<i className="fa-solid fa-magnifying-glass text-xs" aria-hidden="true" />}
+          leftSection={<i className="ph ph-magnifying-glass text-xs" aria-hidden="true" />}
         >
           {cta}
         </Button>

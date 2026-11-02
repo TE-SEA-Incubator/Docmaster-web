@@ -1,27 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useI18n } from "../../context/I18nContext";
 
 interface Message {
   from: "bot" | "user";
   text: string;
 }
 
-const WELCOME_MESSAGES = [
-  "Bonjour ! Bienvenue sur Docmaster, le service 100% camerounais de gestion de documents.",
-  "Je suis votre assistant Docmaster. Comment puis-je vous aider aujourd'hui ?",
-];
-
-const QUICK_REPLIES = [
-  "Déclarer un document perdu",
-  "Retrouver un document",
-  "Transfert d'appareil",
-  "Sécurité de mon compte",
-];
-
 const MAX_HISTORY = 12;
 
 export default function ChatWidget() {
   const { user } = useAuth();
+  const { t, language } = useI18n();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -30,6 +20,18 @@ export default function ChatWidget() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const WELCOME_MESSAGES = [
+    t("chatbot_welcome_1") || "Bonjour ! Bienvenue sur Docmaster, le service 100% camerounais de gestion de documents.",
+    t("chatbot_welcome_2") || "Je suis votre assistant Docmaster. Comment puis-je vous aider aujourd'hui ?",
+  ];
+
+  const QUICK_REPLIES = [
+    t("chatbot_quick_lost") || "Déclarer un document perdu",
+    t("chatbot_quick_find") || "Retrouver un document",
+    t("chatbot_quick_transfer") || "Transfert d'appareil",
+    t("chatbot_quick_security") || "Sécurité de mon compte",
+  ];
 
   useEffect(() => {
     if (open && messages.length === 0) {
@@ -87,6 +89,7 @@ export default function ChatWidget() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: payload,
+          language: language,
           user: user
             ? {
                 prenom: user.prenom,
@@ -105,7 +108,7 @@ export default function ChatWidget() {
     } catch (err: any) {
       setMessages((m) => [
         ...m,
-        { from: "bot", text: "Je suis désolé, je rencontre une difficulté technique. Merci de réessayer dans un instant ou de contacter notre équipe support." },
+        { from: "bot", text: t("chatbot_error") || "Je suis désolé, je rencontre une difficulté technique. Merci de réessayer dans un instant ou de contacter notre équipe support." },
       ]);
     } finally {
       setTyping(false);
@@ -118,7 +121,7 @@ export default function ChatWidget() {
       <button
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-[60px] sm:bottom-6 right-4 sm:right-6 w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 z-50"
-        aria-label={open ? "Fermer le chat" : "Ouvrir le chat"}
+        aria-label={open ? t("chatbot_close") || "Fermer le chat" : t("chatbot_open") || "Ouvrir le chat"}
         aria-expanded={open}
         ref={fabRef}
         style={{ boxShadow: "0 8px 24px rgba(30, 58, 47, 0.25)" }}
@@ -150,16 +153,16 @@ export default function ChatWidget() {
             <img src="/src/assets/images/chat-icon.svg" className="w-6 h-auto" alt="Docmaster" />
           </div>
           <div className="flex-1">
-            <p className="text-white font-bricolage font-semibold text-sm">Assistant Docmaster</p>
+            <p className="text-white font-bricolage font-semibold text-sm">{t("chatbot_title") || "Assistant Docmaster"}</p>
             <p className="text-white/60 text-[11px] flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green-light inline-block" style={{ background: "#A8CBAF" }} />
-              En ligne — réponse immédiate
+              {t("chatbot_status") || "En ligne — réponse immédiate"}
             </p>
           </div>
           <button
             onClick={() => setOpen(false)}
             className="text-white/70 hover:text-white transition-colors"
-            aria-label="Fermer"
+            aria-label={t("chatbot_close") || "Fermer"}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M18 6L6 18M6 6l12 12" />
@@ -216,14 +219,14 @@ export default function ChatWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Écrivez votre message…"
+            placeholder={t("chatbot_placeholder") || "Écrivez votre message…"}
             className="flex-1 bg-bgMain border border-borderMain rounded-full px-4 py-2 text-[13px] text-textMain outline-none focus:border-primary transition-colors"
           />
           <button
             onClick={() => send()}
             disabled={!input.trim()}
             className="w-9 h-9 shrink-0 bg-primary hover:bg-primary-dark disabled:opacity-40 text-white rounded-full flex items-center justify-center transition-colors"
-            aria-label="Envoyer"
+            aria-label={t("chatbot_send") || "Envoyer"}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
               <path d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a.993.993 0 00-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"/>

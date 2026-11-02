@@ -2,6 +2,7 @@ import { query } from '../database/db.ts';
 import { nokashService } from './nokash.service.ts';
 import { subscriptionService } from './subscription.service.ts';
 import { activateRecovery } from '../controllers/payment.controller.ts';
+import { releaseReservationByTransaction } from '../utils/recovery.utils.ts';
 
 function normalizeNokashStatus(payload: any) {
   const status = (payload?.status || payload?.data?.status || payload?.result?.status || '').toString().toUpperCase();
@@ -92,9 +93,22 @@ class PaymentReconciliationService {
                 console.log(`[Reconciliation] Subscription activated for user ${transaction.user_id}`);
               }
             } else if (transaction.type === 'recovery_fee') {
-              const { docId } = metadata || {};
+              const { docId, matchId, foundId, reservationId } = metadata || {};
               if (docId) {
-                await activateRecovery(transaction.user_id, docId, transaction.id);
+                try {
+                  await activateRecovery(transaction.user_id, docId, transaction.id, {
+                    matchId,
+                    foundId,
+                    reservationId,
+                  });
+                } catch (activationErr) {
+                  await query(
+                    `UPDATE transactions SET status = 'PENDING'
+                     WHERE id = $1 AND status = 'SUCCESS' AND type = 'recovery_fee'`,
+                    [transaction.id],
+                  );
+                  throw activationErr;
+                }
               }
             } else if (transaction.type === 'points_purchase') {
               const { pointsAmount } = metadata || {};
@@ -108,6 +122,7 @@ class PaymentReconciliationService {
           } else if (normalized.terminal) {
             const terminalStatus = normalized.status === 'CANCELLED' ? 'CANCELED' : normalized.status;
             await query('UPDATE transactions SET status = $1 WHERE id = $2', [terminalStatus, transaction.id]);
+            await releaseReservationByTransaction(transaction.id);
             console.log(`[Reconciliation] Transaction ${transaction.id} marked as ${terminalStatus}`);
           } else {
             console.log(`[Reconciliation] Transaction ${transaction.id} still pending at Nokash, skipping.`);
@@ -160,9 +175,22 @@ class PaymentReconciliationService {
           await subscriptionService.activateSubscription(transaction.user_id, planId, months || 1);
         }
       } else if (transaction.type === 'recovery_fee') {
-        const { docId } = metadata || {};
+        const { docId, matchId, foundId, reservationId } = metadata || {};
         if (docId) {
-          await activateRecovery(transaction.user_id, docId, transaction.id);
+          try {
+            await activateRecovery(transaction.user_id, docId, transaction.id, {
+              matchId,
+              foundId,
+              reservationId,
+            });
+          } catch (activationErr) {
+            await query(
+              `UPDATE transactions SET status = 'PENDING'
+               WHERE id = $1 AND status = 'SUCCESS' AND type = 'recovery_fee'`,
+              [transaction.id],
+            );
+            throw activationErr;
+          }
         }
       } else if (transaction.type === 'points_purchase') {
         const { pointsAmount } = metadata || {};
@@ -177,6 +205,7 @@ class PaymentReconciliationService {
     } else if (normalized.terminal) {
       const terminalStatus = normalized.status === 'CANCELLED' ? 'CANCELED' : normalized.status;
       await query('UPDATE transactions SET status = $1 WHERE id = $2', [terminalStatus, transaction.id]);
+      await releaseReservationByTransaction(transaction.id);
       return { found: true, updated: true, status: terminalStatus };
     }
 

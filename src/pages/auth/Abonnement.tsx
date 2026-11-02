@@ -41,9 +41,9 @@ import {
 } from "@mantine/core";
 
 const METHOD_ICONS: Record<string, { icon: string; color: string; bg: string }> = {
-  MTN: { icon: "fa-mobile-screen-button", color: "text-[#E8923A]", bg: "bg-[#E8923A]/10" },
-  ORANGE: { icon: "fa-mobile-screen-button", color: "text-[#E8923A]", bg: "bg-[#E8923A]/10" },
-  BANK: { icon: "fa-university", color: "text-blue-400", bg: "bg-blue-50" },
+  MTN: { icon: "ph ph-device-mobile", color: "text-[#E8923A]", bg: "bg-[#E8923A]/10" },
+  ORANGE: { icon: "ph ph-device-mobile", color: "text-[#E8923A]", bg: "bg-[#E8923A]/10" },
+  BANK: { icon: "ph ph-bank", color: "text-blue-400", bg: "bg-blue-50" },
 };
 
 export default function Abonnement() {
@@ -329,14 +329,14 @@ export default function Abonnement() {
 
     if (typeof raw === "object" && !Array.isArray(raw)) {
       const featureMap: Record<string, { label: string; icon: string }> = {
-        objects: { label: "Objets personnels (coffre)", icon: "fa-mobile-screen" },
-        docs_per_type: { label: "Déclarations actives par type", icon: "fa-file-shield" },
-        vault: { label: "Coffre-fort numérique", icon: "fa-vault" },
-        prioritaire: { label: "Support Prioritaire", icon: "fa-headset" },
-        certification: { label: "Certification DocMaster", icon: "fa-certificate" },
-        ads: { label: "Publicité", icon: "fa-rectangle-ad" },
-        matching_speed: { label: "Vitesse Matching", icon: "fa-bolt" },
-        notifications: { label: "Alertes Temps Réel", icon: "fa-bell" }
+        objects: { label: "Objets personnels (coffre)", icon: "ph ph-device-mobile" },
+        docs_per_type: { label: "Déclarations actives par type", icon: "ph ph-file-lock" },
+        vault: { label: "Coffre-fort numérique", icon: "ph ph-vault" },
+        prioritaire: { label: "Support Prioritaire", icon: "ph ph-headset" },
+        certification: { label: "Certification DocMaster", icon: "ph ph-seal" },
+        ads: { label: "Publicité", icon: "ph ph-presentation-chart" },
+        matching_speed: { label: "Vitesse Matching", icon: "ph ph-lightning" },
+        notifications: { label: "Alertes Temps Réel", icon: "ph ph-bell" }
       };
 
       return Object.entries(raw).map(([key, val]) => {
@@ -349,18 +349,18 @@ export default function Abonnement() {
         return {
           label: meta?.label || key,
           value,
-          icon: meta?.icon || "fa-check"
+          icon: meta?.icon || "ph ph-check"
         };
       });
     }
 
     if (Array.isArray(raw)) {
       return raw.map((f: any) => {
-        if (typeof f === "string") return { label: "", value: f, icon: "fa-check" };
+        if (typeof f === "string") return { label: "", value: f, icon: "ph ph-check" };
         return {
           label: f?.label || "",
           value: f?.valeur || f?.name || "",
-          icon: f?.icon || "fa-check"
+          icon: f?.icon || "ph ph-check"
         };
       });
     }
@@ -368,17 +368,17 @@ export default function Abonnement() {
   }
 
   function featureIcon(f: { label: string; value: string; icon?: string }): string {
-    if (f.icon) return `fa-solid ${f.icon}`;
+    if (f.icon) return `${f.icon}`;
     const txt = (f.label + " " + f.value).toLowerCase();
-    if (txt.includes("doc") || txt.includes("declaration")) return "fa-solid fa-file-lines";
-    if (txt.includes("appareil") || txt.includes("device")) return "fa-solid fa-mobile-screen";
-    if (txt.includes("support") || txt.includes("prioritaire")) return "fa-solid fa-headset";
-    if (txt.includes("coffre") || txt.includes("vault") || txt.includes("stockage")) return "fa-solid fa-cloud";
-    if (txt.includes("partenair") || txt.includes("agence")) return "fa-solid fa-building-columns";
-    if (txt.includes("statist") || txt.includes("rapport")) return "fa-solid fa-chart-simple";
-    if (txt.includes("retrait") || txt.includes("point")) return "fa-solid fa-location-dot";
-    if (txt.includes("api")) return "fa-solid fa-code";
-    return "fa-solid fa-check";
+    if (txt.includes("doc") || txt.includes("declaration")) return "ph ph-file-text";
+    if (txt.includes("appareil") || txt.includes("device")) return "ph ph-device-mobile";
+    if (txt.includes("support") || txt.includes("prioritaire")) return "ph ph-headset";
+    if (txt.includes("coffre") || txt.includes("vault") || txt.includes("stockage")) return "ph ph-cloud";
+    if (txt.includes("partenair") || txt.includes("agence")) return "ph ph-bank";
+    if (txt.includes("statist") || txt.includes("rapport")) return "ph ph-chart-bar";
+    if (txt.includes("retrait") || txt.includes("point")) return "ph ph-map-pin";
+    if (txt.includes("api")) return "ph ph-code";
+    return "ph ph-check";
   }
 
   return (
@@ -402,7 +402,7 @@ export default function Abonnement() {
           description={`Votre abonnement ${selectedPlan?.name || "VIP"} est désormais actif. Vous avez accès à tous les avantages de votre formule.`}
           badgeText={selectedPlan?.name || "VIP"}
           badgeColor="green"
-          icon="fa-crown"
+          icon="ph ph-crown"
           details={[
             { label: "Plan", value: selectedPlan?.name || "VIP" },
             { label: "Durée", value: billingPeriod === "annual" ? "12 mois (1 an)" : "1 mois" },
@@ -410,7 +410,7 @@ export default function Abonnement() {
           ]}
           primaryAction={{
             label: "Accéder au tableau de bord",
-            icon: "fa-arrow-right",
+            icon: "ph ph-arrow-right",
             onClick: () => {
               setPaySuccess(false);
               navigate("/dashboard");
@@ -433,7 +433,7 @@ export default function Abonnement() {
           <div className="relative z-10 w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-8">
             <div className="flex-1 w-full">
               <span className="inline-flex items-center gap-1.5 bg-[#E8923A]/15 text-[#E8923A] text-xs font-semibold px-3 py-1 rounded-full mb-4">
-                <i className="fa-solid fa-bolt text-[10px]" />
+                <i className="ph ph-lightning text-[10px]" />
                 {t("abonnement_current_plan").toUpperCase()}
               </span>
 
@@ -481,7 +481,7 @@ export default function Abonnement() {
               <Group gap="sm">
                 <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md rounded-2xl px-3 py-2">
                   <div className="w-8 h-8 rounded-lg bg-[#E8923A]/20 flex items-center justify-center">
-                    <i className="fa-solid fa-file-circle-check text-[#E8923A] text-sm" />
+                    <i className="ph ph-seal-check text-[#E8923A] text-sm" />
                   </div>
                   <div>
                     <Text size="sm" fw={700}  c="white">{declarationsUsed} / {usage?.limits?.docs_per_type || 0} Déclarations</Text>
@@ -490,7 +490,7 @@ export default function Abonnement() {
                 </div>
                 <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md rounded-2xl px-3 py-2">
                   <div className="w-8 h-8 rounded-lg bg-[#E8923A]/20 flex items-center justify-center">
-                    <i className="fa-solid fa-box-open text-[#E8923A] text-sm" />
+                    <i className="ph ph-archive-tray text-[#E8923A] text-sm" />
                   </div>
                   <div>
                     <Text size="sm" fw={700} c="white">{usage?.usage?.objects || 0} Objets</Text>
@@ -522,7 +522,7 @@ export default function Abonnement() {
 
         {/* Active subscription warning */}
         {hasActiveSub && !promo && (
-          <Alert color="#E8923A" variant="light" radius="md" icon={<i className="fa-solid fa-circle-info" />}>
+          <Alert color="#E8923A" variant="light" radius="md" icon={<i className="ph ph-info" />}>
             <Text fw={700} size="sm">{t("abonnement_active_sub_warning_title")}</Text>
             <Text size="xs" c="dimmed" mt={2}>
               {isPromoUser
@@ -609,7 +609,7 @@ export default function Abonnement() {
                     )}
                     <div className="relative z-10">
                       <div className="w-10 h-10 rounded-[12px] flex items-center justify-center mb-3" style={{ background: isFeatured ? "rgba(217,138,48,.15)" : "rgba(217,138,48,.1)" }}>
-                        <i className={`fa-solid ${isFeatured ? "fa-rocket" : "fa-star"} text-[#E8923A] text-base`} />
+                        <i className={`${isFeatured ? "ph ph-rocket" : "ph ph-star"} text-[#E8923A] text-base`} />
                       </div>
                       <Text fw={700} ff="Bricolage Grotesque" size="lg" c={isFeatured ? "white" : "gray.7"}>
                         {plan.name}
@@ -666,7 +666,7 @@ export default function Abonnement() {
         <Paper radius="xl">
           <Group justify="space-between" px="md" py="sm" className="border-b border-gray-200">
             <Text fw={700} ff="Bricolage Grotesque" size="sm">
-              <i className="fa-solid fa-receipt text-[#E8923A] text-sm mr-2" /> Historique de facturation
+              <i className="ph ph-receipt text-[#E8923A] text-sm mr-2" /> Historique de facturation
             </Text>
           </Group>
           {loadingTransactions ? (
@@ -687,7 +687,7 @@ export default function Abonnement() {
                     <Table.Tr key={i}>
                       <Table.Td w={40}>
                         <div className="w-9 h-9 rounded-[10px] bg-green-light flex items-center justify-center">
-                          <i className={`fa-solid ${tx.type === "subscription" ? "fa-bolt" : "fa-file-invoice"} text-green-mid text-sm`} />
+                          <i className={`${tx.type === "subscription" ? "ph ph-lightning" : "ph ph-invoice"} text-green-mid text-sm`} />
                         </div>
                       </Table.Td>
                       <Table.Td>
@@ -710,11 +710,11 @@ export default function Abonnement() {
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
           <Paper radius="xl" className="border border-gray-200" p="md">
             <Text fw={700} ff="Bricolage Grotesque" size="sm" mb="md">
-              <i className="fa-solid fa-credit-card text-[#E8923A] text-sm mr-2" /> Moyen de paiement
+              <i className="ph ph-credit-card text-[#E8923A] text-sm mr-2" /> Moyen de paiement
             </Text>
             {savedMethods.length === 0 ? (
               <Paper p="md" radius="md" className="border border-dashed border-gray-200" ta="center">
-                <i className="fa-solid fa-credit-card text-2xl text-textMuted/30 mb-2 block" />
+                <i className="ph ph-credit-card text-2xl text-textMuted/30 mb-2 block" />
                 <Text size="xs" c="dimmed">Aucun moyen de paiement enregistré</Text>
               </Paper>
             ) : (
@@ -725,7 +725,7 @@ export default function Abonnement() {
                     <Paper key={m.id} bg="gray.0" p="sm" radius="md" className="border border-gray-200">
                       <Group gap="sm">
                         <div className={`w-9 h-9 rounded-[10px] ${mi.bg} flex items-center justify-center`}>
-                          <i className={`fa-solid ${mi.icon} ${mi.color} text-sm`} />
+                          <i className={`${mi.icon} ${mi.color} text-sm`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <Text size="sm" fw={600} truncate>{m.account_name || `${m.method_type} - ${m.account_number}`}</Text>
@@ -743,7 +743,7 @@ export default function Abonnement() {
               variant="outline"
               radius="xl"
               size="sm"
-              leftSection={<i className="fa-solid fa-plus text-[11px]" />}
+              leftSection={<i className="ph ph-plus text-[11px]" />}
               onClick={() => { setAddMethodType("MTN"); setShowAddMethodModal(true); }}
             >
               Ajouter un moyen de paiement
@@ -753,7 +753,7 @@ export default function Abonnement() {
           <Paper radius="xl" className="border border-gray-200" p="md">
             <div>
               <Text fw={700} ff="Bricolage Grotesque" size="sm" mb="xs">
-                <i className="fa-solid fa-circle-xmark text-red-400 text-sm mr-2" /> Gestion de l'abonnement
+                <i className="ph ph-x-circle text-red-400 text-sm mr-2" /> Gestion de l'abonnement
               </Text>
               <Text size="xs" c="dimmed" mb="md">
                 Votre abonnement se renouvelle automatiquement. Vous pouvez l'annuler à tout moment sans frais supplémentaires.
@@ -781,7 +781,7 @@ export default function Abonnement() {
         <Paper radius="xl">
           <Group px="md" py="sm" className="border-b border-gray-200">
             <Text fw={700} ff="Bricolage Grotesque" size="sm">
-                <i className="fa-solid fa-table-columns text-[#E8923A] text-sm mr-2" /> Comparatif complet des plans
+                <i className="ph ph-table text-[#E8923A] text-sm mr-2" /> Comparatif complet des plans
             </Text>
           </Group>
           <div className="overflow-x-auto">
@@ -821,9 +821,9 @@ export default function Abonnement() {
                              style={plan.popular ? { color: "#E8923A", backgroundColor: "rgba(217,138,48,.05)" } : {}}
                           >
                             {val === "Inclus" ? (
-                              <i className="fa-solid fa-check text-green-500" />
+                              <i className="ph ph-check text-green-500" />
                             ) : val === "Non inclus" ? (
-                              <i className="fa-solid fa-xmark text-gray-300" />
+                              <i className="ph ph-x text-gray-300" />
                             ) : (
                               <span style={{ opacity: isFailure ? 0.3 : 1 }}>{val}</span>
                             )}
@@ -857,7 +857,7 @@ export default function Abonnement() {
             <div className="flex items-start justify-between relative z-10">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 text-xl shadow-inner">
-                  <i className="fa-solid fa-shield-halved" />
+                  <i className="ph ph-shield" />
                 </div>
                 <div>
                   <Title order={4} fw={900}>{selectedPlan?.name || "-"}</Title>
@@ -874,7 +874,7 @@ export default function Abonnement() {
             <SimpleGrid cols={2} mt="md" pt="md" style={{ borderTop: "1px solid #E2E8F0" }}>
               <Group gap="sm">
                 <Paper p="xs" radius="md" className="border border-gray-200">
-                  <i className="fa-solid fa-calendar-check text-xs text-gray-400" />
+                  <i className="ph ph-calendar-check text-xs text-gray-400" />
                 </Paper>
                 <div>
                   <Text size="10px" c="dimmed" fw={900} tt="uppercase">Validité</Text>
@@ -885,7 +885,7 @@ export default function Abonnement() {
               </Group>
               <Group gap="sm">
                 <Paper p="xs" radius="md" className="border border-gray-200">
-                  <i className="fa-solid fa-file-shield text-xs text-gray-400" />
+                  <i className="ph ph-file-lock text-xs text-gray-400" />
                 </Paper>
                 <div>
                   <Text size="10px" c="dimmed" fw={900} tt="uppercase">Quota Docs</Text>
@@ -920,7 +920,7 @@ export default function Abonnement() {
       >
         <Stack align="center" gap="md">
           <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
-            <i className="fa-solid fa-triangle-exclamation text-red-500 text-xl" />
+            <i className="ph ph-warning text-red-500 text-xl" />
           </div>
           <Title order={4} ta="center">Annuler l'abonnement ?</Title>
           <Text size="sm" c="dimmed" ta="center">
@@ -960,7 +960,7 @@ function SubscriptionAddMethodModal({ opened, methodType, onClose, onDone, t }: 
   const [error, setError] = useState("");
   const [validationErr, setValidationErr] = useState("");
 
-  const typeIcon = methodType === "BANK" ? "fa-university" : "fa-mobile-screen-button";
+  const typeIcon = methodType === "BANK" ? "ph ph-bank" : "ph ph-device-mobile";
   const typeColor = methodType === "MTN" ? "text-[#E8923A]" : methodType === "ORANGE" ? "text-[#E8923A]" : "text-blue-400";
   const typeBg = methodType === "MTN" ? "bg-[#E8923A]/10" : methodType === "ORANGE" ? "bg-[#E8923A]/10" : "bg-blue-50";
   const typeLabel = methodType === "BANK" ? "Virement bancaire" : `${methodType} Mobile Money`;
@@ -1004,7 +1004,7 @@ function SubscriptionAddMethodModal({ opened, methodType, onClose, onDone, t }: 
       title={
         <Group gap="sm">
           <div className={`w-9 h-9 rounded-[10px] ${typeBg} flex items-center justify-center`}>
-            <i className={`fa-solid ${typeIcon} ${typeColor} text-sm`} />
+            <i className={`${typeIcon} ${typeColor} text-sm`} />
           </div>
           <Text fw={700} ff="Bricolage Grotesque">{typeLabel}</Text>
         </Group>
@@ -1013,14 +1013,14 @@ function SubscriptionAddMethodModal({ opened, methodType, onClose, onDone, t }: 
       {success ? (
         <Stack align="center" py="md" gap="md">
           <div className="w-16 h-16 rounded-full bg-green-light flex items-center justify-center">
-            <i className="fa-solid fa-check-circle text-green-mid text-3xl" />
+            <i className="ph ph-check-circle text-green-mid text-3xl" />
           </div>
           <Text fw={700} ff="Bricolage Grotesque">Moyen de paiement enregistré</Text>
         </Stack>
       ) : (
         <Stack gap="md">
           {(error || validationErr) && (
-            <Alert color="red" icon={<i className="fa-solid fa-circle-exclamation" />} variant="light" size="sm">
+            <Alert color="red" icon={<i className="ph ph-warning-circle" />} variant="light" size="sm">
               {error || validationErr}
             </Alert>
           )}
@@ -1056,7 +1056,7 @@ function SubscriptionAddMethodModal({ opened, methodType, onClose, onDone, t }: 
             fullWidth
             loading={saving}
             disabled={!accountNumber}
-            leftSection={<i className="fa-solid fa-floppy-disk" />}
+            leftSection={<i className="ph ph-floppy-disk" />}
             onClick={handleSave}
             radius="xl"
             size="md"

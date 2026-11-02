@@ -6,7 +6,12 @@ import { usePromo } from "../hooks/usePromo";
 import { useConversationUnread } from "../hooks/useConversationUnread";
 import { getPhotoUrl } from "../utils/image";
 import VipAvatar, { isVipUser } from "../components/ui/VipBadge";
-import { Avatar, Group, Text, UnstyledButton, Modal, Stack, Title, Button } from "@mantine/core";
+import { Avatar, Group, Text, UnstyledButton, Stack, Title, Button } from "@mantine/core";
+import {
+  Dialog,
+  DialogContent,
+  DialogBody,
+} from "../components/ui/dialog";
 
 type SidebarNavItem = { to: string; icon: string; label: string; badge?: number };
 
@@ -27,25 +32,25 @@ export default function Sidebar() {
     {
       section: t("sidebar_primary"),
       items: [
-        { to: "/dashboard", icon: "fa-solid fa-house", label: t("sidebar_dashboard") },
-        { to: "/mes-documents", icon: "fa-solid fa-list-check", label: t("sidebar_saved") },
-        { to: "/mes-appareils", icon: "fa-solid fa-mobile-screen-button", label: t("sidebar_devices") },
+        { to: "/dashboard", icon: "ph ph-house", label: t("sidebar_dashboard") },
+        { to: "/mes-documents", icon: "ph ph-list-checks", label: t("sidebar_saved") },
+        { to: "/mes-appareils", icon: "ph ph-device-mobile", label: t("sidebar_devices") },
       ],
     },
     {
       section: t("sidebar_account"),
       items: [
-        { to: "/mes-declarations", icon: "fa-solid fa-clock-rotate-left", label: t("sidebar_declarations") },
+        { to: "/mes-declarations", icon: "ph ph-clock-counter-clockwise", label: t("sidebar_declarations") },
         {
           to: "/messagerie",
-          icon: "fa-solid fa-message",
+          icon: "ph ph-chat-circle",
           label: "Messagerie",
           badge: unreadMessages,
         },
-        { to: "/mes-gains", icon: "fa-solid fa-wallet", label: t("sidebar_earnings") },
-        { to: "/parrainage", icon: "fa-solid fa-gift", label: t("sidebar_referral") },
-        { to: "/abonnement", icon: "fa-solid fa-crown", label: t("sidebar_subscription") },
-        { to: "/infos-profil", icon: "fa-solid fa-user", label: t("sidebar_profile") },
+        { to: "/mes-gains", icon: "ph ph-wallet", label: t("sidebar_earnings") },
+        { to: "/parrainage", icon: "ph ph-gift", label: t("sidebar_referral") },
+        { to: "/abonnement", icon: "ph ph-crown", label: t("sidebar_subscription") },
+        { to: "/infos-profil", icon: "ph ph-user", label: t("sidebar_profile") },
       ],
     },
   ];
@@ -92,8 +97,9 @@ export default function Sidebar() {
       >
         {/* Logo */}
         <div className="flex items-center px-5 py-4 border-b border-white/10 flex-shrink-0">
-          <Link to="/dashboard">
+          <Link to="/dashboard" className="flex items-center gap-0">
             <img src="/src/assets/images/docmaster.png" alt="DocMaster" className="h-14 w-auto object-contain rounded brightness-0 invert" />
+            <span className="font-poppins font-bold text-white text-[29px] leading-none tracking-tight">ocmaster</span>
           </Link>
         </div>
 
@@ -133,13 +139,23 @@ export default function Sidebar() {
             Actions
           </div>
           <nav className="flex flex-col gap-0.5 px-2">
+            <Link
+              to="/mes-signalements"
+              onClick={() => { if (!isLargeScreen()) close(); }}
+              className="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-white/60 hover:bg-white/8 hover:text-white/90"
+            >
+              <div className="nav-icon">
+                <i className="ph ph-flag" />
+              </div>
+              {t("sidebar_my_reports")}
+            </Link>
             <a
               onClick={handleLogout}
               className="sb-item flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[13px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400"
               style={{ cursor: "pointer" }}
             >
               <div className="nav-icon">
-                <i className="fa-solid fa-right-from-bracket" />
+                <i className="ph ph-sign-out" />
               </div>
               {t("sidebar_logout")}
             </a>
@@ -201,43 +217,47 @@ export default function Sidebar() {
                   </Text>
                 </Group>
               </div>
-              <i className="fa-solid fa-chevron-right" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }} />
+              <i className="ph ph-caret-right" style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }} />
             </Group>
           </UnstyledButton>
         </div>
       </aside>
 
-      <Modal
-        opened={showLogoutConfirm}
-        onClose={() => setShowLogoutConfirm(false)}
-        withCloseButton={false}
-        size="sm"
-        padding="lg"
-      >
-        <Stack align="center" gap="md">
-          <i className="fa-solid fa-right-from-bracket text-red-500 text-2xl" />
-          <Title order={3} size="lg" ta="center">{t("logout_confirm_title")}</Title>
-          <Text size="sm" c="dimmed" ta="center">{t("logout_confirm_desc")}</Text>
-          <Group gap="sm" className="w-full">
-            <Button
-              onClick={() => setShowLogoutConfirm(false)}
-              variant="default"
-              className="flex-1"
-              radius="lg"
-            >
-              {t("logout_confirm_cancel")}
-            </Button>
-            <Button
-              onClick={confirmLogout}
-              color="red"
-              className="flex-1 shadow-lg shadow-red-500/20"
-              radius="lg"
-            >
-              {t("logout_confirm_yes")}
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
+      <Dialog open={showLogoutConfirm} onOpenChange={() => setShowLogoutConfirm(false)}>
+        <DialogContent className="max-w-md">
+          <DialogBody>
+            <div className="flex flex-col items-center gap-5 text-center py-2">
+              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+                <i className="ph ph-sign-out text-red-500 text-3xl" />
+              </div>
+              <div className="space-y-2">
+                <Title order={3} size="lg" className="font-bricolage">{t("logout_confirm_title")}</Title>
+                <Text size="sm" c="dimmed">{t("logout_confirm_desc")}</Text>
+              </div>
+              <Group gap="sm" className="w-full mt-2">
+                <Button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  variant="default"
+                  className="flex-1"
+                  radius="xl"
+                  size="md"
+                >
+                  {t("logout_confirm_cancel")}
+                </Button>
+                <Button
+                  onClick={confirmLogout}
+                  color="red"
+                  className="flex-1"
+                  radius="xl"
+                  size="md"
+                >
+                  {t("logout_confirm_yes")}
+                </Button>
+              </Group>
+            </div>
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

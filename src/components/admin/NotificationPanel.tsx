@@ -30,7 +30,7 @@ export default function NotificationPanel({ open, onClose, notifications, loadin
               </button>
             )}
             <button onClick={onClose} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all">
-              <i className="fa-solid fa-xmark text-xs" />
+              <i className="ph ph-x text-xs" />
             </button>
           </div>
         </div>
@@ -42,7 +42,7 @@ export default function NotificationPanel({ open, onClose, notifications, loadin
             </div>
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-300">
-              <i className="fa-solid fa-bell-slash text-2xl mb-3" />
+              <i className="ph ph-bell-slash text-2xl mb-3" />
               <p className="text-[13px] font-medium text-gray-400">{t("notification_empty")}</p>
             </div>
           ) : (
@@ -56,7 +56,7 @@ export default function NotificationPanel({ open, onClose, notifications, loadin
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-7 h-7 rounded border flex items-center justify-center text-xs shrink-0 ${isUnread ? "bg-[#E8923A]/10 border-[#E8923A]/20 text-[#E8923A]" : "bg-gray-100 border-gray-200 text-gray-400"}`}>
-                      <i className="fa-solid fa-bell" />
+                      <i className="ph ph-bell" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className={`text-[13px] ${isUnread ? "font-semibold text-gray-900" : "font-medium text-gray-500"}`}>{n.titre}</p>

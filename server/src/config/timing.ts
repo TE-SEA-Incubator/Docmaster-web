@@ -11,8 +11,8 @@ function envNumber(name: string, fallback: number): number {
 }
 
 export const TIMING = {
-  matchingIntervalMs: 30_000,
-  matchingCron: '*/30 * * * * *',
+  matchingIntervalMs: 8 * 60 * 60 * 1000,
+  matchingCron: '0 */8 * * *',
 
   paymentPollIntervalMs: 5_000,
   paymentPollTimeoutMs: 300_000,

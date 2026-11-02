@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { query } from '../../database/db.ts';
+import { matchingService } from '../../services/matching.service.ts';
 
 export const getRecentMatches = async (req: Request, res: Response) => {
   try {
@@ -30,6 +31,17 @@ export const getRecentMatches = async (req: Request, res: Response) => {
     `);
 
     res.status(200).json({ success: true, data: result.rows });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getMatchingDiagnostic = async (req: Request, res: Response) => {
+  try {
+    const declarationId = typeof req.query.declarationId === 'string' ? req.query.declarationId : undefined;
+    const limit = Number(req.query.limit) || 50;
+    const data = await matchingService.diagnose(declarationId, limit);
+    res.status(200).json({ success: true, data });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

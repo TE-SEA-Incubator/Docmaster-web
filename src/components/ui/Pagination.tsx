@@ -25,7 +25,7 @@ export default function Pagination({ current, total, pageSize, onChange }: Pagin
           onClick={() => onChange(current - 1)}
           className="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:pointer-events-none transition-all"
         >
-          <i className="fa-solid fa-chevron-left text-[10px]" />
+          <i className="ph ph-caret-left text-[10px]" />
         </button>
         {start > 1 && (
           <>
@@ -57,7 +57,7 @@ export default function Pagination({ current, total, pageSize, onChange }: Pagin
           onClick={() => onChange(current + 1)}
           className="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:pointer-events-none transition-all"
         >
-          <i className="fa-solid fa-chevron-right text-[10px]" />
+          <i className="ph ph-caret-right text-[10px]" />
         </button>
       </div>
     </div>

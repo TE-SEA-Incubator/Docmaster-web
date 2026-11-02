@@ -47,19 +47,19 @@ interface DashboardStats {
 }
 
 const FEATURE_ICONS: Record<string, string> = {
-  docs_per_type: "fa-file-circle-exclamation",
-  objects_limit: "fa-boxes-stacked",
-  sms_alerts: "fa-message",
-  email_alerts: "fa-envelope",
-  geo_tracking: "fa-location-dot",
-  priority_support: "fa-headset",
-  verified_badge: "fa-badge-check",
-  history_days: "fa-clock-rotate-left",
-  ads_free: "fa-ban",
-  export_data: "fa-download",
-  expiration_management: "fa-calendar-clock",
-  expiration_reminders: "fa-bell",
-  auto_archive: "fa-box-archive",
+  docs_per_type: "ph ph-seal-warning",
+  objects_limit: "ph ph-stack",
+  sms_alerts: "ph ph-chat-circle",
+  email_alerts: "ph ph-envelope",
+  geo_tracking: "ph ph-map-pin",
+  priority_support: "ph ph-headset",
+  verified_badge: "ph ph-seal-check",
+  history_days: "ph ph-clock-counter-clockwise",
+  ads_free: "ph ph-prohibit",
+  export_data: "ph ph-download",
+  expiration_management: "ph ph-calendar-dots",
+  expiration_reminders: "ph ph-bell",
+  auto_archive: "ph ph-archive",
 };
 
 const statusBadge = (status: string, t: (k: string) => string) => {
@@ -79,7 +79,7 @@ function formatFeatureValue(val: any, type: string): string {
 }
 
 function featureIcon(code: string): string {
-  return FEATURE_ICONS[code] || "fa-circle";
+  return FEATURE_ICONS[code] || "ph ph-circle";
 }
 
 export default function AdminSubscriptions() {
@@ -190,7 +190,7 @@ export default function AdminSubscriptions() {
     <div>
       {toast && (
         <div className={`fixed top-5 right-5 z-[100] px-4 py-3 rounded border shadow-lg text-[13px] font-semibold text-white ${toast.type === "success" ? "bg-green-600 border-green-700" : "bg-red-600 border-red-700"}`}>
-          <i className={`fa-solid ${toast.type === "success" ? "fa-circle-check" : "fa-circle-exclamation"} mr-2`} />
+          <i className={`${toast.type === "success" ? "ph ph-check-circle" : "ph ph-warning-circle"} mr-2`} />
           {toast.message}
         </div>
       )}
@@ -208,7 +208,7 @@ export default function AdminSubscriptions() {
             className="px-3 py-2 border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] bg-white w-56" />
           <button onClick={openNew}
             className="flex items-center gap-1.5 bg-[#2D5A42] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors">
-            <i className="fa-solid fa-plus text-xs" />{t("admin_subscriptions_create")}
+            <i className="ph ph-plus text-xs" />{t("admin_subscriptions_create")}
           </button>
         </div>
       </header>
@@ -236,7 +236,7 @@ export default function AdminSubscriptions() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {plans.length === 0 ? (
-            <EmptyState icon="fa-solid fa-tags" message={t("admin_no_subscriptions")} />
+            <EmptyState icon="ph ph-tag-simple" message={t("admin_no_subscriptions")} />
           ) : plans.map((plan) => {
               const featureEntries = Object.entries(plan.features || {});
               return (
@@ -256,7 +256,7 @@ export default function AdminSubscriptions() {
                         </div>
                       </div>
                       <button onClick={() => openEdit(plan.id)} className="text-gray-400 hover:text-[#E8923A] transition-colors p-1">
-                        <i className="fa-solid fa-pen-to-square text-sm" />
+                        <i className="ph ph-pencil-simple text-sm" />
                       </button>
                     </div>
                     {featureEntries.length > 0 && (
@@ -273,11 +273,11 @@ export default function AdminSubscriptions() {
                           return (
                             <div key={key} className={`flex items-center gap-2 py-1.5 px-2 rounded text-[12px] ${enabled ? "bg-green-50" : "bg-gray-50"}`}>
                               <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${enabled ? "bg-[#E8923A]/10 text-[#E8923A]" : "bg-gray-100 text-gray-300"}`}>
-                                <i className={`fa-solid ${icon} text-[10px]`} />
+                                <i className={`${icon} text-[10px]`} />
                               </div>
                               <span className={`flex-1 ${enabled ? "text-gray-800" : "text-gray-400"}`}>{label}</span>
                               <span className={`text-[11px] font-semibold ${enabled ? "text-gray-900" : "text-gray-300"}`}>
-                                {isBool ? (enabled ? <i className="fa-solid fa-check text-green-600 text-[10px]" /> : <i className="fa-solid fa-xmark text-gray-300 text-[10px]" />) : formatted}
+                                {isBool ? (enabled ? <i className="ph ph-check text-green-600 text-[10px]" /> : <i className="ph ph-x text-gray-300 text-[10px]" />) : formatted}
                               </span>
                             </div>
                           );
@@ -288,7 +288,7 @@ export default function AdminSubscriptions() {
                   <div className="px-5 pb-4">
                     <button onClick={() => openEdit(plan.id)}
                       className="w-full py-2 border border-gray-200 rounded text-[12px] font-semibold text-gray-600 hover:bg-gray-50 hover:border-[#E8923A] hover:text-[#E8923A] transition-colors">
-                      <i className="fa-solid fa-pen text-[10px] mr-1" />Modifier ce plan
+                      <i className="ph ph-pen text-[10px] mr-1" />Modifier ce plan
                     </button>
                   </div>
                 </div>
@@ -300,7 +300,7 @@ export default function AdminSubscriptions() {
 
       <div className="mb-6">
         <h3 className="font-bold text-sm text-gray-800 mb-4 flex items-center gap-2">
-          <i className="fa-solid fa-tag text-[#E8923A]" />
+          <i className="ph ph-tag text-[#E8923A]" />
           Promotion VIP
           <InfoTooltip text="Gérez le prix et la durée de l'offre promotionnelle VIP." />
         </h3>
@@ -349,12 +349,12 @@ export default function AdminSubscriptions() {
               }}
               disabled={promoSaving}
               className="flex items-center gap-1.5 bg-[#2D5A42] text-white px-5 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60">
-              {promoSaving ? <><i className="fa-solid fa-spinner fa-spin text-xs" /> Enregistrement...</> : <><i className="fa-solid fa-floppy-disk text-xs" /> Enregistrer la promotion</>}
+              {promoSaving ? <><i className="ph ph-spinner animate-spin text-xs" /> Enregistrement...</> : <><i className="ph ph-floppy-disk text-xs" /> Enregistrer la promotion</>}
             </button>
           </div>
         ) : (
           <div className="bg-white border border-dashed border-gray-300 rounded p-8 text-center">
-            <i className="fa-solid fa-tag text-2xl text-gray-300 mb-2" />
+            <i className="ph ph-tag text-2xl text-gray-300 mb-2" />
             <p className="text-gray-400 text-[13px]">Aucune promotion configurée</p>
           </div>
         )}
@@ -377,7 +377,7 @@ export default function AdminSubscriptions() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {paginatedSubs.length === 0 ? (
-              <EmptyState icon="fa-solid fa-receipt" message={t("admin_subs_recent_empty")} colSpan={6} />
+              <EmptyState icon="ph ph-receipt" message={t("admin_subs_recent_empty")} colSpan={6} />
             ) : paginatedSubs.map((s) => {
                 const dateFin = s.date_fin ? new Date(s.date_fin).toLocaleDateString("fr-FR") : s.expiry_date ? new Date(s.expiry_date).toLocaleDateString("fr-FR") : "—";
                 return (
@@ -413,7 +413,7 @@ export default function AdminSubscriptions() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-base text-gray-900">{editingId ? t("admin_subscriptions_modal_title_edit") : t("admin_subscriptions_modal_title_new")}</h3>
               <button onClick={() => setModalOpen(false)} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded text-gray-400 hover:bg-gray-50">
-                <i className="fa-solid fa-xmark text-xs" />
+                <i className="ph ph-x text-xs" />
               </button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
@@ -441,7 +441,7 @@ export default function AdminSubscriptions() {
                     <div key={feat.code} className="flex items-center justify-between py-2 px-2 rounded hover:bg-gray-50 transition-colors">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded border border-gray-200 bg-gray-50 flex items-center justify-center flex-shrink-0">
-                          <i className={`fa-solid ${featureIcon(feat.code)} text-[10px] text-gray-500`} />
+                          <i className={`${featureIcon(feat.code)} text-[10px] text-gray-500`} />
                         </div>
                         <span className="text-[12px] font-medium text-gray-700">{feat.label}</span>
                       </div>
@@ -463,7 +463,7 @@ export default function AdminSubscriptions() {
               )}
               <div className="flex items-center justify-between py-2 px-2 rounded bg-amber-50 border border-amber-100">
                 <div className="flex items-center gap-2">
-                  <i className="fa-solid fa-star text-amber-500 text-sm" />
+                  <i className="ph ph-star text-amber-500 text-sm" />
                   <span className="text-[12px] font-medium text-gray-700">{t("admin_subscriptions_featured")}</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -477,7 +477,7 @@ export default function AdminSubscriptions() {
                 </button>
                 <button type="submit" disabled={saving || !form.name.trim()}
                   className="px-5 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
-                  {saving && <i className="fa-solid fa-spinner fa-spin text-xs" />}
+                  {saving && <i className="ph ph-spinner animate-spin text-xs" />}
                   {editingId ? "Enregistrer" : "Créer"}
                 </button>
               </div>

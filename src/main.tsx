@@ -15,6 +15,7 @@ import { ToastProvider } from "./context/ToastContext";
 import ToastContainer from "./components/ui/ToastContainer";
 import { docmasterTheme } from "./theme/mantine";
 import i18n from "./i18n";
+import "@phosphor-icons/web/regular";
 import "./index.css";
 
 const DATES_LOCALES: Record<string, string> = { fr: "fr", en: "en", ar: "ar" };

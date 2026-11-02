@@ -159,6 +159,12 @@ export class AuthController {
     } catch (error: any) {
       if (error.message.includes('Invalid email or password')) {
         res.status(401).json({ error: 'Invalid email or password' });
+      } else if (error.code === 'ACCOUNT_BLOCKED') {
+        res.status(403).json({
+          error: error.message,
+          message: error.message,
+          code: 'ACCOUNT_BLOCKED',
+        });
       } else {
         res.status(500).json({ error: error.message || 'Login failed' });
       }
@@ -204,6 +210,15 @@ export class AuthController {
         user: result.user,
       });
     } catch (error: any) {
+      if (error.code === 'ACCOUNT_BLOCKED') {
+        res.status(403).json({
+          success: false,
+          error: error.message,
+          message: error.message,
+          code: 'ACCOUNT_BLOCKED',
+        });
+        return;
+      }
       res.status(401).json({ success: false, error: error.message || 'Session expirée' });
     }
   }
@@ -453,6 +468,33 @@ export class AuthController {
     } catch (error: any) {
       console.error('[getEarningsStats]', error);
       res.status(500).json({ success: false, message: error.message || 'Failed to fetch earnings stats' });
+    }
+  }
+
+  /**
+   * Get user earnings history with filters
+   */
+  async getEarningsHistory(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user.id;
+      const { startDate, endDate, type, page = '1', limit = '20' } = req.query;
+
+      const pageNum = parseInt(page as string, 10);
+      const limitNum = parseInt(limit as string, 10);
+
+      const filters = {
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        type: type as string | undefined,
+        offset: (pageNum - 1) * limitNum,
+        limit: limitNum,
+      };
+
+      const result = await this.userService.getEarningsHistory(userId, filters);
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      console.error('[getEarningsHistory]', error);
+      res.status(500).json({ success: false, message: error.message || 'Failed to fetch earnings history' });
     }
   }
 

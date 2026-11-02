@@ -349,4 +349,9 @@ export const adminService = {
     return res.data;
   },
 
+  async getSharePayBalance(): Promise<{ balance: number; currency: string }> {
+    const res = await apiClient.get("admin/sharepay-balance");
+    return res.data.data;
+  },
+
 };

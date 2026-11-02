@@ -50,6 +50,7 @@ import { DOC_META, PLACE_KEYS, type DocumentMetadata } from "../../components/au
 import { addMonths, todayISO } from "../../utils/dateHelpers";
 import { describeValidationErrors } from "../../utils/declarationFieldLabels";
 import LocationSelect from "../../components/ui/LocationSelect";
+import { phClass } from "../../utils/phosphorIcons";
 
 interface DocTypeCatalog {
   id: string;
@@ -91,8 +92,6 @@ export default function Declarer() {
   const [selectedDocs, setSelectedDocs] = useState<DocInstance[]>([]);
   const instanceCounterRef = useRef(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
-
-  const MAX_DOCS = 5;
 
   // Graine de pré-remplissage : /declarer?from=<déclaration de trouvaille>&vault=<document enregistré>.
   // Le vault porte les infos du client ; la trouvaille ne fait que désigner le type de document.
@@ -231,21 +230,12 @@ export default function Declarer() {
 
   const toggleDocType = (docId: string) => {
     setSelectedDocs((prev) => {
-      if (prev.some((s) => s.docId === docId)) return prev.filter((s) => s.docId !== docId);
+      // Un seul type actif à la fois : sélectionner un nouveau type remplace le précédent.
+      if (prev.some((s) => s.docId === docId)) return [];
       const key = createInstanceKey(docId);
       fillFromProfile(docId, key, ownerType === "me");
-      return [...prev, { key, docId }];
+      return [{ key, docId }];
     });
-  };
-
-  const addDocInstance = (docId: string) => {
-    if (selectedDocs.length >= MAX_DOCS) {
-      toast.warning(t("declarer_alert_max_docs"));
-      return;
-    }
-    const key = createInstanceKey(docId);
-    fillFromProfile(docId, key, ownerType === "me");
-    setSelectedDocs((prev) => [...prev, { key, docId }]);
   };
 
   const docTypeOfSeed = (declDocType?: string, vaultTypeDoc?: string): DocTypeCatalog | undefined => {
@@ -315,15 +305,6 @@ export default function Declarer() {
         if (k.endsWith(`_${instanceKey}`)) delete next[k];
       });
       return next;
-    });
-  };
-
-  const removeLastDocInstance = (docId: string) => {
-    setSelectedDocs((prev) => {
-      const instances = prev.filter((s) => s.docId === docId);
-      if (instances.length === 0) return prev;
-      const lastKey = instances[instances.length - 1].key;
-      return prev.filter((s) => s.key !== lastKey);
     });
   };
 
@@ -641,7 +622,7 @@ export default function Declarer() {
           >
             <Group gap="sm" wrap="nowrap" align="flex-start">
               <ThemeIcon size="lg" radius="md" color="orange" variant="light">
-                <i className="fa-solid fa-lightbulb" style={{ fontSize: 16 }} />
+                <i className="ph ph-lightbulb" style={{ fontSize: 16 }} />
               </ThemeIcon>
               <Text component="div" size="sm" fw={600} c="dark.7" style={{ flex: 1, lineHeight: 1.5 }}>
                 {t("declarer_banner")}{" "}
@@ -651,7 +632,7 @@ export default function Declarer() {
                 {t("declarer_banner_suffix")}
               </Text>
               <ActionIcon variant="subtle" color="gray" onClick={() => setBannerVisible(false)} aria-label="Close">
-                <i className="fa-solid fa-xmark" />
+                <i className="ph ph-x" />
               </ActionIcon>
             </Group>
           </Paper>
@@ -674,14 +655,16 @@ export default function Declarer() {
               >
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                   {[
-                    { value: "me" as const, icon: "fa-user-check", label: t("declarer_for_myself") },
-                    { value: "other" as const, icon: "fa-users", label: t("declarer_for_other") },
+                    { value: "me" as const, icon: "ph ph-user-check", label: t("declarer_for_myself"), disabled: false },
+                    { value: "other" as const, icon: "ph ph-users", label: t("declarer_for_other"), disabled: true },
                   ].map((opt) => (
                     <Card
                       key={opt.value}
                       component="button"
                       type="button"
+                      disabled={opt.disabled}
                       onClick={() => {
+                        if (opt.disabled) return;
                         setOwnerType(opt.value);
                         if (opt.value === "me") {
                           selectedDocs.forEach((inst) => fillFromProfile(inst.docId, inst.key, true));
@@ -692,7 +675,8 @@ export default function Declarer() {
                       radius="lg"
                       withBorder
                       style={{
-                        cursor: "pointer",
+                        cursor: opt.disabled ? "not-allowed" : "pointer",
+                        opacity: opt.disabled ? 0.45 : 1,
                         textAlign: "center",
                         background: ownerType === opt.value ? "var(--color-primary-light)" : "white",
                         borderColor: ownerType === opt.value ? "var(--color-primary)" : "var(--color-borda)",
@@ -707,7 +691,7 @@ export default function Declarer() {
                         mx="auto"
                         mb="sm"
                       >
-                        <i className={`fa-solid ${opt.icon}`} style={{ fontSize: 22 }} />
+                        <i className={`${opt.icon}`} style={{ fontSize: 22 }} />
                       </ThemeIcon>
                       <Text fw={600} c={ownerType === opt.value ? "orange.8" : "dark.6"}>
                         {opt.label}
@@ -725,22 +709,20 @@ export default function Declarer() {
                 title={t("declarer_step2_title")}
                 description={t("declarer_step2_desc")}
               >
-                <SimpleGrid cols={{ base: 2, xs: 3, sm: 4 }} spacing="xs">
+                <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide snap-x snap-mandatory min-[576px]:grid min-[576px]:grid-cols-3 min-[576px]:overflow-visible min-[576px]:mx-0 min-[576px]:px-0 min-[576px]:pb-0 min-[576px]:snap-none sm:grid-cols-4">
                   {docTypes.map((doc) => {
-                    const count = selectedDocs.filter((s) => s.docId === doc.id).length;
+                    const selected = selectedDocs.some((s) => s.docId === doc.id);
                     return (
-                        <DocTypeCard
-                          key={doc.id}
-                          doc={doc}
-                          selected={count > 0}
-                          count={count}
-                          onToggle={toggleDocType}
-                          onAddMore={addDocInstance}
-                          onRemoveMore={removeLastDocInstance}
-                        />
+                        <div key={doc.id} className="shrink-0 w-[150px] snap-start min-[576px]:w-auto min-[576px]:shrink">
+                          <DocTypeCard
+                            doc={doc}
+                            selected={selected}
+                            onToggle={toggleDocType}
+                          />
+                        </div>
                     );
                   })}
-                </SimpleGrid>
+                </div>
 
                 {selectedDocs.length > 0 && (
                   <Box mt="md" pt="md" style={{ borderTop: "1px solid var(--color-borda)" }}>
@@ -765,9 +747,9 @@ export default function Declarer() {
                             radius="xl"
                             size="lg"
                             rightSection={
-                              <i className="fa-solid fa-xmark" style={{ fontSize: 9, cursor: "pointer" }} onClick={() => removeDocInstance(inst.key)} />
+                              <i className="ph ph-x" style={{ fontSize: 9, cursor: "pointer" }} onClick={() => removeDocInstance(inst.key)} />
                             }
-                            leftSection={<i className={`fa-solid fa-${doc?.icone || "file"}`} style={{ fontSize: 9 }} />}
+                            leftSection={<i className={`${phClass(doc?.icone || "file")}`} style={{ fontSize: 9 }} />}
                             style={{ cursor: "pointer", textTransform: "none", paddingRight: 8 }}
                           >
                             {doc?.nom}
@@ -788,15 +770,6 @@ export default function Declarer() {
                 title={t("declarer_step3_title")}
                 description={t("declarer_step3_desc")}
               >
-                {selectedDocs.length > 1 && (
-                  <Group gap="xs" mb="md" p="xs" style={{ background: "var(--color-bgMain)", borderRadius: 12 }}>
-                    <i className="fa-solid fa-layer-group" style={{ fontSize: 12, color: "var(--color-primary)" }} />
-                    <Text size="xs" fw={600} c="dimmed">
-                      {selectedDocs.length} {t("declarer_documents_selected")}
-                    </Text>
-                  </Group>
-                )}
-
                 <Stack gap="md">
                   {selectedDocs.map((inst, idx) => {
                     const meta = getDocMeta(inst.docId);
@@ -817,7 +790,7 @@ export default function Declarer() {
                         >
                           <Group gap={isMobile ? "xs" : "sm"} wrap="nowrap">
                             <ThemeIcon size={isMobile ? 32 : 40} radius="md" color="orange" style={{ background: hexColor, color: "white" }}>
-                              <i className={`fa-solid ${meta.icon}`} style={{ fontSize: isMobile ? 14 : 16 }} />
+                              <i className={`${meta.icon}`} style={{ fontSize: isMobile ? 14 : 16 }} />
                             </ThemeIcon>
                             <Box style={{ flex: 1, minWidth: 0 }}>
                               <Text size={isMobile ? "xs" : "sm"} fw={700} style={{ color: hexColor, wordBreak: "break-word" }}>
@@ -836,14 +809,14 @@ export default function Declarer() {
                                 title={t("declarer_remove_document")}
                                 size={isMobile ? "sm" : "md"}
                               >
-                                <i className="fa-solid fa-trash-can" style={{ fontSize: isMobile ? 12 : 13 }} />
+                                <i className="ph ph-trash" style={{ fontSize: isMobile ? 12 : 13 }} />
                               </ActionIcon>
                               <Badge
                                 size={isMobile ? "xs" : "sm"}
                                 radius="xl"
                                 variant="light"
                                 color={isComplete ? "green" : "gray"}
-                                leftSection={<i className={`fa-solid ${isComplete ? "fa-circle-check" : "fa-circle"}`} style={{ fontSize: isMobile ? 8 : 9 }} />}
+                                leftSection={<i className={`${isComplete ? "ph ph-check-circle" : "ph ph-circle"}`} style={{ fontSize: isMobile ? 8 : 9 }} />}
                               >
                                 {isComplete ? t("declarer_completed") : t("declarer_pending")}
                               </Badge>
@@ -887,7 +860,7 @@ export default function Declarer() {
                                     onChange={(e) => { updateFormField(inst.key, field.id, e.currentTarget.value); setFieldErrors((prev) => ({ ...prev, [field.id + "_" + inst.key]: "" })); }}
                                     placeholder={field.placeholder ? t(field.placeholder) : ""}
                                     error={fieldErrors[field.id + "_" + inst.key]}
-                                    leftSection={field.icon ? <i className={`fa-solid ${field.icon}`} style={{ fontSize: 13, color: "var(--color-primary)" }} /> : undefined}
+                                    leftSection={field.icon ? <i className={`${field.icon}`} style={{ fontSize: 13, color: "var(--color-primary)" }} /> : undefined}
                                   />
                                 )}
                               </Box>
@@ -895,7 +868,7 @@ export default function Declarer() {
 
                             {hasExp && !hasDateDelivranceField && (
                               <Box>
-                                <FieldLabel icon="fa-calendar" labelKey="declarer_field_date_delivrance" required />
+                                <FieldLabel icon="ph ph-calendar" labelKey="declarer_field_date_delivrance" required />
                                 <DatePicker
                                   value={getFormValue(inst.key, "date_delivrance")}
                                   onChange={(v) => { updateFormField(inst.key, "date_delivrance", v); setFieldErrors((prev) => ({ ...prev, ["date_delivrance_" + inst.key]: "" })); }}
@@ -910,7 +883,7 @@ export default function Declarer() {
 
                             {hasExp && (
                               <Box>
-                                <FieldLabel icon="fa-calendar-check" labelKey="declarer_field_date_expiration" />
+                                <FieldLabel icon="ph ph-calendar-check" labelKey="declarer_field_date_expiration" />
                                 <DatePicker
                                   value={getFormValue(inst.key, "date_expiration")}
                                   onChange={() => { }}
@@ -937,7 +910,7 @@ export default function Declarer() {
               >
                 <Stack gap="md">
                   <Box>
-                    <FieldLabel icon="fa-magnifying-glass-location" labelKey="declarer_place_search" />
+                    <FieldLabel icon="ph ph-map-pin" labelKey="declarer_place_search" />
                     <Autocomplete
                       value={placeQuery}
                       onChange={setPlaceQuery}
@@ -955,7 +928,7 @@ export default function Declarer() {
                         placeSearching ? (
                           <Loader size="xs" />
                         ) : (
-                          <i className="fa-solid fa-magnifying-glass" style={{ fontSize: 13, color: "var(--color-primary)" }} />
+                          <i className="ph ph-magnifying-glass" style={{ fontSize: 13, color: "var(--color-primary)" }} />
                         )
                       }
                     />
@@ -966,7 +939,7 @@ export default function Declarer() {
 
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                     <Box>
-                      <FieldLabel icon="fa-calendar-days" labelKey="declarer_loss_date" required />
+                      <FieldLabel icon="ph ph-calendar-dots" labelKey="declarer_loss_date" required />
                       <DatePicker
                         value={lossDate}
                         onChange={(v) => { setLossDate(v); setFieldErrors((prev) => ({ ...prev, lossDate: "" })); }}
@@ -977,17 +950,17 @@ export default function Declarer() {
                     </Box>
 
                     <Box>
-                      <FieldLabel icon="fa-clock" labelKey="declarer_loss_time" optional />
+                      <FieldLabel icon="ph ph-clock" labelKey="declarer_loss_time" optional />
                       <TextInput
                         type="time"
                         value={lossTime}
                         onChange={(e) => setLossTime(e.currentTarget.value)}
-                        leftSection={<i className="fa-regular fa-clock" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
+                        leftSection={<i className="ph ph-clock" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
                       />
                     </Box>
 
                     <Box>
-                      <FieldLabel icon="fa-city" labelKey="declarer_city" required />
+                      <FieldLabel icon="ph ph-buildings" labelKey="declarer_city" required />
                       <LocationSelect
                         value={location}
                         onChange={(val) => { setLocation(val); setFieldErrors((prev) => ({ ...prev, ville: "" })); }}
@@ -996,23 +969,23 @@ export default function Declarer() {
                     </Box>
 
                     <Box>
-                      <FieldLabel icon="fa-map-pin" labelKey="declarer_neighborhood" optional />
+                      <FieldLabel icon="ph ph-map-pin" labelKey="declarer_neighborhood" optional />
                       <TextInput
                         value={quartier}
                         onChange={(e) => setQuartier(e.currentTarget.value)}
                         placeholder={t("declarer_placeholder_neighborhood")}
-                        leftSection={<i className="fa-solid fa-location-dot" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
+                        leftSection={<i className="ph ph-map-pin" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
                       />
                     </Box>
                   </SimpleGrid>
 
                   <Box>
-                    <FieldLabel icon="fa-map-location-dot" labelKey="declarer_exact_location" optional />
+                    <FieldLabel icon="ph ph-map-pin" labelKey="declarer_exact_location" optional />
                     <TextInput
                       value={lieuPrecis}
                       onChange={(e) => setLieuPrecis(e.currentTarget.value)}
                       placeholder={t("declarer_placeholder_exact_location")}
-                      leftSection={<i className="fa-solid fa-map-marker-alt" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
+                      leftSection={<i className="ph ph-map-pin" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
                     />
                   </Box>
 
@@ -1038,7 +1011,7 @@ export default function Declarer() {
                   </Box>
 
                   <Box>
-                    <FieldLabel icon="fa-comment-dots" labelKey="declarer_circumstances" optional />
+                    <FieldLabel icon="ph ph-chat-circle-dots" labelKey="declarer_circumstances" optional />
                     <Textarea
                       value={circumstances}
                       onChange={(e) => setCircumstances(e.currentTarget.value)}
@@ -1061,7 +1034,7 @@ export default function Declarer() {
                 <Stack gap="md">
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                     <Box>
-                      <FieldLabel icon="fa-phone" labelKey="declarer_phone" required />
+                      <FieldLabel icon="ph ph-phone" labelKey="declarer_phone" required />
                       <PhoneInput
                         country={"cm"}
                         value={contactPhone}
@@ -1093,25 +1066,25 @@ export default function Declarer() {
                     </Box>
 
                     <Box>
-                      <FieldLabel icon="fa-envelope" labelKey="declarer_email" optional />
+                      <FieldLabel icon="ph ph-envelope" labelKey="declarer_email" optional />
                       <TextInput
                         type="email"
                         value={contactEmail}
                         onChange={(e) => setContactEmail(e.currentTarget.value)}
                         placeholder={t("declarer_placeholder_email")}
-                        leftSection={<i className="fa-regular fa-envelope" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
+                        leftSection={<i className="ph ph-envelope" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
                       />
                     </Box>
                   </SimpleGrid>
 
                   <Box>
                     <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="xs" style={{ letterSpacing: 0.4 }}>
-                      <i className="fa-solid fa-gauge" style={{ fontSize: 11, color: "var(--color-primary)" }} /> {t("declarer_urgency_level")}
+                      <i className="ph ph-gauge" style={{ fontSize: 11, color: "var(--color-primary)" }} /> {t("declarer_urgency_level")}
                     </Text>
                     <Group gap="xs" grow>
-                      <UrgencyBadge level="low" label={t("declarer_urgency_low_btn")} color="green" icon="fa-circle" active={urgencyLevel === "low"} onSelect={setUrgencyLevel} />
-                      <UrgencyBadge level="medium" label={t("declarer_urgency_medium_btn")} color="yellow" icon="fa-circle" active={urgencyLevel === "medium"} onSelect={setUrgencyLevel} />
-                      <UrgencyBadge level="high" label={t("declarer_urgency_high_btn")} color="red" icon="fa-circle" active={urgencyLevel === "high"} onSelect={setUrgencyLevel} />
+                      <UrgencyBadge level="low" label={t("declarer_urgency_low_btn")} color="green" icon="ph ph-circle" active={urgencyLevel === "low"} onSelect={setUrgencyLevel} />
+                      <UrgencyBadge level="medium" label={t("declarer_urgency_medium_btn")} color="yellow" icon="ph ph-circle" active={urgencyLevel === "medium"} onSelect={setUrgencyLevel} />
+                      <UrgencyBadge level="high" label={t("declarer_urgency_high_btn")} color="red" icon="ph ph-circle" active={urgencyLevel === "high"} onSelect={setUrgencyLevel} />
                     </Group>
                     <Text size="xs" c="dimmed" mt="xs">
                       {getUrgencyDescription()}
@@ -1122,7 +1095,7 @@ export default function Declarer() {
                     <Group justify="space-between" align="flex-start" wrap="nowrap">
                       <Group gap="sm" align="flex-start" wrap="nowrap" style={{ flex: 1 }}>
                         <ThemeIcon size="md" color="orange" variant="light" radius="md">
-                          <i className="fa-solid fa-coins" style={{ fontSize: 14 }} />
+                          <i className="ph ph-coins" style={{ fontSize: 14 }} />
                         </ThemeIcon>
                         <Box style={{ flex: 1, minWidth: 0 }}>
                           <Group gap={6} mb={2}>
@@ -1149,7 +1122,7 @@ export default function Declarer() {
                         placeholder={t("declarer_placeholder_amount")}
                         min={0}
                         step={500}
-                        leftSection={<i className="fa-solid fa-franc-sign" style={{ fontSize: 12 }} />}
+                        leftSection={<i className="ph ph-currency-circle-dollar" style={{ fontSize: 12 }} />}
                         rightSection={<Text size="xs" fw={700} c="dimmed">{t("declarer_fcfa")}</Text>}
                         rightSectionWidth={50}
                       />
@@ -1180,7 +1153,7 @@ export default function Declarer() {
                   radius="md"
                   onClick={prevStep}
                   disabled={active === 0}
-                  leftSection={<i className="fa-solid fa-arrow-left" style={{ fontSize: 11 }} />}
+                  leftSection={<i className="ph ph-arrow-left" style={{ fontSize: 11 }} />}
                   size="sm"
                 >
                   {t("declarer_previous")}
@@ -1193,7 +1166,7 @@ export default function Declarer() {
                     color="dark"
                     radius="md"
                     onClick={handleNext}
-                    rightSection={<i className="fa-solid fa-arrow-right" style={{ fontSize: 11 }} />}
+                    rightSection={<i className="ph ph-arrow-right" style={{ fontSize: 11 }} />}
                     size="sm"
                     styles={{ root: { background: "var(--color-green-dark)" } }}
                   >
@@ -1204,7 +1177,7 @@ export default function Declarer() {
                     color="dark"
                     radius="md"
                     onClick={confirmHandlers.open}
-                    rightSection={<i className="fa-solid fa-circle-check" style={{ fontSize: 11 }} />}
+                    rightSection={<i className="ph ph-check-circle" style={{ fontSize: 11 }} />}
                     size="sm"
                     styles={{ root: { background: "var(--color-green-dark)" } }}
                   >
@@ -1242,7 +1215,7 @@ export default function Declarer() {
                         color={isDone ? "orange" : isCurrent ? "green.9" : "gray"}
                         variant={isDone || isCurrent ? "filled" : "outline"}
                       >
-                        {isDone ? <i className="fa-solid fa-check" style={{ fontSize: 10 }} /> : <Text size="xs" fw={700}>{s.num}</Text>}
+                        {isDone ? <i className="ph ph-check" style={{ fontSize: 10 }} /> : <Text size="xs" fw={700}>{s.num}</Text>}
                       </ThemeIcon>
                       <Box>
                         <Text size="sm" fw={isCurrent ? 800 : 600} c={isCurrent ? "dark.7" : "gray.7"}>
@@ -1275,7 +1248,7 @@ export default function Declarer() {
                     const sameTypeIndex = selectedDocs.filter((s) => s.docId === inst.docId).findIndex((s) => s.key === inst.key) + 1;
                     return (
                       <Group key={inst.key} gap="xs">
-                        <i className={`fa-solid fa-${doc?.icone || "file"}`} style={{ fontSize: 12, color: "var(--color-primary)" }} />
+                        <i className={`${phClass(doc?.icone || "file")}`} style={{ fontSize: 12, color: "var(--color-primary)" }} />
                         <Text size="xs" fw={600} c="white">{doc?.nom}{sameTypeCount > 1 ? ` n°${sameTypeIndex}` : ""}</Text>
                       </Group>
                     );
@@ -1286,13 +1259,13 @@ export default function Declarer() {
 
             <Card padding="lg" radius="lg" withBorder style={{ background: "white" }}>
               <Title order={4} mb="sm" style={{ fontFamily: "Bricolage Grotesque", fontSize: 14 }}>
-                <i className="fa-solid fa-circle-info" style={{ color: "var(--color-primary)", marginRight: 8 }} />
+                <i className="ph ph-info" style={{ color: "var(--color-primary)", marginRight: 8 }} />
                 {t("declarer_useful_tips")}
               </Title>
               <Stack gap="xs">
                 {[t("declarer_tip_1"), t("declarer_tip_2"), t("declarer_tip_3"), t("declarer_tip_4")].map((tip, i) => (
                   <Group key={i} gap="xs" align="flex-start" wrap="nowrap">
-                    <i className="fa-solid fa-check" style={{ fontSize: 11, color: "var(--color-green-mid)", marginTop: 3, flexShrink: 0 }} />
+                    <i className="ph ph-check" style={{ fontSize: 11, color: "var(--color-green-mid)", marginTop: 3, flexShrink: 0 }} />
                     <Text size="xs" c="dark.7" style={{ lineHeight: 1.5 }}>{tip}</Text>
                   </Group>
                 ))}

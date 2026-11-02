@@ -109,7 +109,7 @@ describe("buildDocTypeCards", () => {
     const passeport = cards.find((card) => card.code === "PASSPORT");
     expect(passeport?.stats.found).toBe(0);
     expect(passeport?.name).toBe("Passeport");
-    expect(passeport?.icon).toBe("fa-passport");
+    expect(passeport?.icon).toBe("ph ph-book-open");
   });
 
   it("distingue le type illustré de celui qui retombe sur l'icône", () => {

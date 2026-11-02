@@ -1,13 +1,18 @@
 import { useState, useEffect } from "react";
-import { Modal, Button, TextInput, Alert } from "@mantine/core";
+import { Button, TextInput, Alert } from "@mantine/core";
 import { useI18n } from "../../context/I18nContext";
 import { useToast } from "../../context/ToastContext";
 import { paymentsService, type SavedPaymentMethod } from "../../services/paymentsService";
 import { validatePhone } from "../../utils/phoneValidation";
 import Stepper from "./Stepper";
 import api from "../../services/api";
-import orangeMoneyLogo from "../../assets/images/orange-money.svg";
-import mtnMomoLogo from "../../assets/images/mtn-momo.svg";
+import orangeMoneyLogo from "../../assets/images/orange.png";
+import mtnMomoLogo from "../../assets/images/mtn.png";
+import {
+  Dialog,
+  DialogContent,
+  DialogBody,
+} from "../ui/dialog";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -151,67 +156,74 @@ export default function PaymentModal({
 
   // ── Step 1 — method selection
   const renderStep1 = () => (
-    <>
-      <Stepper steps={STEPPER_STEPS} currentStep={1} orientation="horizontal" />
+    <div className="space-y-5">
+      <div className="pb-4 border-b border-borderMain">
+        <Stepper steps={STEPPER_STEPS} currentStep={1} orientation="horizontal" />
+      </div>
 
-      <h2 className="font-bricolage text-lg font-black text-textMain mb-1">
-        Choisir votre moyen de paiement
-      </h2>
-      {description && (
-        <p className="text-[12px] text-textMuted mb-4 leading-relaxed">{description}</p>
-      )}
+      <div>
+        <h2 className="font-bricolage text-xl font-extrabold text-textMain mb-2">
+          Choisir votre moyen de paiement
+        </h2>
+        {description && (
+          <p className="text-[13px] text-textMuted mb-4 leading-relaxed">{description}</p>
+        )}
+      </div>
 
       {children}
 
       {/* Amount */}
-      <div className="p-4 bg-bgMain rounded-[16px] mb-5">
-        <p className="text-[10px] font-bold text-textMuted uppercase mb-1">{t("payment_amount")}</p>
-        <p className="font-bricolage text-2xl font-black text-primary">
-          {amount.toLocaleString("fr-FR")} FCFA
+      <div className="p-5 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border border-primary/20">
+        <p className="text-[11px] font-bold text-textMuted uppercase tracking-wider mb-1.5">
+          {t("payment_amount")}
+        </p>
+        <p className="font-bricolage text-3xl font-black text-primary">
+          {amount.toLocaleString("fr-FR")} <span className="text-xl">FCFA</span>
         </p>
       </div>
 
       {/* Mobile Money */}
-      <div className="space-y-4 mb-5">
-        <div className="space-y-2.5">
-          <p className="text-[10px] uppercase font-bold text-textMuted">Mobile Money</p>
+      <div className="space-y-4">
+        <div className="space-y-3">
+          <p className="text-[11px] uppercase font-bold text-textMuted tracking-wider flex items-center gap-2">
+            <i className="ph ph-device-mobile text-sm" />
+            Mobile Money
+          </p>
 
           {/* Orange Money */}
           <div
-            className={cardBase}
-            style={selectedMethod === "orange" ? cardSelected : cardUnselected}
+            className={`${cardBase} ${selectedMethod === "orange" ? "border-2 border-primary bg-primary/5 shadow-md" : "border border-borderMain hover:border-primary/50"}`}
             onClick={() => setSelectedMethod("orange")}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[10px] flex-shrink-0 overflow-hidden">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden bg-white p-2 border border-borderMain">
                 <img src={orangeMoneyLogo} alt="Orange Money" className="w-full h-full object-contain" />
               </div>
-              <div className="flex-1">
-                <p className="text-[13px] font-bold text-textMain">Orange Money</p>
-                <p className="text-[11px] text-textMuted">{t("payment_orange_sublabel")}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-bold text-textMain">Orange Money</p>
+                <p className="text-[12px] text-textMuted">{t("payment_orange_sublabel")}</p>
               </div>
               {selectedMethod === "orange" && (
-                <i className="fa-solid fa-circle-check text-green-dark text-sm flex-shrink-0" />
+                <i className="ph-fill ph-check-circle text-primary text-xl flex-shrink-0" />
               )}
             </div>
           </div>
 
           {/* MTN Mobile Money */}
           <div
-            className={cardBase}
-            style={selectedMethod === "mtn" ? cardSelected : cardUnselected}
+            className={`${cardBase} ${selectedMethod === "mtn" ? "border-2 border-primary bg-primary/5 shadow-md" : "border border-borderMain hover:border-primary/50"}`}
             onClick={() => setSelectedMethod("mtn")}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[10px] flex-shrink-0 overflow-hidden">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden bg-white p-2 border border-borderMain">
                 <img src={mtnMomoLogo} alt="MTN Mobile Money" className="w-full h-full object-contain" />
               </div>
-              <div className="flex-1">
-                <p className="text-[13px] font-bold text-textMain">MTN Mobile Money</p>
-                <p className="text-[11px] text-textMuted">{t("payment_mtn_sublabel")}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-bold text-textMain">MTN Mobile Money</p>
+                <p className="text-[12px] text-textMuted">{t("payment_mtn_sublabel")}</p>
               </div>
               {selectedMethod === "mtn" && (
-                <i className="fa-solid fa-circle-check text-green-dark text-sm flex-shrink-0" />
+                <i className="ph-fill ph-check-circle text-primary text-xl flex-shrink-0" />
               )}
             </div>
           </div>
@@ -219,40 +231,42 @@ export default function PaymentModal({
         </div>
 
         {/* Autres */}
-        <div className="space-y-2.5">
-          <p className="text-[10px] uppercase font-bold text-textMuted">Autres</p>
+        <div className="space-y-3">
+          <p className="text-[11px] uppercase font-bold text-textMuted tracking-wider flex items-center gap-2">
+            <i className="ph ph-wallet text-sm" />
+            Autres
+          </p>
 
           {/* Points */}
           <div
-            className={cardBase}
-            style={selectedMethod === "points" ? cardSelected : cardUnselected}
+            className={`${cardBase} ${selectedMethod === "points" ? "border-2 border-primary bg-primary/5 shadow-md" : "border border-borderMain hover:border-primary/50"}`}
             onClick={() => setSelectedMethod("points")}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[10px] border border-borderMain flex items-center justify-center flex-shrink-0">
-                <i className="fa-solid fa-star" style={{ color: "#F5A64B" }} />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl border border-borderMain flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-primary/10 to-primary/5">
+                <i className="ph-fill ph-star text-2xl" style={{ color: "#F5A64B" }} />
               </div>
-              <div className="flex-1">
-                <p className="text-[13px] font-bold text-textMain">Payer avec mes Points</p>
-                <p className="text-[11px] text-textMuted">
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-bold text-textMain">Payer avec mes Points</p>
+                <p className="text-[12px] text-textMuted">
                   {pointsNeeded === null ? "Chargement..." : `Coût: ${pointsNeeded} pts`}
                 </p>
               </div>
               {selectedMethod === "points" && (
-                <i className="fa-solid fa-circle-check text-green-dark text-sm flex-shrink-0" />
+                <i className="ph-fill ph-check-circle text-primary text-xl flex-shrink-0" />
               )}
             </div>
           </div>
 
           {/* PayPoint (disabled) */}
-          <div className="p-3 border rounded-[14px] opacity-50 cursor-not-allowed" style={{ border: "1px solid #EAE3D8" }}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[10px] border border-borderMain flex items-center justify-center flex-shrink-0">
-                <i className="fa-solid fa-credit-card text-textMuted" />
+          <div className="p-4 border rounded-2xl opacity-50 cursor-not-allowed border-borderMain bg-gray-50">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl border border-borderMain flex items-center justify-center flex-shrink-0 bg-white">
+                <i className="ph ph-credit-card text-textMuted text-xl" />
               </div>
-              <div className="flex-1">
-                <p className="text-[13px] font-bold text-gray-500">PayPoint</p>
-                <p className="text-[11px] text-gray-400">Bientôt disponible</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-bold text-gray-500">PayPoint</p>
+                <p className="text-[12px] text-gray-400">Bientôt disponible</p>
               </div>
             </div>
           </div>
@@ -261,14 +275,21 @@ export default function PaymentModal({
 
       <Button
         fullWidth
+        size="lg"
         radius="xl"
         disabled={!selectedMethod}
         onClick={handleContinue}
-        style={{ backgroundColor: "#2D5A42", color: "#fff" }}
+        style={{ 
+          backgroundColor: selectedMethod ? "#2D5A42" : undefined, 
+          color: "#fff",
+          height: 48,
+          fontSize: '14px',
+          fontWeight: 700
+        }}
       >
-        Continuer →
+        Continuer <i className="ph ph-arrow-right ml-2" />
       </Button>
-    </>
+    </div>
   );
 
   // ── Step 2 — phone + confirm
@@ -286,44 +307,50 @@ export default function PaymentModal({
       !processing;
 
     return (
-      <>
-        <Stepper steps={STEPPER_STEPS} currentStep={2} orientation="horizontal" />
+      <div className="space-y-5">
+        <div className="pb-4 border-b border-borderMain">
+          <Stepper steps={STEPPER_STEPS} currentStep={2} orientation="horizontal" />
+        </div>
 
         <button
           onClick={handleBack}
-          className="text-[12px] text-textMuted hover:text-textMain flex items-center gap-1 mb-4 transition-colors"
+          className="text-[13px] text-textMuted hover:text-textMain flex items-center gap-2 transition-colors font-semibold"
         >
-          <i className="fa-solid fa-arrow-left text-xs" /> Retour
+          <i className="ph ph-arrow-left" /> Retour
         </button>
 
-        <h2 className="font-bricolage text-lg font-black text-textMain mb-1">
-          Entrez votre numéro {methodLabel}
-        </h2>
+        <div>
+          <h2 className="font-bricolage text-xl font-extrabold text-textMain mb-2">
+            {selectedMethod === "points" ? "Confirmation du paiement" : `Entrez votre numéro ${methodLabel}`}
+          </h2>
 
-        {/* Selected method indicator */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded-[8px] overflow-hidden flex-shrink-0">
-            {selectedMethod === "orange" && <img src={orangeMoneyLogo} alt="Orange Money" className="w-full h-full object-contain" />}
-            {selectedMethod === "mtn" && <img src={mtnMomoLogo} alt="MTN Mobile Money" className="w-full h-full object-contain" />}
-            {selectedMethod === "points" && (
-              <div className="w-full h-full border border-borderMain rounded-[8px] flex items-center justify-center">
-                <i className="fa-solid fa-star text-xs" style={{ color: "#F5A64B" }} />
-              </div>
-            )}
+          {/* Selected method indicator */}
+          <div className="flex items-center gap-3 p-3 bg-bgMain rounded-xl border border-borderMain">
+            <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 bg-white p-1.5 border border-borderMain">
+              {selectedMethod === "orange" && <img src={orangeMoneyLogo} alt="Orange Money" className="w-full h-full object-contain" />}
+              {selectedMethod === "mtn" && <img src={mtnMomoLogo} alt="MTN Mobile Money" className="w-full h-full object-contain" />}
+              {selectedMethod === "points" && (
+                <div className="w-full h-full flex items-center justify-center">
+                  <i className="ph-fill ph-star text-lg" style={{ color: "#F5A64B" }} />
+                </div>
+              )}
+            </div>
+            <span className="text-[14px] font-bold text-textMain">{methodLabel}</span>
           </div>
-          <span className="text-[13px] font-semibold text-textMain">{methodLabel}</span>
         </div>
 
         {/* Amount */}
-        <div className="p-4 bg-bgMain rounded-[16px] mb-5">
-          <p className="text-[10px] font-bold text-textMuted uppercase mb-1">{t("payment_amount")}</p>
-          <p className="font-bricolage text-2xl font-black text-primary">
-            {amount.toLocaleString("fr-FR")} FCFA
+        <div className="p-5 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border border-primary/20">
+          <p className="text-[11px] font-bold text-textMuted uppercase tracking-wider mb-1.5">
+            {t("payment_amount")}
+          </p>
+          <p className="font-bricolage text-3xl font-black text-primary">
+            {amount.toLocaleString("fr-FR")} <span className="text-xl">FCFA</span>
           </p>
           {selectedMethod === "points" && pointsNeeded != null && (
-            <p className="text-[11px] text-textMuted mt-1">
-              <i className="fa-solid fa-star text-xs mr-1" style={{ color: "#F5A64B" }} />
-              Coût en points : {pointsNeeded} pts
+            <p className="text-[12px] text-textMuted mt-2 flex items-center gap-1.5">
+              <i className="ph-fill ph-star" style={{ color: "#F5A64B" }} />
+              Coût en points : <span className="font-bold">{pointsNeeded} pts</span>
             </p>
           )}
         </div>
@@ -358,13 +385,13 @@ export default function PaymentModal({
                         style={selectedSaved?.id === m.id ? { border: "2px solid #2D5A42" } : { border: "1px solid #EAE3D8" }}
                       >
                         <div className="w-7 h-7 rounded-[8px] border border-borderMain flex items-center justify-center">
-                          <i className={`fa-solid fa-mobile-screen-button text-[10px] ${selectedMethod === "mtn" ? "text-yellow-500" : "text-orange-500"}`} />
+                          <i className={`ph ph-device-mobile text-[10px] ${selectedMethod === "mtn" ? "text-yellow-500" : "text-orange-500"}`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[12px] font-semibold text-textMain truncate">{m.account_number}</p>
                           {m.account_name && <p className="text-[10px] text-textMuted truncate">{m.account_name}</p>}
                         </div>
-                        {selectedSaved?.id === m.id && <i className="fa-solid fa-circle-check text-green-dark text-xs" />}
+                        {selectedSaved?.id === m.id && <i className="ph ph-check-circle text-green-dark text-xs" />}
                       </div>
                     ))}
                   </div>
@@ -387,7 +414,7 @@ export default function PaymentModal({
 
             {phoneErr && !useSaved && (
               <p className="text-[11px] text-red-500 font-semibold mt-1.5 flex items-center gap-1">
-                <i className="fa-solid fa-circle-exclamation" /> {phoneErr}
+                <i className="ph ph-warning-circle" /> {phoneErr}
               </p>
             )}
 
@@ -401,35 +428,47 @@ export default function PaymentModal({
         )}
 
         {error && (
-          <Alert color="red" variant="light" radius="md" mb="md" icon={<i className="fa-solid fa-circle-exclamation" />}>
+          <Alert color="red" variant="light" radius="md" mb="md" icon={<i className="ph ph-warning-circle" />}>
             {error}
           </Alert>
         )}
 
         {termsText && (
-          <p className="text-[10px] text-textMuted text-center mb-4 leading-relaxed">{termsText}</p>
+          <p className="text-[11px] text-textMuted text-center leading-relaxed p-3 bg-bgMain rounded-xl">{termsText}</p>
         )}
 
         <Button
           fullWidth
+          size="lg"
           radius="xl"
           disabled={!canSubmit}
           onClick={handleSubmit}
-          style={{ backgroundColor: "#2D5A42", color: "#fff" }}
+          loading={processing}
+          style={{ 
+            backgroundColor: canSubmit ? "#2D5A42" : undefined, 
+            color: "#fff",
+            height: 48,
+            fontSize: '14px',
+            fontWeight: 700
+          }}
         >
           {processing ? (
-            <><i className="fa-solid fa-spinner fa-spin mr-1" /> {t("payment_processing")}</>
+            <>{t("payment_processing")}</>
           ) : (
-            submitLabel || `Payer ${amount.toLocaleString("fr-FR")} FCFA`
+            <>{submitLabel || `Payer ${amount.toLocaleString("fr-FR")} FCFA`} <i className="ph ph-lock-simple ml-2" /></>
           )}
         </Button>
-      </>
+      </div>
     );
   };
 
   return (
-    <Modal opened={isOpen} onClose={onClose} size="md" withCloseButton={false} padding="lg">
-      {step === 1 ? renderStep1() : renderStep2()}
-    </Modal>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogBody className="p-6">
+          {step === 1 ? renderStep1() : renderStep2()}
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }

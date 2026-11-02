@@ -57,7 +57,7 @@ export default function PromoBanner({ plan, onSubscribe, onDismiss, processing, 
             style={{ background: "rgba(0,0,0,0.2)", color: "rgba(255,255,255,0.7)" }}
             aria-label="Fermer"
           >
-            <i className="fa-solid fa-xmark text-sm" />
+            <i className="ph ph-x text-sm" />
           </ActionIcon>
         )}
 
@@ -89,15 +89,15 @@ export default function PromoBanner({ plan, onSubscribe, onDismiss, processing, 
 
           <Group gap={6} mb="sm" wrap="wrap">
             {[
-              { icon: "fa-file-circle-check", label: "5 types doc" },
-              { icon: "fa-box-open", label: "7 objets" },
-              { icon: "fa-bell", label: "Alertes SMS" },
-              { icon: "fa-location-dot", label: "Géo-tracking" },
-              { icon: "fa-circle-check", label: "Badge vérifié" },
+              { icon: "ph ph-seal-check", label: "5 types doc" },
+              { icon: "ph ph-archive-tray", label: "7 objets" },
+              { icon: "ph ph-bell", label: "Alertes SMS" },
+              { icon: "ph ph-map-pin", label: "Géo-tracking" },
+              { icon: "ph ph-check-circle", label: "Badge vérifié" },
             ].map((f) => (
               <Badge key={f.label} variant="filled" size="sm" radius="xl" p={0} style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)", fontSize: 9, fontWeight: 500 }}>
                 <Group gap={4}>
-                  <i className={`fa-solid ${f.icon} text-[7px] sm:text-[8px]`} /> {f.label}
+                  <i className={`${f.icon} text-[7px] sm:text-[8px]`} /> {f.label}
                 </Group>
               </Badge>
             ))}
@@ -111,7 +111,7 @@ export default function PromoBanner({ plan, onSubscribe, onDismiss, processing, 
             size="md"
             fw={900}
             style={{ background: "white", color: "#0284c7" }}
-            leftSection={processing ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-crown" />}
+            leftSection={processing ? <i className="ph ph-spinner animate-spin" /> : <i className="ph ph-crown" />}
           >
             {processing ? "Activation..." : "Activer mon VIP"}
           </Button>

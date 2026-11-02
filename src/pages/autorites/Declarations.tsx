@@ -585,7 +585,7 @@ function DetailContent({
           return (
             <Space size={8} style={{ marginTop: 10 }}>
               {r.isPartner ? (
-                <i className="fa-solid fa-building" style={{ color: "rgba(255,255,255,0.75)" }} />
+                <i className="ph ph-building" style={{ color: "rgba(255,255,255,0.75)" }} />
               ) : (
                 <SearchOutlined style={{ color: "rgba(255,255,255,0.75)" }} />
                )}

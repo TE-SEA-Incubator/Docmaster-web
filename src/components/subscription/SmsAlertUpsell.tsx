@@ -32,7 +32,7 @@ export default function SmsAlertUpsell({ spot, variant = "inline" }: SmsAlertUps
     >
       <Group gap="sm" align="flex-start" wrap="nowrap">
         <i
-          className="fa-solid fa-comment-sms flex-shrink-0 text-textMuted"
+          className="ph ph-chat-circle-text flex-shrink-0 text-textMuted"
           style={{ fontSize: isCard ? 17 : 15, marginTop: 2 }}
           aria-hidden="true"
         />
@@ -57,7 +57,7 @@ export default function SmsAlertUpsell({ spot, variant = "inline" }: SmsAlertUps
             size="sm"
             mt={isCard ? "sm" : 6}
             styles={{ root: { paddingLeft: 0 } }}
-            rightSection={<i className="fa-solid fa-arrow-right text-[9px]" />}
+            rightSection={<i className="ph ph-arrow-right text-[9px]" />}
             onClick={() => navigate("/abonnement")}
           >
             {t("upsell_sms_cta", { plan: planName })}
@@ -71,7 +71,7 @@ export default function SmsAlertUpsell({ spot, variant = "inline" }: SmsAlertUps
           onClick={snooze}
           styles={{ root: { width: 44, height: 44, flexShrink: 0, marginTop: -6 } }}
         >
-          <i className="fa-solid fa-xmark text-sm" />
+          <i className="ph ph-x text-sm" />
         </ActionIcon>
       </Group>
     </Paper>

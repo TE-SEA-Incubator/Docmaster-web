@@ -44,7 +44,7 @@ export function InputTooltip({
     >
       <Text component="div" c="dimmed" style={{ cursor: 'help' }}>
         <Center>
-          <i className="fa-solid fa-circle-info" style={{ fontSize: '18px' }} />
+          <i className="ph ph-info" style={{ fontSize: '18px' }} />
         </Center>
       </Text>
     </Tooltip>

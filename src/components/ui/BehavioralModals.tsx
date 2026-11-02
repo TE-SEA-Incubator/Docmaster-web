@@ -84,7 +84,7 @@ const BehavioralModals: React.FC = () => {
              
              <div className="relative z-10 flex flex-col items-center text-center">
                 <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mb-6 shadow-inner backdrop-blur-md border border-white/10">
-                   <i className="fa-solid fa-handshake-angle text-primary text-4xl" />
+                   <i className="ph ph-hand-heart text-primary text-4xl" />
                 </div>
                 <h3 className="text-white font-bricolage text-2xl font-black mb-2 leading-tight">Chaque minute compte...</h3>
                 <div className="w-12 h-1.5 bg-primary rounded-full mb-6" />
@@ -97,7 +97,7 @@ const BehavioralModals: React.FC = () => {
             <div className="space-y-6">
                <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <i className="fa-solid fa-magnifying-glass text-primary" />
+                    <i className="ph ph-magnifying-glass text-primary" />
                   </div>
                   <p className="text-[13.5px] leading-relaxed text-textMuted">
                     Saviez-vous que plus de <strong className="text-textMain">1 200 documents</strong> sont perdus chaque jour dans le pays ?
@@ -106,7 +106,7 @@ const BehavioralModals: React.FC = () => {
 
                <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <i className="fa-solid fa-check-circle text-green-600" />
+                    <i className="ph ph-check-circle text-green-600" />
                   </div>
                   <p className="text-[13.5px] leading-relaxed text-textMuted">
                     {t("behavioral_stat_matched")}
@@ -141,7 +141,7 @@ const BehavioralModals: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-orange-50/50 border border-orange-100 p-8 rounded-[32px] flex flex-col text-center hover:bg-orange-50 transition-colors group">
                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm group-hover:scale-110 transition-transform">
-                  <i className="fa-solid fa-search text-orange-500 text-2xl" />
+                  <i className="ph ph-magnifying-glass text-orange-500 text-2xl" />
                </div>
                <h3 className="font-bricolage text-xl font-bold text-textMain mb-3">Je cherche un document</h3>
                <p className="text-[13px] text-textMuted leading-relaxed mb-8 flex-1">
@@ -154,7 +154,7 @@ const BehavioralModals: React.FC = () => {
 
             <div className="bg-green-50/50 border border-green-100 p-8 rounded-[32px] flex flex-col text-center hover:bg-green-50 transition-colors group">
                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm group-hover:scale-110 transition-transform">
-                  <i className="fa-solid fa-hand-holding-heart text-green-600 text-2xl" />
+                  <i className="ph ph-hand-heart text-green-600 text-2xl" />
                </div>
                <h3 className="font-bricolage text-xl font-bold text-textMain mb-3">J'ai trouvé un document</h3>
                <p className="text-[13px] text-textMuted leading-relaxed mb-8 flex-1">

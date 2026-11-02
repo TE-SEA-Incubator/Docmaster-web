@@ -88,7 +88,7 @@ export default function DocumentViewer({ recto, verso, title }: DocumentViewerPr
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-3 text-white/60">
-                  <i className="fa-regular fa-image text-4xl md:text-5xl" />
+                  <i className="ph ph-image text-4xl md:text-5xl" />
                   <p className="text-xs md:text-sm font-medium">
                     {face.key === "recto" ? t("detail_no_image_recto") : t("detail_no_image_verso")}
                   </p>
@@ -111,7 +111,7 @@ export default function DocumentViewer({ recto, verso, title }: DocumentViewerPr
                     : "bg-white/10 text-white hover:bg-white/20"
                 }`}
               >
-                <i className={`fa-solid ${option === "recto" ? "fa-rectangle-portrait" : "fa-rectangle-landscape"}`} />
+                <i className={`${option === "recto" ? "ph ph-rectangle" : "ph ph-rectangle"}`} />
                 {t(option === "recto" ? "detail_recto" : "detail_verso")}
               </button>
             ))}
@@ -126,7 +126,7 @@ export default function DocumentViewer({ recto, verso, title }: DocumentViewerPr
           aria-label={t("viewer_rotate")}
           className="w-11 h-11 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white flex items-center justify-center transition-colors"
         >
-          <i className="fa-solid fa-rotate-right text-sm" />
+          <i className="ph ph-arrow-clockwise text-sm" />
         </button>
         <span className="text-xs font-medium text-white/70">
           {zoomed ? t("detail_dezoom") : t("detail_zoom")}

@@ -77,6 +77,41 @@ export class PointsService {
   }
 
   /**
+   * Refund points when a points-funded recovery could not be finalized.
+   * Must only be called when no claim was created for the payment.
+   */
+  async refundPoints(
+    userId: string,
+    amountPoints: number,
+    description: string,
+    metadata: any = {},
+  ) {
+    await query(
+      'UPDATE users SET points = points + $1, updated_at = NOW() WHERE id = $2',
+      [amountPoints, userId],
+    );
+
+    await this.earningsRepository.create({
+      user_id: userId,
+      type: 'POINTS_REFUND',
+      amount: amountPoints,
+      currency: 'POINTS',
+      description,
+      metadata,
+    });
+
+    await notificationService.createNotification({
+      user_id: userId,
+      type: 'POINTS_REFUND',
+      title: 'Points remboursés',
+      message: `${amountPoints} points ont été recrédités : ${description}`,
+      metadata: { ...metadata, amount: amountPoints, type: 'POINTS_REFUND' },
+    });
+
+    return true;
+  }
+
+  /**
    * Convert points to wallet balance
    */
   async convertPointsToWallet(userId: string, amountPoints: number, password?: string) {

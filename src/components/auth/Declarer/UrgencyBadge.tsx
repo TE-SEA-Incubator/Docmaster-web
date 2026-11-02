@@ -30,7 +30,7 @@ export default function UrgencyBadge({ level, label, color, icon, active, onSele
       }}
     >
       <Group gap="xs" justify="center" wrap="nowrap">
-        <i className={`fa-solid ${icon}`} style={{ fontSize: 8, color: `var(--mantine-color-${color}-filled)` }} />
+        <i className={`${icon}`} style={{ fontSize: 8, color: `var(--mantine-color-${color}-filled)` }} />
         <Text size="sm" fw={600} c={active ? `${color}.7` : "dimmed"}>
           {label}
         </Text>

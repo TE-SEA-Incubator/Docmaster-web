@@ -28,6 +28,7 @@ show_usage() {
     echo "Modes disponibles:"
     echo "  full     - Déploiement complet (compression, transfert, compilation des 2 blocs)"
     echo "  front    - Déploiement uniquement du frontend"
+    echo "  backend  - Déploiement uniquement du backend + migrations DB"
     echo "  backup   - Juste la sauvegarde et extraction (sans compilation/build)"
     echo "  prod     - Bascule le frontend Vite (dev) vers server.js (production avec dist/)"
     echo "  -m|--migrate - Option (exécuter les migrations DB sur le serveur distant)"
@@ -40,7 +41,7 @@ if [ "$DEPLOY_MODE" = "help" ] || [ "$DEPLOY_MODE" = "-h" ] || [ "$DEPLOY_MODE" 
     exit 0
 fi
 
-if [ "$DEPLOY_MODE" != "full" ] && [ "$DEPLOY_MODE" != "front" ] && [ "$DEPLOY_MODE" != "backup" ] && [ "$DEPLOY_MODE" != "prod" ]; then
+if [ "$DEPLOY_MODE" != "full" ] && [ "$DEPLOY_MODE" != "front" ] && [ "$DEPLOY_MODE" != "backend" ] && [ "$DEPLOY_MODE" != "backup" ] && [ "$DEPLOY_MODE" != "prod" ]; then
     echo "❌ Mode invalide: $DEPLOY_MODE"
     show_usage
     exit 1
@@ -68,7 +69,7 @@ compress_assets() {
         log_success "Frontend (React) compressé avec succès !"
     fi
 
-    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "backup" ]; then
+    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "backend" ] || [ "$DEPLOY_MODE" = "backup" ]; then
         log_info "Compression du Backend (Dossier /server)..."
         # Copy production env file to server folder before compressing
         if [ -f "./server/.env.production" ]; then
@@ -96,7 +97,7 @@ transfer_assets() {
     if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "front" ] || [ "$DEPLOY_MODE" = "backup" ]; then
         FILES_TO_TRANSFER="../$ARCHIVE_FRONT"
     fi
-    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "backup" ]; then
+    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "backend" ] || [ "$DEPLOY_MODE" = "backup" ]; then
         FILES_TO_TRANSFER="$FILES_TO_TRANSFER ../$ARCHIVE_BACK"
     fi
     
@@ -137,7 +138,7 @@ execute_remote_deployment() {
     fi
 
     # 2. Gestion sélective du build et des dépendances selon le mode choisi
-    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "front" ]; then
+    if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "front" ] || [ "$DEPLOY_MODE" = "backend" ]; then
         echo "Mode $DEPLOY_MODE activé : Installation et Compilation..."
         
         if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "front" ]; then
@@ -148,7 +149,7 @@ execute_remote_deployment() {
             npm run build
         fi
         
-        if [ "$DEPLOY_MODE" = "full" ]; then
+        if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "backend" ]; then
             # Traitement Backend V2
             echo "→ Configuration Dépendances et Build Backend..."
             cd "$BACKEND_DIR"
@@ -165,9 +166,10 @@ execute_remote_deployment() {
                 cd ..
             fi
             
-            # Exécution optionnelle des migrations de base de données
-            if [ "$MIGRATE" = true ]; then
+            # Migrations de base de données (toujours pour le mode backend, optionnel pour full)
+            if [ "$DEPLOY_MODE" = "backend" ] || [ "$MIGRATE" = true ]; then
                 echo "→ Exécution des migrations de base de données..."
+                cd "$BACKEND_DIR"
                 npm run db:migrate || echo "⚠️ Échec du script de migration (db:migrate)."
             fi
         fi
@@ -210,12 +212,14 @@ post_deployment() {
         fi
 
         # 2. Relancement du Frontend V2
-        echo "Relancement du Frontend (docmaster-web-v2)..."
-        cd /var/www/vhosts/docmaster.net/app/Docmaster
-        pm2 restart docmaster-web-v2 --update-env || pm2 start server.js --name "docmaster-web-v2"
+        if [ "$DEPLOY_MODE" != "backend" ]; then
+            echo "Relancement du Frontend (docmaster-web-v2)..."
+            cd /var/www/vhosts/docmaster.net/app/Docmaster
+            pm2 restart docmaster-web-v2 --update-env || pm2 start server.js --name "docmaster-web-v2"
+        fi
         
-        # 3. Relancement du Backend API V2 (seulement si full ou backup)
-        if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "backup" ]; then
+        # 3. Relancement du Backend API V2 (seulement si full, backend ou backup)
+        if [ "$DEPLOY_MODE" = "full" ] || [ "$DEPLOY_MODE" = "backend" ] || [ "$DEPLOY_MODE" = "backup" ]; then
             echo "Relancement du Backend API (DOCMASTER-API_V2)..."
             pm2 restart DOCMASTER-API_V2 --update-env || pm2 start npm --name "DOCMASTER-API_V2" -- run start
         fi

@@ -14,7 +14,7 @@ export default function StatCard({ icon, label, value, color = "#E8923A", bgColo
           className="w-12 h-12 rounded-xl flex items-center justify-center text-lg shrink-0"
           style={{ background: bgColor, color }}
         >
-          <i className={`fa-solid ${icon}`} />
+          <i className={`${icon}`} />
         </div>
         <div>
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>

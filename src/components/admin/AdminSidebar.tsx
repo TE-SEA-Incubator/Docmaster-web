@@ -14,22 +14,48 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const navItems = [
-    { to: "/admin", icon: "fa-solid fa-chart-pie", label: t("admin_dashboard") },
-    { to: "/admin/users", icon: "fa-solid fa-users", label: t("admin_users") },
-    { to: "/admin/document-types", icon: "fa-solid fa-file-contract", label: t("admin_document_types") },
-    { to: "/admin/subscriptions", icon: "fa-solid fa-star", label: t("admin_subscriptions") },
-    { to: "/admin/transactions", icon: "fa-solid fa-receipt", label: t("admin_transactions") },
-    { to: "/admin/referrals", icon: "fa-solid fa-user-group", label: t("admin_referrals") },
-    { to: "/admin/declarations", icon: "fa-solid fa-folder-open", label: t("admin_declarations") },
-    { to: "/admin/autorites", icon: "fa-solid fa-landmark", label: "Autorités" },
-    { to: "/admin/partenaires", icon: "fa-solid fa-building", label: "Partenaires" },
-    { to: "/admin/matching", icon: "fa-solid fa-shuffle", label: "Matching" },
-    { to: "/admin/withdrawals", icon: "fa-solid fa-money-bill-transfer", label: t("admin_withdrawals") },
-    { to: "/admin/sms", icon: "fa-solid fa-comment-sms", label: "SMS" },
-    { to: "/admin/broadcast", icon: "fa-solid fa-bullhorn", label: "Broadcast" },
-    { to: "/admin/activity-log", icon: "fa-solid fa-clock-rotate-left", label: "Journal" },
-    { to: "/admin/settings", icon: "fa-solid fa-gear", label: t("admin_settings") },
+  const navSections = [
+    {
+      section: t("sidebar_primary"),
+      items: [
+        { to: "/admin", icon: "ph ph-chart-pie", label: t("admin_dashboard") },
+        { to: "/admin/users", icon: "ph ph-users", label: t("admin_users") },
+        { to: "/admin/document-types", icon: "ph ph-pen-nib", label: t("admin_document_types") },
+      ],
+    },
+    {
+      section: t("sidebar_account"),
+      items: [
+        { to: "/admin/subscriptions", icon: "ph ph-star", label: t("admin_subscriptions") },
+        { to: "/admin/transactions", icon: "ph ph-receipt", label: t("admin_transactions") },
+        { to: "/admin/referrals", icon: "ph ph-users-three", label: t("admin_referrals") },
+        { to: "/admin/withdrawals", icon: "ph ph-hand-withdraw", label: t("admin_withdrawals") },
+        { to: "/admin/declarations", icon: "ph ph-folder-open", label: t("admin_declarations") },
+        { to: "/admin/matching", icon: "ph ph-shuffle", label: "Matching" },
+      ],
+    },
+    {
+      section: "Gestion",
+      items: [
+        { to: "/admin/autorites", icon: "ph ph-bank", label: "Autorités" },
+        { to: "/admin/partenaires", icon: "ph ph-building", label: "Partenaires" },
+        { to: "/admin/reports", icon: "ph ph-flag", label: "Signalements" },
+      ],
+    },
+    {
+      section: "Communication",
+      items: [
+        { to: "/admin/sms", icon: "ph ph-chat-circle-text", label: "SMS" },
+        { to: "/admin/broadcast", icon: "ph ph-megaphone", label: "Broadcast" },
+      ],
+    },
+    {
+      section: "Système",
+      items: [
+        { to: "/admin/activity-log", icon: "ph ph-clock-counter-clockwise", label: "Journal" },
+        { to: "/admin/settings", icon: "ph ph-gear", label: t("admin_settings") },
+      ],
+    },
   ];
 
   const isActive = (path: string) => {
@@ -72,28 +98,35 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
         </div>
 
         {/* Nav */}
-        <div className="flex-1 overflow-y-auto py-3 admin-scroll">
-          <nav className="flex flex-col px-2 gap-0.5">
-            {navItems.map((item) => {
-              const active = isActive(item.to);
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => { if (window.innerWidth < 1024) onClose(); }}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded text-[13px] font-medium transition-colors ${
-                    active
-                      ? "bg-[#E8923A]/20 text-[#E8923A] font-semibold"
-                      : "text-white/60 hover:bg-white/8 hover:text-white/90"
-                  }`}
-                >
-                  <i className={`${item.icon} w-4 text-center text-sm shrink-0 ${active ? "text-[#E8923A]" : "text-white/50"}`} />
-                  <span className="truncate">{item.label}</span>
-                  {active && <span className="ml-auto w-1 h-4 rounded-full bg-[#E8923A] shrink-0" />}
-                </Link>
-              );
-            })}
-          </nav>
+        <div className="flex-1 overflow-y-auto py-2 admin-scroll">
+          {navSections.map((section) => (
+            <div key={section.section}>
+              <div className="px-5 pt-4 pb-1 text-[9.5px] font-bold text-white/30 uppercase tracking-widest">
+                {section.section}
+              </div>
+              <nav className="flex flex-col px-2 gap-0.5">
+                {section.items.map((item) => {
+                  const active = isActive(item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => { if (window.innerWidth < 1024) onClose(); }}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded text-[13px] font-medium transition-colors ${
+                        active
+                          ? "bg-[#E8923A]/20 text-[#E8923A] font-semibold"
+                          : "text-white/60 hover:bg-white/8 hover:text-white/90"
+                      }`}
+                    >
+                      <i className={`${item.icon} w-4 text-center text-sm shrink-0 ${active ? "text-[#E8923A]" : "text-white/50"}`} />
+                      <span className="truncate">{item.label}</span>
+                      {active && <span className="ml-auto w-1 h-4 rounded-full bg-[#E8923A] shrink-0" />}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          ))}
         </div>
 
         {/* Logout */}
@@ -102,7 +135,7 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
             onClick={() => setShowLogoutConfirm(true)}
             className="flex items-center gap-3 px-3 py-2.5 rounded text-[13px] font-medium text-red-400/70 hover:bg-white/5 hover:text-red-400 w-full transition-colors"
           >
-            <i className="fa-solid fa-right-from-bracket w-4 text-center text-sm shrink-0" />
+            <i className="ph ph-sign-out w-4 text-center text-sm shrink-0" />
             {t("admin_logout")}
           </button>
         </div>
@@ -119,7 +152,7 @@ export default function AdminSidebar({ open, onClose }: AdminSidebarProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-right-from-bracket text-red-500 text-lg" />
+              <i className="ph ph-sign-out text-red-500 text-lg" />
             </div>
             <h3 className="font-bold text-base text-gray-900 text-center mb-1">{t("logout_confirm_title")}</h3>
             <p className="text-[13px] text-gray-500 text-center mb-6">{t("logout_confirm_desc")}</p>

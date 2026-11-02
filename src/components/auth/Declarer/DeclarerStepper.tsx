@@ -33,18 +33,18 @@ export default function DeclarerStepper({ active, isMobile, onStepClick }: Decla
         allowNextStepsSelect={false}
         size={isMobile ? "xs" : "sm"}
         iconSize={isMobile ? 24 : 32}
-        completedIcon={<i className="fa-solid fa-check" style={{ fontSize: 11 }} />}
+        completedIcon={<i className="ph ph-check" style={{ fontSize: 11 }} />}
         styles={{
           stepLabel: { fontSize: isMobile ? 11 : 12 },
           stepDescription: { fontSize: isMobile ? 10 : 11 },
           separator: { marginLeft: isMobile ? -2 : 0, marginRight: isMobile ? -2 : 0 },
         }}
       >
-        <Stepper.Step label={t("declarer_step_1")} description={t("declarer_in_progress")} icon={<i className="fa-solid fa-user" style={{ fontSize: 11 }} />} />
-        <Stepper.Step label={t("declarer_step_2")} icon={<i className="fa-solid fa-file" style={{ fontSize: 11 }} />} />
-        <Stepper.Step label={t("declarer_step_3")} icon={<i className="fa-solid fa-info-circle" style={{ fontSize: 11 }} />} />
-        <Stepper.Step label={t("declarer_step_4")} icon={<i className="fa-solid fa-map-location-dot" style={{ fontSize: 11 }} />} />
-        <Stepper.Step label={t("declarer_step_5")} icon={<i className="fa-solid fa-phone" style={{ fontSize: 11 }} />} />
+        <Stepper.Step label={t("declarer_step_1")} description={t("declarer_in_progress")} icon={<i className="ph ph-user" style={{ fontSize: 11 }} />} />
+        <Stepper.Step label={t("declarer_step_2")} icon={<i className="ph ph-file" style={{ fontSize: 11 }} />} />
+        <Stepper.Step label={t("declarer_step_3")} icon={<i className="ph ph-info" style={{ fontSize: 11 }} />} />
+        <Stepper.Step label={t("declarer_step_4")} icon={<i className="ph ph-map-pin" style={{ fontSize: 11 }} />} />
+        <Stepper.Step label={t("declarer_step_5")} icon={<i className="ph ph-phone" style={{ fontSize: 11 }} />} />
       </Stepper>
     </Paper>
   );

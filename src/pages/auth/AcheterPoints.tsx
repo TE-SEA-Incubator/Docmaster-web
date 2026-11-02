@@ -36,7 +36,7 @@ const PACKS = [
 ];
 
 const PACK_COLORS: MantineColor[] = ["violet", "pink", "blue", "teal", "orange"];
-const PACK_ICONS = ["fa-seedling", "fa-star", "fa-gem", "fa-crown", "fa-rocket"];
+const PACK_ICONS = ["ph ph-plant", "ph ph-star", "ph ph-diamond", "ph ph-crown", "ph ph-rocket"];
 
 export default function AcheterPoints() {
   const { t } = useI18n();
@@ -277,7 +277,7 @@ export default function AcheterPoints() {
                   radius="xl"
                   size="md"
                   className="font-bricolage"
-                  leftSection={<i className="fa-solid fa-clock-rotate-left" />}
+                  leftSection={<i className="ph ph-clock-counter-clockwise" />}
                   onClick={() => navigate("/mes-gains")}
                 >
                   Historique
@@ -321,7 +321,7 @@ export default function AcheterPoints() {
                   >
                     <Group justify="space-between" align="flex-start" mb="xs">
                       <ThemeIcon size={44} radius="md" color={color} variant="light">
-                        <i className={`fa-solid ${icon}`} style={{ fontSize: 20 }} />
+                        <i className={`${icon}`} style={{ fontSize: 20 }} />
                       </ThemeIcon>
                       <Badge color={color} variant="light" size="sm" radius="sm">
                         {pack.badge}
@@ -441,7 +441,7 @@ export default function AcheterPoints() {
           description={`Votre recharge a été effectuée avec succès. Les points ont été ajoutés à votre compte.`}
           badgeText={`+${selectedPack?.toLocaleString("fr-FR")} PTS`}
           badgeColor="green"
-          icon="fa-coins"
+          icon="ph ph-coins"
           details={[
             { label: "Points achetés", value: `+${selectedPack?.toLocaleString("fr-FR")} pts`, highlighted: true },
             { label: "Montant payé", value: `${xafAmount.toLocaleString("fr-FR")} FCFA` },
@@ -449,7 +449,7 @@ export default function AcheterPoints() {
           ]}
           primaryAction={{
             label: "Voir mon solde et historique",
-            icon: "fa-wallet",
+            icon: "ph ph-wallet",
             onClick: () => {
               setPaySuccess(false);
               navigate("/mes-gains");

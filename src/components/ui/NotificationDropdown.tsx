@@ -4,6 +4,8 @@ import { BellOutlined } from "@ant-design/icons";
 import { useNotifications } from "../../hooks/useNotifications";
 import { socketService } from "../../services/socket";
 import { useI18n } from "../../context/I18nContext";
+import { useNavigate } from "react-router-dom";
+import { matchRecoveryTarget } from "../../utils/notificationTargets";
 
 interface NotificationDropdownProps {
   accentColor: string;
@@ -15,29 +17,35 @@ interface NotificationDropdownProps {
 }
 
 const TYPE_META: Record<string, { icon: string; bg: string; color: string }> = {
-  MATCH_FOUND: { icon: "fa-solid fa-handshake", bg: "#dcfce7", color: "#16a34a" },
-  match_found: { icon: "fa-solid fa-handshake", bg: "#dcfce7", color: "#16a34a" },
-  LOST_SUBMITTED: { icon: "fa-solid fa-file-circle-exclamation", bg: "#fef3c7", color: "#d97706" },
-  lost_submitted: { icon: "fa-solid fa-file-circle-exclamation", bg: "#fef3c7", color: "#d97706" },
-  FOUND_SUBMITTED: { icon: "fa-solid fa-hand-holding-heart", bg: "#dbeafe", color: "#2563eb" },
-  found_submitted: { icon: "fa-solid fa-hand-holding-heart", bg: "#dbeafe", color: "#2563eb" },
-  DOC_ADDED: { icon: "fa-solid fa-shield-halved", bg: "#f3e8ff", color: "#7c3aed" },
-  doc_added: { icon: "fa-solid fa-shield-halved", bg: "#f3e8ff", color: "#7c3aed" },
-  PAYMENT_RECEIVED: { icon: "fa-solid fa-money-bill-wave", bg: "#dcfce7", color: "#16a34a" },
-  payment_received: { icon: "fa-solid fa-money-bill-wave", bg: "#dcfce7", color: "#16a34a" },
-  VAULT_MATCH_PENDING: { icon: "fa-solid fa-file-search", bg: "#fef3c7", color: "#d97706" },
-  vault_match_pending: { icon: "fa-solid fa-file-search", bg: "#fef3c7", color: "#d97706" },
-  NEW_DECLARATION_ZONE: { icon: "fa-solid fa-location-dot", bg: "#dbeafe", color: "#2563eb" },
-  new_declaration_zone: { icon: "fa-solid fa-location-dot", bg: "#dbeafe", color: "#2563eb" },
-  CERTIFICATION_DONE: { icon: "fa-solid fa-certificate", bg: "#dcfce7", color: "#16a34a" },
-  certification_done: { icon: "fa-solid fa-certificate", bg: "#dcfce7", color: "#16a34a" },
-  DECLARATION_CERTIFIED: { icon: "fa-solid fa-certificate", bg: "#dcfce7", color: "#16a34a" },
-  declaration_certified: { icon: "fa-solid fa-certificate", bg: "#dcfce7", color: "#16a34a" },
-  WALLET_ADJUSTMENT: { icon: "fa-solid fa-wallet", bg: "#fef3c7", color: "#d97706" },
-  wallet_adjustment: { icon: "fa-solid fa-wallet", bg: "#fef3c7", color: "#d97706" },
+  MATCH_FOUND: { icon: "ph ph-handshake", bg: "#dcfce7", color: "#16a34a" },
+  match_found: { icon: "ph ph-handshake", bg: "#dcfce7", color: "#16a34a" },
+  MATCH_POTENTIAL: { icon: "ph ph-chart-line-up", bg: "#fef3c7", color: "#d97706" },
+  match_potential: { icon: "ph ph-chart-line-up", bg: "#fef3c7", color: "#d97706" },
+  MATCH_CLOSED: { icon: "ph ph-info", bg: "#f3f4f6", color: "#4b5563" },
+  match_closed: { icon: "ph ph-info", bg: "#f3f4f6", color: "#4b5563" },
+  PAYMENT_PENDING: { icon: "ph ph-money-wavy", bg: "#dcfce7", color: "#16a34a" },
+  payment_pending: { icon: "ph ph-money-wavy", bg: "#dcfce7", color: "#16a34a" },
+  LOST_SUBMITTED: { icon: "ph ph-seal-warning", bg: "#fef3c7", color: "#d97706" },
+  lost_submitted: { icon: "ph ph-seal-warning", bg: "#fef3c7", color: "#d97706" },
+  FOUND_SUBMITTED: { icon: "ph ph-hand-heart", bg: "#dbeafe", color: "#2563eb" },
+  found_submitted: { icon: "ph ph-hand-heart", bg: "#dbeafe", color: "#2563eb" },
+  DOC_ADDED: { icon: "ph ph-shield", bg: "#f3e8ff", color: "#7c3aed" },
+  doc_added: { icon: "ph ph-shield", bg: "#f3e8ff", color: "#7c3aed" },
+  PAYMENT_RECEIVED: { icon: "ph ph-money-wavy", bg: "#dcfce7", color: "#16a34a" },
+  payment_received: { icon: "ph ph-money-wavy", bg: "#dcfce7", color: "#16a34a" },
+  VAULT_MATCH_PENDING: { icon: "ph ph-file-magnifying-glass", bg: "#fef3c7", color: "#d97706" },
+  vault_match_pending: { icon: "ph ph-file-magnifying-glass", bg: "#fef3c7", color: "#d97706" },
+  NEW_DECLARATION_ZONE: { icon: "ph ph-map-pin", bg: "#dbeafe", color: "#2563eb" },
+  new_declaration_zone: { icon: "ph ph-map-pin", bg: "#dbeafe", color: "#2563eb" },
+  CERTIFICATION_DONE: { icon: "ph ph-seal", bg: "#dcfce7", color: "#16a34a" },
+  certification_done: { icon: "ph ph-seal", bg: "#dcfce7", color: "#16a34a" },
+  DECLARATION_CERTIFIED: { icon: "ph ph-seal", bg: "#dcfce7", color: "#16a34a" },
+  declaration_certified: { icon: "ph ph-seal", bg: "#dcfce7", color: "#16a34a" },
+  WALLET_ADJUSTMENT: { icon: "ph ph-wallet", bg: "#fef3c7", color: "#d97706" },
+  wallet_adjustment: { icon: "ph ph-wallet", bg: "#fef3c7", color: "#d97706" },
 };
 
-const meta = (type?: string) => TYPE_META[type || ""] || { icon: "fa-solid fa-bell", bg: accentBg(), color: "#1f7a8c" };
+const meta = (type?: string) => TYPE_META[type || ""] || { icon: "ph ph-bell", bg: accentBg(), color: "#1f7a8c" };
 
 function accentBg() {
   return "#E0F2F5";
@@ -46,6 +54,7 @@ function accentBg() {
 export default function NotificationDropdown({ accentColor, service }: NotificationDropdownProps) {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(service);
   const { t, lang } = useI18n();
+  const navigate = useNavigate();
   const localeTag = lang === "ar" ? "ar" : lang === "en" ? "en" : "fr-FR";
   const [liveNotifs, setLiveNotifs] = useState<any[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -114,7 +123,7 @@ export default function NotificationDropdown({ accentColor, service }: Notificat
               justifyContent: "center",
             }}
           >
-            <i className="fa-solid fa-bell" style={{ color: accentColor || "#E8923A", fontSize: 12 }} />
+            <i className="ph ph-bell" style={{ color: accentColor || "#E8923A", fontSize: 12 }} />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 13, color: "#1A1A1A", lineHeight: 1.1 }}>{t("notification_title")}</div>
@@ -140,7 +149,7 @@ export default function NotificationDropdown({ accentColor, service }: Notificat
       <div style={{ flex: 1, overflowY: "auto" }}>
         {allNotifs.length === 0 ? (
           <div style={{ padding: 32, textAlign: "center", color: "#6B7280" }}>
-            <i className="fa-regular fa-bell-slash" style={{ fontSize: 24, opacity: 0.4, display: "block", marginBottom: 8 }} />
+            <i className="ph ph-bell-slash" style={{ fontSize: 24, opacity: 0.4, display: "block", marginBottom: 8 }} />
             <div style={{ fontSize: 12, fontWeight: 500 }}>{t("notification_empty")}</div>
           </div>
         ) : (
@@ -153,6 +162,12 @@ export default function NotificationDropdown({ accentColor, service }: Notificat
                 key={key}
                 onClick={() => {
                   if (!n._live && isUnread && n.id) markAsRead(n.id);
+                  let metadata = n.metadata;
+                  if (typeof metadata === "string") {
+                    try { metadata = JSON.parse(metadata); } catch { metadata = null; }
+                  }
+                  const target = matchRecoveryTarget(n.type || n.notification_type, metadata);
+                  if (target) navigate(target);
                 }}
                 style={{
                   display: "flex",

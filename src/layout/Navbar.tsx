@@ -46,12 +46,13 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
     >
       <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center justify-between">
         {/* Logo - Original sans filtre */}
-        <Link to="/" className="flex items-center gap-3 flex-shrink-0 group">
+        <Link to="/" className="flex items-center gap-0 flex-shrink-0 transition-transform hover:scale-105">
           <img
             src="/src/assets/images/docmaster.png"
             alt="DocMaster"
-            className="h-10 w-auto transition-transform group-hover:scale-105"
+            className="h-10 w-auto"
           />
+          <span className="font-poppins font-bold text-green-dark text-[21px] leading-none tracking-tight">ocmaster</span>
         </Link>
 
         {/* Navigation Desktop */}
@@ -90,7 +91,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
               onClick={() => setLangOpen(!langOpen)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-[14px] bg-surface2 hover:bg-borderMain/30 border border-borderMain text-textMain text-[13px] font-semibold transition-all"
             >
-              <i className="fa-solid fa-globe text-[15px]" />
+              <i className="ph ph-globe text-[15px]" />
               <span className="hidden lg:inline">
                 {lang === "fr" ? "FR" : lang === "ar" ? "AR" : "EN"}
               </span>
@@ -109,7 +110,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
                       lang === "fr" ? "text-primary bg-primary/5" : "text-textMain"
                     }`}
                   >
-                    <i className="fa-solid fa-check text-[12px] w-4" style={{ opacity: lang === "fr" ? 1 : 0 }} />
+                    <i className="ph ph-check text-[12px] w-4" style={{ opacity: lang === "fr" ? 1 : 0 }} />
                     Français
                   </button>
                   <button
@@ -118,7 +119,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
                       lang === "en" ? "text-primary bg-primary/5" : "text-textMain"
                     }`}
                   >
-                    <i className="fa-solid fa-check text-[12px] w-4" style={{ opacity: lang === "en" ? 1 : 0 }} />
+                    <i className="ph ph-check text-[12px] w-4" style={{ opacity: lang === "en" ? 1 : 0 }} />
                     English
                   </button>
                   <button
@@ -127,7 +128,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
                       lang === "ar" ? "text-primary bg-primary/5" : "text-textMain"
                     }`}
                   >
-                    <i className="fa-solid fa-check text-[12px] w-4" style={{ opacity: lang === "ar" ? 1 : 0 }} />
+                    <i className="ph ph-check text-[12px] w-4" style={{ opacity: lang === "ar" ? 1 : 0 }} />
                     العربية
                   </button>
                 </div>
@@ -159,7 +160,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
               className="hidden md:flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-[14px] text-[14px] font-black transition-all shadow-lg shadow-primary/30 active:scale-95"
             >
               {t("nav_login")}
-              <i className="fa-solid fa-arrow-right text-[11px]" />
+              <i className="ph ph-arrow-right text-[11px]" />
             </Link>
           )}
 
@@ -168,7 +169,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden w-10 h-10 flex items-center justify-center rounded-[14px] bg-surface2 border border-borderMain text-textMain hover:bg-borderMain/30 transition-all"
           >
-            <i className={`fa-solid ${mobileOpen ? "fa-xmark" : "fa-bars"} text-[16px]`} />
+            <i className={`${mobileOpen ? "ph ph-x" : "ph ph-hamburger"} text-[16px]`} />
           </button>
         </div>
       </div>
@@ -188,7 +189,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
                 : "text-textMain hover:bg-primary/5"
             }`}
           >
-            <i className="fa-solid fa-house w-5 text-center" />
+            <i className="ph ph-house w-5 text-center" />
             {t("nav_home")}
           </Link>
           <Link
@@ -200,7 +201,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
                 : "text-textMain hover:bg-primary/5"
             }`}
           >
-            <i className="fa-solid fa-magnifying-glass w-5 text-center" />
+            <i className="ph ph-magnifying-glass w-5 text-center" />
             {t("nav_search")}
           </Link>
 
@@ -226,7 +227,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
                 onClick={() => setMobileOpen(false)}
                 className="text-primary hover:text-primary-dark transition-colors"
               >
-                <i className="fa-solid fa-arrow-right text-[14px]" />
+                <i className="ph ph-arrow-right text-[14px]" />
               </Link>
             </div>
           ) : (
@@ -237,7 +238,7 @@ export default function Navbar({ promoBarVisible = false }: { promoBarVisible?: 
                 className="flex items-center justify-center gap-2 w-full py-3.5 bg-primary hover:bg-primary-dark text-white rounded-[14px] font-black text-[14px] shadow-lg shadow-primary/30 transition-all"
               >
                 {t("nav_login")}
-                <i className="fa-solid fa-arrow-right text-[11px]" />
+                <i className="ph ph-arrow-right text-[11px]" />
               </Link>
             </div>
           )}

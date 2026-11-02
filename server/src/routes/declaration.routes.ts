@@ -10,6 +10,9 @@ import {
   searchPublicFound,
   publicRecentFound,
   getDeclarationById,
+  getDeclarationMatches,
+  confirmDeclarationMatch,
+  rejectDeclarationMatch,
   getRenderContext,
   validateRecovery,
   initiateRecovery,
@@ -391,6 +394,70 @@ router.get('/:id', authMiddleware, getDeclarationById);
  *       404:
  *         description: Déclaration introuvable
  */
+/**
+ * @swagger
+ * /declarations/{id}/matches:
+ *   get:
+ *     summary: Correspondances actives d'une déclaration (propriétaire)
+ *     tags: [Declarations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ */
+router.get('/:id/matches', authMiddleware, getDeclarationMatches);
+
+/**
+ * @swagger
+ * /declarations/{id}/confirm-match:
+ *   post:
+ *     summary: Confirmer explicitement une correspondance avant paiement
+ *     tags: [Declarations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [matchId]
+ *             properties:
+ *               matchId: { type: string, format: uuid }
+ */
+router.post('/:id/confirm-match', authMiddleware, confirmDeclarationMatch);
+
+/**
+ * @swagger
+ * /declarations/{id}/matches/{matchId}/reject:
+ *   post:
+ *     summary: Écarter un candidat qui n'appartient pas au propriétaire
+ *     tags: [Declarations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - in: path
+ *         name: matchId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Candidat écarté, la recherche reprend
+ */
+router.post('/:id/matches/:matchId/reject', authMiddleware, rejectDeclarationMatch);
+
 router.get('/:id/render-context', authMiddleware, getRenderContext);
 
 /**

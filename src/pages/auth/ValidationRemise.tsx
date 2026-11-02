@@ -177,7 +177,7 @@ export default function ValidationRemise() {
         <div key={idx} className="timeline-item relative pl-[48px] pb-[40px] last:pb-0">
           <div className={dotCls}>
             {isDone ? (
-              <i className="fa-solid fa-check text-[10px]" />
+              <i className="ph ph-check text-[10px]" />
             ) : isActive || true ? (
               <span className="text-[11px]">{idx + 1}</span>
             ) : null}
@@ -211,12 +211,12 @@ export default function ValidationRemise() {
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] border border-borderMain p-8 max-w-md w-full text-center shadow-sm">
             <div className="w-16 h-16 bg-bgMain rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-file-circle-question text-textMuted text-2xl" />
+              <i className="ph ph-seal-question text-textMuted text-2xl" />
             </div>
             <h1 className="font-bricolage text-xl font-black text-textMain mb-2">Document introuvable</h1>
             <p className="text-textMuted text-[13px] mb-6">Aucun ID de déclaration fourni.</p>
             <Link to="/dashboard" className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold text-[13px] hover:bg-primary-dark transition-all">
-              <i className="fa-solid fa-arrow-left text-[11px]" /> Retour au dashboard
+              <i className="ph ph-arrow-left text-[11px]" /> Retour au dashboard
             </Link>
           </div>
         </div>
@@ -245,12 +245,12 @@ export default function ValidationRemise() {
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white rounded-[32px] border border-borderMain p-8 max-w-md w-full text-center shadow-sm">
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fa-solid fa-circle-exclamation text-red-400 text-2xl" />
+              <i className="ph ph-warning-circle text-red-400 text-2xl" />
             </div>
             <h1 className="font-bricolage text-xl font-black text-textMain mb-2">Document introuvable</h1>
             <p className="text-textMuted text-[13px] mb-6">{error}</p>
             <Link to="/dashboard" className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold text-[13px] hover:bg-primary-dark transition-all">
-              <i className="fa-solid fa-arrow-left text-[11px]" /> Retour au dashboard
+              <i className="ph ph-arrow-left text-[11px]" /> Retour au dashboard
             </Link>
           </div>
         </div>
@@ -266,7 +266,7 @@ export default function ValidationRemise() {
           <div className="max-w-lg mx-auto pt-12">
             <div className="bg-white rounded-[32px] border border-green-200 shadow-xl p-10 text-center">
               <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-                <i className="fa-solid fa-circle-check text-green-500 text-4xl" />
+                <i className="ph ph-check-circle text-green-500 text-4xl" />
               </div>
               <h2 className="font-bricolage text-2xl font-black text-green-dark mb-2">
                 ✅ Code validé avec succès !
@@ -317,7 +317,7 @@ export default function ValidationRemise() {
           <div className="bg-green-dark rounded-[24px] p-6 text-white flex flex-col sm:flex-row items-center gap-5 shadow-xl shadow-green-950/20 relative overflow-hidden">
             <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-primary/10 rounded-full blur-2xl" />
             <div className="w-14 h-14 rounded-[18px] bg-white/10 flex items-center justify-center flex-shrink-0">
-              <i className="fa-solid fa-hand-holding-heart text-primary text-2xl animate-pulse" />
+              <i className="ph ph-hand-heart text-primary text-2xl animate-pulse" />
             </div>
             <div className="flex-1 w-full">
               <p className="text-[11px] text-white/50 uppercase font-black tracking-widest mb-1.5">
@@ -369,7 +369,7 @@ export default function ValidationRemise() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="bg-white rounded-[32px] border border-borderMain p-6 shadow-sm flex items-center gap-5">
                   <div className="w-14 h-14 rounded-[22px] bg-orange-50 flex items-center justify-center text-primary-dark border border-orange-100">
-                    <i className="fa-solid fa-coins text-2xl" />
+                    <i className="ph ph-coins text-2xl" />
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-textMuted uppercase tracking-wider mb-0.5">
@@ -383,7 +383,7 @@ export default function ValidationRemise() {
                 </div>
                 <div className="bg-white rounded-[32px] border border-borderMain p-6 shadow-sm flex items-center gap-5">
                   <div className="w-14 h-14 rounded-[22px] bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
-                    <i className="fa-solid fa-star text-2xl" />
+                    <i className="ph ph-star text-2xl" />
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-textMuted uppercase tracking-wider mb-0.5">
@@ -403,9 +403,9 @@ export default function ValidationRemise() {
               {/* Code Validation Card */}
               <div className="bg-white rounded-[40px] border-2 border-borderMain p-8 text-center shadow-sm relative">
                 <div className="w-20 h-20 rounded-full bg-surface2 border border-borderMain flex items-center justify-center mx-auto mb-6 shadow-inner relative">
-                  <i className="fa-solid fa-key text-primary text-3xl" />
+                  <i className="ph ph-key text-primary text-3xl" />
                   <div className="absolute -right-1 -bottom-1 w-8 h-8 rounded-full bg-white border border-borderMain flex items-center justify-center shadow-sm">
-                    <i className="fa-solid fa-shield-halved text-[10px] text-green-600" />
+                    <i className="ph ph-shield text-[10px] text-green-600" />
                   </div>
                 </div>
 
@@ -418,7 +418,7 @@ export default function ValidationRemise() {
 
                 {alertMsg && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-[12px] text-red-600 font-semibold flex items-center gap-2">
-                    <i className="fa-solid fa-circle-exclamation" />
+                    <i className="ph ph-warning-circle" />
                     {alertMsg}
                   </div>
                 )}
@@ -455,19 +455,19 @@ export default function ValidationRemise() {
                   >
                     {validating ? (
                       <>
-                        <i className="fa-solid fa-circle-notch fa-spin" />
+                        <i className="ph ph-circle-notch animate-spin" />
                         Validation en cours...
                       </>
                     ) : (
                       <>
-                        <i className="fa-solid fa-hand-holding-dollar" />
+                        <i className="ph ph-hand-coins" />
                         Valider la remise & Percevoir les gains
                       </>
                     )}
                   </button>
 
                   <p className="text-[10px] text-textMuted italic flex items-center justify-center gap-2">
-                    <i className="fa-solid fa-lock text-[8px]" />
+                    <i className="ph ph-lock text-[8px]" />
                     Le code sera débloqué par le propriétaire dès qu'il aura payé les frais de logistique.
                   </p>
                 </div>
@@ -491,14 +491,14 @@ export default function ValidationRemise() {
 
                   <div className="flex items-center gap-4 p-4 bg-surface2 rounded-2xl border border-borderMain/50">
                     <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-borderMain shadow-sm">
-                      <i className="fa-solid fa-file-invoice text-textMuted" />
+                      <i className="ph ph-invoice text-textMuted" />
                     </div>
                     <div>
                       <p className="text-[13px] font-bold text-textMain">
                         {getDocTypeName()} {doc.numero_document ? `N° ${doc.numero_document}` : ""}
                       </p>
                       <p className="text-[10px] text-textMuted italic">
-                        <i className="fa-solid fa-location-dot mr-1" />
+                        <i className="ph ph-map-pin mr-1" />
                         Trouvée à : {doc.ville || "Non spécifié"}
                       </p>
                     </div>
@@ -522,7 +522,7 @@ export default function ValidationRemise() {
 
                 <div className="pt-4 border-t border-dashed border-borderMain space-y-3">
                   <p className="text-[10px] font-bold text-textMain uppercase tracking-wider flex items-center gap-2">
-                    <i className="fa-solid fa-shield-halved text-green-600" />
+                    <i className="ph ph-shield text-green-600" />
                     Instructions de sécurité :
                   </p>
                   <ul className="space-y-2">
@@ -538,7 +538,7 @@ export default function ValidationRemise() {
                 </div>
 
                 <button className="w-full py-4 border border-borderMain rounded-2xl text-[11px] font-bold text-textMain hover:bg-surface2 transition-all flex items-center justify-center gap-2">
-                  <i className="fa-solid fa-headset text-primary" />
+                  <i className="ph ph-headset text-primary" />
                   Besoin d'aide personnalisé ?
                 </button>
               </div>
@@ -571,7 +571,7 @@ export default function ValidationRemise() {
           className="px-5 py-3 bg-green-dark hover:bg-green-mid text-white rounded-2xl font-bricolage font-black text-[12px] shadow-lg shadow-green-900/20 transition-all flex-shrink-0 active:scale-[0.97] disabled:opacity-50"
         >
           {validating ? (
-            <i className="fa-solid fa-circle-notch fa-spin" />
+            <i className="ph ph-circle-notch animate-spin" />
           ) : (
             "Valider"
           )}

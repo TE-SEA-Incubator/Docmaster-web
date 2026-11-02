@@ -109,7 +109,7 @@ export default function AdminSms() {
         {/* Send SMS */}
         <div className="bg-white border border-gray-200 rounded p-5">
           <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <i className="fa-solid fa-paper-plane text-[#E8923A]" />
+            <i className="ph ph-paper-plane text-[#E8923A]" />
             Envoyer un SMS
             <InfoTooltip text="Envoyez un SMS à un ou plusieurs numéros (séparés par des virgules)." />
           </h3>
@@ -130,14 +130,14 @@ export default function AdminSms() {
             </div>
             {sendResult && (
               <div className={`px-3 py-2.5 rounded border text-[13px] flex items-center gap-2 ${sendResult.success ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>
-                <i className={`fa-solid ${sendResult.success ? "fa-circle-check" : "fa-circle-xmark"} shrink-0`} />
+                <i className={`${sendResult.success ? "ph ph-check-circle" : "ph ph-x-circle"} shrink-0`} />
                 {sendResult.message}
               </div>
             )}
             <div className="flex items-center gap-3">
               <button type="submit" disabled={!message.trim() || sending}
                 className="flex items-center gap-1.5 bg-[#2D5A42] text-white px-5 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-50">
-                {sending ? <><i className="fa-solid fa-spinner fa-spin text-xs" /> Envoi...</> : <><i className="fa-solid fa-paper-plane text-xs" /> {t("admin_sms_send")}</>}
+                {sending ? <><i className="ph ph-spinner animate-spin text-xs" /> Envoi...</> : <><i className="ph ph-paper-plane text-xs" /> {t("admin_sms_send")}</>}
               </button>
               <span className="text-[12px] text-gray-400">{message.length} caractères</span>
             </div>
@@ -163,7 +163,7 @@ export default function AdminSms() {
               {loading ? (
                 <tr><td colSpan={4} className="py-4 text-center text-[13px] text-gray-400">{t("admin_sms_loading")}</td></tr>
               ) : usage.length === 0 ? (
-                <EmptyState icon="fa-solid fa-chart-simple" message={t("admin_sms_no_data")} colSpan={4} />
+                <EmptyState icon="ph ph-chart-bar" message={t("admin_sms_no_data")} colSpan={4} />
               ) : usage.map((row, i) => (
                 <tr key={i} className="hover:bg-gray-50 transition-colors">
                   <td className="px-3 py-2.5 font-mono text-[12px]">{row.appid}</td>
@@ -197,7 +197,7 @@ export default function AdminSms() {
             {loading ? (
               <tr><td colSpan={5} className="py-4 text-center text-[13px] text-gray-400">{t("admin_sms_loading")}</td></tr>
             ) : purchases.length === 0 ? (
-              <EmptyState icon="fa-solid fa-box" message={t("admin_sms_no_purchases")} colSpan={5} />
+              <EmptyState icon="ph ph-package" message={t("admin_sms_no_purchases")} colSpan={5} />
             ) : purchases.map((p, i) => (
               <tr key={i} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 text-[11px] text-gray-400">{new Date(p.purchaseDate).toLocaleString("fr-FR")}</td>

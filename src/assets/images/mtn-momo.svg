@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-  <!-- MTN Mobile Money brand logo representation -->
-  <!-- Yellow background (MTN brand color) -->
-  <rect width="48" height="48" rx="8" fill="#FFCC00"/>
-  <!-- Dark text "MTN" -->
-  <text x="24" y="22" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="900" fill="#1A1A1A" text-anchor="middle" letter-spacing="0.3">MTN</text>
-  <!-- "MoMo" text below -->
-  <text x="24" y="34" font-family="Arial, Helvetica, sans-serif" font-size="8" font-weight="700" fill="#1A1A1A" text-anchor="middle" letter-spacing="0.3">MoMo</text>
-</svg>

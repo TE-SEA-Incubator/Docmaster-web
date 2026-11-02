@@ -66,7 +66,7 @@ export default function PromoPopup({ plan, onSubscribe, onDismiss, processing, p
             className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/15 text-white/70 hover:bg-black/30 hover:text-white transition-all z-10"
             aria-label="Fermer"
           >
-            <i className="fa-solid fa-xmark" />
+            <i className="ph ph-x" />
           </button>
 
           <div className="relative z-10">
@@ -109,15 +109,15 @@ export default function PromoPopup({ plan, onSubscribe, onDismiss, processing, p
             </h4>
             <div className="grid grid-cols-2 gap-y-2.5 gap-x-3">
               {[
-                { icon: "fa-file-circle-check", label: "5 types de documents" },
-                { icon: "fa-box-open", label: "Jusqu'à 7 objets" },
-                { icon: "fa-bell", label: "Alertes SMS & Email" },
-                { icon: "fa-location-dot", label: "Géo-localisation en temps réel" },
-                { icon: "fa-circle-check", label: "Badge vérifié" },
-                { icon: "fa-headset", label: "Support prioritaire 24/7" },
+                { icon: "ph ph-seal-check", label: "5 types de documents" },
+                { icon: "ph ph-archive-tray", label: "Jusqu'à 7 objets" },
+                { icon: "ph ph-bell", label: "Alertes SMS & Email" },
+                { icon: "ph ph-map-pin", label: "Géo-localisation en temps réel" },
+                { icon: "ph ph-check-circle", label: "Badge vérifié" },
+                { icon: "ph ph-headset", label: "Support prioritaire 24/7" },
               ].map((f) => (
                 <div key={f.label} className="flex items-center gap-2 text-textMain">
-                  <i className={`fa-solid ${f.icon} text-sky-500 text-[10px]`} />
+                  <i className={`${f.icon} text-sky-500 text-[10px]`} />
                   <span className="text-[11px] font-medium">{f.label}</span>
                 </div>
               ))}
@@ -130,9 +130,9 @@ export default function PromoPopup({ plan, onSubscribe, onDismiss, processing, p
             className="w-full py-3 bg-gradient-to-r from-sky-600 to-blue-500 hover:from-sky-500 hover:to-blue-400 text-white font-extrabold text-[14px] rounded-xl transition-all active:scale-[0.97] shadow-lg shadow-sky-600/30 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {processing || !!pollingStatus ? (
-              <><i className="fa-solid fa-spinner fa-spin" /> Activation...</>
+              <><i className="ph ph-spinner animate-spin" /> Activation...</>
             ) : (
-              <><i className="fa-solid fa-crown" /> Activer pour {plan.price.toLocaleString("fr-FR")} XAF</>
+              <><i className="ph ph-crown" /> Activer pour {plan.price.toLocaleString("fr-FR")} XAF</>
             )}
           </button>
 

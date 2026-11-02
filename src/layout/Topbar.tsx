@@ -61,7 +61,8 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
       component="header"
       radius={0}
       px={{ base: "sm", md: "xl" }}
-      h={64}
+      pt={{ base: 8, md: 12 }}
+      pb={{ base: 8, md: 12 }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -84,7 +85,7 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
         <div style={{ minWidth: 0, flex: 1 }}>
           {breadcrumbs.length > 0 ? (
             <Breadcrumbs
-              separator={<i className="fa-solid fa-chevron-right" style={{ fontSize: 10, color: "var(--mantine-color-gray-5)" }} />}
+              separator={<i className="ph ph-caret-right" style={{ fontSize: 10, color: "var(--mantine-color-gray-5)" }} />}
               visibleFrom="sm"
             >
               {breadcrumbs.map((crumb, i) => {
@@ -117,7 +118,7 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
           size="sm"
           w="100%"
           maw={340}
-          leftSection={<i className="fa-solid fa-magnifying-glass" style={{ fontSize: 13, color: "var(--mantine-color-gray-5)" }} />}
+          leftSection={<i className="ph ph-magnifying-glass" style={{ fontSize: 13, color: "var(--mantine-color-gray-5)" }} />}
           rightSectionWidth={36}
           rightSection={
             <ActionIcon
@@ -128,7 +129,7 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
               onClick={doSearch}
               aria-label="Rechercher"
             >
-              <i className="fa-solid fa-arrow-right" style={{ fontSize: 11 }} />
+              <i className="ph ph-arrow-right" style={{ fontSize: 11 }} />
             </ActionIcon>
           }
           styles={{
@@ -149,7 +150,7 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
           size="xs"
           radius="md"
           color="red"
-          leftSection={<i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 10 }} />}
+          leftSection={<i className="ph ph-warning" style={{ fontSize: 10 }} />}
         >
           {t("topbar_declare_lost")}
         </Button>
@@ -161,7 +162,7 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
           size="xs"
           radius="md"
           color="green"
-          leftSection={<i className="fa-solid fa-hand-holding-hand" style={{ fontSize: 10 }} />}
+          leftSection={<i className="ph ph-handshake" style={{ fontSize: 10 }} />}
         >
           {t("topbar_found_doc")}
         </Button>
@@ -173,20 +174,20 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
               variant="default"
               size="xs"
               radius="md"
-              leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #E8923A)", fontSize: 11 }} />}
-              rightSection={<i className="fa-solid fa-chevron-down" style={{ fontSize: 9, color: "var(--mantine-color-gray-5)" }} />}
+              leftSection={<i className="ph ph-globe" style={{ color: "var(--color-primary, #E8923A)", fontSize: 11 }} />}
+              rightSection={<i className="ph ph-caret-down" style={{ fontSize: 9, color: "var(--mantine-color-gray-5)" }} />}
             >
               {languageLabel}
             </Button>
           </Menu.Target>
           <Menu.Dropdown>
-            <Menu.Item onClick={() => setLanguage("fr")} leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #E8923A)" }} />}>
+            <Menu.Item onClick={() => setLanguage("fr")} leftSection={<i className="ph ph-globe" style={{ color: "var(--color-primary, #E8923A)" }} />}>
               Français
             </Menu.Item>
-            <Menu.Item onClick={() => setLanguage("en")} leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #E8923A)" }} />}>
+            <Menu.Item onClick={() => setLanguage("en")} leftSection={<i className="ph ph-globe" style={{ color: "var(--color-primary, #E8923A)" }} />}>
               English
             </Menu.Item>
-            <Menu.Item onClick={() => setLanguage("ar")} leftSection={<i className="fa-solid fa-globe" style={{ color: "var(--color-primary, #E8923A)" }} />}>
+            <Menu.Item onClick={() => setLanguage("ar")} leftSection={<i className="ph ph-globe" style={{ color: "var(--color-primary, #E8923A)" }} />}>
               العربية
             </Menu.Item>
           </Menu.Dropdown>
@@ -206,7 +207,7 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
             radius="md"
             aria-label="Notifications"
           >
-            <i className="fa-solid fa-bell" style={{ color: "var(--mantine-color-gray-6)" }} />
+            <i className="ph ph-bell" style={{ color: "var(--mantine-color-gray-6)" }} />
           </ActionIcon>
         </Indicator>
 
@@ -226,7 +227,7 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
                 variant="gradient"
                 gradient={{ from: "green.9", to: "green.6" }}
               >
-                <i className="fa-solid fa-user" style={{ fontSize: 14 }} />
+                <i className="ph ph-user" style={{ fontSize: 14 }} />
               </Avatar>
             </ActionIcon>
           </Menu.Target>
@@ -234,14 +235,14 @@ export default function Topbar({ title, breadcrumbs = [], onToggleSidebar }: Top
             <Menu.Item
               component={Link}
               to="/messagerie"
-              leftSection={<i className="fa-solid fa-message" style={{ fontSize: 13, color: "#2D5A42" }} />}
+              leftSection={<i className="ph ph-chat-circle" style={{ fontSize: 13, color: "#2D5A42" }} />}
             >
               <Text size="sm">Messagerie</Text>
             </Menu.Item>
             <Menu.Item
               component={Link}
               to="/infos-profil"
-              leftSection={<i className="fa-solid fa-user" style={{ fontSize: 13, color: "#2D5A42" }} />}
+              leftSection={<i className="ph ph-user" style={{ fontSize: 13, color: "#2D5A42" }} />}
             >
               <Text size="sm">Profil</Text>
             </Menu.Item>

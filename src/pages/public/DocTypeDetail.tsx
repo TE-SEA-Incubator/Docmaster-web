@@ -293,13 +293,13 @@ export default function DocTypeDetail() {
             to="/recherche-publique"
             className="inline-flex items-center gap-2 text-[13px] font-bold text-textMuted hover:text-textMain transition-colors"
           >
-            <i className="fa-solid fa-arrow-left text-xs" />
+            <i className="ph ph-arrow-left text-xs" />
             {t("rechercher_type_back")}
           </Link>
 
           {!loading && !card && (
             <div className="mt-6 bg-white border border-borderMain rounded-3xl p-8 flex flex-col items-center text-center">
-              <i className="fa-solid fa-circle-question text-2xl text-textMuted mb-4" />
+              <i className="ph ph-question text-2xl text-textMuted mb-4" />
               <h1 className="font-bricolage text-xl font-black text-textMain">
                 {t("rechercher_type_not_found")}
               </h1>
@@ -312,7 +312,7 @@ export default function DocTypeDetail() {
               <header className="mt-5">
                 <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
                   <div className="flex items-start gap-3 min-w-0">
-                    <i className={`fa-solid ${card.icon} mt-1 text-lg text-textMuted shrink-0`} />
+                    <i className={`${card.icon} mt-1 text-lg text-textMuted shrink-0`} />
                     <div className="min-w-0">
                       <h1 className="font-bricolage text-2xl md:text-3xl font-bold text-textMain tracking-normal truncate">
                         {card.name}
@@ -353,7 +353,7 @@ export default function DocTypeDetail() {
 
               {!loading && statsError && (
                 <div className="mt-6 bg-white border border-borderMain rounded-2xl p-6 flex items-center gap-3">
-                  <i className="fa-solid fa-triangle-exclamation text-textMuted" />
+                  <i className="ph ph-warning text-textMuted" />
                   <p className="text-sm font-semibold text-textMain">{t("rechercher_type_stats_error")}</p>
                 </div>
               )}
@@ -394,7 +394,7 @@ export default function DocTypeDetail() {
                     ) : recentDocs.length === 0 && recentItems.length === 0 ? (
                       <div className="mt-5 flex flex-col items-center justify-center py-14 text-center px-5">
                         <div className="w-20 h-20 rounded-2xl border border-borderMain bg-white flex items-center justify-center mb-6">
-                          <i className="fa-solid fa-folder-open text-2xl text-textMuted" />
+                          <i className="ph ph-folder-open text-2xl text-textMuted" />
                         </div>
                         <h3 className="font-bricolage text-xl font-bold text-textMain mb-2">
                           {t("rechercher_type_recent_empty")}
@@ -422,7 +422,7 @@ export default function DocTypeDetail() {
                                 onClick={(e) => e.stopPropagation()}
                                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-bold text-white bg-green-dark hover:bg-green-mid transition-colors"
                               >
-                                <i className="fa-solid fa-file-circle-plus text-xs" />
+                                <i className="ph ph-file-plus text-xs" />
                                 {t("rechercher_its_mine")}
                               </Link>
                             }
@@ -441,7 +441,7 @@ export default function DocTypeDetail() {
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-textMuted">
-                                  <i className="fa-solid fa-circle-check text-[10px]" />
+                                  <i className="ph ph-check-circle text-[10px]" />
                                   {t("rechercher_found_doc")}
                                 </span>
                                 <span className="text-[11px] font-medium text-textMuted whitespace-nowrap">
@@ -457,7 +457,7 @@ export default function DocTypeDetail() {
                               </h3>
 
                               <p className="mt-1 flex items-center gap-2 text-[12px] font-medium text-textMuted">
-                                <i className="fa-regular fa-calendar text-[11px]" />
+                                <i className="ph ph-calendar text-[11px]" />
                                 {formatDate(item.date)}
                               </p>
 
@@ -466,7 +466,7 @@ export default function DocTypeDetail() {
                                   to={declareTo(item.id)}
                                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-dark px-4 py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-green-mid"
                                 >
-                                  <i className="fa-solid fa-file-circle-plus text-xs" />
+                                  <i className="ph ph-file-plus text-xs" />
                                   {t("rechercher_its_mine")}
                                 </Link>
                               </div>
@@ -483,7 +483,7 @@ export default function DocTypeDetail() {
                         to={`/recherche-publique?type=${encodeURIComponent(card.code || card.id)}`}
                         className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-green-dark hover:bg-green-mid transition-colors"
                       >
-                        <i className="fa-solid fa-magnifying-glass text-xs" />
+                        <i className="ph ph-magnifying-glass text-xs" />
                         {t("rechercher_type_cta")}
                       </Link>
                     )}
@@ -491,7 +491,7 @@ export default function DocTypeDetail() {
                       to="/recherche-publique"
                       className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-borderMain bg-white text-sm font-bold text-textMain hover:bg-surface2 transition-colors"
                     >
-                      <i className="fa-solid fa-layer-group text-xs" />
+                      <i className="ph ph-stack-simple text-xs" />
                       {t("rechercher_types_title")}
                     </Link>
                   </div>

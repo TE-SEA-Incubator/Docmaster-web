@@ -36,7 +36,7 @@ export default function PromoBar({ onVisibilityChange }: PromoBarProps) {
         {/* Gauche : badge + message promo */}
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="inline-flex items-center gap-1 bg-white/20 text-white rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide flex-shrink-0">
-            <i className="fa-solid fa-tag text-[9px]" />
+            <i className="ph ph-tag text-[9px]" />
             -{discountPct}%
           </span>
           <span className="text-white text-xs sm:text-sm font-normal truncate">
@@ -46,14 +46,14 @@ export default function PromoBar({ onVisibilityChange }: PromoBarProps) {
 
         {/* Centre : prix */}
         <span className="hidden md:inline-flex items-center gap-1.5 text-blue-100 text-xs sm:text-sm font-normal flex-shrink-0">
-          <i className="fa-solid fa-circle-check text-blue-200 text-xs" />
+          <i className="ph ph-check-circle text-blue-200 text-xs" />
           {promo.price.toLocaleString("fr-FR")} XAF
         </span>
 
         {/* Droite : CTA */}
         <span className="inline-flex items-center gap-1.5 text-white text-xs sm:text-sm font-medium flex-shrink-0 group-hover:translate-x-0.5 transition-transform">
           {t("promo_bar_cta")}
-          <i className="fa-solid fa-arrow-right text-[10px]" />
+          <i className="ph ph-arrow-right text-[10px]" />
         </span>
       </div>
     </div>

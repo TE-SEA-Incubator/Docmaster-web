@@ -1,15 +1,14 @@
 import { ClaimRepository } from '../repositories/claim.repository.ts';
 import { DeclarationRepository } from '../repositories/declaration.repository.ts';
-import { MatchRepository } from '../repositories/match.repository.ts';
 import { DocumentTypeRepository } from '../repositories/document-type.repository.ts';
 import { DeclarationService } from './declaration.service.ts';
-import { resolveLostFoundPair } from '../utils/recovery.utils.ts';
+import { resolveLostFoundPair, completeReservationForFound } from '../utils/recovery.utils.ts';
 import { HttpError } from '../utils/http-error.ts';
 import { TIMING } from '../config/timing.ts';
+import { query } from '../database/db.ts';
 
 const claimRepo = new ClaimRepository();
 const declRepo = new DeclarationRepository();
-const matchRepo = new MatchRepository();
 const docTypeRepo = new DocumentTypeRepository();
 
 async function resolveDocType(docTypeRef: string) {
@@ -22,22 +21,24 @@ async function resolveDocType(docTypeRef: string) {
 }
 
 async function findPaidClaim(docId: string) {
-  let claim = await claimRepo.findPaidByDocId(docId);
-  if (claim) return claim;
+  const declaration = await declRepo.findById(docId);
+  if (!declaration) return null;
+
+  if (declaration.declaration_type === 'FOUND') {
+    return await claimRepo.findPaidByFoundId(docId);
+  }
+
+  const direct = await claimRepo.findPaidByDocId(docId);
+  if (direct) return direct;
+
+  // Legacy rows may use a FOUND id as doc_id.
+  const byFound = await claimRepo.findPaidByFoundId(docId);
+  if (byFound) return byFound;
 
   const pair = await resolveLostFoundPair(docId);
-  if (pair && pair.lostId !== docId) {
-    claim = await claimRepo.findPaidByDocId(pair.lostId);
-    if (claim) return claim;
+  if (pair?.lostId && pair.lostId !== docId) {
+    return await claimRepo.findPaidByDocId(pair.lostId);
   }
-
-  const matches = await matchRepo.findByDeclarationId(docId);
-  for (const match of matches) {
-    const lostId = match.lost_declaration_id;
-    const potential = await claimRepo.findPaidByDocId(lostId);
-    if (potential) return potential;
-  }
-
   return null;
 }
 
@@ -58,12 +59,15 @@ export async function validateRecoveryCode(docId: string, userId: string, code: 
   }
 
   // Le code de remise expire désormais comme les autres délais : la même
-  // durée est servie au front par GET /settings/timing.
-  const claimAgeMs = Date.now() - new Date(claim.created_at).getTime();
-  if (Number.isFinite(claimAgeMs) && claimAgeMs > TIMING.claimCodeTtlHours * 60 * 60 * 1000) {
+  // durée est servie au front par GET /settings/timing. Un code régénéré par
+  // le support porte sa propre échéance (claims.code_expires_at).
+  const expiresAtMs = claim.code_expires_at
+    ? new Date(claim.code_expires_at).getTime()
+    : new Date(claim.created_at).getTime() + TIMING.claimCodeTtlHours * 60 * 60 * 1000;
+  if (Number.isFinite(expiresAtMs) && Date.now() > expiresAtMs) {
     throw new HttpError(
       410,
-      `Ce code de remise a expiré (validité ${TIMING.claimCodeTtlHours} h). Demandez un nouveau code au propriétaire.`,
+      `Ce code de remise a expiré (validité ${TIMING.claimCodeTtlHours} h). Demandez un nouveau code au propriétaire ou au support.`,
     );
   }
 
@@ -81,16 +85,24 @@ export async function validateRecoveryCode(docId: string, userId: string, code: 
   }
 
   const lostId = claim.doc_id;
-  await claimRepo.updateStatus(claim.id, 'VALIDATED');
-  await declRepo.updateStatus(lostId, 'RETURNED');
+  const foundId = claim.found_declaration_id
+    || (await resolveLostFoundPair(lostId))?.foundId
+    || null;
 
-  const matches = await matchRepo.findByDeclarationId(lostId);
-  if (matches?.length) {
-    for (const match of matches) {
-      const otherId =
-        match.lost_declaration_id === lostId ? match.found_declaration_id : match.lost_declaration_id;
-      await declRepo.updateStatus(otherId, 'RETURNED');
-    }
+  const validated = await query(
+    `UPDATE claims SET status = 'VALIDATED'
+     WHERE id = $1 AND status = 'PAID'
+     RETURNING *`,
+    [claim.id],
+  );
+  if (validated.rows.length === 0) {
+    throw new HttpError(409, 'Cette réclamation a déjà été validée.');
+  }
+
+  await declRepo.updateStatus(lostId, 'RETURNED');
+  if (foundId) {
+    await declRepo.updateStatus(foundId, 'RETURNED');
+    await completeReservationForFound(foundId);
   }
 
   const lostDecl = await declRepo.findById(lostId);
@@ -105,5 +117,6 @@ export async function validateRecoveryCode(docId: string, userId: string, code: 
     success: true,
     message: 'Code validé avec succès ! Le document a été officiellement remis.',
     claimId: claim.id,
+    foundId,
   };
 }

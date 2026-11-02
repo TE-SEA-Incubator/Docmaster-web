@@ -8,33 +8,33 @@ const DOC_TYPE_IMAGES: Record<string, string> = {
 };
 
 const DOC_TYPE_ICONS: Record<string, string> = {
-  CNI: "fa-id-card",
-  PASSPORT: "fa-passport",
-  PERMIS: "fa-car",
-  DIPLOME: "fa-graduation-cap",
-  CARTE_BLUE: "fa-credit-card",
-  CARTE_GRISE: "fa-file-invoice",
-  CARTE_SEJOUR: "fa-id-badge",
-  CARTE_VOTE: "fa-check-to-slot",
-  ACTE_NAISSANCE: "fa-file-circle-plus",
-  ACTE_MARIAGE: "fa-ring",
-  ACTE_DECES: "fa-scroll",
-  TITRE_FINANCIER: "fa-house-chimney",
-  AUTRES: "fa-circle-question",
+  CNI: "ph ph-identification-card",
+  PASSPORT: "ph ph-book-open",
+  PERMIS: "ph ph-car",
+  DIPLOME: "ph ph-graduation-cap",
+  CARTE_BLUE: "ph ph-credit-card",
+  CARTE_GRISE: "ph ph-invoice",
+  CARTE_SEJOUR: "ph ph-identification-badge",
+  CARTE_VOTE: "ph ph-check-square",
+  ACTE_NAISSANCE: "ph ph-file-plus",
+  ACTE_MARIAGE: "ph ph-circle-dashed",
+  ACTE_DECES: "ph ph-scroll",
+  TITRE_FINANCIER: "ph ph-house-line",
+  AUTRES: "ph ph-question",
 };
 
 const KEYWORD_ICONS: Array<[string[], string]> = [
-  [["passport", "passeport"], "fa-passport"],
-  [["cni", "identit"], "fa-id-card"],
-  [["permis", "conduire"], "fa-car"],
-  [["diplom", "bac"], "fa-graduation-cap"],
-  [["mariage"], "fa-ring"],
-  [["grise", "vehicule", "véhicule"], "fa-car-side"],
-  [["sejour", "séjour"], "fa-id-badge"],
-  [["vote", "electeur", "électeur"], "fa-check-to-slot"],
-  [["naissance"], "fa-file-circle-plus"],
-  [["deces", "décès"], "fa-scroll"],
-  [["foncier", "financier"], "fa-house-chimney"],
+  [["passport", "passeport"], "ph ph-book-open"],
+  [["cni", "identit"], "ph ph-identification-card"],
+  [["permis", "conduire"], "ph ph-car"],
+  [["diplom", "bac"], "ph ph-graduation-cap"],
+  [["mariage"], "ph ph-circle-dashed"],
+  [["grise", "vehicule", "véhicule"], "ph ph-car-profile"],
+  [["sejour", "séjour"], "ph ph-identification-badge"],
+  [["vote", "electeur", "électeur"], "ph ph-check-square"],
+  [["naissance"], "ph ph-file-plus"],
+  [["deces", "décès"], "ph ph-scroll"],
+  [["foncier", "financier"], "ph ph-house-line"],
 ];
 
 export function normalizeDocTypeCode(code?: string | null): string {
@@ -50,9 +50,9 @@ export function getDocTypeImage(code?: string | null): string {
 }
 
 /**
- * `document_types.icone` est un nom d'icône Mantine (« id-card-outline »), pas une classe
- * FontAwesome : le coller dans `fa-solid fa-${icone}` ne rend rien. On retombe sur le code, puis
- * sur le libellé, puis sur un document générique.
+ * `document_types.icone` porte un nom d'icône historique (« id-card », « id-card-outline »),
+ * pas une classe Phosphor : le coller tel quel dans `ph ph-${icone}` ne rend rien. On retombe
+ * sur le code, puis sur le libellé, puis sur un document générique.
  */
 export function getDocTypeIcon(code?: string | null, nom?: string | null): string {
   const byCode = DOC_TYPE_ICONS[normalizeDocTypeCode(code)];
@@ -62,5 +62,5 @@ export function getDocTypeIcon(code?: string | null, nom?: string | null): strin
   for (const [words, icon] of KEYWORD_ICONS) {
     if (words.some((word) => key.includes(word))) return icon;
   }
-  return "fa-file-lines";
+  return "ph ph-file-text";
 }

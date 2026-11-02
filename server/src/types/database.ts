@@ -27,7 +27,14 @@ export interface User {
 }
 
 export type DeclarationType = 'LOST' | 'FOUND';
-export type DocumentStatus = 'AVAILABLE' | 'SEARCHING' | 'RETURNED' | 'MATCHED';
+export type DocumentStatus =
+    | 'AVAILABLE'
+    | 'SEARCHING'
+    | 'MATCHED'
+    | 'RESERVED'
+    | 'CLAIMED'
+    | 'RETURNED'
+    | 'CANCELLED';
 
 export interface DocumentType {
     id: string;
@@ -100,8 +107,28 @@ export interface Match {
     found_declaration_id: string;
     score: number;
     status: MatchStatus;
+    details?: any;
+    owner_confirmed_at?: Date | null;
+    owner_confirmed_by?: string | null;
+    closed_reason?: string | null;
+    closed_at?: Date | null;
     created_at: Date;
     updated_at?: Date;
+}
+
+export type RecoveryReservationStatus = 'RESERVED' | 'PAID' | 'COMPLETED' | 'EXPIRED' | 'CANCELLED';
+
+export interface RecoveryReservation {
+    id: string;
+    match_id: string | null;
+    lost_declaration_id: string;
+    found_declaration_id: string;
+    owner_id: string | null;
+    transaction_id: string | null;
+    status: RecoveryReservationStatus;
+    expires_at: Date;
+    created_at: Date;
+    updated_at: Date;
 }
 
 
@@ -132,11 +159,16 @@ export interface UserDocument {
 export interface Claim {
     id: string;
     doc_id: string;
+    found_declaration_id?: string | null;
     owner_id: string;
     finder_id: string;
     verification_code: string;
-    status: 'PENDING' | 'VALIDATED' | 'FAILED';
+    status: 'PENDING' | 'PAID' | 'VALIDATED' | 'FAILED';
     verification_attempts: number;
+    attempts: number;
+    amount?: number | null;
+    currency?: string;
+    transaction_id?: string | null;
     created_at: Date;
 }
 
@@ -179,6 +211,41 @@ export interface DeletionRequest {
     created_at: Date;
     reviewed_at?: Date;
     executed_at?: Date;
+}
+
+export type ReportTargetType = 'DECLARATION' | 'MATCH' | 'CONVERSATION' | 'USER' | 'SUPPORT';
+export type ReportReasonCategory = 'WRONG_DOCUMENT' | 'NO_HANDOVER' | 'FRAUD' | 'ABUSIVE' | 'OTHER';
+export type ReportStatus = 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'DISMISSED';
+
+export type ReportActionType =
+    | 'REPLY'
+    | 'NUDGE_FINDER'
+    | 'REGENERATE_CODE'
+    | 'CLOSE_AND_REFUND'
+    | 'BLOCK_USER'
+    | 'UNBLOCK_USER';
+
+/** Compte sanctionné par BLOCK_USER / UNBLOCK_USER : la cible du ticket ou son auteur. */
+export type ReportActionSubject = 'TARGET' | 'REPORTER';
+
+export interface Report {
+    id: string;
+    reporter_id: string;
+    target_type: ReportTargetType;
+    target_id: string | null;
+    reason_category: ReportReasonCategory;
+    description: string;
+    status: ReportStatus;
+    admin_note?: string | null;
+    admin_reply?: string | null;
+    resolution_action?: ReportActionType | null;
+    resolution_payload?: Record<string, any> | null;
+    /** Dossier de récupération rattaché à une demande d'aide sans cible. */
+    context_match_id?: string | null;
+    resolved_by?: string | null;
+    resolved_at?: Date | null;
+    created_at: Date;
+    updated_at: Date;
 }
 
 export type WithdrawalRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAID' | 'CANCELLED';
@@ -262,4 +329,28 @@ export interface PartenairePublic extends Partenaire {
     region?: string | null;
     wallet_balance: number;
     is_verified: boolean;
+}
+
+export type TestimonialContext = 'MATCH' | 'RECOVERY';
+export type TestimonialStatus = 'PUBLISHED' | 'HIDDEN';
+
+export interface Testimonial {
+    id: string;
+    user_id: string;
+    declaration_id: string;
+    context: TestimonialContext;
+    rating: number;
+    comment: string;
+    status: TestimonialStatus;
+    created_at: Date;
+    updated_at: Date;
+}
+
+export interface PublicTestimonial {
+    id: string;
+    author_label: string;
+    context: TestimonialContext;
+    rating: number;
+    comment: string;
+    created_at: Date;
 }

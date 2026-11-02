@@ -1,0 +1,9 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    "Backend page-to-offset conversion missing — Controller passes `page` to service but service treats it as `offset`. Page 2 with limit 10 should be offset 10, but backend uses offset 2. Calculate `offset = (page - 1) * limit` in controller before calling service.",
+    "Frontend response shape mismatch — Backend returns `{ success: true, data: { history, total, limit, offset } }` but frontend expects `data.data` to be the array. Line 741 in MesGains.tsx does `raw.data || []` but `raw` is `{ history, total, limit, offset }` so `raw.data` is undefined. Change line 741 to `setPointsHistory(Array.isArray(raw) ? raw : raw.history || raw.data || [])`.",
+    "No error feedback when history fetch fails — If `authService.getEarningsHistory()` throws, the catch block is empty and the component shows a loader forever. Add `setPointsHistoryLoading(false)` in the finally block (already present) but also consider showing an error state or toast when fetch fails."
+  ],
+  "reviewDoc": "/home/ruxel/Docmaster/Docmaster-web/.agents/tasks/mesgains-history-review.md"
+}

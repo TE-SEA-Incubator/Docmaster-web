@@ -30,13 +30,13 @@ const STATUS_LABEL_KEYS: Record<string, { labelKey: string; color: string }> = {
 
 function getIconForType(type?: string) {
   const t = (type || "").toLowerCase();
-  if (t.includes("cni")) return "fa-id-card";
-  if (t.includes("pass")) return "fa-passport";
-  if (t.includes("permis")) return "fa-car";
-  if (t.includes("diplome")) return "fa-graduation-cap";
-  if (t.includes("acte")) return "fa-file-invoice";
-  if (t.includes("carte")) return "fa-credit-card";
-  return "fa-file-lines";
+  if (t.includes("cni")) return "ph ph-identification-card";
+  if (t.includes("pass")) return "ph ph-book-open";
+  if (t.includes("permis")) return "ph ph-car";
+  if (t.includes("diplome")) return "ph ph-graduation-cap";
+  if (t.includes("acte")) return "ph ph-invoice";
+  if (t.includes("carte")) return "ph ph-credit-card";
+  return "ph ph-file-text";
 }
 
 export default function Dashboard() {
@@ -223,7 +223,7 @@ export default function Dashboard() {
             whiteSpace: "nowrap",
           }}
         >
-          <i className="fa-regular fa-calendar" style={{ color: partenairePalette.primary, fontSize: 14 }} />
+          <i className="ph ph-calendar" style={{ color: partenairePalette.primary, fontSize: 14 }} />
           <Typography.Text type="secondary" style={{ fontSize: 13, textTransform: "capitalize" }}>
             {today}
           </Typography.Text>
@@ -285,7 +285,7 @@ export default function Dashboard() {
                   marginLeft: 8,
                 }}
               >
-                <i className="fa-solid fa-triangle-exclamation" style={{ color: "#ef4444", fontSize: 16 }} />
+                <i className="ph ph-warning" style={{ color: "#ef4444", fontSize: 16 }} />
               </div>
             </div>
             <Typography.Text style={{ fontSize: 26, fontWeight: 800, color: partenairePalette.greenDark, display: "block", lineHeight: 1.2 }}>
@@ -315,7 +315,7 @@ export default function Dashboard() {
                   marginLeft: 8,
                 }}
               >
-                <i className="fa-solid fa-hand-holding-heart" style={{ color: "#8b5cf6", fontSize: 16 }} />
+                <i className="ph ph-hand-heart" style={{ color: "#8b5cf6", fontSize: 16 }} />
               </div>
             </div>
             <Typography.Text style={{ fontSize: 26, fontWeight: 800, color: partenairePalette.greenDark, display: "block", lineHeight: 1.2 }}>
@@ -353,7 +353,7 @@ export default function Dashboard() {
                   margin: "0 auto 14px",
                 }}
               >
-                <i className="fa-solid fa-folder-open" style={{ color: partenairePalette.textMuted, fontSize: 24 }} />
+                <i className="ph ph-folder-open" style={{ color: partenairePalette.textMuted, fontSize: 24 }} />
               </div>
               <Typography.Title level={4} style={{ marginBottom: 4, color: partenairePalette.greenDark }}>
                 {t("partenaire_dashboard_empty_title")}
@@ -380,7 +380,7 @@ export default function Dashboard() {
               style={{ borderRadius: 10, border: `1px solid ${partenairePalette.border}` }}
               title={
                 <Space size={8}>
-                  <i className="fa-solid fa-clock-rotate-left" style={{ color: partenairePalette.primary, fontSize: 14 }} />
+                  <i className="ph ph-clock-counter-clockwise" style={{ color: partenairePalette.primary, fontSize: 14 }} />
                   <span style={{ fontSize: 15, fontWeight: 700, color: partenairePalette.greenDark }}>
                     {t("partenaire_dashboard_recent_activity")}
                   </span>
@@ -391,7 +391,7 @@ export default function Dashboard() {
                   style={{ fontSize: 12, fontWeight: 600, color: partenairePalette.primaryDark, cursor: "pointer" }}
                   onClick={() => navigate("/partenaire/declarations")}
                 >
-                  {t("partenaire_dashboard_view_all")} <i className="fa-solid fa-arrow-right" style={{ fontSize: 9 }} />
+                  {t("partenaire_dashboard_view_all")} <i className="ph ph-arrow-right" style={{ fontSize: 9 }} />
                 </Typography.Text>
               }
               styles={{ body: { padding: 0 } }}
@@ -466,7 +466,7 @@ export default function Dashboard() {
         <Col xs={24} md={12}>
           <Card style={{ borderRadius: 10, border: `1px solid ${partenairePalette.border}`, height: "100%" }} styles={{ body: { padding: 20 } }}>
             <Space size={8} style={{ marginBottom: 14 }}>
-              <i className="fa-solid fa-wallet" style={{ color: partenairePalette.primary, fontSize: 14 }} />
+              <i className="ph ph-wallet" style={{ color: partenairePalette.primary, fontSize: 14 }} />
               <Typography.Text strong style={{ color: partenairePalette.greenDark, fontSize: 15 }}>
                 {t("partenaire_dashboard_portefeuille")}
               </Typography.Text>
@@ -478,7 +478,7 @@ export default function Dashboard() {
               {Number(partenaire?.wallet_balance ?? stats?.wallet_balance ?? 0).toLocaleString(localeTag)} FCFA
             </Typography.Title>
             <Typography.Text style={{ display: "block", marginTop: 6, color: "#D97706", fontWeight: 600 }}>
-              <i className="fa-solid fa-star" style={{ marginRight: 6, fontSize: 11 }} />
+              <i className="ph ph-star" style={{ marginRight: 6, fontSize: 11 }} />
               {Number(stats?.total_points ?? partenaire?.points ?? 0).toLocaleString(localeTag)} pts
             </Typography.Text>
             {potentialCount > 0 && (
@@ -506,7 +506,7 @@ export default function Dashboard() {
               block
               style={{ marginTop: 14, height: 36 }}
               onClick={() => navigate("/partenaire/portefeuille")}
-              icon={<i className="fa-solid fa-arrow-right" style={{ fontSize: 11 }} />}
+              icon={<i className="ph ph-arrow-right" style={{ fontSize: 11 }} />}
             >
               {t("partenaire_dashboard_view_history")}
             </Button>
@@ -515,7 +515,7 @@ export default function Dashboard() {
         <Col xs={24} md={12}>
           <Card style={{ borderRadius: 10, border: `1px solid ${partenairePalette.border}`, height: "100%" }} styles={{ body: { padding: 20 } }}>
             <Space size={8} style={{ marginBottom: 16 }}>
-              <i className="fa-solid fa-chart-pie" style={{ color: partenairePalette.primary, fontSize: 14 }} />
+              <i className="ph ph-chart-pie" style={{ color: partenairePalette.primary, fontSize: 14 }} />
               <Typography.Text strong style={{ color: partenairePalette.greenDark, fontSize: 15 }}>
                 {t("partenaire_dashboard_findings_split")}
               </Typography.Text>
@@ -654,7 +654,7 @@ function FoundStepIndicator({ steps, current, color }: { steps: string[]; curren
                 color: done ? "white" : active ? c.text : c.faded,
               }}
             >
-              {done ? <i className="fa-solid fa-check" /> : <i className={`fa-solid ${i === 0 ? "fa-magnifying-glass" : i === 1 ? "fa-file-signature" : i === 2 ? "fa-user-check" : "fa-handshake"}`} />}
+              {done ? <i className="ph ph-check" /> : <i className={`${i === 0 ? "ph ph-magnifying-glass" : i === 1 ? "ph ph-pen-nib" : i === 2 ? "ph ph-user-check" : "ph ph-handshake"}`} />}
             </div>
             <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: -0.3, color: done || active ? c.text : c.faded }}>
               {step}
@@ -681,7 +681,7 @@ function FoundCard({ decl, onOpen, onRendre }: { decl: PartenaireDeclaration; on
     : decl.status === "MATCHED"
     ? t("partenaire_dashboard_card_matched_header")
     : t("partenaire_dashboard_card_found_header");
-  const headerIcon = decl.status === "RETURNED" ? "fa-circle-check" : decl.status === "MATCHED" ? "fa-handshake" : "fa-hand-holding-heart";
+  const headerIcon = decl.status === "RETURNED" ? "ph ph-check-circle" : decl.status === "MATCHED" ? "ph ph-handshake" : "ph ph-hand-heart";
   const badgeLabel = decl.status === "RETURNED"
     ? t("partenaire_dashboard_status_returned")
     : decl.status === "MATCHED"
@@ -713,7 +713,7 @@ function FoundCard({ decl, onOpen, onRendre }: { decl: PartenaireDeclaration; on
         }}
       >
         <Space size={8}>
-          <i className={`fa-solid ${headerIcon}`} style={{ color: c.text }} />
+          <i className={`${headerIcon}`} style={{ color: c.text }} />
           <Typography.Text strong style={{ color: c.text, fontSize: 13 }}>
             {headerLabel}
           </Typography.Text>
@@ -737,7 +737,7 @@ function FoundCard({ decl, onOpen, onRendre }: { decl: PartenaireDeclaration; on
               flexShrink: 0,
             }}
           >
-            <i className={`fa-solid ${getIconForType(decl.doc_type)}`} style={{ fontSize: 18 }} />
+            <i className={`${getIconForType(decl.doc_type)}`} style={{ fontSize: 18 }} />
           </div>
           <div style={{ minWidth: 0 }}>
             <Typography.Text strong style={{ fontSize: 13.5, display: "block" }}>
@@ -784,7 +784,7 @@ function FoundCard({ decl, onOpen, onRendre }: { decl: PartenaireDeclaration; on
               padding: "8px 12px",
             }}
           >
-            <i className="fa-solid fa-clock-rotate-left" style={{ color: "#3B82F6", marginRight: 4 }} />
+            <i className="ph ph-clock-counter-clockwise" style={{ color: "#3B82F6", marginRight: 4 }} />
             {t("partenaire_dashboard_waiting")}
           </div>
         )}
@@ -824,14 +824,14 @@ function periodLabelKey(p?: string) {
 }
 
 const PERF_TYPE_ICONS: Record<string, { icon: string; color: string }> = {
-  CNI: { icon: "fa-id-card", color: "#3b82f6" },
-  PASSPORT: { icon: "fa-passport", color: "#8b5cf6" },
-  PERMIS: { icon: "fa-car", color: "#10b981" },
-  DIPLOME: { icon: "fa-graduation-cap", color: "#f59e0b" },
-  CARTE_BLUE: { icon: "fa-credit-card", color: "#6366f1" },
-  CARTE_GRISE: { icon: "fa-file-invoice", color: "#ef4444" },
-  ACTE_NAISSANCE: { icon: "fa-file-circle-plus", color: "#14b8a6" },
-  DEFAULT: { icon: "fa-file-lines", color: "#6b7280" },
+  CNI: { icon: "ph ph-identification-card", color: "#3b82f6" },
+  PASSPORT: { icon: "ph ph-book-open", color: "#8b5cf6" },
+  PERMIS: { icon: "ph ph-car", color: "#10b981" },
+  DIPLOME: { icon: "ph ph-graduation-cap", color: "#f59e0b" },
+  CARTE_BLUE: { icon: "ph ph-credit-card", color: "#6366f1" },
+  CARTE_GRISE: { icon: "ph ph-invoice", color: "#ef4444" },
+  ACTE_NAISSANCE: { icon: "ph ph-file-plus", color: "#14b8a6" },
+  DEFAULT: { icon: "ph ph-file-text", color: "#6b7280" },
 };
 
 function timeAgo(dateString?: string) {
@@ -875,7 +875,7 @@ function PerfCard({ doc, period }: { doc: any; period?: string }) {
             flexShrink: 0,
           }}
         >
-          <i className={`fa-solid ${cfg.icon}`} style={{ color: cfg.color, fontSize: 12 }} />
+          <i className={`${cfg.icon}`} style={{ color: cfg.color, fontSize: 12 }} />
         </div>
         <Typography.Text
           strong
@@ -894,7 +894,7 @@ function PerfCard({ doc, period }: { doc: any; period?: string }) {
             whiteSpace: "nowrap",
           }}
         >
-          <i className={`fa-solid ${isUp ? "fa-arrow-up" : "fa-arrow-down"}`} style={{ fontSize: 7, marginRight: 2 }} />{" "}
+          <i className={`${isUp ? "ph ph-arrow-up" : "ph ph-arrow-down"}`} style={{ fontSize: 7, marginRight: 2 }} />{" "}
           {Math.abs(trend)}%
         </div>
       </div>
@@ -908,10 +908,10 @@ function PerfCard({ doc, period }: { doc: any; period?: string }) {
       </div>
       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
         <div style={{ fontSize: 9.5, color: "#d97706", background: "#fef3c7", padding: "2px 6px", borderRadius: 6 }}>
-          <i className="fa-solid fa-arrow-down" style={{ fontSize: 7, marginRight: 3 }} /> {t("partenaire_dashboard_lost_count", { count: lost })}
+          <i className="ph ph-arrow-down" style={{ fontSize: 7, marginRight: 3 }} /> {t("partenaire_dashboard_lost_count", { count: lost })}
         </div>
         <div style={{ fontSize: 9.5, color: "#16a34a", background: "#dcfce7", padding: "2px 6px", borderRadius: 6 }}>
-          <i className="fa-solid fa-arrow-up" style={{ fontSize: 7, marginRight: 3 }} /> {t("partenaire_dashboard_found_count", { count: found })}
+          <i className="ph ph-arrow-up" style={{ fontSize: 7, marginRight: 3 }} /> {t("partenaire_dashboard_found_count", { count: found })}
         </div>
       </div>
       <div
@@ -926,7 +926,7 @@ function PerfCard({ doc, period }: { doc: any; period?: string }) {
           maxWidth: "100%",
         }}
       >
-        <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 7, marginRight: 4 }} /> {activityText}
+        <i className="ph ph-clock-counter-clockwise" style={{ fontSize: 7, marginRight: 4 }} /> {activityText}
       </div>
     </Card>
   );

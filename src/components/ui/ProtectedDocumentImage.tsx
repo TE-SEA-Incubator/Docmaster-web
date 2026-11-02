@@ -75,7 +75,7 @@ export function ProtectedDocumentImage({
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-black/5 via-black/15 to-black/25">
             <div className="flex flex-col items-center gap-1.5 px-3 py-2.5 bg-white/92 backdrop-blur-sm rounded-xl shadow-md border border-white/80 max-w-[85%]">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <i className="fa-solid fa-lock text-primary text-sm" />
+                <i className="ph ph-lock text-primary text-sm" />
               </div>
               <span className="text-[10px] font-extrabold uppercase tracking-wide text-textMain text-center leading-tight">
                 {t(lockLabelKey)}
@@ -104,7 +104,7 @@ export function ProtectedDocumentImage({
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-black/5 via-black/15 to-black/25">
           <div className="flex flex-col items-center gap-1.5 px-3 py-2.5 bg-white/92 backdrop-blur-sm rounded-xl shadow-md border border-white/80 max-w-[85%]">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <i className="fa-solid fa-lock text-primary text-sm" />
+              <i className="ph ph-lock text-primary text-sm" />
             </div>
               <span className="text-[10px] font-extrabold uppercase tracking-wide text-textMain text-center leading-tight">
                 {t(lockLabelKey)}
@@ -118,7 +118,7 @@ export function ProtectedDocumentImage({
                   onClick={(event) => event.stopPropagation()}
                   className="mt-1 inline-flex items-center gap-1 px-3 py-1 bg-primary text-white rounded-full text-[9px] font-bold hover:bg-primary-dark transition-all shadow-sm"
                 >
-                  <i className="fa-solid fa-right-to-bracket text-[8px]" />
+                  <i className="ph ph-sign-in text-[8px]" />
                   {t("nav_login")}
                 </Link>
               )}

@@ -40,7 +40,7 @@ export default function Stepper({
                   }`}
                 >
                   {isDone ? (
-                    <i className="fa-solid fa-check text-xs"></i>
+                    <i className="ph ph-check text-xs"></i>
                   ) : (
                     <span>{idx}</span>
                   )}
@@ -101,7 +101,7 @@ export default function Stepper({
               }`}
             >
               {isDone ? (
-                <i className="fa-solid fa-check text-xs"></i>
+                <i className="ph ph-check text-xs"></i>
               ) : (
                 <span>{idx}</span>
               )}

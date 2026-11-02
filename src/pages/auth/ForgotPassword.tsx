@@ -44,12 +44,12 @@ export default function ForgotPassword() {
           <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
 
           <Link to="/login" className="inline-flex items-center gap-2 text-[12.5px] text-textMuted font-semibold hover:text-primary transition-colors mb-6">
-            <i className="fa-solid fa-arrow-left" /> {t("forgot_back_to_login")}
+            <i className="ph ph-arrow-left" /> {t("forgot_back_to_login")}
           </Link>
 
           <div className="flex flex-col gap-6 relative z-10">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary text-3xl">
-              <i className="fa-solid fa-key" />
+              <i className="ph ph-key" />
             </div>
 
             <div className="space-y-2">
@@ -64,7 +64,7 @@ export default function ForgotPassword() {
             {sent ? (
               <div className="flex flex-col items-center gap-4 text-center py-4">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-500 text-3xl">
-                  <i className="fa-solid fa-envelope-circle-check" />
+                  <i className="ph ph-envelope-simple" />
                 </div>
                 <p className="text-gray-700 font-semibold text-[15px]">{t("forgot_email_sent")}</p>
                 <p className="text-gray-400 text-sm leading-relaxed">
@@ -82,7 +82,7 @@ export default function ForgotPassword() {
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 {error && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-[14px] text-red-600 text-[12px] font-semibold flex items-center gap-2">
-                    <i className="fa-solid fa-circle-exclamation" /> {error}
+                    <i className="ph ph-warning-circle" /> {error}
                   </div>
                 )}
 
@@ -91,7 +91,7 @@ export default function ForgotPassword() {
                     {t("forgot_your_email")}
                   </label>
                   <div className="relative flex items-center group">
-                    <i className="fa-regular fa-envelope absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary" />
+                    <i className="ph ph-envelope absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary" />
                     <input
                       type="email"
                       value={email}
@@ -109,9 +109,9 @@ export default function ForgotPassword() {
                   className="w-full py-3.5 bg-primary text-white rounded-2xl font-bold text-base shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {loading ? (
-                    <i className="fa-solid fa-spinner fa-spin" />
+                    <i className="ph ph-spinner animate-spin" />
                   ) : (
-                    <><i className="fa-solid fa-paper-plane" /> {t("forgot_send_link")}</>
+                    <><i className="ph ph-paper-plane" /> {t("forgot_send_link")}</>
                   )}
                 </button>
               </form>

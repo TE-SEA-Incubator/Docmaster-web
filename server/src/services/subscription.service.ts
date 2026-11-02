@@ -1,9 +1,9 @@
 import { subscriptionRepository } from '../repositories/subscription.repository.ts';
 import { query } from '../database/db.ts';
 import { notificationService } from './notification.service.ts';
-import { nokashService } from './nokash.service.ts';
 import { startNokashPaymentPolling } from '../controllers/payment.controller.ts';
 import { v4 as uuidv4 } from 'uuid';
+import { getPaymentProvider } from '../config/features.js';
 
 class SubscriptionService {
   private resolveObjectsLimit(features: any) {
@@ -123,65 +123,140 @@ class SubscriptionService {
         return await this.activateSubscription(userId, planId, months);
       }
 
-      // Map frontend method to Nokash method
-      let nokashMethod: any = 'MTN_MOMO';
-      if (paymentDetails.method === 'ORANGE_MONEY') nokashMethod = 'ORANGE_MONEY';
-      // Add other mappings if needed
+      // Map frontend method to payment provider method
+      const provider = getPaymentProvider('USER');
+      
+      if (provider === 'SHAREPAY') {
+        // Use SharePay for payment
+        const { getSharePayService } = await import('./sharepay.service.js');
+        const sharepay = getSharePayService();
+        
+        const paymentMethod = paymentDetails.method === 'ORANGE_MONEY' 
+          ? 'ORANGE_MONEY_CM' 
+          : 'MTN_MOMO_CM';
 
-      const nokashRes = await nokashService.initiatePayment({
-        payment_method: nokashMethod,
-        amount: amountToPay,
-        order_id: orderId,
-        user_phone: paymentDetails.phone,
-        country: 'CM'
-      });
+        console.log(`[SharePay] 🚀 Initiation paiement abonnement`, {
+          userId,
+          planId,
+          planName: plan.name,
+          months,
+          amount: Math.round(amountToPay),
+          currency: 'XAF',
+          paymentMethod,
+          phone: paymentDetails.phone?.replace(/(\d{3})\d{4}(\d{3})/, '$1****$2'), // masque le numéro dans les logs
+          orderId,
+        });
+        
+        // Create charge (direct debit)
+        const result = await sharepay.createCharge({
+          amount: Math.round(amountToPay),
+          currency: 'XAF',
+          paymentMethod,
+          payerAccount: paymentDetails.phone,
+          payerName: `User ${userId}`,
+          merchantReference: orderId,
+          description: `Abonnement ${plan.name} - ${months} mois`,
+          idempotencyKey: orderId,
+        });
 
-      console.log('🚀 [Nokash Response]', JSON.stringify(nokashRes, null, 2));
+        console.log(`[SharePay] ✅ Réponse charge reçue`, {
+          reference: result.reference,
+          status: result.status,
+          amount: result.amount,
+          currency: result.currency,
+        });
 
-      if (nokashRes.status !== 'REQUEST_OK' && nokashRes.status !== 'SUCCESS') {
-        const rawMsg = nokashRes.message || (nokashRes.data && nokashRes.data.message) || '';
-        let userFriendlyMsg = "Le service de paiement est temporairement indisponible. Veuillez réessayer plus tard.";
-
-        if (rawMsg.includes("pas encore intégré cette méthode")) {
-          userFriendlyMsg = "Ce mode de paiement n'est pas encore disponible pour ce plan. Veuillez en choisir un autre.";
-        } else if (rawMsg.includes("montant") || rawMsg.includes("amount")) {
-          userFriendlyMsg = "Le montant de la transaction est invalide.";
-        } else if (rawMsg.includes("phone") || rawMsg.includes("numéro")) {
-          userFriendlyMsg = "Le numéro de téléphone fourni est incorrect ou mal formaté.";
+        if (result.status !== 'PENDING' && result.status !== 'SUCCESS') {
+          console.error(`[SharePay] ❌ Statut inattendu: ${result.status}`, result);
+          throw new Error("Le paiement n'a pas pu être initié. Veuillez réessayer.");
         }
 
-        throw new Error(`Nokash: ${userFriendlyMsg}`);
+        // Create PENDING transaction
+        await query(
+          `INSERT INTO transactions (user_id, amount, currency, status, payment_method, type, external_ref, metadata) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            userId, 
+            amountToPay, 
+            'XAF',
+            'PENDING', 
+            paymentDetails.method || 'MOMO', 
+            'subscription', 
+            result.reference,
+            JSON.stringify({ planId, months, orderId, provider: 'SHAREPAY' })
+          ]
+        );
+
+        // For SharePay, webhook will handle activation
+        return { 
+          status: 'PENDING_PAYMENT', 
+          message: 'Paiement SharePay initié. Validez sur votre téléphone.',
+          transactionId: result.reference,
+          provider: 'SHAREPAY'
+        };
+      } else {
+        // Use Nokash (legacy)
+        const { nokashService } = await import('./nokash.service.js');
+        
+        let nokashMethod: any = 'MTN_MOMO';
+        if (paymentDetails.method === 'ORANGE_MONEY') nokashMethod = 'ORANGE_MONEY';
+
+        const nokashRes = await nokashService.initiatePayment({
+          payment_method: nokashMethod,
+          amount: amountToPay,
+          order_id: orderId,
+          user_phone: paymentDetails.phone,
+          country: 'CM'
+        });
+
+        console.log('🚀 [Nokash Response]', JSON.stringify(nokashRes, null, 2));
+
+        if (nokashRes.status !== 'REQUEST_OK' && nokashRes.status !== 'SUCCESS') {
+          const rawMsg = nokashRes.message || (nokashRes.data && nokashRes.data.message) || '';
+          let userFriendlyMsg = "Le service de paiement est temporairement indisponible. Veuillez réessayer plus tard.";
+
+          if (rawMsg.includes("pas encore intégré cette méthode")) {
+            userFriendlyMsg = "Ce mode de paiement n'est pas encore disponible pour ce plan. Veuillez en choisir un autre.";
+          } else if (rawMsg.includes("montant") || rawMsg.includes("amount")) {
+            userFriendlyMsg = "Le montant de la transaction est invalide.";
+          } else if (rawMsg.includes("phone") || rawMsg.includes("numéro")) {
+            userFriendlyMsg = "Le numéro de téléphone fourni est incorrect ou mal formaté.";
+          }
+
+          throw new Error(`Nokash: ${userFriendlyMsg}`);
+        }
+
+        // Create PENDING transaction
+        await query(
+          `INSERT INTO transactions (user_id, amount, currency, status, payment_method, type, external_ref, metadata) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            userId, 
+            amountToPay, 
+            'XAF',
+            'PENDING', 
+            paymentDetails.method || 'MOMO', 
+            'subscription', 
+            nokashRes.data.id,
+            JSON.stringify({ planId, months, orderId, provider: 'NOKASH' })
+          ]
+        );
+
+        startNokashPaymentPolling({
+          externalRef: nokashRes.data.id,
+          onSuccess: async (transaction) => {
+            const metadata = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : transaction.metadata;
+            await this.activateSubscription(transaction.user_id, metadata.planId, metadata.months);
+          }
+        });
+
+        return { 
+          status: 'PENDING_PAYMENT', 
+          message: 'Paiement Nokash initié. Veuillez valider sur votre téléphone.',
+          transactionId: nokashRes.data.id,
+          provider: 'NOKASH'
+        };
       }
-
-      // Create PENDING transaction
-      await query(
-        `INSERT INTO transactions (user_id, amount, currency, status, payment_method, type, external_ref, metadata) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          userId, 
-          amountToPay, 
-          'XAF',
-          'PENDING', 
-          paymentDetails.method || 'MOMO', 
-          'subscription', 
-          nokashRes.data.id, // Nokash ID
-          JSON.stringify({ planId, months, orderId })
-        ]
-      );
-
-      startNokashPaymentPolling({
-        externalRef: nokashRes.data.id,
-        onSuccess: async (transaction) => {
-          const metadata = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : transaction.metadata;
-          await this.activateSubscription(transaction.user_id, metadata.planId, metadata.months);
-        }
-      });
-
-      return { 
-        status: 'PENDING_PAYMENT', 
-        message: 'Paiement initié. Veuillez valider sur votre téléphone.',
-        transactionId: nokashRes.data.id
-      };
     }
 
     // 3. If Free (or price 0), activate immediately

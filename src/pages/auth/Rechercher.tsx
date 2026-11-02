@@ -6,6 +6,7 @@ import { useTopbar } from "../../hooks/useTopbar";
 import { useAuth } from "../../context/AuthContext";
 import { declarationsService, documentTypesService } from "../../services/declarationsService";
 import { API_BASE_URL } from "../../services/api";
+import { lostRecoveryTarget, type RecoveryMatchRef } from "../../utils/recoveryTargets";
 
 import type { Declaration, DocTypeCatalog } from "../../types/api";
 import { ProtectedDocumentImage } from "../../components/ui/ProtectedDocumentImage";
@@ -46,6 +47,17 @@ function resolveLostDeclarationId(doc: ResultDoc, explicitLostId?: string): stri
   const matches = (doc.matches as Array<{ lost_declaration_id?: string; status?: string }> | undefined) || [];
   const active = matches.find((m) => m.status && ["PENDING", "CONFIRMED", "MATCHED"].includes(m.status));
   return active?.lost_declaration_id || doc.id;
+}
+
+function resolveRecoveryHref(doc: ResultDoc, explicitLostId?: string): string {
+  if (explicitLostId) {
+    const target = lostRecoveryTarget(
+      explicitLostId,
+      (doc.matches as RecoveryMatchRef[] | undefined) || [],
+    );
+    if (target.hasMatch) return target.href;
+  }
+  return `/correspondances?id=${resolveLostDeclarationId(doc, explicitLostId)}`;
 }
 
 interface ResultDoc {
@@ -160,7 +172,7 @@ export default function Rechercher() {
             <Paper bg="yellow.0" bds="1px solid" bdcolor="yellow.3" p="md" radius="md">
               <Group gap="md" align="flex-start">
                 <ThemeIcon color="yellow" size="xl" variant="light" radius="md">
-                  <i className="fa-solid fa-magnifying-glass-chart text-lg" />
+                  <i className="ph ph-chart-line-up text-lg" />
                 </ThemeIcon>
                 <div className="flex-1">
                   <Text fw={700} size="sm">{t("rechercher_matches_detected")}</Text>
@@ -173,7 +185,7 @@ export default function Rechercher() {
                   variant="outline"
                   color="yellow"
                   radius="xl"
-                  leftSection={<i className="fa-solid fa-xmark" />}
+                  leftSection={<i className="ph ph-x" />}
                   onClick={() => navigate("/rechercher", { replace: true })}
                 >
                   {t("rechercher_close")}
@@ -184,7 +196,7 @@ export default function Rechercher() {
             <Paper p="md" radius="md" withBorder>
               <Group gap="md" align="flex-start">
                 <ThemeIcon color="yellow" size="lg" variant="light" radius="md">
-                  <i className="fa-solid fa-shield-halved text-sm" />
+                  <i className="ph ph-shield text-sm" />
                 </ThemeIcon>
                 <div>
                   <Text fw={700} size="sm">{t("rechercher_data_protection")}</Text>
@@ -201,7 +213,7 @@ export default function Rechercher() {
               <Group gap="sm">
                 <TextInput
                   flex={1}
-                  leftSection={<i className="fa-solid fa-magnifying-glass" />}
+                  leftSection={<i className="ph ph-magnifying-glass" />}
                   rightSection={
                     query ? (
                       <ActionIcon
@@ -210,7 +222,7 @@ export default function Rechercher() {
                         size="sm"
                         onClick={() => { setQuery(""); setResults([]); }}
                       >
-                        <i className="fa-solid fa-circle-xmark" />
+                        <i className="ph ph-x-circle" />
                       </ActionIcon>
                     ) : null
                   }
@@ -294,7 +306,7 @@ export default function Rechercher() {
                 }}
                 mb="md"
               >
-                <i className="fa-solid fa-magnifying-glass text-3xl text-textMuted" />
+                <i className="ph ph-magnifying-glass text-3xl text-textMuted" />
               </Paper>
               <Title order={4} ff="Bricolage Grotesque" mb="xs">
                 {isMatchView ? t("rechercher_no_matches_loaded") : t("rechercher_no_results")}
@@ -309,7 +321,7 @@ export default function Rechercher() {
                   component={Link}
                   to="/declarer"
                   radius="xl"
-                  leftSection={<i className="fa-solid fa-file-circle-plus" />}
+                  leftSection={<i className="ph ph-file-plus" />}
                   style={{ backgroundColor: "#E8923A" }}
                 >
                   {t("rechercher_declare_loss")}
@@ -352,7 +364,7 @@ export default function Rechercher() {
                         color="dark"
                         size="sm"
                         radius="xl"
-                        leftSection={<i className="fa-solid fa-file-lines text-primary text-[9px]" />}
+                        leftSection={<i className="ph ph-file-text text-primary text-[9px]" />}
                       >
                         {docType}
                       </Badge>
@@ -378,11 +390,11 @@ export default function Rechercher() {
                         {showFull ? (
                           <Button
                             component={Link}
-                            to={`/recuperer?id=${resolveLostDeclarationId(doc, lostDeclarationId)}${isMatchView ? `&found=${doc.id}` : ""}`}
+                            to={resolveRecoveryHref(doc, lostDeclarationId)}
                             fullWidth
                             radius="xl"
                             size="sm"
-                            leftSection={<i className="fa-solid fa-hand-holding-heart" />}
+                            leftSection={<i className="ph ph-hand-heart" />}
                             style={{ backgroundColor: "#E8923A" }}
                           >
                             {t("dashboard_recover_document")}
@@ -395,7 +407,7 @@ export default function Rechercher() {
                             variant="outline"
                             radius="xl"
                             size="sm"
-                            leftSection={<i className="fa-solid fa-file-circle-plus" />}
+                            leftSection={<i className="ph ph-file-plus" />}
                           >
                             {user ? t("rechercher_its_mine") : t("rechercher_declare_to_see")}
                           </Button>

@@ -248,15 +248,15 @@ class SocketService {
   private getIconForType(type: NotificationType): string {
     switch (type) {
       case "MATCH_FOUND":
-        return "fa-solid fa-handshake";
+        return "ph ph-handshake";
       case "PAYMENT_RECEIVED":
-        return "fa-solid fa-money-bill-wave";
+        return "ph ph-money-wavy";
       case "RECOVERY_SUCCESS":
-        return "fa-solid fa-circle-check";
+        return "ph ph-check-circle";
       case "DOC_ADDED":
-        return "fa-solid fa-file-circle-plus";
+        return "ph ph-file-plus";
       default:
-        return "fa-solid fa-bell";
+        return "ph ph-bell";
     }
   }
 

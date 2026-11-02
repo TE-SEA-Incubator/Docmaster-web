@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getActivityLogs } from '../controllers/admin/activity.controller.ts';
-import { getRecentMatches, getMatchingStats } from '../controllers/admin/match-monitor.controller.ts';
+import { getRecentMatches, getMatchingStats, getMatchingDiagnostic } from '../controllers/admin/match-monitor.controller.ts';
 import { authMiddleware, adminMiddleware } from '../middleware/auth.middleware.ts';
 import { query } from '../database/db.ts';
 
@@ -268,6 +268,27 @@ router.get('/matching/stats', getMatchingStats);
 
 /**
  * @swagger
+ * /admin/matching/diagnose:
+ *   get:
+ *     summary: Diagnostic read-only du matching (scores, candidats, points manquants)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: declarationId
+ *         schema: { type: string }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 50 }
+ *     responses:
+ *       200:
+ *         description: Diagnostic généré
+ */
+router.get('/matching/diagnose', getMatchingDiagnostic);
+
+/**
+ * @swagger
  * /admin/global-search:
  *   get:
  *     summary: Recherche globale (utilisateurs + déclarations)
@@ -359,6 +380,49 @@ router.get('/global-search', async (req, res) => {
   } catch (err: any) {
     console.error('[GlobalSearch]', err.message);
     res.status(500).json({ success: false, message: 'Erreur de recherche' });
+  }
+});
+
+/**
+ * @swagger
+ * /admin/sharepay-balance:
+ *   get:
+ *     summary: Récupérer le solde SharePay de l'application
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Solde récupéré avec succès
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/sharepay-balance', async (req, res) => {
+  try {
+    const { getSharePayService } = await import('../services/sharepay.service.ts');
+    
+    try {
+      const sharepayService = getSharePayService();
+      const balanceData = await sharepayService.getBalance();
+      
+      res.json({
+        success: true,
+        data: balanceData
+      });
+    } catch (initError: any) {
+      // SharePay non configuré ou désactivé
+      return res.status(503).json({
+        success: false,
+        message: 'SharePay non configuré ou désactivé',
+        error: initError.message
+      });
+    }
+  } catch (error: any) {
+    console.error('❌ [Admin] SharePay balance error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Erreur lors de la récupération du solde'
+    });
   }
 });
 

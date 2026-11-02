@@ -1,218 +1,94 @@
-# Guide d'Intégration - Workflow de Récupération DocMaster
+# Récupération DocMaster — Guide d'intégration
 
-## 🎯 Vue d'ensemble
+Ce guide décrit le workflow actuel : un `FOUND` peut correspondre à plusieurs
+`LOST`, mais un `LOST` ne peut avoir qu'un seul `FOUND` actif. Le propriétaire
+confirme explicitement son document, puis paie la récupération. Le trouveur
+voit une vue limitée des déclarations de perte associées.
 
-Ce guide décrit l'intégration complète du workflow de récupération de documents dans DocMaster, connectant le frontend et le backend via une API centralisée.
+## 1. Parcours utilisateur
 
-## 📁 Structure des fichiers
+1. Le matching crée un match `PENDING` ou `CONFIRMED` par `LOST`. Un même
+   `FOUND` peut être associé à plusieurs `LOST`.
+2. Le propriétaire ouvre `/correspondances?id=<LOST_ID>` et consulte son
+   candidat (`GET /declarations/:id/matches`). Le trouveur ouvre
+   `/correspondances?id=<FOUND_ID>` pour voir les `LOST` associés avec des
+   données personnelles limitées.
+3. Il confirme explicitement le bon document
+   (`POST /declarations/:id/confirm-match`).
+4. Il paie la récupération depuis la page de confirmation. Le frontend appelle
+   `POST /payments/pay-recovery` avec `docId`, `matchId`, `paymentMethod` et
+   éventuellement `phone`.
+5. Le backend réserve le `FOUND` avant l'appel de paiement externe.
+6. Après confirmation du paiement, `activateRecovery` crée le claim gagnant,
+   clôt les autres `LOST` associés au `FOUND` et ouvre la conversation.
+7. Le trouveur valide le code lors de la remise. Le claim passe à `VALIDATED`,
+   la récompense est versée et le document est clôturé.
 
-### Backend (TypeScript)
-```
-server/
-├── src/
-│   ├── controllers/claim.controller.ts      # Gestion des claims
-│   ├── controllers/payment.controller.ts    # Gestion des paiements
-│   ├── repositories/claim.repository.ts     # Base de données claims
-│   ├── services/matching.service.ts          # Matching automatique
-│   └── routes/
-│       ├── claim.routes.ts                  # Routes claims
-│       └── payment.routes.ts                # Routes paiements
-└── types/database.ts                         # Types TypeScript
-```
+Le paiement direct sans confirmation est refusé, même lorsqu'il n'existe qu'un
+seul candidat.
 
-### Frontend (JavaScript)
-```
-src/
-├── js/
-│   └── services/
-│       ├── api.js                           # API centralisée ⭐
-│       ├── recovery.js                      # Service récupération ⭐
-│       └── recovery-workflow-example.js     # Exemples d'utilisation
-├── recuperer.html                           # Interface propriétaire ⭐
-└── recuperation.html                        # Interface trouveur ⭐
-```
+## 2. Endpoints
 
-## 🔄 Workflow Complet
+### Propriétaire
 
-### 1. Matching Automatique (Backend)
-```typescript
-// matching.service.ts
-async handleHighConfidenceMatch(d1, d2) {
-  // 1. Mettre à jour les statuts à 'MATCHED'
-  // 2. Créer automatiquement un claim
-  // 3. Générer un code de vérification
-  // 4. Notifier les utilisateurs
-}
-```
+| Méthode | Route | Rôle |
+| :--- | :--- | :--- |
+| `GET` | `/declarations/:id/matches` | Liste des candidats `PENDING`/`CONFIRMED` |
+| `POST` | `/declarations/:id/confirm-match` | Confirmation explicite (`{ matchId }`) |
+| `POST` | `/payments/pay-recovery` | Paiement (`{ docId, matchId, paymentMethod, phone? }`) |
+| `GET` | `/recovery/status/:docId?matchId=...` | Statut, code si payé |
+| `POST` | `/recovery/validate` | Validation du code par le trouveur |
 
-### 2. Paiement (Propriétaire)
-```javascript
-// recuperer.html + recovery.js
-async completeOwnerWorkflow(docId) {
-  // 1. Vérifier si un claim existe
-  // 2. Traiter le paiement (5000 FCFA)
-  // 3. Révéler le code de vérification
-  // 4. Mettre à jour l'UI
-}
-```
+`/declarations/recover` reste disponible comme alias du paiement, avec les
+mêmes règles de confirmation et de réservation.
 
-### 3. Validation (Trouveur)
-```javascript
-// recuperation.html + recovery.js
-async validateCode(docId, code) {
-  // 1. Valider le code de 4 chiffres
-  // 2. Mettre à jour le statut du claim
-  // 3. Confirmer la remise
-  // 4. Verser les gains
-}
-```
+### Administration
 
-## 🛠️ API Centralisée (`api.js`)
+| Méthode | Route | Rôle |
+| :--- | :--- | :--- |
+| `GET` | `/admin/matching/diagnose` | Diagnostic en lecture seule du matching |
 
-### Claims
-```javascript
-// Créer un claim manuellement
-createClaim({ docId, ownerId, finderId })
+## 3. Garanties de concurrence
 
-// Obtenir le claim actif d'un document
-getActiveClaim(docId)
+- Un seul `FOUND` actif par `LOST` (index unique partiel
+  `uniq_active_match_per_lost`). Un `FOUND` peut avoir plusieurs `LOST`.
+- Réservation obligatoire avant l'appel au prestataire de paiement.
+- Index uniques partiels : une réservation active par `FOUND` et par `LOST`.
+- Verrou advisory PostgreSQL sur le `FOUND` + `SELECT ... FOR UPDATE` pendant
+  l'activation.
+- Claim unique par `FOUND` payé/validé.
+- Les candidats perdants passent à `REJECTED` et leurs propriétaires sont
+  notifiés (`MATCH_CLOSED`).
+- Les activations sont idempotentes : un callback répété retourne le claim
+  existant sans créer de doublon.
+- En cas d'échec après un paiement réussi, la transaction repasse en `PENDING`
+  afin d'être reprise par la réconciliation ; un paiement par points est
+  remboursé si l'activation n'a pas abouti.
 
-// Valider le code de récupération
-validateRecoveryCode({ docId, code })
-```
+## 4. Délais et reprise
 
-### Paiements
-```javascript
-// Payer les frais de récupération
-payRecoveryFee({ docId, amount, paymentMethod })
+- TTL de réservation : `RECOVERY_RESERVATION_TTL_MINUTES` (15 par défaut).
+- Expiration des réservations : cron chaque minute.
+- Réconciliation des transactions : reprend les transactions `SUCCESS` sans
+  claim et les active avec les métadonnées `{ docId, matchId, foundId,
+  reservationId }`.
+- Les webhooks Nokash et le polling transmettent le même contexte.
 
-// Historique des transactions
-getMyTransactions()
-```
+## 5. Statuts utiles
 
-### Déclarations
-```javascript
-// Initier le processus de récupération
-initiateRecovery(docId)
-```
+- Match : `PENDING`, `CONFIRMED`, `REJECTED`.
+- Claim : `PENDING`, `PAID`, `VALIDATED`, `FAILED`.
+- Réservation : `RESERVED`, `PAID`, `COMPLETED`, `EXPIRED`, `CANCELLED`.
+- Déclaration trouvée : `AVAILABLE`, `MATCHED`, `RESERVED`, `CLAIMED`,
+  `RETURNED`, `CANCELLED`.
 
-## 🎨 Interfaces Utilisateur
+## 6. Points d'attention
 
-### `recuperer.html` - Propriétaire
-- **Affichage**: Document trouvé, informations du trouveur (floutées)
-- **Action**: Bouton "Payer & Récupérer" 
-- **Processus**: Paiement → Révélation code → Instructions de retrait
-- **URL**: `/recuperer.html?id=DOC_ID&view=owner`
-
-### `recuperation.html` - Trouveur  
-- **Affichage**: Historique du signalement, gains potentiels
-- **Action**: Saisie du code de 4 chiffres
-- **Processus**: Validation code → Confirmation remise → Versement gains
-- **URL**: `/recuperation.html?id=DOC_ID&view=finder`
-
-## 📊 Flux de Données
-
-```
-1. Document déclaré (LOST/FOUND)
-        ↓
-2. Matching automatique (score ≥80)
-        ↓
-3. Création claim + génération code
-        ↓
-4. Notification propriétaire
-        ↓
-5. Paiement propriétaire (5000 FCFA)
-        ↓
-6. Révélation code vérification
-        ↓
-7. Validation code par trouveur
-        ↓
-8. Remise document + versement gains
-```
-
-## 🔧 Points d'Intégration
-
-### Backend
-- **MatchingService**: Crée automatiquement les claims lors du matching
-- **ClaimController**: Gère la validation des codes
-- **PaymentController**: Traite les paiements et révèle les codes
-
-### Frontend
-- **recovery.js**: Service centralisé pour tous les appels API
-- **recoveryService**: Objet global exposé pour les pages HTML
-- **Mises à jour UI**: Automatiques selon les réponses API
-
-## 🚀 Utilisation
-
-### Pour le propriétaire:
-```javascript
-// Dans recuperer.html
-const result = await window.recoveryService.completeOwnerWorkflow(docId);
-if (result.success) {
-  // UI mise à jour automatiquement
-  // Code affiché: result.verificationCode
-}
-```
-
-### Pour le trouveur:
-```javascript
-// Dans recuperation.html  
-const result = await window.recoveryService.validateCode(docId, code);
-if (result.success) {
-  // Gains versés, redirection dashboard
-}
-```
-
-## 🔐 Sécurité
-
-- **Codes**: 6 chiffres générés aléatoirement
-- **Limitation**: 5 tentatives maximum par claim
-- **Validation**: Codes vérifiés côté serveur uniquement
-- **Transactions**: Suivi complet avec statuts
-
-## 📱 UX Features
-
-- **Progression**: Timeline visuelle du processus
-- **Notifications**: Messages en temps réel
-- **Responsive**: Design mobile-first
-- **Animations**: Transitions fluides entre étapes
-- **Feedback**: Chargement et erreurs gérés
-
-## 🐛 Débogage
-
-### Logs Backend:
-```bash
-# Matching
-🔐 [Claim] Auto-generated claim for document DOC_ID with code 123456
-
-# Paiement  
-💳 [Payment] Transaction TRANS_ID initiated for doc DOC_ID
-
-# Validation
-✅ [Recovery] Code validated successfully
-```
-
-### Logs Frontend:
-```javascript
-console.log('🔄 [Recovery] Starting complete owner workflow for:', docId);
-console.log('✅ [Recovery] Payment successful, verification code:', code);
-```
-
-## 🔄 Tests
-
-### Workflow complet:
-1. Créer déclaration LOST et FOUND avec mêmes identifiants
-2. Vérifier création automatique du claim
-3. Payer depuis interface propriétaire
-4. Valider code depuis interface trouveur
-5. Confirmer mise à jour des statuts
-
-### Cas limites:
-- Code invalide (5 tentatives max)
-- Claim inexistant
-- Erreur paiement
-- Document déjà retourné
-
----
-
-**Note**: Cette intégration garantit que tous les appels API passent par `api.js`, assurant une maintenance centralisée et une cohérence des données.
+- Ne jamais payer depuis une notification sans passer par la confirmation.
+- Un propriétaire ne peut pas avoir deux `FOUND` actifs pour le même `LOST`.
+- Le trouveur ne voit jamais les données personnelles complètes du
+  propriétaire avant la validation de la remise.
+- Un `FOUND` déjà réservé ou récupéré ne peut pas être confirmé par un autre
+  propriétaire.
+- Les notifications `MATCH_CONFIRMED` indiquent au trouveur le `matchId` et le
+  `foundId` concernés.

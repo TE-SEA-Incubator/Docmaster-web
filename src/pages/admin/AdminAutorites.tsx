@@ -125,13 +125,13 @@ export default function AdminAutorites() {
           onClick={openNew}
           className="inline-flex items-center gap-2 bg-[#2D5A42] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
         >
-          <i className="fa-solid fa-plus text-xs" />
+          <i className="ph ph-plus text-xs" />
           Nouvelle autorité
         </button>
       </div>
 
       {autorites.length === 0 ? (
-        <EmptyState icon="fa-solid fa-landmark" message="Aucune autorité pour le moment." />
+        <EmptyState icon="ph ph-bank" message="Aucune autorité pour le moment." />
       ) : (
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
           <table className="w-full text-left">
@@ -185,14 +185,14 @@ export default function AdminAutorites() {
                         title={a.is_active ? "Désactiver" : "Activer"}
                         className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#E8923A] hover:border-[#E8923A]/40 transition-colors"
                       >
-                        <i className="fa-solid fa-power-off text-[10px]" />
+                        <i className="ph ph-power text-[10px]" />
                       </button>
                       <button
                         onClick={() => handleDelete(a.id)}
                         title="Supprimer"
                         className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"
                       >
-                        <i className="fa-solid fa-trash text-[10px]" />
+                        <i className="ph ph-trash text-[10px]" />
                       </button>
                     </div>
                   </td>
@@ -210,7 +210,7 @@ export default function AdminAutorites() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-base text-gray-900">Nouvelle autorité</h3>
               <button onClick={() => setModalOpen(false)} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded text-gray-400 hover:bg-gray-50">
-                <i className="fa-solid fa-xmark text-xs" />
+                <i className="ph ph-x text-xs" />
               </button>
             </div>
 
@@ -288,7 +288,7 @@ export default function AdminAutorites() {
                 </button>
                 <button type="submit" disabled={saving || !form.nom.trim() || !form.prenom.trim() || !form.email.trim() || !form.department.trim()}
                   className="px-5 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
-                  {saving && <i className="fa-solid fa-spinner fa-spin text-xs" />}
+                  {saving && <i className="ph ph-spinner animate-spin text-xs" />}
                   Créer l'autorité
                 </button>
               </div>
@@ -303,7 +303,7 @@ export default function AdminAutorites() {
           <div className="bg-white rounded-lg w-full max-w-md border border-gray-200 shadow-xl mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-5">
               <div className="w-12 h-12 rounded-full bg-green-50 border border-green-100 flex items-center justify-center mx-auto mb-4">
-                <i className="fa-solid fa-check text-green-600 text-lg" />
+                <i className="ph ph-check text-green-600 text-lg" />
               </div>
               <h3 className="font-bold text-base text-gray-900 text-center mb-1">Autorité créée</h3>
               <p className="text-[13px] text-gray-500 text-center mb-4">

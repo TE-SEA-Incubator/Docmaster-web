@@ -1,6 +1,7 @@
 import { UserRepository } from '../repositories/auth.repository.ts';
 import argon2 from 'argon2';
 import crypto from 'crypto';
+import pool from '../database/db.ts';
 import { User } from '../types/database.ts';
 import { generateToken } from '../config/jwt.ts';
 import { ReferralService } from './referral.service.ts';
@@ -137,6 +138,13 @@ export class UserService {
       throw new Error('Invalid email or password');
     }
 
+    if ((user as any).blocked_at) {
+      const blockedError: any = new Error('Votre compte est suspendu. Contactez le support.');
+      blockedError.status = 403;
+      blockedError.code = 'ACCOUNT_BLOCKED';
+      throw blockedError;
+    }
+
     const token = generateToken(user.id, user.email, user.role);
     const refreshToken = crypto.randomBytes(48).toString('hex');
     const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
@@ -161,6 +169,13 @@ export class UserService {
     const user = await this.userRepository.findByRefreshTokenHash(refreshHash);
     if (!user) {
       throw new Error('Session expirée, veuillez vous reconnecter');
+    }
+
+    if ((user as any).blocked_at) {
+      const blockedError: any = new Error('Votre compte est suspendu. Contactez le support.');
+      blockedError.status = 403;
+      blockedError.code = 'ACCOUNT_BLOCKED';
+      throw blockedError;
     }
 
     const newRefreshToken = crypto.randomBytes(48).toString('hex');
@@ -412,6 +427,54 @@ export class UserService {
         total_returned: totalReturned,
         total_referrals: totalReferrals
       }
+    };
+  }
+
+  /**
+   * Get complete earnings history with filters (gains, conversions, withdrawals)
+   */
+  async getEarningsHistory(userId: string, filters: any = {}) {
+    const limit = Math.min(100, Math.max(1, Number(filters.limit) || 50));
+    const offset = Math.max(0, Number(filters.offset) || 0);
+    const { startDate, endDate, type } = filters;
+
+    const query = `
+      SELECT 
+        id,
+        type,
+        amount,
+        currency,
+        description,
+        metadata,
+        created_at
+      FROM earnings_history
+      WHERE user_id = $1
+        AND ($2::timestamp IS NULL OR created_at >= $2)
+        AND ($3::timestamp IS NULL OR created_at <= $3)
+        AND ($4::varchar IS NULL OR type = $4)
+      ORDER BY created_at DESC
+      LIMIT $5 OFFSET $6
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM earnings_history
+      WHERE user_id = $1
+        AND ($2::timestamp IS NULL OR created_at >= $2)
+        AND ($3::timestamp IS NULL OR created_at <= $3)
+        AND ($4::varchar IS NULL OR type = $4)
+    `;
+
+    const [historyRes, countRes] = await Promise.all([
+      pool.query(query, [userId, startDate || null, endDate || null, type || null, limit, offset]),
+      pool.query(countQuery, [userId, startDate || null, endDate || null, type || null])
+    ]);
+
+    return {
+      history: historyRes.rows,
+      total: parseInt(countRes.rows[0].total, 10),
+      limit,
+      offset
     };
   }
 }

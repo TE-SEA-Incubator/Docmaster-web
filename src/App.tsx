@@ -22,6 +22,7 @@ const DocTypeDetail = lazy(() => import("./pages/public/DocTypeDetail"));
 const RechercherAuth = lazy(() => import("./pages/auth/Rechercher"));
 const Declarer = lazy(() => import("./pages/auth/Declarer"));
 const Recuperer = lazy(() => import("./pages/auth/Recuperer"));
+const Correspondances = lazy(() => import("./pages/auth/Correspondances"));
 const Rendre = lazy(() => import("./pages/auth/Rendre"));
 const Trouver = lazy(() => import("./pages/auth/Trouver"));
 const ValidationRemise = lazy(() => import("./pages/auth/ValidationRemise"));
@@ -33,6 +34,7 @@ const Dashboard = lazy(() => import("./pages/auth/Dashboard"));
 const MesDocuments = lazy(() => import("./pages/auth/MesDocuments"));
 const MesAppareils = lazy(() => import("./pages/auth/MesAppareils"));
 const MesDeclarations = lazy(() => import("./pages/auth/MesDeclarations"));
+const MesSignalements = lazy(() => import("./pages/auth/MesSignalements"));
 const Abonnement = lazy(() => import("./pages/auth/Abonnement"));
 const Parrainage = lazy(() => import("./pages/auth/Parrainage"));
 const MesGains = lazy(() => import("./pages/auth/MesGains"));
@@ -54,6 +56,7 @@ const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 const AdminDocumentTypes = lazy(() => import("./pages/admin/AdminDocumentTypes"));
 const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
 const AdminMatchingMonitor = lazy(() => import("./pages/admin/AdminMatchingMonitor"));
+const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
 import { useAutoriteShortcut } from "./hooks/useAutoriteShortcut";
 import { usePartenaireShortcut } from "./hooks/usePartenaireShortcut";
 
@@ -104,6 +107,7 @@ export default function App() {
           <Route path="/recherche-publique/type/:code" element={<LazyPage Component={DocTypeDetail} />} />
           <Route path="/declarer" element={<ProtectedRoute><LazyPage Component={Declarer} /></ProtectedRoute>} />
           <Route path="/recuperer" element={<ProtectedRoute><LazyPage Component={Recuperer} /></ProtectedRoute>} />
+          <Route path="/correspondances" element={<ProtectedRoute><LazyPage Component={Correspondances} /></ProtectedRoute>} />
           <Route path="/trouver" element={<LazyPage Component={Trouver} />} />
           <Route path="/rendre" element={<ProtectedRoute><LazyPage Component={Rendre} /></ProtectedRoute>} />
           <Route path="/remise" element={<LazyPage Component={ValidationRemise} />} />
@@ -116,6 +120,7 @@ export default function App() {
           <Route path="/mes-documents" element={<ProtectedRoute><LazyPage Component={MesDocuments} /></ProtectedRoute>} />
           <Route path="/mes-appareils" element={<ProtectedRoute><LazyPage Component={MesAppareils} /></ProtectedRoute>} />
           <Route path="/mes-declarations" element={<ProtectedRoute><LazyPage Component={MesDeclarations} /></ProtectedRoute>} />
+          <Route path="/mes-signalements" element={<ProtectedRoute><LazyPage Component={MesSignalements} /></ProtectedRoute>} />
 
           <Route path="/abonnement" element={<ProtectedRoute><LazyPage Component={Abonnement} /></ProtectedRoute>} />
           <Route path="/parrainage" element={<ProtectedRoute><LazyPage Component={Parrainage} /></ProtectedRoute>} />
@@ -141,6 +146,7 @@ export default function App() {
           <Route path="/admin/document-types" element={<LazyPage Component={AdminDocumentTypes} />} />
           <Route path="/admin/activity-log" element={<LazyPage Component={AdminActivityLog} />} />
           <Route path="/admin/matching" element={<LazyPage Component={AdminMatchingMonitor} />} />
+          <Route path="/admin/reports" element={<LazyPage Component={AdminReports} />} />
           <Route path="/admin/broadcast" element={<LazyPage Component={AdminBroadcast} />} />
         </Route>
 

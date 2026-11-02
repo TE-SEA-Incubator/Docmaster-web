@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import { useToast } from "../../context/ToastContext";
 import { subscriptionsService } from "../../services/subscriptionsService";
+import { testimonialsService, type PublicTestimonial } from "../../services/testimonialsService";
+import { levelFor } from "../../utils/testimonialLevels";
 import { useGlobalStats } from "../../hooks/useGlobalStats";
 import { useAuth } from "../../context/AuthContext";
 import { useGoogleOneTap } from "../../hooks/useGoogleOneTap";
@@ -20,17 +22,17 @@ function getFullImageUrl(url?: string): string {
 }
 
 const testimonials = [
-  { author: "Marie NGUYEN", roleKey: "testimonial_1_role", quoteKey: "testimonial_1_quote", icon: "fas fa-briefcase" },
-  { author: "Paul FOTSO", roleKey: "testimonial_2_role", quoteKey: "testimonial_2_quote", icon: "fas fa-chalkboard-teacher" },
-  { author: "Sandra EKOTTO", roleKey: "testimonial_3_role", quoteKey: "testimonial_3_quote", icon: "fa-solid fa-graduation-cap" },
+  { author: "Marie NGUYEN", roleKey: "testimonial_1_role", quoteKey: "testimonial_1_quote", icon: "fas ph ph-briefcase" },
+  { author: "Paul FOTSO", roleKey: "testimonial_2_role", quoteKey: "testimonial_2_quote", icon: "fas ph ph-chalkboard-teacher" },
+  { author: "Sandra EKOTTO", roleKey: "testimonial_3_role", quoteKey: "testimonial_3_quote", icon: "ph ph-graduation-cap" },
 ];
 
 const partners = [
-  { icon: "fas fa-university", label: "Préfecture" },
-  { icon: "fas fa-id-card", label: "CNI / Passeport" },
-  { icon: "fas fa-graduation-cap", label: "Université" },
-  { icon: "fa-solid fa-building", label: "Centre National" },
-  { icon: "fa-solid fa-car", label: "Transports" },
+  { icon: "fas ph ph-bank", label: "Préfecture" },
+  { icon: "fas ph ph-identification-card", label: "CNI / Passeport" },
+  { icon: "fas ph ph-graduation-cap", label: "Université" },
+  { icon: "ph ph-building", label: "Centre National" },
+  { icon: "ph ph-car", label: "Transports" },
 ];
 
 function useCounter(ref, target, suffix = "") {
@@ -71,17 +73,17 @@ const steps = [
 ];
 
 const features = [
-  { icon: "fa-solid fa-shield-halved", bg: "bg-green-light", color: "text-green-mid", titleKey: "home_feature_secure", descKey: "home_feature_secure_desc" },
-  { icon: "fa-solid fa-bolt", bg: "bg-primary/10", color: "text-primary", titleKey: "home_feature_fast", descKey: "home_feature_fast_desc" },
-  { icon: "fa-solid fa-users", bg: "bg-blue-50", color: "text-blue-500", titleKey: "home_feature_community", descKey: "home_feature_community_desc" },
-  { icon: "fa-solid fa-mobile-screen-button", bg: "bg-purple-50", color: "text-purple-500", titleKey: "home_feature_payment_title", descKey: "home_feature_payment_desc" },
+  { icon: "ph ph-shield", bg: "bg-green-light", color: "text-green-mid", titleKey: "home_feature_secure", descKey: "home_feature_secure_desc" },
+  { icon: "ph ph-lightning", bg: "bg-primary/10", color: "text-primary", titleKey: "home_feature_fast", descKey: "home_feature_fast_desc" },
+  { icon: "ph ph-users", bg: "bg-blue-50", color: "text-blue-500", titleKey: "home_feature_community", descKey: "home_feature_community_desc" },
+  { icon: "ph ph-device-mobile", bg: "bg-purple-50", color: "text-purple-500", titleKey: "home_feature_payment_title", descKey: "home_feature_payment_desc" },
 ];
 
 const tips = [
-  { icon: "fa-solid fa-shield-alt", titleKey: "home_tip_vigilance", descKey: "home_tip_vigilance_desc" },
-  { icon: "fa-solid fa-copy", titleKey: "home_tip_scan", descKey: "home_tip_scan_desc" },
-  { icon: "fa-solid fa-bell", titleKey: "home_tip_declare", descKey: "home_tip_declare_desc" },
-  { icon: "fa-solid fa-phone-alt", titleKey: "home_tip_contacts", descKey: "home_tip_contacts_desc" },
+  { icon: "ph ph-shield", titleKey: "home_tip_vigilance", descKey: "home_tip_vigilance_desc" },
+  { icon: "ph ph-copy", titleKey: "home_tip_scan", descKey: "home_tip_scan_desc" },
+  { icon: "ph ph-bell", titleKey: "home_tip_declare", descKey: "home_tip_declare_desc" },
+  { icon: "ph ph-phone", titleKey: "home_tip_contacts", descKey: "home_tip_contacts_desc" },
 ];
 
 const RADAR_NODE_POSITIONS = [
@@ -107,9 +109,9 @@ export default function Home() {
   }, []);
 
   const statCounters = [
-    { target: globalStats?.declared ?? 0, labelKey: "stat_declared", suffix: "", icon: "fa-solid fa-file-lines" },
-    { target: globalStats?.recovered ?? 0, labelKey: "stat_recovered_label", suffix: "", icon: "fa-solid fa-magnifying-glass" },
-    { target: globalStats?.rate ?? 0, labelKey: "stat_rate", suffix: "%", icon: "fa-solid fa-handshake" },
+    { target: globalStats?.declared ?? 0, labelKey: "stat_declared", suffix: "", icon: "ph ph-file-text" },
+    { target: globalStats?.recovered ?? 0, labelKey: "stat_recovered_label", suffix: "", icon: "ph ph-magnifying-glass" },
+    { target: globalStats?.rate ?? 0, labelKey: "stat_rate", suffix: "%", icon: "ph ph-handshake" },
   ];
 
   return (
@@ -278,23 +280,23 @@ function HeroSection({ t, stats }) {
                 to="/login"
                 className="inline-flex items-center gap-2.5 px-8 py-4 bg-primary text-white rounded-[18px] font-black text-[15px] shadow-xl shadow-primary/40 hover:bg-primary-dark transition-all hover:-translate-y-1 active:scale-95"
               >
-                <i className="fa-solid fa-file-circle-plus" /> {t("btn_declare_loss")}
+                <i className="ph ph-file-plus" /> {t("btn_declare_loss")}
               </Link>
               <Link
                 to="/rechercher"
                 className="inline-flex items-center gap-2.5 px-8 py-4 bg-white border border-borderMain text-textMain rounded-[18px] font-bold text-[15px] hover:bg-white/80 transition-all hover:-translate-y-1 active:scale-95 shadow-sm"
               >
-                <i className="fa-solid fa-magnifying-glass" /> {t("btn_search")}
+                <i className="ph ph-magnifying-glass" /> {t("btn_search")}
               </Link>
             </div>
 
             {!!stats && (
               <div className="flex flex-wrap items-center justify-center gap-6">
-                <MiniStat icon="fa-solid fa-file-lines" value={stats.declared.toLocaleString("fr-FR")} label={t("home_mini_declared")} />
+                <MiniStat icon="ph ph-file-text" value={stats.declared.toLocaleString("fr-FR")} label={t("home_mini_declared")} />
                 <div className="w-px h-8 bg-borderMain" />
-                <MiniStat icon="fa-solid fa-magnifying-glass" value={stats.recovered.toLocaleString("fr-FR")} label={t("home_mini_found")} />
+                <MiniStat icon="ph ph-magnifying-glass" value={stats.recovered.toLocaleString("fr-FR")} label={t("home_mini_found")} />
                 <div className="w-px h-8 bg-borderMain" />
-                <MiniStat icon="fa-solid fa-handshake" value={`${stats.rate}%`} label={t("stat_rate")} />
+                <MiniStat icon="ph ph-handshake" value={`${stats.rate}%`} label={t("stat_rate")} />
               </div>
             )}
           </div>
@@ -313,7 +315,7 @@ function HeroSection({ t, stats }) {
       {/* scroll cue */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-textMuted/40 animate-bounce">
         <span className="text-[10px] font-bold uppercase tracking-widest">{t("home_how_title")}</span>
-        <i className="fa-solid fa-chevron-down text-xs" />
+        <i className="ph ph-caret-down text-xs" />
       </div>
     </section>
   );
@@ -469,7 +471,7 @@ function RecentDocsSection({ t }: { t: (key: string, params?: any) => string }) 
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-10">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
-            <i className="fa-solid fa-clock-rotate-left text-[10px]" /> {t("home_recent_badge")}
+            <i className="ph ph-clock-counter-clockwise text-[10px]" /> {t("home_recent_badge")}
           </span>
           <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">
             {t("home_recent_title")}
@@ -526,7 +528,7 @@ function RecentDocsSection({ t }: { t: (key: string, params?: any) => string }) 
                       {/* Badge type de document (par dessus) */}
                       <div className="absolute top-3 left-3 z-10">
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase border border-borderMain text-textMain shadow-sm">
-                          <i className="fa-solid fa-shield-halved text-primary" />{" "}
+                          <i className="ph ph-shield text-primary" />{" "}
                           {docType}
                         </span>
                       </div>
@@ -555,13 +557,13 @@ function RecentDocsSection({ t }: { t: (key: string, params?: any) => string }) 
 
                       <div className="space-y-2 mb-4">
                         <p className="text-[12px] text-textMuted flex items-center gap-1.5">
-                          <i className="fa-solid fa-hashtag text-[10px] text-primary/50" />
+                          <i className="ph ph-hash text-[10px] text-primary/50" />
                           <span className="blur-sm select-none font-mono text-[11px] opacity-80 pointer-events-none">
                             {docNumber}
                           </span>
                         </p>
                         <div className="flex items-center gap-2 py-2 border-y border-borderMain/50">
-                          <i className="fa-solid fa-location-dot text-primary text-[11px]" />
+                          <i className="ph ph-map-pin text-primary text-[11px]" />
                           <span className="blur-sm select-none text-[12px] font-medium opacity-80 pointer-events-none truncate">
                             {locationText}, {countryText}
                           </span>
@@ -573,7 +575,7 @@ function RecentDocsSection({ t }: { t: (key: string, params?: any) => string }) 
                           to={user ? `/declarer?from=${encodeURIComponent(String(doc.id))}` : `/login?redirect=${encodeURIComponent(`/declarer?from=${doc.id}`)}`}
                           className="flex items-center justify-center gap-2 w-full py-2.5 bg-primary text-white rounded-[14px] font-bold text-[13px] hover:bg-primary-dark transition-all shadow-md shadow-primary/20 active:scale-95"
                         >
-                          <i className="fa-solid fa-file-circle-plus text-xs" /> {t("rechercher_its_mine")}
+                          <i className="ph ph-file-plus text-xs" /> {t("rechercher_its_mine")}
                         </Link>
                       </div>
                     </div>
@@ -586,9 +588,9 @@ function RecentDocsSection({ t }: { t: (key: string, params?: any) => string }) 
             {docs.length > 3 && (
               <div className="mt-4 text-center">
                 <p className="text-[12px] text-textMuted flex items-center justify-center gap-2">
-                  <i className="fa-solid fa-arrow-left text-[10px]" />
+                  <i className="ph ph-arrow-left text-[10px]" />
                   <span>Faites défiler pour voir plus</span>
-                  <i className="fa-solid fa-arrow-right text-[10px]" />
+                  <i className="ph ph-arrow-right text-[10px]" />
                 </p>
               </div>
             )}
@@ -636,7 +638,7 @@ function HowItWorksSection({ t }) {
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                  <i className="fa-solid fa-file-lines text-primary text-[9px]" />
+                  <i className="ph ph-file-text text-primary text-[9px]" />
                 </div>
                 <div className="h-2.5 bg-textMain/10 rounded-full w-20" />
               </div>
@@ -662,12 +664,12 @@ function HowItWorksSection({ t }) {
           <div className="relative flex flex-col items-center gap-3 w-full max-w-[200px]">
             {/* Big match badge */}
             <div className="w-24 h-24 rounded-3xl bg-green-light flex items-center justify-center shadow-md border border-borderMain">
-              <i className="fa-solid fa-check-circle text-green-mid text-4xl" />
+              <i className="ph ph-check-circle text-green-mid text-4xl" />
             </div>
             {/* Notification card */}
             <div className="w-full bg-white border border-borderMain rounded-2xl p-3 shadow-sm flex items-start gap-2.5">
               <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <i className="fa-solid fa-bell text-primary text-[11px]" />
+                <i className="ph ph-bell text-primary text-[11px]" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="h-2 bg-textMain/15 rounded-full w-3/4 mb-1.5" />
@@ -677,7 +679,7 @@ function HowItWorksSection({ t }) {
             </div>
             {/* Email badge */}
             <div className="flex items-center gap-2 bg-white border border-borderMain rounded-full px-3 py-1.5 shadow-sm">
-              <i className="fa-solid fa-envelope text-primary text-[10px]" />
+              <i className="ph ph-envelope text-primary text-[10px]" />
               <div className="h-1.5 bg-borderMain rounded-full w-16" />
             </div>
           </div>
@@ -695,12 +697,12 @@ function HowItWorksSection({ t }) {
             {/* ID card mock */}
             <div className="w-full rounded-2xl bg-white border border-borderMain shadow-md overflow-hidden">
               <div className="bg-primary/10 px-3 py-2 flex items-center gap-2">
-                <i className="fa-solid fa-id-card text-primary text-[11px]" />
+                <i className="ph ph-identification-card text-primary text-[11px]" />
                 <div className="h-1.5 bg-primary/30 rounded-full w-20" />
               </div>
               <div className="p-3 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-textMuted/10 flex items-center justify-center flex-shrink-0">
-                  <i className="fa-solid fa-user text-textMuted text-sm" />
+                  <i className="ph ph-user text-textMuted text-sm" />
                 </div>
                 <div className="flex-1 space-y-1.5">
                   <div className="h-2 bg-textMain/15 rounded-full w-3/4" />
@@ -711,7 +713,7 @@ function HowItWorksSection({ t }) {
             </div>
             {/* Verified badge */}
             <div className="flex items-center gap-2 bg-green-light border border-borderMain rounded-xl px-3 py-2">
-              <i className="fa-solid fa-circle-check text-green-mid text-sm" />
+              <i className="ph ph-check-circle text-green-mid text-sm" />
               <div className="h-1.5 bg-green-mid/30 rounded-full flex-1" />
               <div className="text-[9px] font-black text-green-mid whitespace-nowrap">98%</div>
             </div>
@@ -787,7 +789,7 @@ function WhyDocmasterSection({ t }) {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
-            <i className="fa-solid fa-star text-[10px]" /> {t("home_why_badge")}
+            <i className="ph ph-star text-[10px]" /> {t("home_why_badge")}
           </span>
           <h2 className="font-bricolage text-2xl md:text-3xl font-extrabold text-textMain tracking-normal mb-4">{t("home_why_title")}</h2>
           <p className="text-textMuted text-[14px] leading-relaxed max-w-lg mx-auto tracking-wide">{t("home_why_desc")}</p>
@@ -813,7 +815,7 @@ function WhyDocmasterSection({ t }) {
               <div className="flex flex-wrap gap-3">
                 {["Paiement sécurisé", "Code de retrait unique", "Agences partenaires"].map((label, j) => (
                   <div key={j} className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10">
-                    <i className="fa-solid fa-check-circle text-primary text-sm" />
+                    <i className="ph ph-check-circle text-primary text-sm" />
                     <span className="text-white text-[12px] font-bold">{label}</span>
                   </div>
                 ))}
@@ -825,7 +827,7 @@ function WhyDocmasterSection({ t }) {
             <div className="absolute -left-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-xl" />
             <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
               <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-green-dark text-2xl flex-shrink-0">
-                <i className="fa-solid fa-coins" />
+                <i className="ph ph-coins" />
               </div>
               <div>
                 <h3 className="font-bricolage text-[18px] font-bold text-green-dark mb-2 sm:mb-1">{t("home_feature_rewards")}</h3>
@@ -903,7 +905,7 @@ function VaultDeviceSection({ t }) {
                 className="inline-flex items-center gap-2 text-sm font-semibold text-textMain hover:text-green-dark transition-colors"
               >
                 En savoir plus
-                <i className="fa-solid fa-arrow-right text-xs" />
+                <i className="ph ph-arrow-right text-xs" />
               </a>
             </div>
             
@@ -951,7 +953,7 @@ function VaultDeviceSection({ t }) {
                 className="inline-flex items-center gap-2 text-sm font-semibold text-textMain hover:text-primary transition-colors"
               >
                 En savoir plus
-                <i className="fa-solid fa-arrow-right text-xs" />
+                <i className="ph ph-arrow-right text-xs" />
               </a>
             </div>
             
@@ -1114,7 +1116,7 @@ function StatsSection({ t, statCounters }) {
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
-            <i className="fa-solid fa-chart-pie text-[10px]" /> {t("stat_impact_badge")}
+            <i className="ph ph-chart-pie text-[10px]" /> {t("stat_impact_badge")}
           </span>
           <h2 className="font-bricolage text-2xl md:text-3xl font-black text-[#1A1A1A] tracking-normal mb-4">{t("stats_title")}</h2>
           <p className="text-gray-500 text-[14px] leading-relaxed tracking-wide">{t("stats_subtitle")}</p>
@@ -1181,9 +1183,9 @@ function StatsSection({ t, statCounters }) {
 
 function WalletRewardsSection({ t }) {
   const steps = [
-    { icon: "fa-solid fa-file-circle-plus", titleKey: "home_wallet_step1_title", descKey: "home_wallet_step1_desc" },
-    { icon: "fa-solid fa-handshake", titleKey: "home_wallet_step2_title", descKey: "home_wallet_step2_desc" },
-    { icon: "fa-solid fa-wallet", titleKey: "home_wallet_step3_title", descKey: "home_wallet_step3_desc" },
+    { icon: "ph ph-file-plus", titleKey: "home_wallet_step1_title", descKey: "home_wallet_step1_desc" },
+    { icon: "ph ph-handshake", titleKey: "home_wallet_step2_title", descKey: "home_wallet_step2_desc" },
+    { icon: "ph ph-wallet", titleKey: "home_wallet_step3_title", descKey: "home_wallet_step3_desc" },
   ];
 
   return (
@@ -1193,7 +1195,7 @@ function WalletRewardsSection({ t }) {
       <div className="relative z-10 max-w-5xl mx-auto">
         <div className="text-center mb-8">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
-            <i className="fa-solid fa-sack-dollar text-[10px]" /> {t("home_wallet_badge")}
+            <i className="ph ph-piggy-bank text-[10px]" /> {t("home_wallet_badge")}
           </span>
           <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">{t("home_wallet_title")}</h2>
           <p className="text-textMuted text-[14px] leading-relaxed max-w-xl mx-auto tracking-wide">{t("home_wallet_desc")}</p>
@@ -1218,7 +1220,7 @@ function WalletRewardsSection({ t }) {
             <Link to="/login"
               className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-green-dark text-white rounded-[18px] font-black text-[14px] hover:bg-green-mid transition-all flex-shrink-0"
             >
-              {t("home_wallet_btn")} <i className="fa-solid fa-arrow-right text-[11px]" />
+              {t("home_wallet_btn")} <i className="ph ph-arrow-right text-[11px]" />
             </Link>
           </div>
         </div>
@@ -1234,15 +1236,15 @@ function ReferralSection({ t }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
             <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-6 border border-primary/20">
-              <i className="fa-solid fa-gift text-[10px]" /> {t("home_referral_badge")}
+              <i className="ph ph-gift text-[10px]" /> {t("home_referral_badge")}
             </span>
             <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-6" dangerouslySetInnerHTML={{ __html: t("home_referral_title") }} />
             <p className="text-textMuted text-[14px] mb-8 leading-loose tracking-wide">{t("home_referral_desc")}</p>
             <ul className="space-y-4 mb-10">
               {[
-                { icon: "fa-solid fa-gift", text: t("home_referral_feature1") },
-                { icon: "fa-solid fa-coins", text: t("home_referral_feature2") },
-                { icon: "fa-solid fa-crown", text: t("home_referral_feature3") },
+                { icon: "ph ph-gift", text: t("home_referral_feature1") },
+                { icon: "ph ph-coins", text: t("home_referral_feature2") },
+                { icon: "ph ph-crown", text: t("home_referral_feature3") },
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-4">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -1255,7 +1257,7 @@ function ReferralSection({ t }) {
             <Link to="/login"
               className="inline-flex items-center gap-2.5 px-8 py-4 bg-green-dark text-white rounded-[18px] font-black text-[15px] hover:bg-green-mid transition-all shadow-lg shadow-green-dark/20"
             >
-              {t("home_referral_btn")} <i className="fa-solid fa-arrow-right text-[11px]" />
+              {t("home_referral_btn")} <i className="ph ph-arrow-right text-[11px]" />
             </Link>
           </div>
 
@@ -1290,7 +1292,7 @@ function SubscriptionsTeaser({ t, plans }: { t: any; plans: Plan[] }) {
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <span className="inline-flex items-center gap-2 px-5 py-2 bg-white/10 text-primary rounded-full text-[12px] font-black uppercase tracking-widest mb-6 border border-white/10 backdrop-blur-sm">
-            <i className="fa-solid fa-crown text-[10px]" /> {t("home_subscriptions_badge")}
+            <i className="ph ph-crown text-[10px]" /> {t("home_subscriptions_badge")}
           </span>
           <h2 className="font-bricolage text-3xl md:text-5xl font-black text-white tracking-tight mb-6">{t("home_subscriptions_title")}</h2>
           <p className="text-white/50 text-[15px] md:text-[17px] leading-relaxed max-w-2xl mx-auto tracking-wide">{t("home_subscriptions_desc")}</p>
@@ -1299,7 +1301,7 @@ function SubscriptionsTeaser({ t, plans }: { t: any; plans: Plan[] }) {
         <div id="pricing-container" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
           {plans.length === 0 && (
             <div className="col-span-full text-center text-white/40 text-[13px] py-10">
-              <i className="fa-solid fa-circle-notch fa-spin mr-2" /> {t("home_subscriptions_loading")}
+              <i className="ph ph-circle-notch animate-spin mr-2" /> {t("home_subscriptions_loading")}
             </div>
           )}
           {plans.slice(0, 4).map((plan, idx) => {
@@ -1311,7 +1313,7 @@ function SubscriptionsTeaser({ t, plans }: { t: any; plans: Plan[] }) {
             return (
               <div key={plan.id} className={`group rounded-[32px] p-8 flex flex-col transition-all duration-500 hover:-translate-y-3 ${isFeatured ? "bg-white/10 border-2 border-primary/30 shadow-2xl shadow-primary/10 scale-105 z-10" : "bg-white/5 border border-white/10 hover:bg-white/10"}`}>
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:rotate-12 ${isFeatured ? "bg-primary text-green-dark shadow-lg shadow-primary/20" : "bg-white/10 text-primary"}`}>
-                  <i className={`fa-solid ${isFeatured ? 'fa-rocket' : 'fa-crown'} text-xl`} />
+                  <i className={`${isFeatured ? 'ph ph-rocket' : 'ph ph-crown'} text-xl`} />
                 </div>
                 <div className={`font-bricolage text-xl font-black ${isFeatured ? "text-white" : "text-white/90"}`}>{plan.name}</div>
                 <div className="font-bricolage text-3xl md:text-4xl font-black text-white mt-4 mb-6 tracking-tight">
@@ -1324,7 +1326,7 @@ function SubscriptionsTeaser({ t, plans }: { t: any; plans: Plan[] }) {
                   {features.slice(0, 5).map((f: any, fi: number) => (
                     <div key={fi} className="flex items-center gap-3 text-[13px]">
                       <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${isFeatured ? "bg-primary text-green-dark" : "bg-white/10 text-primary"}`}>
-                        <i className="fa-solid fa-check text-[10px]" />
+                        <i className="ph ph-check text-[10px]" />
                       </div>
                       <span className="text-white/70 font-medium capitalize">{String(f).replace(/_/g, ' ')}</span>
                     </div>
@@ -1350,7 +1352,7 @@ function SubscriptionsTeaser({ t, plans }: { t: any; plans: Plan[] }) {
           <Link to="/abonnement"
             className="inline-flex items-center gap-3 px-10 py-5 bg-white/5 border border-white/10 text-white rounded-3xl font-black text-[15px] hover:bg-white/10 transition-all hover:scale-105"
           >
-            DÉCOUVRIR TOUS LES PLANS <i className="fa-solid fa-arrow-right text-[11px]" />
+            DÉCOUVRIR TOUS LES PLANS <i className="ph ph-arrow-right text-[11px]" />
           </Link>
         </div>
       </div>
@@ -1359,85 +1361,131 @@ function SubscriptionsTeaser({ t, plans }: { t: any; plans: Plan[] }) {
 }
 
 function TestimonialsSection({ t, lang }) {
-  const railRef = useRef(null);
-  const barRef = useRef(null);
-  const dotsRef = useRef(null);
-  const indexRef = useRef(0);
-  const timerRef = useRef(null);
   const scrollDuration = 5000;
+  const barRef = useRef(null);
+  const [real, setReal] = useState<PublicTestimonial[]>([]);
+  const [index, setIndex] = useState(0);
 
-  const renderRail = useCallback(() => {
-    if (!railRef.current) return;
-    railRef.current.innerHTML = testimonials.map((item, idx) => {
-      const quote = t(item.quoteKey);
-      const role = t(item.roleKey);
-      return `
-        <div class="w-full flex-shrink-0">
-          <div class="p-8 md:p-14 relative min-h-[320px] flex flex-col justify-center">
-            <div class="absolute top-6 right-10 text-6xl text-primary/10 select-none"><i class="fa-solid fa-quote-right"></i></div>
-            <p class="text-lg text-textMain leading-relaxed mb-10 max-w-2xl font-medium italic">"${quote}"</p>
-            <div class="flex items-center gap-4">
-              <div class="w-14 h-14 bg-green-dark rounded-full flex items-center justify-center text-white text-xl shadow-lg"><i class="fa-solid fa-user"></i></div>
-              <div>
-                <h4 class="font-bricolage font-black text-textMain uppercase tracking-tight">${item.author}</h4>
-                <div class="flex items-center text-sm text-primary font-medium mt-0.5"><i class="${item.icon} mr-1.5 text-xs"></i>${role}</div>
-              </div>
-            </div>
-          </div>
-        </div>`;
-    }).join("");
-    updateDots();
-  }, [t]);
-
-  const updateDots = useCallback(() => {
-    if (!dotsRef.current) return;
-    dotsRef.current.innerHTML = testimonials
-      .map((_, i) => `<div class="h-2 rounded-full transition-all duration-500 ${i === indexRef.current ? "bg-primary w-8" : "bg-borda w-2"}"></div>`)
-      .join("");
+  useEffect(() => {
+    let alive = true;
+    testimonialsService
+      .listPublic(12)
+      .then((res) => {
+        if (alive && res.success && Array.isArray(res.data)) setReal(res.data);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const goTo = useCallback((index) => {
-    indexRef.current = index;
-    if (railRef.current) {
-      railRef.current.style.transform = `translateX(-${index * 100}%)`;
+  const items = useMemo(() => {
+    if (real.length > 0) {
+      return real.map((item) => ({
+        key: item.id,
+        author: item.author_label,
+        quote: item.comment,
+        role: t(
+          item.context === "RECOVERY"
+            ? "testimonial_context_recovery"
+            : "testimonial_context_match",
+        ),
+        icon: "ph ph-check-circle",
+        level: levelFor(item.rating),
+      }));
     }
-    updateDots();
-    resetBar();
-  }, [updateDots]);
+    return testimonials.map((item) => ({
+      key: item.author,
+      author: item.author,
+      quote: t(item.quoteKey),
+      role: t(item.roleKey),
+      icon: item.icon,
+      level: null,
+    }));
+  }, [real, t]);
 
-  const resetBar = useCallback(() => {
+  const total = items.length;
+  const safeIndex = total ? index % total : 0;
+
+  const goTo = useCallback(
+    (value: number) => setIndex(total ? ((value % total) + total) % total : 0),
+    [total],
+  );
+
+  useEffect(() => {
+    setIndex(0);
+  }, [real.length]);
+
+  useEffect(() => {
     if (!barRef.current) return;
     barRef.current.style.transition = "none";
     barRef.current.style.width = "0%";
     void barRef.current.offsetWidth;
     barRef.current.style.transition = `width ${scrollDuration}ms linear`;
     barRef.current.style.width = "100%";
-  }, []);
-
-  const next = useCallback(() => {
-    goTo((indexRef.current + 1) % testimonials.length);
-  }, [goTo]);
+  }, [safeIndex, real.length]);
 
   useEffect(() => {
-    renderRail();
-    resetBar();
-    timerRef.current = setInterval(next, scrollDuration);
-    return () => clearInterval(timerRef.current);
-  }, [renderRail, resetBar, next]);
+    if (total < 2) return;
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % total), scrollDuration);
+    return () => clearInterval(timer);
+  }, [total, safeIndex]);
 
   return (
     <section className="py-20 px-5 overflow-hidden" style={{ backgroundColor: "#F7F7F7" }}>
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
-            <i className="fa-solid fa-quote-left text-[10px]" /> {t("testimonials_badge")}
+            <i className="ph ph-quotes text-[10px]" /> {t("testimonials_badge")}
           </span>
           <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">{t("testimonials_title")}</h2>
           <p className="text-textMuted text-[14px] tracking-wide leading-relaxed">{t("testimonials_subtitle")}</p>
         </div>
 
         <div className="relative rounded-[32px] overflow-hidden shadow-xl border border-borda">
-          <div id="testimonial-rail" ref={railRef} className="flex bg-white" style={{ transition: "transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
+          <div
+            id="testimonial-rail"
+            className="flex bg-white"
+            style={{
+              transform: `translateX(-${safeIndex * 100}%)`,
+              transition: "transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            }}
+          >
+            {items.map((item) => (
+              <div key={item.key} className="w-full flex-shrink-0">
+                <div className="p-8 md:p-14 relative min-h-[320px] flex flex-col justify-center">
+                  <div className="absolute top-6 right-10 text-6xl text-primary/10 select-none">
+                    <i className="ph ph-quotes" />
+                  </div>
+                  <p className="text-lg text-textMain leading-relaxed mb-10 max-w-2xl font-medium italic">
+                    “{item.quote}”
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-green-dark rounded-full flex items-center justify-center text-white text-xl shadow-lg">
+                      <i className="ph ph-user" />
+                    </div>
+                    <div>
+                      <h4 className="font-bricolage font-black text-textMain uppercase tracking-tight">
+                        {item.author}
+                      </h4>
+                      <div className="flex items-center text-sm text-primary font-medium mt-0.5">
+                        <i className={`${item.icon} mr-1.5 text-xs`} />
+                        {item.role}
+                      </div>
+                      {item.level && (
+                        <div className="flex items-center gap-1.5 text-[13px] text-textMuted mt-1">
+                          <span className="text-base leading-none" aria-hidden="true">
+                            {item.level.emoji}
+                          </span>
+                          {t(item.level.labelKey)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
           <div className="absolute bottom-0 left-0 h-1 bg-borda w-full">
             <div ref={barRef} className="h-full bg-primary w-0" />
           </div>
@@ -1445,17 +1493,31 @@ function TestimonialsSection({ t, lang }) {
 
         <div className="flex items-center justify-center gap-5 mt-8">
           <button
-            onClick={() => goTo((indexRef.current - 1 + testimonials.length) % testimonials.length)}
+            onClick={() => goTo(safeIndex - 1)}
+            aria-label={t("testimonials_prev")}
             className="w-11 h-11 rounded-full border border-borda bg-white flex items-center justify-center hover:bg-primary hover:border-primary hover:text-white text-textMuted transition-all"
           >
-            <i className="fa-solid fa-chevron-left text-sm" />
+            <i className="ph ph-caret-left text-sm" />
           </button>
-          <div ref={dotsRef} id="dots-container" className="flex items-center gap-2.5" />
+          <div id="dots-container" className="flex items-center gap-2.5">
+            {items.map((item, dotIndex) => (
+              <button
+                key={item.key}
+                onClick={() => goTo(dotIndex)}
+                aria-label={`${dotIndex + 1}`}
+                aria-current={dotIndex === safeIndex}
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  dotIndex === safeIndex ? "bg-primary w-8" : "bg-borda w-2"
+                }`}
+              />
+            ))}
+          </div>
           <button
-            onClick={next}
+            onClick={() => goTo(safeIndex + 1)}
+            aria-label={t("testimonials_next")}
             className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-all shadow-lg shadow-primary/30"
           >
-            <i className="fa-solid fa-chevron-right text-sm" />
+            <i className="ph ph-caret-right text-sm" />
           </button>
         </div>
       </div>
@@ -1471,7 +1533,7 @@ function TipsSection({ t }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
           <div className="lg:col-span-1">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 text-green-dark rounded-full text-[11px] font-black uppercase tracking-widest mb-6 border border-white/20">
-              <i className="fa-solid fa-lightbulb text-[10px]" /> {t("home_tips_badge")}
+              <i className="ph ph-lightbulb text-[10px]" /> {t("home_tips_badge")}
             </span>
             <h2 className="font-bricolage text-2xl md:text-3xl font-black text-green-dark tracking-normal mb-6" dangerouslySetInnerHTML={{ __html: t("home_tips_title") }} />
             <p className="text-green-dark/70 text-[14px] leading-loose tracking-wide">{t("home_tips_desc")}</p>
@@ -1521,7 +1583,7 @@ function AppDownloadSection({ t }) {
         {/* Badge supérieur */}
         <div className="text-center mb-8">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest border border-primary/20">
-            <i className="fa-solid fa-mobile-screen text-[10px]" /> {t("home_app_badge")}
+            <i className="ph ph-device-mobile text-[10px]" /> {t("home_app_badge")}
           </span>
         </div>
 
@@ -1532,12 +1594,13 @@ function AppDownloadSection({ t }) {
             {/* Partie gauche : Texte et boutons */}
             <div className="px-4 md:px-8 flex flex-col justify-center">
               {/* Logo DocMaster */}
-              <div className="mb-6">
+              <div className="mb-6 flex items-center gap-0">
                 <img 
                   src="/src/assets/images/docmaster.png" 
                   alt="DocMaster" 
                   className="h-10 w-auto object-contain"
                 />
+                <span className="font-poppins font-bold text-green-dark text-[21px] leading-none tracking-tight">ocmaster</span>
               </div>
 
               <h2 className="font-bricolage text-[2.2rem] md:text-[2.8rem] lg:text-[3.5rem] font-extrabold text-textMain leading-[1.1] mb-6">
@@ -1568,14 +1631,14 @@ function AppDownloadSection({ t }) {
                   to="/dashboard"
                   className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-[16px] font-bold text-[14px] text-textMain border-2 border-borderMain hover:bg-surface2 transition-all active:scale-95"
                 >
-                  <i className="fa-solid fa-arrow-right text-sm" />
+                  <i className="ph ph-arrow-right text-sm" />
                   Accéder à l'app web
                 </Link>
               </div>
 
               {/* Badge "Disponible sur" */}
               <div className="inline-flex items-center gap-2 text-textMuted text-[13px]">
-                <i className="fa-solid fa-circle-check text-green-mid text-sm" />
+                <i className="ph ph-check-circle text-green-mid text-sm" />
                 <span className="font-medium">{t("home_app_available")} Android</span>
               </div>
             </div>
@@ -1666,11 +1729,11 @@ function StickyAppBar({ t }) {
           className="absolute -top-3 -right-3 sm:top-1/2 sm:-right-4 sm:-translate-y-1/2 w-7 h-7 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
           aria-label="Close"
         >
-          <i className="fa-solid fa-xmark text-white/70 text-sm" />
+          <i className="ph ph-x text-white/70 text-sm" />
         </button>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
-            <i className="fa-solid fa-mobile-screen text-[#2D5A42] text-lg" />
+            <i className="ph ph-device-mobile text-[#2D5A42] text-lg" />
           </div>
           <p className="text-[13px] md:text-[15px] font-semibold text-white/90">
             {t("home_sticky_download")}
@@ -1685,7 +1748,7 @@ function StickyAppBar({ t }) {
           <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-2 bg-white/10 text-white px-5 py-2.5 rounded-[14px] font-black text-[12px] md:text-[13px] hover:bg-white/20 transition-all whitespace-nowrap active:scale-95"
           >
-            <i className="fa-brands fa-apple text-base" /> {t("home_app_appstore")}
+            <i className="ph ph-apple-logo text-base" /> {t("home_app_appstore")}
           </a>
         </div>
       </div>
@@ -1698,22 +1761,22 @@ function StickyAppBar({ t }) {
 function MatchingSection({ t }) {
   const steps = [
     {
-      icon: "fa-solid fa-file-circle-exclamation",
+      icon: "ph ph-seal-warning",
       titleKey: "home_matching_step1_title",
       descKey: "home_matching_step1_desc",
     },
     {
-      icon: "fa-solid fa-robot",
+      icon: "ph ph-robot",
       titleKey: "home_matching_step2_title",
       descKey: "home_matching_step2_desc",
     },
     {
-      icon: "fa-solid fa-bell",
+      icon: "ph ph-bell",
       titleKey: "home_matching_step3_title",
       descKey: "home_matching_step3_desc",
     },
     {
-      icon: "fa-solid fa-handshake",
+      icon: "ph ph-handshake",
       titleKey: "home_matching_step4_title",
       descKey: "home_matching_step4_desc",
     },
@@ -1725,7 +1788,7 @@ function MatchingSection({ t }) {
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="text-center mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest mb-5 border border-primary/20">
-            <i className="fa-solid fa-brain text-[10px]" /> {t("home_matching_badge")}
+            <i className="ph ph-brain text-[10px]" /> {t("home_matching_badge")}
           </span>
           <h2 className="font-bricolage text-2xl md:text-3xl font-black text-textMain tracking-normal mb-4">{t("home_matching_title")}</h2>
           <p className="text-textMuted text-[14px] leading-relaxed max-w-2xl mx-auto tracking-wide">{t("home_matching_desc")}</p>
@@ -1754,7 +1817,7 @@ function MatchingSection({ t }) {
         <div className="mt-12 bg-primary/5 border border-primary/10 rounded-[24px] p-6 md:p-8 max-w-3xl mx-auto">
           <div className="flex flex-col md:flex-row items-center gap-6 mb-7">
             <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl flex-shrink-0 shadow-lg shadow-primary/30">
-              <i className="fa-solid fa-percent" />
+              <i className="ph ph-percent" />
             </div>
             <div className="flex-1 text-center md:text-left">
               <h4 className="font-bricolage text-[17px] font-bold text-textMain mb-1">{t("home_matching_score_title")}</h4>
@@ -1863,7 +1926,7 @@ function DeviceProtectionSection({ t }) {
               <ul className="space-y-4 mb-10">
                 <li className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
-                    <i className="fa-solid fa-qrcode" />
+                    <i className="ph ph-qr-code" />
                   </div>
                   <div>
                     <h4 className="font-bold text-[#1A1A1A]">{t("home_device_feature1_title")}</h4>
@@ -1872,7 +1935,7 @@ function DeviceProtectionSection({ t }) {
                 </li>
                 <li className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-red-100 text-red-500 flex items-center justify-center flex-shrink-0 mt-1">
-                    <i className="fa-solid fa-triangle-exclamation" />
+                    <i className="ph ph-warning" />
                   </div>
                   <div>
                     <h4 className="font-bold text-[#1A1A1A]">{t("home_device_feature2_title")}</h4>
@@ -1881,7 +1944,7 @@ function DeviceProtectionSection({ t }) {
                 </li>
                 <li className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-green-100 text-green-700 flex items-center justify-center flex-shrink-0 mt-1">
-                    <i className="fa-solid fa-bell" />
+                    <i className="ph ph-bell" />
                   </div>
                   <div>
                     <h4 className="font-bold text-[#1A1A1A]">{t("home_device_feature3_title")}</h4>
@@ -1893,7 +1956,7 @@ function DeviceProtectionSection({ t }) {
               <Link to="/login"
                 className="inline-flex items-center gap-3 px-8 py-4 bg-green-dark text-white rounded-2xl font-bold hover:bg-green-mid transition-all shadow-lg hover:-translate-y-1"
               >
-                <i className="fa-solid fa-shield-halved" /> {t("home_device_btn")}
+                <i className="ph ph-shield" /> {t("home_device_btn")}
               </Link>
             </div>
 
@@ -1904,11 +1967,11 @@ function DeviceProtectionSection({ t }) {
               <div className="relative z-10 w-full max-w-md lg:max-w-lg" style={{ filter: "drop-shadow(0 30px 40px rgba(0,0,0,0.15))" }}>
                 <DeviceProtectionIllustration />
                 <div className="absolute top-4 -left-4 md:-left-8 bg-white border border-borda rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3 z-20">
-                  <div className="w-8 h-8 rounded-full bg-green-light flex items-center justify-center"><i className="fa-solid fa-check text-green-dark text-[10px]" /></div>
+                  <div className="w-8 h-8 rounded-full bg-green-light flex items-center justify-center"><i className="ph ph-check text-green-dark text-[10px]" /></div>
                   <div><p className="text-[10px] font-black text-textMain">{t("home_device_tag_serial")}</p><p className="text-[9px] text-textMuted">{t("home_device_tag_saved")}</p></div>
                 </div>
                 <div className="absolute bottom-10 -right-4 md:-right-8 bg-white border border-borda rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3 z-20">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><i className="fa-solid fa-shield text-primary text-[10px]" /></div>
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><i className="ph ph-shield text-primary text-[10px]" /></div>
                   <div><p className="text-[10px] font-black text-textMain">{t("home_device_tag_protected")}</p><p className="text-[9px] text-textMuted">{t("home_device_tag_secure")}</p></div>
                 </div>
               </div>

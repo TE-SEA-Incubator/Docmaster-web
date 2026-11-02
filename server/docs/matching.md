@@ -1,78 +1,75 @@
-# Implementation Plan - DocMaster Matching Algorithm
+# Matching multi-candidats
 
-This plan outlines the implementation of an intelligent matching system to automatically connect users who have lost objects (documents, devices) with those who have found them.
+Le matching relie les déclarations `LOST` et `FOUND` selon cette règle :
 
-## User Review Required
+- un `FOUND` peut correspondre à **plusieurs** déclarations `LOST` ;
+- une déclaration `LOST` ne peut avoir qu'**un seul** `FOUND` actif.
 
-> [!IMPORTANT]
-> The matching algorithm currently uses an exact match on the "fingerprint" (type + number). We propose to move to a hybrid system including fuzzy matching for cases where the number is slightly different or missing.
+Si un meilleur `FOUND` apparaît pour un `LOST`, l'ancien match est rejeté
+(`closed_reason = 'SUPERSEDED'`) et remplacé. Un match déjà confirmé par le
+propriétaire n'est jamais remplacé. Le premier paiement confirmé réserve le
+`FOUND`, crée le claim gagnant et clôt les autres candidats.
 
-> [!WARNING]
-> Should the matching be cross-table? (e.g., matching a registered device in `my_devices` with a public declaration in `declarations`?) We recommend YES for maximum efficiency.
+## Cycle de vie
 
-## Proposed Strategy
+1. Une déclaration `LOST` (`SEARCHING`) ou `FOUND` (`AVAILABLE`) est créée.
+2. Le matching calcule un score pour chaque paire active.
+3. Le score détermine le statut de la correspondance :
+   - `>= 80` : `CONFIRMED`
+   - `50 – 79` : `PENDING`
+   - `< 50` : ignorée
+4. Le propriétaire doit confirmer explicitement un candidat
+   (`POST /declarations/:id/confirm-match`) avant tout paiement.
+5. Le paiement réserve le `FOUND` puis active la récupération. Les autres
+   matches sont fermés avec `closed_reason = 'ALREADY_CLAIMED'`.
 
-The system will use a **Hybrid Approach** to ensure both speed and reliability:
+Un match `CONFIRMED` n'est jamais rétrogradé par le cron. Les scores des
+matches `PENDING` sont rafraîchis et peuvent être promus à `CONFIRMED`.
 
-### 1. Instant Matching (The "Alarm")
-- Triggered immediately when a new declaration is created.
-- Focused on **High Confidence Matches** (Fingerprint, Exact Number).
-- Provides immediate feedback and notifications to users.
+## Scoring
 
-### 2. Background "Patrol" Job (The "Cron Job")
-- A background task running every 30 minutes (MatchingWorker).
-- **Purpose**: "Rescue" matches that were missed during real-time processing due to transient errors or complex similarity checks.
-- **Deep Scanning**: Performs more intensive fuzzy matching across all active declarations.
-- **Reliability**: Ensures that even if the server was busy or down during an instant match, the connection will eventually be made.
+| Facteur | Barème |
+| :--- | :--- |
+| Empreinte identique | 100 (retour immédiat) |
+| Numéro de document | 50 |
+| Nom du propriétaire | 40 / 20 selon similarité |
+| Ville | 20 |
+| Quartier | 10 |
+| Date | 15 / 10 / 5 selon proximité |
+| État physique | 5 |
+| Type de document | 10 |
 
-### 3. Duplicate Prevention
-- Uses the `fingerprint` to prevent multiple identical declarations of the same type.
+Le score total est plafonné à 100.
 
-### 4. Scoring Algorithm
-Matching will be performed by calculating a similarity score between a **LOST** declaration and a **FOUND** declaration:
+## Statuts
 
-| Factor | Criteria | Points |
-| :--- | :--- | :--- |
-| **Document Number** | Exact match (Fingerprint match) | 100 |
-| **Document Number** | Partial match (last 6 digits) | 50 |
-| **Owner Name** | Similarity > 0.8 (Levenshtein) | 40 |
-| **Location** | Same city | 20 |
-| **Object Type** | Same category | 10 |
+- `PENDING` : candidat potentiel, visible par le propriétaire.
+- `CONFIRMED` : score de correspondance élevé (`>= 80`). Le propriétaire doit
+  encore confirmer explicitement (`owner_confirmed_at`) avant le paiement.
+- `REJECTED` : candidat fermé (`closed_reason`) après un gagnant, un rejet ou
+  le remplacement par un meilleur `FOUND`.
+- `MATCHED` (déclaration) : au moins un candidat actif ou récupération payée.
+- `RESERVED`, `CLAIMED`, `RETURNED`, `CANCELLED` : états de récupération du
+  document trouvé.
 
-**Match Thresholds:**
-- **Score >= 80**: Match Confirmed (Auto-notify).
-- **50 <= Score < 80**: Potential Match (Manual review / Suggestion).
+## Exécution
 
----
+- Matching automatique : 3 fois par jour, toutes les 8 heures (`0 */8 * * *`).
+- Diagnostic admin : `GET /admin/matching/diagnose?declarationId=...&limit=...`.
+- API propriétaire : `GET /declarations/:id/matches`.
 
-## Proposed Changes
+Le diagnostic est en lecture seule et ne modifie ni les scores ni les statuts.
 
-### [Backend] Logic & Services
+## Contrainte base de données
 
-#### [MODIFY] [declaration.service.ts](file:///home/ruxel/Docmaster/server/src/services/declaration.service.ts)
-- Update `checkMatches` to include the fuzzy scoring logic.
-- Integrate cross-table checks against `my_devices` and `my_documents`.
+La migration `74_one_found_per_lost.sql` nettoie les doublons historiques puis
+crée l'index unique partiel `uniq_active_match_per_lost` sur
+`matches(lost_declaration_id)` pour les statuts `PENDING` et `CONFIRMED`.
 
-#### [MODIFY] [declaration.repository.ts](file:///home/ruxel/Docmaster/server/src/repositories/declaration.repository.ts)
-- Add advanced SQL queries using PostgreSQL's `similarity()` (if `pg_trgm` extension is enabled) or `LEVENSHTEIN` distance.
+## Réservations
 
-#### [NEW] [matching.service.ts](file:///home/ruxel/Docmaster/server/src/services/matching.service.ts)
-- Create a dedicated service to centralize matching logic and scoring calculation.
-
-### [Database] Schema Updates
-
-#### [NEW] [15_enable_trgm.sql](file:///home/ruxel/Docmaster/server/src/database/shema/15_enable_trgm.sql)
-- Enable the `pg_trgm` extension for fast text similarity searching.
-
----
-
-## Verification Plan
-
-### Automated Tests
-- Create unit tests for the `MatchingService` with various edge cases (typos in names, missing numbers).
-- Integration test: create a lost document and a found document with similar info and verify notifications are sent.
-
-### Manual Verification
-- Simulate a loss declaration for an "iPhone 13" in Yaoundé.
-- Create a found declaration for a "iPhone 13" in Yaoundé with a slightly different description.
-- Verify that the owner receives a "Potential Match" notification.
+La table `recovery_reservations` garantit une seule réservation active par
+`FOUND` et par `LOST`. Les réservations non payées expirent après
+`RECOVERY_RESERVATION_TTL_MINUTES` (15 minutes par défaut). Le cron d'expiration
+s'exécute chaque minute. Un verrou advisory PostgreSQL sur le `FOUND`, combiné
+à `FOR UPDATE`, sérialise les activations concurrentes.

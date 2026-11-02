@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import { adminService } from "../../services/admin";
 import InfoTooltip from "../../components/ui/InfoTooltip";
@@ -16,10 +17,12 @@ interface User {
 
 export default function AdminUsers() {
   const { t } = useI18n();
+  const [params] = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  // Deep link depuis un signalement : /admin/users?search=<email>
+  const [search, setSearch] = useState(params.get("search") ?? "");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<User | null>(null);
@@ -68,7 +71,7 @@ export default function AdminUsers() {
           onClick={handleExport}
           className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded text-[12px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
         >
-          <i className="fa-solid fa-download text-[10px]" /> CSV
+          <i className="ph ph-download text-[10px]" /> CSV
         </button>
       </div>
 
@@ -77,7 +80,7 @@ export default function AdminUsers() {
         {/* Filters */}
         <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap items-center gap-2 shrink-0">
           <div className="relative flex-1 min-w-[180px] max-w-xs">
-            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+            <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
             <input
               type="search"
               value={search}
@@ -118,7 +121,7 @@ export default function AdminUsers() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {users.length === 0 ? (
-                <EmptyState colSpan={8} icon="fa-solid fa-users" message={t("admin_no_users_found")} />
+                <EmptyState colSpan={8} icon="ph ph-users" message={t("admin_no_users_found")} />
               ) : (
                 users.map((u) => {
                   const initial = ((u.prenom?.[0] || "") + (u.nom?.[0] || "")).toUpperCase() || "?";
@@ -170,7 +173,7 @@ export default function AdminUsers() {
                           className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
                           title={t("admin_user_delete_title")}
                         >
-                          <i className="fa-solid fa-trash-can text-xs" />
+                          <i className="ph ph-trash text-xs" />
                         </button>
                       </td>
                     </tr>
@@ -200,7 +203,7 @@ export default function AdminUsers() {
                 onClick={() => setSelected(null)}
                 className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all"
               >
-                <i className="fa-solid fa-xmark text-xs" />
+                <i className="ph ph-x text-xs" />
               </button>
             </div>
 

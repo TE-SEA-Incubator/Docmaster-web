@@ -106,4 +106,89 @@ export class ClaimRepository {
   async findByLostAndOwner(lostDocId: string, ownerId: string) {
     return this.findByDocIdAndOwner(lostDocId, ownerId);
   }
+
+  async findPaidByFoundId(foundId: string) {
+    const { rows } = await pool.query(
+      `SELECT * FROM claims
+       WHERE found_declaration_id = $1
+         AND status IN ('PAID', 'VALIDATED')
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [foundId],
+    );
+    return rows[0] || null;
+  }
+
+  async findPaidByLostId(lostId: string) {
+    const { rows } = await pool.query(
+      `SELECT * FROM claims
+       WHERE doc_id = $1
+         AND status IN ('PAID', 'VALIDATED')
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [lostId],
+    );
+    return rows[0] || null;
+  }
+
+  async createForMatch(claimData: {
+    doc_id: string;
+    found_declaration_id: string;
+    owner_id: string;
+    finder_id: string;
+    verification_code: string;
+    status?: 'PENDING' | 'PAID' | 'VALIDATED' | 'FAILED';
+    amount?: number | null;
+    transaction_id?: string | null;
+  }) {
+    const { rows } = await pool.query(
+      `INSERT INTO claims
+         (doc_id, found_declaration_id, owner_id, finder_id, verification_code, status, attempts, amount, transaction_id)
+       VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8)
+       RETURNING *`,
+      [
+        claimData.doc_id,
+        claimData.found_declaration_id,
+        claimData.owner_id,
+        claimData.finder_id,
+        claimData.verification_code,
+        claimData.status || 'PAID',
+        claimData.amount ?? null,
+        claimData.transaction_id ?? null,
+      ],
+    );
+    return rows[0];
+  }
+
+  async promoteForMatch(
+    claimId: string,
+    data: {
+      verification_code: string;
+      finder_id: string | null;
+      found_declaration_id: string;
+      amount: number | null;
+      transaction_id: string | null;
+    },
+  ) {
+    const { rows } = await pool.query(
+      `UPDATE claims
+       SET status = 'PAID',
+           verification_code = $2,
+           finder_id = $3,
+           found_declaration_id = $4,
+           amount = $5,
+           transaction_id = $6
+       WHERE id = $1
+       RETURNING *`,
+      [
+        claimId,
+        data.verification_code,
+        data.finder_id,
+        data.found_declaration_id,
+        data.amount,
+        data.transaction_id,
+      ],
+    );
+    return rows[0] || null;
+  }
 }

@@ -46,7 +46,7 @@ export default function PollingModal({
           className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-all"
           title="Fermer"
         >
-          <i className="fa-solid fa-xmark text-sm" />
+          <i className="ph ph-x text-sm" />
         </button>
       </div>
 
@@ -61,7 +61,7 @@ export default function PollingModal({
 
         {/* Center device icon */}
         <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-[#2D5A42] to-[#2D5A42] text-white flex items-center justify-center shadow-md">
-          <i className="fa-solid fa-mobile-screen-button text-2xl animate-bounce" style={{ animationDuration: "2s" }} />
+          <i className="ph ph-device-mobile text-2xl animate-bounce" style={{ animationDuration: "2s" }} />
         </div>
       </div>
 
@@ -75,7 +75,7 @@ export default function PollingModal({
         </p>
         <div className="pt-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-slate-100 text-slate-600">
-            <i className="fa-solid fa-clock text-[11px] text-slate-400" />
+            <i className="ph ph-clock text-[11px] text-slate-400" />
             {minutes}:{seconds}
           </span>
         </div>
@@ -84,7 +84,7 @@ export default function PollingModal({
       {/* Help USSD card */}
       <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 mb-5 text-left text-xs text-slate-600 space-y-1.5">
         <p className="font-bold text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-          <i className="fa-solid fa-circle-info text-amber-500" />
+          <i className="ph ph-info text-amber-500" />
           Le prompt n'apparaît pas ?
         </p>
         <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
@@ -107,12 +107,12 @@ export default function PollingModal({
           >
             {isManualChecking ? (
               <>
-                <i className="fa-solid fa-circle-notch fa-spin text-sm" />
+                <i className="ph ph-circle-notch animate-spin text-sm" />
                 Vérification du statut...
               </>
             ) : (
               <>
-                <i className="fa-solid fa-arrows-rotate text-xs" />
+                <i className="ph ph-arrows-clockwise text-xs" />
                 J'ai déjà validé sur mon téléphone
               </>
             )}

@@ -53,7 +53,7 @@ export class MatchingService {
   async findAndNotifyMatches(declaration: DocumentDeclaration): Promise<{ highConfidence: number; potential: number }> {
     const stats = { highConfidence: 0, potential: 0 };
 
-    if (['MATCHED', 'RETURNED', 'CANCELLED', 'CLAIMED'].includes(declaration.status)) {
+    if (['RETURNED', 'CANCELLED', 'CLAIMED', 'RESERVED'].includes(declaration.status)) {
       return stats;
     }
     let docTypeCode = declaration.doc_type;
@@ -79,7 +79,7 @@ export class MatchingService {
 
     for (const candidate of candidates) {
       if (candidate.id === declaration.id) continue;
-      if (['MATCHED', 'RETURNED', 'CANCELLED', 'CLAIMED'].includes(candidate.status)) continue;
+      if (['RETURNED', 'CANCELLED', 'CLAIMED', 'RESERVED'].includes(candidate.status)) continue;
 
       const lostId = declaration.declaration_type === 'LOST' ? declaration.id : candidate.id;
       const foundId = declaration.declaration_type === 'LOST' ? candidate.id : declaration.id;
@@ -89,22 +89,56 @@ export class MatchingService {
       const score = matchResult.totalScore;
 
       if (existing) {
-        if (score >= 80 && existing.score < 80) {
+        if (existing.status === 'REJECTED') continue;
+
+        if (existing.status === 'CONFIRMED') {
+          if (score !== existing.score) {
+            await this.matchRepository.updateScoreAndStatus(lostId, foundId, score, 'CONFIRMED', {
+              criteria: matchResult.criteria,
+            });
+          }
+          continue;
+        }
+
+        if (score >= 80) {
           await this.matchRepository.updateScoreAndStatus(lostId, foundId, score, 'CONFIRMED', {
             criteria: matchResult.criteria,
           });
-          await this.handleHighConfidenceMatch(declaration, candidate);
+          await this.handleHighConfidenceMatch(declaration, candidate, existing.id);
           stats.highConfidence++;
-        } else if (score >= 80 && (declaration.status !== 'MATCHED' || candidate.status !== 'MATCHED')) {
-          await this.handleHighConfidenceMatch(declaration, candidate);
-          stats.highConfidence++;
-        } else if (score >= 50 && score < 80 && existing.score < 50) {
+          continue;
+        }
+
+        // Un PENDING est rafraîchi à chaque passage : une modification de ville,
+        // date ou quartier doit être visible sans attendre un nouveau match.
+        if (score !== existing.score || !existing.details) {
           await this.matchRepository.updateScoreAndStatus(lostId, foundId, score, 'PENDING', {
             criteria: matchResult.criteria,
           });
-          stats.potential++;
         }
+        if (score >= 50) stats.potential++;
         continue;
+      }
+
+      // Règle métier : un FOUND peut correspondre à plusieurs LOST, mais un
+      // LOST ne peut avoir qu'un seul FOUND actif. On remplace l'ancien
+      // candidat uniquement si le nouveau est strictement meilleur.
+      const activeForLost = await this.matchRepository.findActiveByLost(lostId);
+      if (activeForLost.length > 0) {
+        const incumbent = activeForLost[0];
+        const locked = activeForLost.some((m) => Boolean(m.owner_confirmed_at));
+        if (locked || score < 50 || score <= incumbent.score) {
+          if (score >= 50) {
+            console.log(
+              `      ⏭️ [ONE_FOUND_PER_LOST] Candidate ${foundId} skipped (score ${score} <= ${incumbent.score} or owner-confirmed)`,
+            );
+          }
+          continue;
+        }
+        console.log(
+          `      ♻️ [ONE_FOUND_PER_LOST] Replacing ${incumbent.found_declaration_id} with ${foundId} (${incumbent.score} -> ${score})`,
+        );
+        await this.matchRepository.rejectActiveByLost(lostId, 'SUPERSEDED');
       }
 
       // Toujours émettre l'événement de tentative de matching pour le monitoring
@@ -134,7 +168,7 @@ export class MatchingService {
         stats.highConfidence++;
         const match = await this.matchRepository.create(lostId, foundId, score, 'CONFIRMED', { criteria: matchResult.criteria });
         if (match) {
-          await this.handleHighConfidenceMatch(declaration, candidate);
+          await this.handleHighConfidenceMatch(declaration, candidate, match.id);
         }
         // Note: L'événement 'MATCHING:MATCH_FOUND' est conservé en plus de 'MATCHING:ATTEMPT' pour compatibilité
         this.socketService.sendToAdmins('MATCHING:MATCH_FOUND', {
@@ -170,7 +204,14 @@ export class MatchingService {
             type: 'MATCH_POTENTIAL',
             title: 'Correspondance potentielle trouvée',
             message: `Des correspondances potentielles ont été trouvées pour votre ${docTypeName}. Connectez-vous pour voir les détails.`,
-            metadata: { lostId, foundId, score, docType: docTypeName }
+            metadata: {
+              lostId,
+              foundId,
+              matchId: match?.id,
+              score,
+              docType: docTypeName,
+              action: 'VIEW_MATCHES',
+            }
           });
           console.log(`      🔔 [NOTIFY] Owner ${ownerId} notified about potential match (${score})`);
         } catch (err) {
@@ -207,6 +248,91 @@ export class MatchingService {
     }
 
     return stats;
+  }
+
+  /**
+   * Read-only diagnostic: explains why a declaration does or does not match.
+   * It never writes to matches/declarations/notifications.
+   */
+  async diagnose(declarationId?: string, limit = 50) {
+    const declarations = declarationId
+      ? (await pool.query('SELECT * FROM declarations WHERE id = $1', [declarationId])).rows
+      : (
+          await pool.query(
+            `SELECT * FROM declarations
+             WHERE declaration_type = 'LOST'
+               AND status IN ('SEARCHING', 'MATCHED')
+             ORDER BY created_at DESC
+             LIMIT $1`,
+            [Math.min(Math.max(limit, 1), 200)],
+          )
+        ).rows;
+
+    const reports: any[] = [];
+
+    for (const declaration of declarations as DocumentDeclaration[]) {
+      let docTypeCode = declaration.doc_type;
+      const docTypeMeta =
+        (await this.docTypeRepository.findById(declaration.doc_type)) ||
+        (await this.docTypeRepository.findByCode(declaration.doc_type));
+      if (docTypeMeta) docTypeCode = docTypeMeta.code;
+
+      const oppositeType = declaration.declaration_type === 'LOST' ? 'FOUND' : 'LOST';
+      const candidates = await this.declarationRepository.findCandidatesForMatch(
+        declaration.doc_type,
+        docTypeCode,
+        oppositeType,
+      );
+
+      const candidateReports: any[] = [];
+      for (const candidate of candidates) {
+        if (candidate.id === declaration.id) continue;
+        const lostId = declaration.declaration_type === 'LOST' ? declaration.id : candidate.id;
+        const foundId = declaration.declaration_type === 'LOST' ? candidate.id : declaration.id;
+        const existing = await this.matchRepository.findBetween(lostId, foundId);
+        const result = this.calculateMatchScore(declaration, candidate, lostId, foundId);
+
+        const missing = result.criteria
+          .filter((c) => !c.matched && c.points === 0 && c.max > 0)
+          .map((c) => `${c.name} (${c.max})`);
+
+        candidateReports.push({
+          candidateId: candidate.id,
+          candidateIdentifiant: candidate.identifiant_doc_dm,
+          score: result.totalScore,
+          computedStatus: result.status,
+          existingMatchStatus: existing?.status || null,
+          matchId: existing?.id || null,
+          missingPoints: missing,
+          criteria: result.criteria,
+        });
+      }
+
+      candidateReports.sort((a, b) => b.score - a.score);
+
+      reports.push({
+        declarationId: declaration.id,
+        identifiant: declaration.identifiant_doc_dm,
+        declarationType: declaration.declaration_type,
+        status: declaration.status,
+        docType: declaration.doc_type,
+        ville: declaration.ville,
+        quartier: declaration.quartier,
+        ownerName: declaration.owner_name,
+        candidateCount: candidateReports.length,
+        confirmed: candidateReports.filter((c) => c.existingMatchStatus === 'CONFIRMED').length,
+        pending: candidateReports.filter((c) => c.existingMatchStatus === 'PENDING').length,
+        rejected: candidateReports.filter((c) => c.existingMatchStatus === 'REJECTED').length,
+        topCandidates: candidateReports.slice(0, 10),
+      });
+    }
+
+    return {
+      generatedAt: new Date().toISOString(),
+      count: reports.length,
+      threshold: { confirmed: 80, pending: 50 },
+      reports,
+    };
   }
 
   private async checkAgainstPrivateVaults(foundDecl: DocumentDeclaration) {
@@ -293,11 +419,7 @@ export class MatchingService {
   }
 
   async runFullMatchingCycle(): Promise<void> {
-    if (!this.hasNewDeclarations) {
-      return;
-    }
-
-    console.log('🔄 [MatchingWorker] Starting full matching cycle (new data detected)...');
+    console.log('🔄 [MatchingWorker] Starting matching cycle...');
     this.hasNewDeclarations = false;
 
     const cycleId = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -309,39 +431,53 @@ export class MatchingService {
     });
 
     try {
-      const { rows: activeLost } = await this.declarationRepository.search({
-        declaration_type: 'LOST',
-        status: 'SEARCHING'
-      });
+      // Les LOST déjà MATCHED restent traités : un PENDING peut être promu après
+      // une modification, et les correspondances existantes doivent être re-scorées.
+      const { rows: activeLost } = await pool.query(
+        `SELECT * FROM declarations
+         WHERE declaration_type = 'LOST'
+           AND status IN ('SEARCHING', 'MATCHED')
+         ORDER BY created_at ASC
+         LIMIT 500`,
+      );
 
-      const total = activeLost.length;
+      // Les FOUND MATCHED sont atteints depuis leurs LOST. Les FOUND AVAILABLE
+      // couvrent le cas où le FOUND a été publié après les LOST.
+      const { rows: activeFound } = await pool.query(
+        `SELECT * FROM declarations
+         WHERE declaration_type = 'FOUND'
+           AND status = 'AVAILABLE'
+         ORDER BY created_at ASC
+         LIMIT 500`,
+      );
+
+      const work: DocumentDeclaration[] = [...activeLost, ...activeFound];
+      const total = work.length;
       let processed = 0;
       let highConfidence = 0;
       let potential = 0;
 
-      for (const lost of activeLost) {
+      for (const declaration of work) {
         processed++;
-        console.log(`🔎 Checking matches for ${lost.identifiant_doc_dm} (${lost.doc_type})...`);
+        console.log(`🔎 Checking matches for ${declaration.identifiant_doc_dm} (${declaration.doc_type})...`);
 
         this.socketService.sendToAdmins('MATCHING:CHECKING', {
-          declarationId: lost.id,
-          identifiant: lost.identifiant_doc_dm,
-          docType: lost.doc_type,
-          ownerName: lost.owner_name,
-          ville: lost.ville,
+          declarationId: declaration.id,
+          identifiant: declaration.identifiant_doc_dm,
+          docType: declaration.doc_type,
+          ownerName: declaration.owner_name,
+          ville: declaration.ville,
           progress: { current: processed, total },
           timestamp: new Date().toISOString(),
         });
 
-        await this.findAndNotifyMatches(lost).then((s) => {
+        await this.findAndNotifyMatches(declaration).then((s) => {
           highConfidence += s.highConfidence;
           potential += s.potential;
         });
       }
 
-      const summary = { highConfidence, potential };
-
-      console.log(`✅ [MatchingWorker] Finished cycle. Processed ${processed} lost declarations.`);
+      console.log(`✅ [MatchingWorker] Finished cycle. Processed ${processed} declarations.`);
 
       this.socketService.sendToAdmins('MATCHING:CYCLE_END', {
         cycleId,
@@ -497,15 +633,11 @@ export class MatchingService {
     return costs[s2.length];
   }
 
-  private async handleHighConfidenceMatch(d1: DocumentDeclaration, d2: DocumentDeclaration) {
+  private async handleHighConfidenceMatch(d1: DocumentDeclaration, d2: DocumentDeclaration, matchId?: string) {
     if (!d1.reporter_id || !d2.reporter_id) return;
 
     const lostDecl = d1.declaration_type === 'LOST' ? d1 : d2;
     const foundDecl = d1.declaration_type === 'FOUND' ? d1 : d2;
-
-    if (lostDecl.status === 'MATCHED' && foundDecl.status === 'MATCHED') {
-      return;
-    }
 
     const lostUserId = lostDecl.reporter_id!;
     const foundUserId = foundDecl.reporter_id!;
@@ -534,16 +666,26 @@ export class MatchingService {
           type: 'MATCH_FOUND',
           title: 'Bonne nouvelle ! Document trouvé',
           message: `Quelqu'un a signalé avoir trouvé votre ${docTypeName}.`,
-          metadata: { docId: lostId, docType: docTypeName, matchType: 'LOST_SIDE' }
+          metadata: {
+            docId: lostId,
+            foundId,
+            matchId,
+            docType: docTypeName,
+            matchType: 'LOST_SIDE',
+          }
         });
         // Notifier le partenaire finder
-        await this.notificationService.notifyPartenaireMatchFound(foundUserId, docTypeName, foundId);
+        await this.notificationService.notifyPartenaireMatchFound(foundUserId, docTypeName, foundId, {
+          matchId,
+          foundId,
+        });
       } else {
         await this.notificationService.notifyMatchFound(
           lostUserId,
           foundUserId,
           lostId,
-          docTypeName
+          docTypeName,
+          { matchId, foundId },
         );
       }
   }

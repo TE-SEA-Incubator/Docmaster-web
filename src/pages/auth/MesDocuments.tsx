@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Modal, Loader, Paper, Text, Group, TextInput, Card, Stepper, Button, Select, Stack, Checkbox, Radio, Alert, Progress } from "@mantine/core";
+import { Loader, Paper, Text, Group, TextInput, Card, Stepper, Button, Select, Stack, Checkbox, Radio, Alert, Progress } from "@mantine/core";
+import { Dialog, DialogContent, DialogBody } from "../../components/ui/dialog";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { documentTypesService } from "../../services/declarationsService";
 import { documentsService } from "../../services/documentsService";
@@ -19,6 +20,7 @@ import { todayISO } from "../../utils/dateHelpers";
 import { extractApiError } from "../../utils/extractApiError";
 import { describeValidationErrors } from "../../utils/declarationFieldLabels";
 import type { Document, DocTypeCatalog } from "../../types/api";
+import { phClass } from "../../utils/phosphorIcons";
 
 function addMonths(dateStr: string, months: number): string {
   if (!dateStr) return "";
@@ -74,6 +76,28 @@ export default function MesDocuments() {
   );
   const hasExpiration = validityOption === 'EXPIRING' && (selectedType === 'AUTRES' || (selectedDocType?.delai_expiration_mois ?? 0) > 0);
   const isAutoExpiry = selectedType !== 'AUTRES' && (selectedDocType?.delai_expiration_mois ?? 0) > 0;
+
+  const typeOptions = useMemo(() => [
+    ...docTypes
+      .filter((dt) => dt.code !== "AUTRES")
+      .filter((dt) => validityOption === 'EXPIRING' ? (dt.delai_expiration_mois ?? 0) > 0 : (dt.delai_expiration_mois ?? 0) === 0)
+      .map((dt) => ({
+        value: dt.code,
+        label: dt.nom,
+        icone: dt.icone || "file-lines",
+        hasExp: (dt.delai_expiration_mois ?? 0) > 0,
+      })),
+    { value: 'AUTRES', label: t("mesdocuments_custom_type"), icone: "pen-to-square", hasExp: false },
+  ], [docTypes, validityOption, t]);
+
+  const selectType = (value: string) => {
+    setSelectedType(value);
+    setCustomTypeName("");
+    const dt = docTypes.find((d) => d.code === value);
+    if (form.issued && dt && (dt.delai_expiration_mois ?? 0) > 0) {
+      setForm((prev) => ({ ...prev, expiry: addMonths(prev.issued, dt.delai_expiration_mois) }));
+    }
+  };
 
   const updateIssued = (v: string) => {
     setForm((prev) => ({
@@ -242,7 +266,7 @@ export default function MesDocuments() {
   const FilterTab = ({ id, label }: { id: string; label: string }) => (
     <button
       onClick={() => setFilterCat(id)}
-      className={`tab-filter ${filterCat === id ? "active" : ""}`}
+      className={`tab-filter shrink-0 snap-start ${filterCat === id ? "active" : ""}`}
     >
       {label} {id === "all" && `(${docs.length})`}
     </button>
@@ -261,13 +285,13 @@ export default function MesDocuments() {
           <Paper withBorder p="md" radius="md" style={{ background: "rgba(217,138,48,0.08)", borderColor: "rgba(217,138,48,0.2)" }}>
             <Group gap="sm" align="flex-start" wrap="nowrap">
               <Paper style={{ background: "rgba(217,138,48,0.15)", width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <i className="fa-solid fa-shield-halved text-primary text-sm" />
+                <i className="ph ph-shield text-primary text-sm" />
               </Paper>
               <div style={{ flex: 1 }}>
                 <Text fz={13.5} fw={700}>{t("mesdocuments_banner_title")}</Text>
                 <Text size="sm" c="dimmed">{t("mesdocuments_banner_desc")}</Text>
               </div>
-              <i className="fa-solid fa-xmark text-sm" style={{ cursor: "pointer", color: "var(--mantine-color-dimmed)" }} onClick={() => setShowBanner(false)} />
+              <i className="ph ph-x text-sm" style={{ cursor: "pointer", color: "var(--mantine-color-dimmed)" }} onClick={() => setShowBanner(false)} />
             </Group>
           </Paper>
         )}
@@ -275,7 +299,7 @@ export default function MesDocuments() {
         {/* Compteurs */}
         <Group gap="md" align="center" wrap="wrap">
           <Text fz={14} fw={700}>
-            <i className="fa-solid fa-folder-open text-primary mr-2" style={{ fontSize: 12 }} />
+            <i className="ph ph-folder-open text-primary mr-2" style={{ fontSize: 12 }} />
             {docs.length} {t("mesdocuments_total_registered")}
           </Text>
           <Text fz={13} c="dimmed">
@@ -289,16 +313,16 @@ export default function MesDocuments() {
             placeholder={t("mesdocuments_search_placeholder")}
             value={search}
             onChange={(e) => setSearch(e.currentTarget.value)}
-            leftSection={<i className="fa-solid fa-search text-xs" />}
+            leftSection={<i className="ph ph-magnifying-glass text-xs" />}
             style={{ flex: 1, maxWidth: 320 }}
           />
-          <Group gap="xs" wrap="wrap">
+          <div className="flex gap-2 overflow-x-auto -mx-1 px-1 scrollbar-hide snap-x snap-mandatory md:flex-wrap md:overflow-visible md:mx-0 md:px-0 md:snap-none">
             <FilterTab id="all" label={t("mesdocuments_filter_all")} />
             {docTypes.map((dt) => (
               <FilterTab key={dt.code} id={dt.code} label={dt.nom} />
             ))}
             <FilterTab id="__archived" label={t("mesdocuments_filter_archived")} />
-          </Group>
+          </div>
         </Group>
 
         {/* Documents grid */}
@@ -315,7 +339,7 @@ export default function MesDocuments() {
             }}
           >
             <div className="w-12 h-12 rounded-2xl bg-primary/10 border-2 border-primary/25 flex items-center justify-center">
-              <i className="fa-solid fa-plus text-primary text-xl" />
+              <i className="ph ph-plus text-primary text-xl" />
             </div>
             <div className="text-center">
               <Text fz={14} fw={700}>{t("mesdocuments_add_document")}</Text>
@@ -340,7 +364,7 @@ export default function MesDocuments() {
         {/* Security notice */}
         <Paper withBorder p="md" radius="md">
           <Group gap="sm">
-            <i className="fa-solid fa-lock text-green-mid text-lg flex-shrink-0" />
+            <i className="ph ph-lock text-green-mid text-lg flex-shrink-0" />
             <div>
               <Text fz={12.5} fw={700}>{t("mesdocuments_security_title")}</Text>
               <Text size="sm" c="dimmed">{t("mesdocuments_security_desc")}</Text>
@@ -355,11 +379,20 @@ export default function MesDocuments() {
         onClose={closeAddModal}
         closeLabel={t("detail_close")}
         title={t(editingDoc ? "mesdocuments_edit_modal_title" : "mesdocuments_modal_title")}
-        subtitle={<Text size="sm" c="dimmed">{t("mesdocuments_step")} {step} {t("mesdocuments_of")} 3</Text>}
+        subtitle={<Text size="sm" c="dimmed" mt={2}>{t("mesdocuments_step")} {step} {t("mesdocuments_of")} 3</Text>}
         onBack={step > 1 ? () => goStep(step - 1) : undefined}
         backLabel={t("mesdocuments_back")}
         progress={
-          <Stepper active={step - 1} size="xs" allowNextStepsSelect={false}>
+          <Stepper 
+            active={step - 1} 
+            size="sm" 
+            allowNextStepsSelect={false}
+            styles={{
+              stepIcon: { fontSize: '13px', fontWeight: 700 },
+              stepLabel: { fontSize: '13px', fontWeight: 600 },
+              separator: { marginLeft: '2px', marginRight: '2px' }
+            }}
+          >
             <Stepper.Step label={t("mesdocuments_step_type")} />
             <Stepper.Step label={t("mesdocuments_step_info")} />
             <Stepper.Step label={t("mesdocuments_step_photos")} />
@@ -371,7 +404,8 @@ export default function MesDocuments() {
               color="green" fullWidth size="lg" onClick={handleSubmit}
               disabled={(!editingDoc && !consent) || submitting}
               loading={submitting}
-              leftSection={!submitting && <i className="fa-solid fa-shield-halved" />}
+              leftSection={!submitting && <i className="ph ph-shield text-lg" />}
+              styles={{ root: { height: 48, fontSize: '14px', fontWeight: 700 } }}
             >
               {t(editingDoc ? "mesdocuments_update_secure" : "mesdocuments_save_secure")}
             </Button>
@@ -386,7 +420,8 @@ export default function MesDocuments() {
                 || (hasExpiration && !form.issued)
                 || (hasExpiration && !isAutoExpiry && !form.expiry)
               )}
-              rightSection={<i className="fa-solid fa-arrow-right" />}
+              rightSection={<i className="ph ph-arrow-right text-lg" />}
+              styles={{ root: { height: 48, fontSize: '14px', fontWeight: 700 } }}
             >
               {t("mesdocuments_continue")}
             </Button>
@@ -415,99 +450,154 @@ export default function MesDocuments() {
 
         {/* Step 1: Validity Option */}
         {step === 1 && (
-          <Radio.Group
-            label={t("mesdocuments_validity_option")}
-            value={validityOption}
-            onChange={(value) => { setValidityOption(value as "EXPIRING" | "PERMANENT"); setSelectedType(null); }}
-          >
-            <Stack gap="sm">
-              {([
-                { value: "EXPIRING", icon: "fa-calendar-clock", label: t("mesdocuments_option_expiring"), desc: t("mesdocuments_option_expiring_desc") },
-                { value: "PERMANENT", icon: "fa-infinity", label: t("mesdocuments_option_permanent"), desc: t("mesdocuments_option_permanent_desc") },
-              ] as const).map((option) => (
-                <Paper
-                  key={option.value}
-                  withBorder
-                  radius="md"
-                  p="md"
-                  onClick={() => { setValidityOption(option.value); setSelectedType(null); }}
-                  style={{ cursor: "pointer", background: validityOption === option.value ? "var(--mantine-color-gray-0)" : undefined }}
-                >
-                  <Group gap="md" align="flex-start" wrap="nowrap">
-                    <Radio value={option.value} size="lg" />
-                    <i className={`fa-solid ${option.icon} text-lg ${validityOption === option.value ? "text-green-dark" : "text-textMuted"}`} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <Text fz={15} fw={700}>{option.label}</Text>
-                      <Text size="sm" c="dimmed" mt={2}>{option.desc}</Text>
-                    </div>
-                  </Group>
-                </Paper>
-              ))}
-            </Stack>
-          </Radio.Group>
+          <div>
+            <Text component="label" fz={14} fw={700} mb="md" c="textMain">
+              {t("mesdocuments_validity_option")}
+            </Text>
+            <Radio.Group
+              value={validityOption}
+              onChange={(value) => { setValidityOption(value as "EXPIRING" | "PERMANENT"); setSelectedType(null); }}
+            >
+              <Stack gap="sm">
+                {([
+                  { value: "EXPIRING", icon: "ph ph-calendar-dots", label: t("mesdocuments_option_expiring"), desc: t("mesdocuments_option_expiring_desc") },
+                  { value: "PERMANENT", icon: "ph ph-infinity", label: t("mesdocuments_option_permanent"), desc: t("mesdocuments_option_permanent_desc") },
+                ] as const).map((option) => (
+                  <Paper
+                    key={option.value}
+                    withBorder
+                    radius="lg"
+                    p="lg"
+                    onClick={() => { setValidityOption(option.value); setSelectedType(null); }}
+                    style={{ 
+                      cursor: "pointer", 
+                      background: validityOption === option.value ? "var(--mantine-color-primary-0)" : "var(--mantine-color-body)",
+                      borderWidth: 2,
+                      borderColor: validityOption === option.value ? "var(--mantine-color-primary-5)" : "var(--mantine-color-default-border)",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    <Group gap="md" align="flex-start" wrap="nowrap">
+                      <Radio value={option.value} size="md" />
+                      <i className={`${option.icon} text-2xl ${validityOption === option.value ? "text-primary" : "text-textMuted"}`} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text fz={15} fw={700} mb={4}>{option.label}</Text>
+                        <Text size="sm" c="dimmed" lh={1.5}>{option.desc}</Text>
+                      </div>
+                    </Group>
+                  </Paper>
+                ))}
+              </Stack>
+            </Radio.Group>
+          </div>
         )}
 
         {/* Step 2: Type + Info */}
         {step === 2 && (
           <div>
+            <div className="sm:hidden mb-5">
+              <Text component="label" fz={14} fw={700} mb="sm" display="block" c="textMain">
+                {t("mesdocuments_modal_choose_type")} <R />
+              </Text>
+              <div className="flex gap-2 overflow-x-auto -mx-1 px-1 scrollbar-hide snap-x snap-mandatory">
+                {typeOptions.map((opt) => {
+                  const active = selectedType === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => selectType(opt.value)}
+                      className={`shrink-0 snap-start w-[160px] rounded-2xl border-2 p-4 text-center transition-all ${
+                        active ? "border-primary bg-primary-light shadow-sm" : "border-borderMain bg-white"
+                      }`}
+                    >
+                      <i className={`${phClass(opt.icone)} text-2xl ${active ? "text-primary" : "text-textMuted"}`} />
+                      <div className="mt-3 text-[13px] font-bold leading-tight text-textMain">{opt.label}</div>
+                      <div className="mt-1.5 text-[11px] text-textMuted font-medium">
+                        {opt.hasExp ? t("has_expiration") : t("no_expiration")}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <Select
-              label={<>{t("mesdocuments_modal_choose_type")} <R /></>}
-              data={[
-                ...docTypes
-                  .filter((dt) => dt.code !== "AUTRES")
-                  .filter((dt) => validityOption === 'EXPIRING' ? (dt.delai_expiration_mois ?? 0) > 0 : (dt.delai_expiration_mois ?? 0) === 0)
-                  .map((dt) => ({ value: dt.code, label: dt.nom })),
-                { value: 'AUTRES', label: t("mesdocuments_custom_type") },
-              ]}
+              className="hidden sm:block"
+              label={<Text fz={14} fw={700} mb={4}>{t("mesdocuments_modal_choose_type")} <R /></Text>}
+              data={typeOptions.map(({ value, label }) => ({ value, label }))}
               value={selectedType}
               onChange={(v) => {
-                setSelectedType(v);
-                setCustomTypeName("");
-                const dt = docTypes.find((d) => d.code === v);
-                if (form.issued && dt && (dt.delai_expiration_mois ?? 0) > 0) {
-                  setForm((prev) => ({ ...prev, expiry: addMonths(prev.issued, dt.delai_expiration_mois) }));
-                }
+                if (v) selectType(v);
               }}
               placeholder={t("mesdocuments_choose_expiring_type")}
               searchable clearable mb="md"
+              styles={{ input: { height: 42, fontSize: '14px' } }}
             />
 
             {selectedType === 'AUTRES' && (
               <TextInput
-                label={t("mesdocuments_custom_type")}
+                label={<Text fz={14} fw={700} mb={4}>{t("mesdocuments_custom_type")}</Text>}
                 value={customTypeName}
                 onChange={(e) => setCustomTypeName(e.currentTarget.value)}
                 placeholder={t("mesdocuments_custom_type_placeholder")}
                 mb="md" autoFocus
+                styles={{ input: { height: 42, fontSize: '14px' } }}
               />
             )}
 
-            <Stack gap="sm" mb="md">
+            <Stack gap="md" mb="md">
               <TextInput
-                label={<>{t("mesdocuments_full_name")} <R /></>}
+                label={<Text fz={14} fw={700} mb={4}>{t("mesdocuments_full_name")} <R /></Text>}
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.currentTarget.value })}
                 placeholder={t("mesdocuments_placeholder_name")} required
+                styles={{ input: { height: 42, fontSize: '14px' } }}
               />
               <TextInput
-                label={<>{t("mesdocuments_doc_number")} <R /></>}
+                label={<Text fz={14} fw={700} mb={4}>{t("mesdocuments_doc_number")} <R /></Text>}
                 value={form.number}
                 onChange={(e) => setForm({ ...form, number: e.currentTarget.value })}
                 placeholder={t("mesdocuments_placeholder_number")} required
+                styles={{ input: { height: 42, fontSize: '14px' } }}
               />
               {hasExpiration ? (
-                <Group gap="sm" wrap="wrap">
-                  <DatePicker className="grow basis-[200px]" value={form.issued} onChange={updateIssued} label={<>{t("mesdocuments_issue_date")} <R /></>} placeholder={t("mesdocuments_placeholder_date")} maxDate={todayISO()} />
-                  <DatePicker className="grow basis-[200px]" value={form.expiry} onChange={(v) => setForm({ ...form, expiry: v })} label={t("mesdocuments_expiry_date")} placeholder={t("mesdocuments_placeholder_date")} disabled={isAutoExpiry} />
+                <Group gap="md" wrap="wrap">
+                  <DatePicker 
+                    className="grow basis-[200px]" 
+                    value={form.issued} 
+                    onChange={updateIssued} 
+                    label={<Text fz={14} fw={700} mb={4}>{t("mesdocuments_issue_date")} <R /></Text>} 
+                    placeholder={t("mesdocuments_placeholder_date")} 
+                    maxDate={todayISO()} 
+                    styles={{ input: { height: 42, fontSize: '14px' } }}
+                  />
+                  <DatePicker 
+                    className="grow basis-[200px]" 
+                    value={form.expiry} 
+                    onChange={(v) => setForm({ ...form, expiry: v })} 
+                    label={<Text fz={14} fw={700} mb={4}>{t("mesdocuments_expiry_date")}</Text>} 
+                    placeholder={t("mesdocuments_placeholder_date")} 
+                    disabled={isAutoExpiry} 
+                    styles={{ input: { height: 42, fontSize: '14px' } }}
+                  />
                 </Group>
               ) : (
-                <DatePicker value={form.issued} onChange={(v) => setForm({ ...form, issued: v })} label={t("mesdocuments_issue_date")} placeholder={t("mesdocuments_placeholder_date")} maxDate={todayISO()} />
+                <DatePicker 
+                  value={form.issued} 
+                  onChange={(v) => setForm({ ...form, issued: v })} 
+                  label={<Text fz={14} fw={700} mb={4}>{t("mesdocuments_issue_date")}</Text>} 
+                  placeholder={t("mesdocuments_placeholder_date")} 
+                  maxDate={todayISO()} 
+                  styles={{ input: { height: 42, fontSize: '14px' } }}
+                />
               )}
               <TextInput
-                label={t("mesdocuments_issuing_authority")}
+                label={<Text fz={14} fw={700} mb={4}>{t("mesdocuments_issuing_authority")}</Text>}
                 value={form.authority}
                 onChange={(e) => setForm({ ...form, authority: e.currentTarget.value })}
                 placeholder={t("mesdocuments_placeholder_authority")}
+                styles={{ input: { height: 42, fontSize: '14px' } }}
               />
             </Stack>
           </div>
@@ -516,28 +606,33 @@ export default function MesDocuments() {
         {/* Step 3: Photos + Confirm */}
         {step === 3 && (
           <div>
-            <Stack gap="md" mb="lg">
+            <Stack gap="lg" mb="xl">
               {/* Recto dropzone */}
               <div>
-                <Text fw={500} size="sm" mb={4}>{t("mesdocuments_photo_recto")} <R /></Text>
+                <Text fw={700} fz={14} mb="sm" c="textMain">
+                  {t("mesdocuments_photo_recto")} <R />
+                </Text>
                 {editingDoc?.photo_recto && !rectoFile && (
-                  <Paper withBorder p="sm" radius="md" mb="xs">
-                    <Group gap="sm" wrap="nowrap">
-                      <img src={toMediaUrl(editingDoc.photo_recto)} alt="" style={{ width: 64, height: 48, objectFit: "cover", borderRadius: 8 }} />
-                      <Text size="xs" c="dimmed" fw={600} style={{ flex: 1 }} truncate>{t("mesdocuments_current_photo")}</Text>
+                  <Paper withBorder p="md" radius="lg" mb="sm" style={{ background: "var(--mantine-color-bgMain)" }}>
+                    <Group gap="md" wrap="nowrap">
+                      <img src={toMediaUrl(editingDoc.photo_recto)} alt="" style={{ width: 72, height: 54, objectFit: "cover", borderRadius: 10 }} />
+                      <Text size="sm" c="dimmed" fw={600} style={{ flex: 1 }} truncate>
+                        <i className="ph ph-image mr-2" />
+                        {t("mesdocuments_current_photo")}
+                      </Text>
                     </Group>
                   </Paper>
                 )}
                 {rectoFile ? (
-                  <Paper withBorder p="sm" radius="md">
-                    <Group gap="sm">
-                      <img src={URL.createObjectURL(rectoFile)} alt="recto" style={{ width: 64, height: 48, objectFit: "cover", borderRadius: 8 }} />
-                      <div style={{ flex: 1 }}>
-                        <Text size="sm" fw={600} truncate>{rectoFile.name}</Text>
-                        <Text size="xs" c="dimmed">{(rectoFile.size / 1024).toFixed(0)} Ko</Text>
+                  <Paper withBorder p="md" radius="lg" style={{ background: "var(--mantine-color-body)" }}>
+                    <Group gap="md" wrap="nowrap">
+                      <img src={URL.createObjectURL(rectoFile)} alt="recto" style={{ width: 72, height: 54, objectFit: "cover", borderRadius: 10 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text size="sm" fw={700} truncate>{rectoFile.name}</Text>
+                        <Text size="xs" c="dimmed" mt={2}>{(rectoFile.size / 1024).toFixed(0)} Ko</Text>
                       </div>
-                      <Button variant="subtle" color="red" size="compact-xs" onClick={() => setRectoFile(null)}>
-                        <i className="fa-solid fa-xmark" />
+                      <Button variant="subtle" color="red" size="sm" onClick={() => setRectoFile(null)}>
+                        <i className="ph ph-x text-lg" />
                       </Button>
                     </Group>
                   </Paper>
@@ -547,22 +642,23 @@ export default function MesDocuments() {
                     onDrop={(files) => setRectoFile(files[0] || null)}
                     accept={IMAGE_MIME_TYPE}
                     maxSize={10 * 1024 ** 2}
-                    radius="md"
-                    p="lg"
+                    radius="lg"
+                    p="xl"
+                    style={{ borderWidth: 2, borderStyle: 'dashed' }}
                   >
-                    <Group justify="center" gap="sm">
+                    <Group justify="center" gap="md">
                       <Dropzone.Accept>
-                        <i className="fa-solid fa-download text-xl" style={{ color: "var(--mantine-color-blue-6)" }} />
+                        <i className="ph ph-download text-3xl" style={{ color: "var(--mantine-color-blue-6)" }} />
                       </Dropzone.Accept>
                       <Dropzone.Reject>
-                        <i className="fa-solid fa-xmark text-xl" style={{ color: "var(--mantine-color-red-6)" }} />
+                        <i className="ph ph-x text-3xl" style={{ color: "var(--mantine-color-red-6)" }} />
                       </Dropzone.Reject>
                       <Dropzone.Idle>
-                        <i className="fa-solid fa-cloud-arrow-up text-xl" style={{ color: "var(--mantine-color-dimmed)" }} />
+                        <i className="ph ph-cloud-arrow-up text-3xl" style={{ color: "var(--mantine-color-dimmed)" }} />
                       </Dropzone.Idle>
                       <div>
-                        <Text size="sm" fw={600}>{t("mesdocuments_drop_photo")}</Text>
-                        <Text size="xs" c="dimmed">{t("mesdocuments_click_import")}</Text>
+                        <Text size="sm" fw={700}>{t("mesdocuments_drop_photo")}</Text>
+                        <Text size="xs" c="dimmed" mt={4}>{t("mesdocuments_click_import")}</Text>
                       </div>
                     </Group>
                   </Dropzone>
@@ -571,25 +667,30 @@ export default function MesDocuments() {
 
               {/* Verso dropzone */}
               <div>
-                <Text fw={500} size="sm" mb={4}>{t("mesdocuments_photo_verso")} <Text span c="dimmed" fw={400} size="xs">— {t("mesdocuments_optional")}</Text></Text>
+                <Text fw={700} fz={14} mb="sm" c="textMain">
+                  {t("mesdocuments_photo_verso")} <Text span c="dimmed" fw={400} size="xs" ml={4}>— {t("mesdocuments_optional")}</Text>
+                </Text>
                 {editingDoc?.photo_verso && !versoFile && (
-                  <Paper withBorder p="sm" radius="md" mb="xs">
-                    <Group gap="sm" wrap="nowrap">
-                      <img src={toMediaUrl(editingDoc.photo_verso)} alt="" style={{ width: 64, height: 48, objectFit: "cover", borderRadius: 8 }} />
-                      <Text size="xs" c="dimmed" fw={600} style={{ flex: 1 }} truncate>{t("mesdocuments_current_photo")}</Text>
+                  <Paper withBorder p="md" radius="lg" mb="sm" style={{ background: "var(--mantine-color-bgMain)" }}>
+                    <Group gap="md" wrap="nowrap">
+                      <img src={toMediaUrl(editingDoc.photo_verso)} alt="" style={{ width: 72, height: 54, objectFit: "cover", borderRadius: 10 }} />
+                      <Text size="sm" c="dimmed" fw={600} style={{ flex: 1 }} truncate>
+                        <i className="ph ph-image mr-2" />
+                        {t("mesdocuments_current_photo")}
+                      </Text>
                     </Group>
                   </Paper>
                 )}
                 {versoFile ? (
-                  <Paper withBorder p="sm" radius="md">
-                    <Group gap="sm">
-                      <img src={URL.createObjectURL(versoFile)} alt="verso" style={{ width: 64, height: 48, objectFit: "cover", borderRadius: 8 }} />
-                      <div style={{ flex: 1 }}>
-                        <Text size="sm" fw={600} truncate>{versoFile.name}</Text>
-                        <Text size="xs" c="dimmed">{(versoFile.size / 1024).toFixed(0)} Ko</Text>
+                  <Paper withBorder p="md" radius="lg" style={{ background: "var(--mantine-color-body)" }}>
+                    <Group gap="md" wrap="nowrap">
+                      <img src={URL.createObjectURL(versoFile)} alt="verso" style={{ width: 72, height: 54, objectFit: "cover", borderRadius: 10 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text size="sm" fw={700} truncate>{versoFile.name}</Text>
+                        <Text size="xs" c="dimmed" mt={2}>{(versoFile.size / 1024).toFixed(0)} Ko</Text>
                       </div>
-                      <Button variant="subtle" color="red" size="compact-xs" onClick={() => setVersoFile(null)}>
-                        <i className="fa-solid fa-xmark" />
+                      <Button variant="subtle" color="red" size="sm" onClick={() => setVersoFile(null)}>
+                        <i className="ph ph-x text-lg" />
                       </Button>
                     </Group>
                   </Paper>
@@ -599,22 +700,23 @@ export default function MesDocuments() {
                     onDrop={(files) => setVersoFile(files[0] || null)}
                     accept={IMAGE_MIME_TYPE}
                     maxSize={10 * 1024 ** 2}
-                    radius="md"
-                    p="lg"
+                    radius="lg"
+                    p="xl"
+                    style={{ borderWidth: 2, borderStyle: 'dashed' }}
                   >
-                    <Group justify="center" gap="sm">
+                    <Group justify="center" gap="md">
                       <Dropzone.Accept>
-                        <i className="fa-solid fa-download text-xl" style={{ color: "var(--mantine-color-blue-6)" }} />
+                        <i className="ph ph-download text-3xl" style={{ color: "var(--mantine-color-blue-6)" }} />
                       </Dropzone.Accept>
                       <Dropzone.Reject>
-                        <i className="fa-solid fa-xmark text-xl" style={{ color: "var(--mantine-color-red-6)" }} />
+                        <i className="ph ph-x text-3xl" style={{ color: "var(--mantine-color-red-6)" }} />
                       </Dropzone.Reject>
                       <Dropzone.Idle>
-                        <i className="fa-solid fa-cloud-arrow-up text-xl" style={{ color: "var(--mantine-color-dimmed)" }} />
+                        <i className="ph ph-cloud-arrow-up text-3xl" style={{ color: "var(--mantine-color-dimmed)" }} />
                       </Dropzone.Idle>
                       <div>
-                        <Text size="sm" fw={600}>{t("mesdocuments_drop_photo")}</Text>
-                        <Text size="xs" c="dimmed">{t("mesdocuments_click_import")}</Text>
+                        <Text size="sm" fw={700}>{t("mesdocuments_drop_photo")}</Text>
+                        <Text size="xs" c="dimmed" mt={4}>{t("mesdocuments_click_import")}</Text>
                       </div>
                     </Group>
                   </Dropzone>
@@ -622,9 +724,12 @@ export default function MesDocuments() {
               </div>
             </Stack>
 
-            <Paper withBorder p="md" radius="md" mb="lg" style={{ background: "var(--mantine-color-bgMain)" }}>
-              <Text fz={12} fw={700} c="dimmed" tt="uppercase" mb="md">{t("mesdocuments_summary")}</Text>
-              <Stack gap="xs">
+            <Paper withBorder p="lg" radius="lg" mb="lg" style={{ background: "var(--mantine-color-bgMain)" }}>
+              <Group gap="sm" mb="md">
+                <i className="ph ph-list-checks text-xl text-primary" />
+                <Text fz={14} fw={700} c="textMain">{t("mesdocuments_summary")}</Text>
+              </Group>
+              <Stack gap="sm">
                 {[
                   { label: t("mesdocuments_summary_name"), val: form.name },
                   { label: t("mesdocuments_summary_type"), val: selectedType === 'AUTRES' && customTypeName.trim() ? customTypeName.trim() : (docTypes.find(dt => dt.code === selectedType)?.nom || selectedType) },
@@ -633,9 +738,9 @@ export default function MesDocuments() {
                   ...(validityOption === 'EXPIRING' ? [{ label: t("mesdocuments_summary_issued"), val: form.issued || "—" }, { label: t("mesdocuments_summary_expiry"), val: form.expiry || "—" }] : []),
                   { label: t("mesdocuments_summary_documents"), val: `${(rectoFile ? 1 : 0) + (versoFile ? 1 : 0)} ${t("mesdocuments_summary_files")}` },
                 ].map((i) => (
-                  <Group key={i.label} justify="space-between">
+                  <Group key={i.label} justify="space-between" wrap="nowrap">
                     <Text size="sm" c="dimmed">{i.label}</Text>
-                    <Text size="sm" fw={700}>{i.val}</Text>
+                    <Text size="sm" fw={700} ta="right">{i.val}</Text>
                   </Group>
                 ))}
               </Stack>
@@ -643,9 +748,10 @@ export default function MesDocuments() {
 
             {!editingDoc && (
               <Checkbox
-                label={t("mesdocuments_consent")}
+                label={<Text size="sm" lh={1.5}>{t("mesdocuments_consent")}</Text>}
                 checked={consent}
                 onChange={(e) => setConsent(e.currentTarget.checked)}
+                size="md"
               />
             )}
           </div>
@@ -672,27 +778,31 @@ export default function MesDocuments() {
       )}
 
       {/* ── DELETE MODAL ── */}
-      <Modal opened={showDeleteModal} onClose={() => setShowDeleteModal(false)} size="sm" withCloseButton={false} padding="xl">
-        <div className="text-center">
-          <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4 mx-auto">
-            <i className="fa-solid fa-trash-can text-red-500 text-xl" />
-          </div>
-          <h3 className="font-bricolage text-lg font-bold text-textMain mb-2">{t("mesdocuments_confirm_delete_title")}</h3>
-          <p className="text-[13.5px] text-textMuted mb-6 leading-relaxed">
-            {t("mesdocuments_confirm_delete_desc")}
-          </p>
-          <div className="flex gap-3">
-            <button onClick={() => setShowDeleteModal(false)}
-              className="flex-1 py-2.5 rounded-[11px] bg-bgMain border border-borderMain text-textMain font-bold text-[13.5px] hover:border-textMain transition-colors">
-              {t("mesdocuments_cancel")}
-            </button>
-            <button onClick={confirmDelete}
-              className="flex-1 py-2.5 rounded-[11px] bg-red-500 text-white font-bold text-[13.5px] hover:bg-red-600 transition-all active:scale-[.98]">
-              {t("mesdocuments_confirm_delete")}
-            </button>
-          </div>
-        </div>
-      </Modal>
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogBody>
+            <div className="text-center">
+              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4 mx-auto">
+                <i className="ph ph-trash text-red-500 text-xl" />
+              </div>
+              <h3 className="font-bricolage text-lg font-bold text-textMain mb-2">{t("mesdocuments_confirm_delete_title")}</h3>
+              <p className="text-[13.5px] text-textMuted mb-6 leading-relaxed">
+                {t("mesdocuments_confirm_delete_desc")}
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 py-2.5 rounded-[11px] bg-bgMain border border-borderMain text-textMain font-bold text-[13.5px] hover:border-textMain transition-colors">
+                  {t("mesdocuments_cancel")}
+                </button>
+                <button onClick={confirmDelete}
+                  className="flex-1 py-2.5 rounded-[11px] bg-red-500 text-white font-bold text-[13.5px] hover:bg-red-600 transition-all active:scale-[.98]">
+                  {t("mesdocuments_confirm_delete")}
+                </button>
+              </div>
+            </div>
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
 
       {/* ── LOST MODAL ── */}
       {showLostModal && selectedDoc && (
@@ -706,7 +816,7 @@ export default function MesDocuments() {
       {showSuccess && (
         <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3 rounded-full flex items-center gap-3 shadow-2xl z-[100] animate-in fade-in slide-in-from-bottom-4">
           <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-            <i className="fa-solid fa-check text-[10px]" />
+            <i className="ph ph-check text-[10px]" />
           </div>
           <span className="text-[13px] font-medium whitespace-nowrap">{successMsg}</span>
         </div>

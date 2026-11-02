@@ -299,15 +299,28 @@ export class DeclarationRepository {
     // We match by exact ID OR by code (ILIKE).
     // This allows matching between new ID-based records and legacy code-based records.
     const query = `
-      SELECT * FROM declarations 
+      SELECT * FROM declarations d
       WHERE (
-        doc_type = $1 
-        OR doc_type ILIKE $2
-        OR (doc_type ILIKE 'passport' AND $2 ILIKE 'passeport') 
-        OR (doc_type ILIKE 'passeport' AND $2 ILIKE 'passport')
+        d.doc_type = $1 
+        OR d.doc_type ILIKE $2
+        OR (d.doc_type ILIKE 'passport' AND $2 ILIKE 'passeport') 
+        OR (d.doc_type ILIKE 'passeport' AND $2 ILIKE 'passport')
       )
-      AND declaration_type = $3
-      AND status NOT IN ('RETURNED', 'CLAIMED', 'CANCELLED', 'MATCHED')
+      AND d.declaration_type = $3
+      AND (
+        ($3 = 'LOST' AND d.status = 'SEARCHING')
+        OR ($3 = 'FOUND' AND d.status IN ('AVAILABLE', 'MATCHED'))
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM recovery_reservations rr
+        WHERE rr.found_declaration_id = d.id
+          AND rr.status IN ('RESERVED', 'PAID')
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM claims c
+        WHERE c.found_declaration_id = d.id
+          AND c.status IN ('PAID', 'VALIDATED')
+      )
     `;
     const { rows } = await pool.query(query, [docTypeId, docTypeCode, oppositeType]);
     return rows;
@@ -329,6 +342,25 @@ export class DeclarationRepository {
     `;
     const { rows } = await pool.query(query, [fingerprint, declarationType]);
     return rows[0] || null;
+  }
+
+  /**
+   * FOUND declarations created by a reporter inside a rolling window.
+   * Used to enforce the anti-abuse limit (2 findings per 10 minutes).
+   */
+  async countRecentFoundByReporter(
+    reporterId: string,
+    minutes: number,
+  ): Promise<{ count: number; oldest: Date | null }> {
+    const { rows } = await pool.query(
+      `SELECT COUNT(*)::int AS count, MIN(created_at) AS oldest
+       FROM declarations
+       WHERE reporter_id = $1
+         AND declaration_type = 'FOUND'
+         AND created_at > NOW() - make_interval(mins => $2)`,
+      [reporterId, minutes],
+    );
+    return { count: rows[0].count, oldest: rows[0].oldest };
   }
 
   /**

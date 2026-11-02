@@ -18,7 +18,7 @@ export const CurrentPlanCard: React.FC<Props> = ({ planName, usage, loading }) =
 
       <div className="relative z-10">
         <div className="flex items-center gap-2 bg-primary/20 border border-primary/30 rounded-full px-3 py-1 mb-4 inline-flex">
-          <i className="fa-solid fa-bolt text-primary text-[10px]" />
+          <i className="ph ph-lightning text-primary text-[10px]" />
           <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t("abonnement_current_plan")}</span>
         </div>
 

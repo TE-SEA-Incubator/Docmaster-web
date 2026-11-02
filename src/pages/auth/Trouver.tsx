@@ -13,6 +13,7 @@ import DatePicker from "../../components/ui/DatePicker";
 import LocationSelect from "../../components/ui/LocationSelect";
 import { describeValidationErrors } from "../../utils/declarationFieldLabels";
 import { todayISO } from "../../utils/dateHelpers";
+import { phClass } from "../../utils/phosphorIcons";
 
 interface DocTypeItem {
   id: string;
@@ -64,6 +65,7 @@ export default function Trouver() {
   const [contactEmail, setContactEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const requestIdRef = useRef<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [success, setSuccess] = useState(false);
   const [refNumber, setRefNumber] = useState("");
@@ -157,7 +159,7 @@ export default function Trouver() {
 
     const resultsBox = document.getElementById("map-search-results")!;
     resultsBox.innerHTML =
-      `<div class="p-3 text-[12px] text-textMuted italic flex items-center gap-2"><i class="fa-solid fa-spinner fa-spin"></i> ${t("trouver_searching")}</div>`;
+      `<div class="p-3 text-[12px] text-textMuted italic flex items-center gap-2"><i class="ph ph-spinner animate-spin"></i> ${t("trouver_searching")}</div>`;
     resultsBox.classList.remove("hidden");
 
     try {
@@ -386,6 +388,10 @@ export default function Trouver() {
 
     setSubmitting(true);
 
+    // Une clé stable par tentative : un timeout réseau suivi d'un nouvel envoi
+    // ne crée pas de seconde déclaration côté serveur.
+    const idempotencyKey = (requestIdRef.current ||= crypto.randomUUID());
+
     const formData = new FormData();
     formData.append("doc_type", selectedType);
     formData.append("owner_name", ownerName);
@@ -437,6 +443,7 @@ export default function Trouver() {
 
     try {
       const result = await declarationsService.createFound(formData, {
+        headers: { "Idempotency-Key": idempotencyKey },
         onUploadProgress: (event) => {
           if (event.total) setProgress(Math.round((event.loaded / event.total) * 100));
         },
@@ -444,6 +451,7 @@ export default function Trouver() {
       setProgress(100);
 
       if (result.success) {
+        requestIdRef.current = null;
         setRefNumber(result.data?.identifiant_doc_dm || "");
         setSuccess(true);
       } else {
@@ -479,10 +487,10 @@ export default function Trouver() {
         <div
           className="p-4 sm:p-6 lg:p-8 custom-scrollbar max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto pb-24 md:pb-0"
         >
-          <div className="max-w-lg mx-auto">
+          <div className="w-full mx-auto">
             <div className="bg-white border border-borderMain rounded-[16px] p-5 text-center">
               <div className="w-14 h-14 rounded-[18px] bg-green-light flex items-center justify-center mx-auto mb-3">
-                <i className="fa-solid fa-circle-check text-green-mid text-3xl"></i>
+                <i className="ph ph-check-circle text-green-mid text-3xl"></i>
               </div>
               <h2 className="font-bricolage text-xl font-extrabold text-textMain mb-1">
                 {t("trouver_declaration_published")}
@@ -536,11 +544,11 @@ export default function Trouver() {
       <div
         className="p-4 sm:p-6 lg:p-8 custom-scrollbar max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto pb-24 md:pb-0"
       >
-        <div className="max-w-4xl mx-auto space-y-4">
+        <div className="w-full mx-auto space-y-4">
           {/* Hero */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[13px] bg-green-light border border-green-dark/10 flex items-center justify-center flex-shrink-0">
-              <i className="fa-solid fa-hand-holding-heart text-green-mid text-lg"></i>
+              <i className="ph ph-hand-heart text-green-mid text-lg"></i>
             </div>
             <div>
               <h1 className="font-bricolage text-[17px] font-extrabold text-textMain tracking-tight leading-tight">
@@ -582,7 +590,7 @@ export default function Trouver() {
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all duration-300 relative z-1 flex-shrink-0 ${circleCls}`}
                     >
                       {isDone ? (
-                        <i className="fa-solid fa-check text-[9px]"></i>
+                        <i className="ph ph-check text-[9px]"></i>
                       ) : (
                         <span>{idx}</span>
                       )}
@@ -599,7 +607,7 @@ export default function Trouver() {
             <div className="bg-white border border-borderMain rounded-[16px] p-4 panel-content">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-7 h-7 rounded-[8px] bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <i className="fa-solid fa-tag text-primary text-xs"></i>
+                  <i className="ph ph-tag text-primary text-xs"></i>
                 </div>
                 <h2 className="font-bricolage text-[15px] font-bold text-textMain">
                   {t("trouver_step1_title")}
@@ -610,7 +618,7 @@ export default function Trouver() {
                 <p className="text-[11px] font-bold text-textMain mb-2 uppercase tracking-wider opacity-60">
                   {t("trouver_doc_types")}
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
+                <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide snap-x snap-mandatory sm:grid sm:grid-cols-5 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0 sm:snap-none mb-3">
                   {docTypes.map((d) => {
                     const st = getIconStyle(d.icone);
                     return (
@@ -620,7 +628,7 @@ export default function Trouver() {
                           setSelectedType(d.id);
                           setAutreType("");
                         }}
-                        className={`doc-type-card border-2 rounded-[12px] p-[10px_6px] cursor-pointer text-center bg-white relative transition-all duration-180 hover:border-primary hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(217,138,48,0.12)] ${
+                        className={`doc-type-card shrink-0 w-[150px] snap-start sm:w-auto border-2 rounded-[12px] p-[10px_6px] cursor-pointer text-center bg-white relative transition-all duration-180 hover:border-primary hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(217,138,48,0.12)] ${
                           selectedType === d.id
                             ? "!border-primary !bg-[#fef0dc] !shadow-[0_0_0_3px_rgba(217,138,48,0.12)]"
                             : "border-[#eae3d8]"
@@ -632,7 +640,7 @@ export default function Trouver() {
                         <div
                           className={`w-9 h-9 rounded-[10px] ${st.bg} flex items-center justify-center mx-auto mb-2`}
                         >
-                          <i className={`fa-solid fa-${d.icone || "file-lines"} ${st.cls} text-lg`}></i>
+                          <i className={`${phClass(d.icone || "file-lines")} ${st.cls} text-lg`}></i>
                         </div>
                         <div className="text-[12px] font-bold text-textMain">{d.nom}</div>
                       </button>
@@ -657,7 +665,7 @@ export default function Trouver() {
                 disabled={!selectedType}
                 className="w-full py-3 rounded-[12px] bg-primary text-white font-bricolage text-[14px] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-dark transition-all active:scale-[.98]"
               >
-                {t("trouver_continue")} <i className="fa-solid fa-arrow-right ml-1 text-[12px]"></i>
+                {t("trouver_continue")} <i className="ph ph-arrow-right ml-1 text-[12px]"></i>
               </button>
             </div>
           )}
@@ -667,7 +675,7 @@ export default function Trouver() {
             <div className="bg-white border border-borderMain rounded-[16px] p-4 panel-content">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-7 h-7 rounded-[8px] bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <i className="fa-solid fa-user text-primary text-xs"></i>
+                  <i className="ph ph-user text-primary text-xs"></i>
                 </div>
                 <div>
                   <h2 className="font-bricolage text-[15px] font-bold text-textMain">
@@ -693,7 +701,7 @@ export default function Trouver() {
                       placeholder={t("trouver_owner_name_placeholder")}
                     />
                     <p className="text-[10.5px] text-[#9ca3af] mt-1">
-                      <i className="fa-solid fa-eye-slash text-[10px]"></i> {t("trouver_shared_only")}
+                      <i className="ph ph-eye-slash text-[10px]"></i> {t("trouver_shared_only")}
                     </p>
                   </div>
                   <div>
@@ -733,9 +741,9 @@ export default function Trouver() {
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { value: "bon", label: t("trouver_condition_good"), icon: "fa-circle-check", cls: "text-green-500" },
-                      { value: "moyen", label: t("trouver_condition_fair"), icon: "fa-triangle-exclamation", cls: "text-amber-500" },
-                      { value: "abime", label: t("trouver_condition_damaged"), icon: "fa-circle-xmark", cls: "text-red-400" },
+                      { value: "bon", label: t("trouver_condition_good"), icon: "ph ph-check-circle", cls: "text-green-500" },
+                      { value: "moyen", label: t("trouver_condition_fair"), icon: "ph ph-warning", cls: "text-amber-500" },
+                      { value: "abime", label: t("trouver_condition_damaged"), icon: "ph ph-x-circle", cls: "text-red-400" },
                     ].map((opt) => (
                       <div key={opt.value} className="radio-pill">
                         <input
@@ -755,7 +763,7 @@ export default function Trouver() {
                               : ""
                           }`}
                         >
-                          <i className={`fa-solid ${opt.icon} ${opt.cls} text-xs`}></i>
+                          <i className={`${opt.icon} ${opt.cls} text-xs`}></i>
                           {opt.label}
                         </label>
                       </div>
@@ -821,13 +829,13 @@ export default function Trouver() {
                   onClick={() => goToStep(1)}
                   className="px-4 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors flex items-center gap-1.5"
                 >
-                  <i className="fa-solid fa-arrow-left text-[11px]"></i> {t("trouver_back")}
+                  <i className="ph ph-arrow-left text-[11px]"></i> {t("trouver_back")}
                 </button>
                 <button
                   onClick={() => goToStep(3)}
                   className="flex-1 py-2.5 rounded-[12px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]"
                 >
-                  {t("trouver_continue")} <i className="fa-solid fa-arrow-right ml-1 text-[11px]"></i>
+                  {t("trouver_continue")} <i className="ph ph-arrow-right ml-1 text-[11px]"></i>
                 </button>
               </div>
             </div>
@@ -838,7 +846,7 @@ export default function Trouver() {
             <div className="bg-white border border-borderMain rounded-[16px] p-4 panel-content">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-7 h-7 rounded-[8px] bg-green-light flex items-center justify-center flex-shrink-0">
-                  <i className="fa-solid fa-location-dot text-green-mid text-xs"></i>
+                  <i className="ph ph-map-pin text-green-mid text-xs"></i>
                 </div>
                 <div>
                   <h2 className="font-bricolage text-[15px] font-bold text-textMain">
@@ -879,7 +887,7 @@ export default function Trouver() {
                   {/* Search */}
                   <div className="relative group/search mb-2">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-textMuted group-focus-within/search:text-primary transition-colors">
-                      <i className="fa-solid fa-magnifying-glass text-[13px]"></i>
+                      <i className="ph ph-magnifying-glass text-[13px]"></i>
                     </div>
                     <input
                       id="map-search-input"
@@ -908,7 +916,7 @@ export default function Trouver() {
                       onClick={searchLocation}
                       className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark transition-all shadow-sm"
                     >
-                      <i className="fa-solid fa-arrow-right text-[11px]"></i>
+                      <i className="ph ph-arrow-right text-[11px]"></i>
                     </button>
                     <div
                       id="map-search-results"
@@ -922,7 +930,7 @@ export default function Trouver() {
                       locationData ? "visible opacity-100" : "invisible opacity-0"
                     }`}
                   >
-                    <i className="fa-solid fa-location-dot text-green-mid"></i>
+                    <i className="ph ph-map-pin text-green-mid"></i>
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] text-textMain font-bold truncate">
                         {locationData?.city || t("trouver_loading_address")}
@@ -937,7 +945,7 @@ export default function Trouver() {
                   <div id="map-loader" className="w-full h-[280px] rounded-[16px] bg-bgMain border border-borderMain overflow-hidden relative">
                     <div ref={mapContainerRef} className="w-full h-full"></div>
                     <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                      <i className="fa-solid fa-spinner fa-spin text-primary text-2xl"></i>
+                      <i className="ph ph-spinner animate-spin text-primary text-2xl"></i>
                     </div>
                   </div>
                 </div>
@@ -948,13 +956,13 @@ export default function Trouver() {
                   onClick={() => goToStep(2)}
                   className="px-4 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors flex items-center gap-1.5"
                 >
-                  <i className="fa-solid fa-arrow-left text-[11px]"></i> {t("trouver_back")}
+                  <i className="ph ph-arrow-left text-[11px]"></i> {t("trouver_back")}
                 </button>
                 <button
                   onClick={() => goToStep(4)}
                   className="flex-1 py-2.5 rounded-[12px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]"
                 >
-                  {t("trouver_continue")} <i className="fa-solid fa-arrow-right ml-1 text-[11px]"></i>
+                  {t("trouver_continue")} <i className="ph ph-arrow-right ml-1 text-[11px]"></i>
                 </button>
               </div>
             </div>
@@ -965,7 +973,7 @@ export default function Trouver() {
             <div className="bg-white border border-borderMain rounded-[16px] p-4 panel-content">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded-[8px] bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <i className="fa-solid fa-camera text-primary text-xs"></i>
+                  <i className="ph ph-camera text-primary text-xs"></i>
                 </div>
                 <h2 className="font-bricolage text-[15px] font-bold text-textMain">
                   {t("trouver_step4_title")}
@@ -1010,7 +1018,7 @@ export default function Trouver() {
                       />
                     ) : (
                       <>
-                        <i className="fa-solid fa-cloud-arrow-up text-2xl text-textMuted mb-1 block"></i>
+                        <i className="ph ph-cloud-arrow-up text-2xl text-textMuted mb-1 block"></i>
                         <p className="text-[13px] font-bold text-textMain">
                           {t("trouver_drag_recto")}
                         </p>
@@ -1055,7 +1063,7 @@ export default function Trouver() {
                       />
                     ) : (
                       <>
-                        <i className="fa-solid fa-rotate-right text-2xl text-textMuted mb-1 block"></i>
+                        <i className="ph ph-arrow-clockwise text-2xl text-textMuted mb-1 block"></i>
                         <p className="text-[13px] font-bold text-textMain">
                           {t("trouver_drag_verso")}
                         </p>
@@ -1070,13 +1078,13 @@ export default function Trouver() {
                   onClick={() => goToStep(3)}
                   className="px-4 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors flex items-center gap-1.5"
                 >
-                  <i className="fa-solid fa-arrow-left text-[11px]"></i> {t("trouver_back")}
+                  <i className="ph ph-arrow-left text-[11px]"></i> {t("trouver_back")}
                 </button>
                 <button
                   onClick={() => goToStep(5)}
                   className="flex-1 py-2.5 rounded-[12px] bg-primary text-white font-bricolage text-[14px] font-bold hover:bg-primary-dark transition-all active:scale-[.98]"
                 >
-                  {t("trouver_continue")} <i className="fa-solid fa-arrow-right ml-1 text-[11px]"></i>
+                  {t("trouver_continue")} <i className="ph ph-arrow-right ml-1 text-[11px]"></i>
                 </button>
               </div>
             </div>
@@ -1087,7 +1095,7 @@ export default function Trouver() {
             <div className="bg-white border border-borderMain rounded-[16px] p-4 panel-content">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-7 h-7 rounded-[8px] bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <i className="fa-solid fa-handshake text-primary text-xs"></i>
+                  <i className="ph ph-handshake text-primary text-xs"></i>
                 </div>
                 <h2 className="font-bricolage text-[15px] font-bold text-textMain">
                   {t("trouver_step5_title")}
@@ -1121,7 +1129,7 @@ export default function Trouver() {
                               : ""
                           }`}
                         >
-                          <i className={`fa-solid ${contactModes.includes(opt.value) ? "fa-check" : "fa-plus"} text-[10px]`}></i>
+                          <i className={`${contactModes.includes(opt.value) ? "ph ph-check" : "ph ph-plus"} text-[10px]`}></i>
                           {opt.label}
                         </label>
                       </div>
@@ -1266,7 +1274,7 @@ export default function Trouver() {
                   disabled={submitting}
                   className="px-4 py-2.5 rounded-[12px] bg-bgMain border border-borderMain text-textMain text-[13px] font-bold hover:border-textMain transition-colors flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  <i className="fa-solid fa-arrow-left text-[11px]"></i> {t("trouver_back")}
+                  <i className="ph ph-arrow-left text-[11px]"></i> {t("trouver_back")}
                 </button>
                 <button
                   onClick={submitDeclaration}
@@ -1275,7 +1283,7 @@ export default function Trouver() {
                 >
                   {submitting ? (
                     <>
-                      <i className="fa-solid fa-spinner fa-spin text-[12px]"></i> {t("trouver_publishing")}
+                      <i className="ph ph-spinner animate-spin text-[12px]"></i> {t("trouver_publishing")}
                     </>
                   ) : (
                     t("trouver_publish")

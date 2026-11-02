@@ -36,6 +36,7 @@ import { useI18n } from "../../context/I18nContext";
 import AntdLocationSelect from "../../components/ui/AntdLocationSelect";
 import OsmStreetSearch from "../../components/ui/OsmStreetSearch";
 import { partenairePalette } from "../../theme/partenaires";
+import { phClass } from "../../utils/phosphorIcons";
 
 interface LocationValue {
   region: string;
@@ -309,7 +310,7 @@ export default function DeclarerTrouvaille() {
                   <Button
                     size="small"
                     type="text"
-                    icon={<i className="fa-solid fa-copy" />}
+                    icon={<i className="ph ph-copy" />}
                     onClick={() => navigator.clipboard.writeText(ref)}
                   />
                 </Space>
@@ -318,7 +319,7 @@ export default function DeclarerTrouvaille() {
           </div>
           <div style={{ padding: "12px 16px", background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 8, textAlign: "left", marginBottom: 24 }}>
             <Typography.Text style={{ fontSize: 12, color: "#d46b08" }}>
-              <i className="fa-solid fa-wallet" style={{ marginRight: 8 }} />
+              <i className="ph ph-wallet" style={{ marginRight: 8 }} />
               {t("partenaire_declarer_success_reward")}
             </Typography.Text>
           </div>
@@ -461,7 +462,7 @@ export default function DeclarerTrouvaille() {
                           margin: "0 auto 8px",
                         }}
                       >
-                        <i className={`fa-solid fa-${d.icone || "file-lines"}`} style={{ color: selected ? "#fff" : partenairePalette.primary, fontSize: 16 }} />
+                        <i className={`${phClass(d.icone || "file-lines")}`} style={{ color: selected ? "#fff" : partenairePalette.primary, fontSize: 16 }} />
                       </div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: partenairePalette.textMain }}>{d.nom}</div>
                       {(d.delai_expiration_mois ?? 0) > 0 ? (
@@ -480,7 +481,7 @@ export default function DeclarerTrouvaille() {
             </Row>
           )}
           <Button type="primary" block style={{ marginTop: 24, height: 40 }} onClick={nextStep} disabled={docs.length === 0}>
-            {t("partenaire_declarer_continue")} <i className="fa-solid fa-arrow-right ml-1" style={{ fontSize: 11 }} />
+            {t("partenaire_declarer_continue")} <i className="ph ph-arrow-right ml-1" style={{ fontSize: 11 }} />
           </Button>
         </Card>
       )}
@@ -513,7 +514,7 @@ export default function DeclarerTrouvaille() {
                     size="small"
                     type="text"
                     danger
-                    icon={<i className="fa-solid fa-trash-can" />}
+                    icon={<i className="ph ph-trash" />}
                     onClick={() => removeDoc(doc.key)}
                     title={t("partenaire_declarer_remove_doc")}
                   />
@@ -547,15 +548,15 @@ export default function DeclarerTrouvaille() {
                     <Radio.Group value={doc.etat} onChange={(e) => updateDoc(doc.key, { etat: e.target.value })}>
                       <Space wrap>
                         <Radio.Button value="bon">
-                          <i className="fa-solid fa-circle-check" style={{ color: "#16a34a", marginRight: 6 }} />
+                          <i className="ph ph-check-circle" style={{ color: "#16a34a", marginRight: 6 }} />
                           {t("partenaire_declarer_state_good")}
                         </Radio.Button>
                         <Radio.Button value="moyen">
-                          <i className="fa-solid fa-triangle-exclamation" style={{ color: "#f59e0b", marginRight: 6 }} />
+                          <i className="ph ph-warning" style={{ color: "#f59e0b", marginRight: 6 }} />
                           {t("partenaire_declarer_state_mid")}
                         </Radio.Button>
                         <Radio.Button value="abime">
-                          <i className="fa-solid fa-circle-xmark" style={{ color: "#ef4444", marginRight: 6 }} />
+                          <i className="ph ph-x-circle" style={{ color: "#ef4444", marginRight: 6 }} />
                           {t("partenaire_declarer_state_damaged")}
                         </Radio.Button>
                       </Space>
@@ -577,7 +578,7 @@ export default function DeclarerTrouvaille() {
           <Space style={{ width: "100%", justifyContent: "space-between" }}>
             <Button onClick={() => setStep(0)}>{t("partenaire_declarer_back")}</Button>
             <Button type="primary" onClick={nextStep}>
-              {t("partenaire_declarer_continue")} <i className="fa-solid fa-arrow-right ml-1" style={{ fontSize: 11 }} />
+              {t("partenaire_declarer_continue")} <i className="ph ph-arrow-right ml-1" style={{ fontSize: 11 }} />
             </Button>
           </Space>
         </Card>
@@ -616,7 +617,7 @@ export default function DeclarerTrouvaille() {
           <Space style={{ width: "100%", justifyContent: "space-between" }}>
             <Button onClick={() => setStep(1)}>{t("partenaire_declarer_back")}</Button>
             <Button type="primary" onClick={nextStep}>
-              {t("partenaire_declarer_continue")} <i className="fa-solid fa-arrow-right ml-1" style={{ fontSize: 11 }} />
+              {t("partenaire_declarer_continue")} <i className="ph ph-arrow-right ml-1" style={{ fontSize: 11 }} />
             </Button>
           </Space>
         </Card>
@@ -697,7 +698,7 @@ export default function DeclarerTrouvaille() {
           <Space style={{ width: "100%", justifyContent: "space-between" }}>
             <Button onClick={() => setStep(2)}>{t("partenaire_declarer_back")}</Button>
             <Button type="primary" onClick={() => setStep(4)}>
-              {t("partenaire_declarer_continue")} <i className="fa-solid fa-arrow-right ml-1" style={{ fontSize: 11 }} />
+              {t("partenaire_declarer_continue")} <i className="ph ph-arrow-right ml-1" style={{ fontSize: 11 }} />
             </Button>
           </Space>
         </Card>

@@ -80,7 +80,7 @@ export default function CompleteDeclarationModal({ declaration, onClose, onSaved
             className="text-textMuted hover:text-textMain transition-colors disabled:opacity-40"
             aria-label={t("detail_close")}
           >
-            <i className="fa-solid fa-xmark text-lg" />
+            <i className="ph ph-x text-lg" />
           </button>
         </div>
 
@@ -127,9 +127,9 @@ export default function CompleteDeclarationModal({ declaration, onClose, onSaved
             className="px-6 py-3.5 bg-primary text-white rounded-2xl font-bricolage font-black text-sm hover:bg-primary-dark transition-all shadow-xl shadow-primary/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? (
-              <i className="fa-solid fa-spinner fa-spin" />
+              <i className="ph ph-spinner animate-spin" />
             ) : (
-              <i className="fa-solid fa-check" />
+              <i className="ph ph-check" />
             )}
             {t("mesdeclarations_complete_save")}
           </button>

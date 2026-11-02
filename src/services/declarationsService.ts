@@ -42,10 +42,28 @@ export const declarationsService = {
     return res.data;
   },
 
-  async getRenderContext(id: string, foundId?: string) {
+  async getRenderContext(id: string, foundId?: string, matchId?: string) {
+    const params = foundId || matchId ? { ...(foundId ? { found: foundId } : {}), ...(matchId ? { match: matchId } : {}) } : undefined;
     const res = await apiClient.get<ApiResponse<Declaration>>(`declarations/${id}/render-context`, {
-      params: foundId ? { found: foundId } : undefined,
+      params,
     });
+    return res.data;
+  },
+
+  async getMatches(id: string) {
+    const res = await apiClient.get<ApiResponse<any>>(`declarations/${id}/matches`);
+    return res.data;
+  },
+
+  async confirmMatch(id: string, matchId: string) {
+    const res = await apiClient.post<ApiResponse<any>>(`declarations/${id}/confirm-match`, { matchId });
+    return res.data;
+  },
+
+  async rejectMatch(id: string, matchId: string) {
+    const res = await apiClient.post<ApiResponse<any>>(
+      `declarations/${id}/matches/${matchId}/reject`,
+    );
     return res.data;
   },
 
@@ -66,7 +84,7 @@ export const declarationsService = {
     return res.data;
   },
 
-  async payRecoveryFee(data: { docId: string; paymentMethod: string; phone: string; amount?: number }) {
+  async payRecoveryFee(data: { docId: string; paymentMethod: string; phone: string; amount?: number; matchId?: string }) {
     const res = await apiClient.post<ApiResponse>("payments/pay-recovery", data);
     return res.data;
   },

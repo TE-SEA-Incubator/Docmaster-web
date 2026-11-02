@@ -456,13 +456,13 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
             </p>
             <div className={styles.step1BrandProofs}>
               <div className={styles.step1ProofItem}>
-                <i className="fa-solid fa-circle-check" /> {t("login_proof_docs")}
+                <i className="ph ph-check-circle" /> {t("login_proof_docs")}
               </div>
               <div className={styles.step1ProofItem}>
-                <i className="fa-solid fa-users" /> {t("login_proof_members")}
+                <i className="ph ph-users" /> {t("login_proof_members")}
               </div>
               <div className={styles.step1ProofItem}>
-                <i className="fa-solid fa-shield-halved" /> {t("login_proof_security")}
+                <i className="ph ph-shield" /> {t("login_proof_security")}
               </div>
             </div>
           </div>
@@ -474,7 +474,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
               <p className={styles.step1FormSubtitle}>Entrez vos informations pour commencer.</p>
 
               {regError && (
-                <Alert variant="light" color="red" icon={<i className="fa-solid fa-circle-exclamation" />} px="md" py="sm">
+                <Alert variant="light" color="red" icon={<i className="ph ph-warning-circle" />} px="md" py="sm">
                   {regError}
                 </Alert>
               )}
@@ -483,7 +483,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                 <TextInput
                   {...registerField("nom")}
                   placeholder={t("profil_placeholder_lastname")}
-                  leftSection={<i className="fa-regular fa-user" />}
+                  leftSection={<i className="ph ph-user" />}
                   size="lg"
                   radius="lg"
                   required
@@ -493,7 +493,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                   {...registerField("prenom")}
                   onKeyDown={(e) => e.key === "Enter" && canGoNext(1) && goNext(1)}
                   placeholder={t("profil_placeholder_firstname")}
-                  leftSection={<i className="fa-regular fa-user" />}
+                  leftSection={<i className="ph ph-user" />}
                   size="lg"
                   radius="lg"
                   required
@@ -507,7 +507,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                   onClick={() => goNext(1)}
                   disabled={!canGoNext(1)}
                 >
-                  {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
+                  {t("login_btn_continue")} <i className="ph ph-arrow-right" />
                 </button>
               </div>
 
@@ -552,7 +552,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
               size="lg"
               radius="lg"
               placeholder="Sélectionnez votre date de naissance"
-              leftSection={<i className="fa-solid fa-calendar-days" />}
+              leftSection={<i className="ph ph-calendar-dots" />}
               clearable
               valueFormat="DD/MM/YYYY"
               locale="fr"
@@ -561,14 +561,14 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
 
             <div className={styles.btnRow}>
               <button className={styles.btnBack} onClick={goPrev}>
-                <i className="fa-solid fa-arrow-left" />
+                <i className="ph ph-arrow-left" />
               </button>
               <button
                 className={`${styles.btnPrimary} ${styles.btnPrimaryWhite}`}
                 onClick={() => goNext(2)}
                 disabled={!canGoNext(2)}
               >
-                {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
+                {t("login_btn_continue")} <i className="ph ph-arrow-right" />
               </button>
             </div>
 
@@ -600,14 +600,14 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                   type="email"
                   {...registerField("email")}
                   placeholder={t("login_email_placeholder")}
-                  leftSection={<i className="fa-regular fa-envelope" />}
+                  leftSection={<i className="ph ph-envelope" />}
                   rightSection={
                     emailChecking ? (
                       <Loader size="sm" color="gray" />
                     ) : emailExists === true ? (
-                      <i className="fa-solid fa-circle-xmark" style={{ color: "#e03131" }} />
+                      <i className="ph ph-x-circle" style={{ color: "#e03131" }} />
                     ) : emailExists === false && form.email.trim() ? (
-                      <i className="fa-solid fa-circle-check" style={{ color: "#2f9e44" }} />
+                      <i className="ph ph-check-circle" style={{ color: "#2f9e44" }} />
                     ) : null
                   }
                   size="lg"
@@ -678,14 +678,14 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
 
             <div className={styles.btnRow}>
               <button className={`${styles.btnBack} ${styles.btnBackDark}`} onClick={goPrev}>
-                <i className="fa-solid fa-arrow-left" />
+                <i className="ph ph-arrow-left" />
               </button>
               <button
                 className={`${styles.btnPrimary} ${styles.btnPrimaryGold}`}
                 onClick={() => goNext(3)}
                 disabled={!canGoNext(3)}
               >
-                {t("login_btn_continue")} <i className="fa-solid fa-arrow-right" />
+                {t("login_btn_continue")} <i className="ph ph-arrow-right" />
               </button>
             </div>
 
@@ -715,7 +715,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
               <PasswordInput
                 {...registerField("password")}
                 placeholder={t("reset_placeholder_password")}
-                leftSection={<i className="fa-solid fa-lock" />}
+                leftSection={<i className="ph ph-lock" />}
                 size="lg"
                 radius="lg"
                 error={errors.password?.message}
@@ -750,7 +750,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                 {...registerField("passwordConfirm")}
                 onKeyDown={(e) => e.key === "Enter" && canGoNext(4) && proceedToPseudo()}
                 placeholder={t("reset_placeholder_confirm")}
-                leftSection={<i className="fa-solid fa-lock" />}
+                leftSection={<i className="ph ph-lock" />}
                 size="lg"
                 radius="lg"
                 error={errors.passwordConfirm?.message}
@@ -773,26 +773,26 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
               />
               {form.passwordConfirm && pwMatch === false && (
                 <div className={`${styles.pwMatch} ${styles.pwMatchError}`}>
-                  <i className="fa-solid fa-circle-xmark" /> {t("login_error_pw_mismatch")}
+                  <i className="ph ph-x-circle" /> {t("login_error_pw_mismatch")}
                 </div>
               )}
               {pwMatch === true && (
                 <div className={`${styles.pwMatch} ${styles.pwMatchOk}`}>
-                  <i className="fa-solid fa-circle-check" /> {t("login_success_pw_match")}
+                  <i className="ph ph-check-circle" /> {t("login_success_pw_match")}
                 </div>
               )}
             </div>
 
             <div className={styles.btnRow}>
               <button className={styles.btnBack} onClick={goPrev}>
-                <i className="fa-solid fa-arrow-left" />
+                <i className="ph ph-arrow-left" />
               </button>
               <button
                 className={`${styles.btnPrimary} ${styles.btnPrimaryGold}`}
                 onClick={proceedToPseudo}
                 disabled={!canGoNext(4)}
               >
-                <>{t("login_btn_validate")} <i className="fa-solid fa-arrow-right" /></>
+                <>{t("login_btn_validate")} <i className="ph ph-arrow-right" /></>
               </button>
             </div>
 
@@ -819,7 +819,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
             </p>
 
             {regError && (
-              <Alert variant="light" color="red" icon={<i className="fa-solid fa-circle-exclamation" />} px="md" py="sm">
+              <Alert variant="light" color="red" icon={<i className="ph ph-warning-circle" />} px="md" py="sm">
                 {regError}
               </Alert>
             )}
@@ -862,9 +862,9 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                 className={styles.referralToggle}
                 onClick={() => setShowReferral(!showReferral)}
               >
-                <i className="fa-solid fa-gift" />
+                <i className="ph ph-gift" />
                 {t("login_referral_question")}
-                <i className={`fa-solid fa-chevron-down ${styles.referralToggleIcon} ${showReferral ? styles.referralToggleIconOpen : ""}`} />
+                <i className={`ph ph-caret-down ${styles.referralToggleIcon} ${showReferral ? styles.referralToggleIconOpen : ""}`} />
               </button>
 
               {showReferral && (
@@ -878,14 +878,14 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                   }}
                   disabled={referralLocked}
                   placeholder={t("login_referral_placeholder")}
-                  leftSection={<i className="fa-solid fa-gift" />}
+                  leftSection={<i className="ph ph-gift" />}
                 />
               )}
             </div>
 
             <div className={styles.btnRow}>
               <button className={styles.btnBack} onClick={goPrev}>
-                <i className="fa-solid fa-arrow-left" />
+                <i className="ph ph-arrow-left" />
               </button>
               <button
                 className={`${styles.btnPrimary} ${styles.btnPrimaryGreen}`}
@@ -893,9 +893,9 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                 disabled={!form.pseudo || regLoading}
               >
                 {regLoading ? (
-                  <i className="fa-solid fa-spinner fa-spin" />
+                  <i className="ph ph-spinner animate-spin" />
                 ) : (
-                  <><i className="fa-solid fa-rocket" /> {t("login_btn_create")}</>
+                  <><i className="ph ph-rocket" /> {t("login_btn_create")}</>
                 )}
               </button>
             </div>
@@ -946,12 +946,12 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
 
             {resendSuccess && (
               <div className={styles.pinSuccess}>
-                <i className="fa-solid fa-circle-check" /> {resendSuccess}
+                <i className="ph ph-check-circle" /> {resendSuccess}
               </div>
             )}
             {pinError && (
               <div className={styles.pinError}>
-                <i className="fa-solid fa-circle-exclamation" /> {pinError}
+                <i className="ph ph-warning-circle" /> {pinError}
               </div>
             )}
 
@@ -965,11 +965,11 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                 disabled={resendCountdown > 0 || pinSending}
               >
                 {pinSending ? (
-                  <i className="fa-solid fa-spinner fa-spin" />
+                  <i className="ph ph-spinner animate-spin" />
                 ) : resendCountdown > 0 ? (
-                  <><i className="fa-solid fa-clock" />{resendCountdown}s</>
+                  <><i className="ph ph-clock" />{resendCountdown}s</>
                 ) : (
-                  <><i className="fa-solid fa-rotate-right" /> {t("login_pin_resend")}</>
+                  <><i className="ph ph-arrow-clockwise" /> {t("login_pin_resend")}</>
                 )}
               </button>
             </div>
@@ -981,7 +981,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                 disabled={resendCountdown > 0 || pinSending}
                 style={{ marginTop: -4 }}
               >
-                <i className="fa-solid fa-envelope" /> Je n'ai pas reçu le SMS — envoyer par e-mail
+                <i className="ph ph-envelope" /> Je n'ai pas reçu le SMS — envoyer par e-mail
               </button>
             )}
 
@@ -991,7 +991,7 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                 onClick={() => { setDirection("prev"); setStep(5); }}
                 disabled={pinSending}
               >
-                <i className="fa-solid fa-arrow-left" />
+                <i className="ph ph-arrow-left" />
               </button>
               <button
                 className={`${styles.btnPrimary} ${styles.btnPrimaryWhite}`}
@@ -999,9 +999,9 @@ const onFinalSubmit = async (data: RegisterFormValues) => {
                 disabled={!canGoNext(6) || pinSending}
               >
                 {pinSending ? (
-                  <i className="fa-solid fa-spinner fa-spin" />
+                  <i className="ph ph-spinner animate-spin" />
                 ) : (
-                  <>{t("login_btn_verify")} <i className="fa-solid fa-arrow-right" /></>
+                  <>{t("login_btn_verify")} <i className="ph ph-arrow-right" /></>
                 )}
               </button>
             </div>

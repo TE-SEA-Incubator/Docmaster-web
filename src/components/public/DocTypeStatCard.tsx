@@ -45,11 +45,11 @@ export default function DocTypeStatCard({ card, periodKey, to }: DocTypeStatCard
             className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
           />
         ) : (
-          <i className={`fa-solid ${card.icon} text-2xl text-textMuted`} />
+          <i className={`${card.icon} text-2xl text-textMuted`} />
         )}
         {trend > 0 && (
           <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-1 bg-white/95 border border-borderMain rounded-full text-[10px] font-bold text-green-dark">
-            <i className="fa-solid fa-arrow-trend-up text-[9px]" />
+            <i className="ph ph-trend-up text-[9px]" />
             {trend}%
           </span>
         )}
@@ -57,7 +57,7 @@ export default function DocTypeStatCard({ card, periodKey, to }: DocTypeStatCard
 
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-start gap-2.5 min-w-0">
-          <i className={`fa-solid ${card.icon} mt-0.5 text-base shrink-0 ${iconColor(card.categorie)}`} />
+          <i className={`${card.icon} mt-0.5 text-base shrink-0 ${iconColor(card.categorie)}`} />
           <p
             className="text-[15px] font-bold text-textMain leading-snug"
             title={card.name}
@@ -76,13 +76,13 @@ export default function DocTypeStatCard({ card, periodKey, to }: DocTypeStatCard
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <Badge color="green" variant="light" radius="xl" size="sm" leftSection={<i className="fa-solid fa-arrow-up text-[9px]" />}>
+          <Badge color="green" variant="light" radius="xl" size="sm" leftSection={<i className="ph ph-arrow-up text-[9px]" />}>
             {stats.found} {t("dashboard_perf_found")}
           </Badge>
         </div>
 
         <p className="mt-auto pt-3 text-[12px] font-medium text-textMuted flex items-center gap-1.5">
-          <i className="fa-solid fa-clock-rotate-left text-[10px] shrink-0" />
+          <i className="ph ph-clock-counter-clockwise text-[10px] shrink-0" />
           {oldestFound ? (
             <span className="truncate" title={`${t("doc_type_card_oldest_found")} ${oldestFound}`}>
               {t("doc_type_card_oldest_found")} {oldestFound}

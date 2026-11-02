@@ -206,6 +206,11 @@ export class DocumentService {
       }, { bypassLimits: true });
       declarationId = decl.id;
     } catch (declError) {
+      // Un conflit métier (déjà une déclaration active, doublon…) doit être vu
+      // par l'utilisateur : il apprend pourquoi sa déclaration n'a pas été créée.
+      if (declError instanceof HttpError && declError.statusCode >= 400 && declError.statusCode < 500) {
+        throw declError;
+      }
       console.error('⚠️ Could not auto-create declaration:', declError);
     }
 

@@ -85,7 +85,7 @@ export default function TransfertAppareil() {
       <div className="min-h-screen bg-bgMain flex items-center justify-center p-4">
         <Paper p="xl" radius="xl" className="max-w-md w-full text-center" withBorder>
           <ThemeIcon size={60} radius="xl" variant="light" color="red" mx="auto">
-            <i className="fa-solid fa-circle-exclamation text-2xl" />
+            <i className="ph ph-warning-circle text-2xl" />
           </ThemeIcon>
           <Title order={4} mt="md" mb="xs">Lien invalide</Title>
           <Text c="dimmed" size="sm">{error}</Text>
@@ -102,7 +102,7 @@ export default function TransfertAppareil() {
       <div className="min-h-screen bg-bgMain flex items-center justify-center p-4">
         <Paper p="xl" radius="xl" className="max-w-md w-full text-center" withBorder>
           <ThemeIcon size={60} radius="xl" variant="light" color={actionType === "accepted" ? "green" : "gray"} mx="auto">
-            <i className={`fa-solid ${actionType === "accepted" ? "fa-check" : "fa-xmark"} text-2xl`} />
+            <i className={`${actionType === "accepted" ? "ph ph-check" : "ph ph-x"} text-2xl`} />
           </ThemeIcon>
           <Title order={4} mt="md" mb="xs">
             {actionType === "accepted" ? "Transfert accepté !" : "Transfert refusé"}
@@ -125,7 +125,7 @@ export default function TransfertAppareil() {
       <Paper p="xl" radius="xl" className="max-w-md w-full" withBorder>
         <Stack align="center" gap="md" mb="lg">
           <ThemeIcon size={70} radius="xl" variant="light" color="primary">
-            <i className="fa-solid fa-arrow-right-arrow-left text-3xl" />
+            <i className="ph ph-arrows-left-right text-3xl" />
           </ThemeIcon>
           <Title order={4} ta="center">Transfert d'appareil</Title>
         </Stack>
@@ -140,7 +140,7 @@ export default function TransfertAppareil() {
           <Paper p="md" radius="lg" className="bg-gray-50" mb="lg">
             <Group gap="sm">
               <ThemeIcon size={40} radius="md" variant="light" color="gray">
-                <i className="fa-solid fa-mobile-screen-button" />
+                <i className="ph ph-device-mobile" />
               </ThemeIcon>
               <div>
                 <Text fw={700}>{transferData.device.brand} {transferData.device.model}</Text>
@@ -160,10 +160,10 @@ export default function TransfertAppareil() {
         ) : (
           <Stack gap="sm">
             <Button fullWidth radius="xl" color="green" loading={processing} onClick={handleAccept}>
-              <i className="fa-solid fa-check mr-1" /> Accepter le transfert
+              <i className="ph ph-check mr-1" /> Accepter le transfert
             </Button>
             <Button fullWidth radius="xl" variant="outline" color="red" loading={processing} onClick={handleReject}>
-              <i className="fa-solid fa-xmark mr-1" /> Refuser
+              <i className="ph ph-x mr-1" /> Refuser
             </Button>
           </Stack>
         )}

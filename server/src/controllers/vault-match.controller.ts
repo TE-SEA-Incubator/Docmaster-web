@@ -123,6 +123,9 @@ export async function respondVaultMatch(req: Request, res: Response) {
         { source: 'vault_confirmation', vault_doc_id },
       );
       console.log(`[VaultMatch] Match créé — id=${match?.id}`);
+      if (match?.id) {
+        await matchRepository.setOwnerConfirmation(match.id, userId);
+      }
 
       if (vault_doc_id) {
         await documentRepository.updateLostStatus(vault_doc_id, userId, true, lostDecl.id);
@@ -142,6 +145,7 @@ export async function respondVaultMatch(req: Request, res: Response) {
           finderId,
           lostDecl.id,
           docTypeLabel,
+          { matchId: match?.id, foundId: foundDecl.id },
         );
         console.log(`[VaultMatch] Notification MATCH_FOUND envoyée`);
       } catch (notifyErr) {

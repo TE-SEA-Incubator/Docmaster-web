@@ -70,7 +70,7 @@ export default function AdminReferrals() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {refs.length === 0 ? (
-                <EmptyState icon="fa-solid fa-gift" message={t("admin_no_referrals")} colSpan={6} />
+                <EmptyState icon="ph ph-gift" message={t("admin_no_referrals")} colSpan={6} />
               ) : (
                 refs.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50 transition-colors">
@@ -95,7 +95,7 @@ export default function AdminReferrals() {
                           onClick={() => reward(r.id)}
                           className="text-[12px] px-3 py-1.5 rounded border border-[#E8923A] bg-[#E8923A]/10 text-[#E8923A] hover:bg-[#E8923A]/20 font-semibold transition-colors"
                         >
-                          <i className="fa-solid fa-gift mr-1.5 text-[10px]" />
+                          <i className="ph ph-gift mr-1.5 text-[10px]" />
                           {t("admin_reward_btn")}
                         </button>
                       )}

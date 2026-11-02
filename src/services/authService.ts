@@ -74,6 +74,24 @@ export const authService = {
     return res.data;
   },
 
+  async getEarningsHistory(filters?: {
+    startDate?: Date;
+    endDate?: Date;
+    type?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const params: Record<string, string> = {};
+    if (filters?.startDate) params.startDate = filters.startDate.toISOString();
+    if (filters?.endDate) params.endDate = filters.endDate.toISOString();
+    if (filters?.type) params.type = filters.type;
+    if (filters?.page) params.page = filters.page.toString();
+    if (filters?.limit) params.limit = filters.limit.toString();
+
+    const res = await apiClient.get<ApiResponse>("auth/earnings/history", { params });
+    return res.data;
+  },
+
   async changePassword(currentPassword: string, newPassword: string) {
     const res = await apiClient.put<ApiResponse & { success: boolean }>("auth/password", {
       current_password: currentPassword,

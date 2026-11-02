@@ -30,14 +30,19 @@ export class RecoveryController {
       }
 
       const docIdStr = Array.isArray(docId) ? docId[0] : docId;
-      const pair = await resolveLostFoundPair(docIdStr);
+      const matchId = typeof req.query?.matchId === 'string' ? req.query.matchId : undefined;
+      const pair = await resolveLostFoundPair(docIdStr, matchId);
 
-      if (!pair) {
+      if (!pair || !pair.lostDecl) {
         return res.status(404).json({ success: false, message: 'Déclaration introuvable' });
       }
 
       const lostId = pair.lostId;
-      const claim = await claimRepo.findPaidByDocId(lostId);
+      let claim = null;
+      if (pair.foundId && typeof (claimRepo as any).findPaidByFoundId === 'function') {
+        claim = await claimRepo.findPaidByFoundId(pair.foundId);
+      }
+      claim = claim || (await claimRepo.findPaidByDocId(lostId));
 
       if (!claim) {
         return res.status(200).json({
@@ -47,6 +52,10 @@ export class RecoveryController {
           data: {
             paid: false,
             declaration: pair.lostDecl,
+            foundId: pair.foundId,
+            matchId: pair.matchId,
+            matchStatus: pair.match?.status ?? null,
+            ownerConfirmedAt: pair.match?.owner_confirmed_at ?? null,
           },
         });
       }
@@ -62,6 +71,8 @@ export class RecoveryController {
           doc_id: claim.doc_id,
           status: claim.status,
           created_at: claim.created_at,
+          foundId: claim.found_declaration_id || pair.foundId,
+          matchId: pair.matchId,
           paid: claim.status === 'PAID' || claim.status === 'VALIDATED',
           // Révéler le code secret uniquement au propriétaire
           verification_code: isOwner ? claim.verification_code : undefined,

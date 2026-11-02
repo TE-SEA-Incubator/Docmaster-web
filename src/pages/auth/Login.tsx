@@ -90,12 +90,13 @@ export default function Login() {
         {/* ═══ MOBILE HEADER ═══ */}
         <div className="p-[48px_28px_32px] md:hidden">
           <div className="flex items-center gap-2.5 mb-5">
-            <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
+            <Link to="/" className="flex items-center gap-0 flex-shrink-0">
               <img
                 src="/src/assets/images/docmaster.png"
                 alt="DocMaster"
-                className="h-9 w-auto brightness-0 invert"
+                className="h-9 w-auto"
               />
+              <span className="font-poppins font-bold text-green-dark text-[18px] leading-none tracking-tight">ocmaster</span>
             </Link>
           </div>
           <h2 className="font-bricolage text-[28px] font-extrabold text-textMain leading-[1.2] tracking-tight mb-1.5">
@@ -119,7 +120,7 @@ export default function Login() {
             </div>
 
             {loginError && (
-              <Alert variant="light" color="red" icon={<i className="fa-solid fa-circle-exclamation" />} px="md" py="sm">
+              <Alert variant="light" color="red" icon={<i className="ph ph-warning-circle" />} px="md" py="sm">
                 {loginError}
               </Alert>
             )}
@@ -129,7 +130,7 @@ export default function Login() {
               value={loginForm.email}
               onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))}
               placeholder={t("login_email_placeholder")}
-              leftSection={<i className="fa-regular fa-envelope" />}
+              leftSection={<i className="ph ph-envelope" />}
               size="lg"
               radius="lg"
               required
@@ -141,7 +142,7 @@ export default function Login() {
               value={loginForm.password}
               onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))}
               placeholder={t("login_password_placeholder")}
-              leftSection={<i className="fa-solid fa-lock" />}
+              leftSection={<i className="ph ph-lock" />}
               size="lg"
               radius="lg"
               required
@@ -154,7 +155,7 @@ export default function Login() {
                 onClick={() => setShowForgot(true)}
                 className="text-[12.5px] text-primary font-semibold hover:underline cursor-pointer"
               >
-                <i className="fa-solid fa-key mr-1.5" />
+                <i className="ph ph-key mr-1.5" />
                 {t("login_forgot_password")}
               </button>
             </div>
@@ -165,9 +166,9 @@ export default function Login() {
               className="w-full py-3.5 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60"
             >
               {loginLoading ? (
-                <i className="fa-solid fa-spinner fa-spin" />
+                <i className="ph ph-spinner animate-spin" />
               ) : (
-                <><i className="fa-solid fa-right-to-bracket" /> {t("login_btn_login")}</>
+                <><i className="ph ph-sign-in" /> {t("login_btn_login")}</>
               )}
             </button>
 
@@ -189,9 +190,9 @@ export default function Login() {
 
           <div className="flex flex-col gap-2 mt-2">
             {[
-              { icon: "fa-solid fa-circle-check", text: t("login_proof_docs") },
-              { icon: "fa-solid fa-users", text: t("login_proof_members") },
-              { icon: "fa-solid fa-shield-halved", text: t("login_proof_security") },
+              { icon: "ph ph-check-circle", text: t("login_proof_docs") },
+              { icon: "ph ph-users", text: t("login_proof_members") },
+              { icon: "ph ph-shield", text: t("login_proof_security") },
             ].map((item) => (
               <div
                 key={item.text}
@@ -212,12 +213,13 @@ export default function Login() {
               <div className="absolute w-[160px] h-[160px] bg-white/[0.04] rounded-full top-[-40px] right-[-40px]" />
             </div>
             <div className="relative z-10">
-              <Link to="/" className="flex items-center gap-2.5">
+              <Link to="/" className="flex items-center gap-0">
                 <img
                   src="/src/assets/images/docmaster.png"
                   alt="DocMaster"
                   className="h-14 w-auto brightness-0 invert"
                 />
+                <span className="font-poppins font-bold text-white text-[29px] leading-none tracking-tight">ocmaster</span>
               </Link>
             </div>
             <div className="relative z-10">
@@ -230,9 +232,9 @@ export default function Login() {
             </div>
             <div className="flex flex-col gap-2.5 relative z-10">
               {[
-                { icon: "fa-solid fa-circle-check", text: t("login_proof_docs") },
-                { icon: "fa-solid fa-users", text: t("login_proof_members") },
-                { icon: "fa-solid fa-shield-halved", text: t("login_proof_security") },
+                { icon: "ph ph-check-circle", text: t("login_proof_docs") },
+                { icon: "ph ph-users", text: t("login_proof_members") },
+                { icon: "ph ph-shield", text: t("login_proof_security") },
               ].map((item) => (
                 <div
                   key={item.text}
@@ -257,7 +259,7 @@ export default function Login() {
               </div>
 
               {loginError && (
-                <Alert variant="light" color="red" icon={<i className="fa-solid fa-circle-exclamation" />} px="md" py="sm">
+                <Alert variant="light" color="red" icon={<i className="ph ph-warning-circle" />} px="md" py="sm">
                   {loginError}
                 </Alert>
               )}
@@ -267,7 +269,7 @@ export default function Login() {
                 value={loginForm.email}
                 onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))}
                 placeholder={t("login_email_placeholder")}
-                leftSection={<i className="fa-regular fa-envelope" />}
+                leftSection={<i className="ph ph-envelope" />}
                 size="lg"
                 radius="lg"
                 required
@@ -279,7 +281,7 @@ export default function Login() {
                 value={loginForm.password}
                 onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))}
                 placeholder={t("login_password_placeholder")}
-                leftSection={<i className="fa-solid fa-lock" />}
+                leftSection={<i className="ph ph-lock" />}
                 size="lg"
                 radius="lg"
                 required
@@ -292,7 +294,7 @@ export default function Login() {
                   onClick={() => setShowForgot(true)}
                   className="text-[12.5px] text-primary font-semibold hover:underline cursor-pointer"
                 >
-                  <i className="fa-solid fa-key mr-1.5" />
+                  <i className="ph ph-key mr-1.5" />
                   {t("login_forgot_password")}
                 </button>
               </div>
@@ -303,9 +305,9 @@ export default function Login() {
                 className="w-full py-4 bg-primary text-white rounded-[14px] font-bricolage text-[16px] font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/40 active:scale-[0.98] disabled:opacity-60 mt-1"
               >
                 {loginLoading ? (
-                  <i className="fa-solid fa-spinner fa-spin" />
+                  <i className="ph ph-spinner animate-spin" />
                 ) : (
-                  <><i className="fa-solid fa-right-to-bracket" /> {t("login_btn_login")}</>
+                  <><i className="ph ph-sign-in" /> {t("login_btn_login")}</>
                 )}
               </button>
 
@@ -337,12 +339,12 @@ export default function Login() {
 
           <button onClick={() => { setShowForgot(false); forgotRef.current?.close(); }}
             className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors z-20 cursor-pointer">
-            <i className="fa-solid fa-xmark text-xl" />
+            <i className="ph ph-x text-xl" />
           </button>
 
           <div className="flex flex-col gap-6 relative z-10">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary text-3xl">
-              <i className="fa-solid fa-key" />
+              <i className="ph ph-key" />
             </div>
 
             <div className="space-y-2">
@@ -353,7 +355,7 @@ export default function Login() {
             {forgotSent ? (
               <div className="flex flex-col items-center gap-4 text-center py-2">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-500 text-3xl">
-                  <i className="fa-solid fa-envelope-circle-check" />
+                  <i className="ph ph-envelope-simple" />
                 </div>
                 <p className="text-gray-700 font-semibold">{t("forgot_sent_title")}</p>
                 <p className="text-gray-400 text-sm">{t("forgot_sent_desc")}</p>
@@ -385,7 +387,7 @@ export default function Login() {
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
                 placeholder={t("login_email_placeholder")}
-                leftSection={<i className="fa-regular fa-envelope" />}
+                leftSection={<i className="ph ph-envelope" />}
                 size="lg"
                 radius="lg"
                 required
@@ -397,7 +399,7 @@ export default function Login() {
                   disabled={forgotLoading || !forgotEmail}
                   className="w-full py-3.5 bg-primary text-white rounded-2xl font-bold text-base shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                  {forgotLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-solid fa-paper-plane" /> {t("forgot_btn")}</>}
+                  {forgotLoading ? <i className="ph ph-spinner animate-spin" /> : <><i className="ph ph-paper-plane" /> {t("forgot_btn")}</>}
                 </button>
               </form>
             )}

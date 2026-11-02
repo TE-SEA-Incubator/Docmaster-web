@@ -48,6 +48,9 @@ import { locationRoutes } from "./src/routes/locations.routes.js";
 import chatRoutes from "./src/routes/chat.routes.js";
 import recoveryRoutes from "./src/routes/recovery.routes.js";
 import conversationRoutes from "./src/routes/conversation.routes.js";
+import reportRoutes from "./src/routes/report.routes.js";
+import sharepayWebhookRoutes from "./src/routes/sharepay-webhook.routes.js";
+import testimonialRoutes from "./src/routes/testimonial.routes.js";
 import { authMiddleware } from "./src/middleware/auth.middleware.js";
 import { partenaireAuthMiddleware } from "./src/modules/partenaires/partenaires.middleware.js";
 
@@ -288,6 +291,9 @@ export function createApp(): Application {
   app.use("/api/locations", locationRoutes);
   app.use("/api/chat", chatRoutes);
   app.use("/api/recovery", recoveryRoutes);
+  app.use("/api/reports", reportRoutes);
+  app.use("/api/testimonials", testimonialRoutes);
+  app.use("/webhooks", sharepayWebhookRoutes); // SharePay webhook route
 
   // ═════════════════════════════════════════════════════════════════
   // CHILLER SUB-APPLICATION

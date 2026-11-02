@@ -25,9 +25,10 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [docId, paymentMethod]
+ *             required: [docId, paymentMethod, matchId]
  *             properties:
  *               docId: { type: string, description: "ID du document perdu" }
+ *               matchId: { type: string, description: "Correspondance confirmée" }
  *               paymentMethod: { type: string, example: "MTN_MOMO", enum: [MTN_MOMO, ORANGE_MONEY, POINTS] }
  *               phone: { type: string, example: "677000000" }
  *               amount: { type: number, example: 5000 }

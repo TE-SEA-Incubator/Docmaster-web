@@ -5,7 +5,7 @@ import { UserRepository } from '../repositories/auth.repository.js';
 import { TransactionRepository } from '../repositories/transaction.repository.js';
 import { notificationService } from '../services/notification.service.js';
 import { activityLogService } from '../services/activity-log.service.js';
-import { nokashPayoutService } from '../services/nokash-payout.service.ts';
+import { payoutService } from '../services/payout.service.js';
 import { withdrawalSettlementService } from '../services/withdrawal-settlement.service.ts';
 import { pool } from '../database/db.js';
 
@@ -48,52 +48,60 @@ export class WithdrawalController {
         });
       }
 
-      // Option A: Automated Payout via Nokash API
+      // Option A: Automated Payout via Unified Payout Service (Nokash or SharePay)
       if (autoPayout) {
         // Mark as PROCESSING inside the SQL transaction
         await client.query(
           'UPDATE withdrawals SET status = $1, admin_note = $2, updated_at = NOW() WHERE id = $3',
-          ['PROCESSING', adminNote || 'Nokash Payout en cours d\'initiation...', withdrawalId]
+          ['PROCESSING', adminNote || 'Payout en cours d\'initiation...', withdrawalId]
         );
         await client.query('COMMIT');
 
         try {
-          const payoutRes = await nokashPayoutService.initiatePayout({
+          // Get user info for SharePay
+          const userRes = await pool.query('SELECT nom, prenom, email FROM users WHERE id = $1', [withdrawal.user_id]);
+          const user = userRes.rows[0];
+          
+          const payoutRes = await payoutService.initiatePayout({
             amount: Number(withdrawal.amount),
             order_id: withdrawal.id,
             user_phone: withdrawal.payment_details,
             payment_method: withdrawal.payment_method,
+            user_name: user ? `${user.prenom} ${user.nom}` : undefined,
+            user_email: user?.email,
+            description: `Retrait DocMaster - ${withdrawal.amount} XAF`,
+            user_type: 'USER',
           });
 
-          if (payoutRes.status === 'REQUEST_OK' && payoutRes.data) {
+          if (payoutRes.success) {
             await pool.query(
               'UPDATE withdrawals SET admin_note = $1, updated_at = NOW() WHERE id = $2',
-              [`Nokash Payout initié (ID: ${payoutRes.data.id})`, withdrawalId]
+              [`${payoutRes.provider} Payout initié (Ref: ${payoutRes.reference})`, withdrawalId]
             );
 
             activityLogService.log({
               user_id: (req as any).user.id,
-              action_type: 'INITIATE_NOKASH_PAYOUT',
+              action_type: 'INITIATE_PAYOUT',
               entity_type: 'withdrawal',
               entity_id: withdrawalId,
-              description: `Payout Nokash initié pour ${withdrawal.amount} XAF vers ${withdrawal.payment_details}`,
-              metadata: { nokash: payoutRes.data },
+              description: `Payout ${payoutRes.provider} initié pour ${withdrawal.amount} XAF vers ${withdrawal.payment_details}`,
+              metadata: { provider: payoutRes.provider, reference: payoutRes.reference, data: payoutRes.data },
             }).catch(() => {});
 
             return res.json({
               success: true,
-              message: 'Payout Nokash initié avec succès. Les fonds seront transférés dès validation opérateur.',
-              data: { withdrawal: { ...withdrawal, status: 'PROCESSING' }, nokash: payoutRes.data },
+              message: payoutRes.message || `Payout ${payoutRes.provider} initié avec succès`,
+              data: { withdrawal: { ...withdrawal, status: 'PROCESSING' }, payout: payoutRes.data },
             });
           } else {
             // Revert status to PENDING on initiation error
             await pool.query(
               'UPDATE withdrawals SET status = $1, admin_note = $2, updated_at = NOW() WHERE id = $3',
-              ['PENDING', `Échec initiation Nokash: ${payoutRes.message || 'Erreur inconnue'}`, withdrawalId]
+              ['PENDING', `Échec initiation ${payoutRes.provider}: ${payoutRes.message}`, withdrawalId]
             );
             return res.status(400).json({
               success: false,
-              message: `Erreur Nokash Payout: ${payoutRes.message || 'Échec initialisation'}`,
+              message: `Erreur ${payoutRes.provider} Payout: ${payoutRes.message}`,
             });
           }
         } catch (payoutErr: any) {
@@ -419,9 +427,9 @@ export class WithdrawalController {
       client.release();
     }
 
-    // 7. Trigger Nokash Payout API immediately (Direct Instant Transfer)
+    // 7. Trigger Payout API immediately (SharePay or Nokash based on config)
     try {
-      const payoutRes = await nokashPayoutService.initiatePayout({
+      const payoutRes = await payoutService.initiatePayout({
         amount: Number(createdWithdrawal.amount),
         order_id: createdWithdrawal.id,
         user_phone: createdWithdrawal.payment_details,
@@ -431,7 +439,7 @@ export class WithdrawalController {
       if (payoutRes.status === 'REQUEST_OK' && payoutRes.data) {
         await pool.query(
           'UPDATE withdrawals SET admin_note = $1, updated_at = NOW() WHERE id = $2',
-          [`Nokash Payout initié (ID: ${payoutRes.data.id})`, createdWithdrawal.id]
+          [`Paiement initié (Réf: ${payoutRes.data.id})`, createdWithdrawal.id]
         );
 
         // Notify user that payout is in flight
@@ -440,29 +448,29 @@ export class WithdrawalController {
           type: 'WITHDRAWAL_INITIATED',
           title: 'Retrait en cours de transfert ⏳',
           message: `Votre virement de ${createdWithdrawal.amount} XAF vers le ${createdWithdrawal.payment_details} a été initié. Vous recevrez une confirmation dès validation par votre opérateur.`,
-          metadata: { withdrawalId: createdWithdrawal.id, nokashId: payoutRes.data.id },
+          metadata: { withdrawalId: createdWithdrawal.id, paymentRef: payoutRes.data.id },
         }).catch(() => {});
 
         // Notify admins
         notificationService.notifyAdmins(
           'Nouveau Retrait Automatique Initié',
-          `Un virement automatique de ${createdWithdrawal.amount} XAF vers le ${createdWithdrawal.payment_details} a été envoyé à Nokash (Réf: ${payoutRes.data.id}).`,
+          `Un virement automatique de ${createdWithdrawal.amount} XAF vers le ${createdWithdrawal.payment_details} a été envoyé (Réf: ${payoutRes.data.id}).`,
           'INFO'
         ).catch(() => {});
 
         activityLogService.log({
           user_id: createdWithdrawal.user_id,
-          action_type: 'INITIATE_NOKASH_PAYOUT',
+          action_type: 'INITIATE_PAYOUT',
           entity_type: 'withdrawal',
           entity_id: createdWithdrawal.id,
           description: `Retrait automatique initié pour ${createdWithdrawal.amount} XAF vers ${createdWithdrawal.payment_details}`,
-          metadata: { nokash: payoutRes.data },
+          metadata: { payment: payoutRes.data },
         }).catch(() => {});
 
         return res.json({
           success: true,
           message: 'Retrait initié avec succès. Votre solde a été mis à jour.',
-          data: { withdrawal: createdWithdrawal, new_wallet_balance: newBalance, nokash: payoutRes.data },
+          data: { withdrawal: createdWithdrawal, new_wallet_balance: newBalance, payment: payoutRes.data },
         });
       } else {
         // Payout initiation rejected by Nokash -> Remboursement automatique immédiat
@@ -479,7 +487,7 @@ export class WithdrawalController {
              VALUES ($1, $2, $3, $4, 'CREDIT', 'WITHDRAWAL', $5, 'withdrawal', $6)`,
             [createdWithdrawal.user_id, Number(createdWithdrawal.amount), curBal, refundedBal, createdWithdrawal.id, JSON.stringify({ refund: true, reason: 'INITIATION_REJECTED' })]
           );
-          await refundClient.query('UPDATE withdrawals SET status = $1, admin_note = $2, updated_at = NOW() WHERE id = $3', ['REJECTED', `Échec initiation Nokash: ${payoutRes.message || 'Erreur opérateur'} (Fonds recrédités)`, createdWithdrawal.id]);
+          await refundClient.query('UPDATE withdrawals SET status = $1, admin_note = $2, updated_at = NOW() WHERE id = $3', ['REJECTED', `Échec initiation paiement: ${payoutRes.message || 'Erreur opérateur'} (Fonds recrédités)`, createdWithdrawal.id]);
           await refundClient.query(`UPDATE transactions SET status = 'FAILED', updated_at = NOW() WHERE user_id = $1 AND type = 'withdrawal' AND (metadata->>'withdrawalId' = $2 OR id::text = $2)`, [createdWithdrawal.user_id, createdWithdrawal.id]);
           await refundClient.query('COMMIT');
         } catch (rErr) {

@@ -17,7 +17,7 @@ export default function FieldLabel({ icon, labelKey, required, optional }: Field
   const { t } = useI18n();
   return (
     <Group gap={6} mb={4}>
-      {icon && <i className={`fa-solid ${icon}`} style={{ fontSize: 11, color: "var(--color-primary)" }} />}
+      {icon && <i className={`${icon}`} style={{ fontSize: 11, color: "var(--color-primary)" }} />}
       <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: 0.4 }}>
         {t(labelKey)}
       </Text>

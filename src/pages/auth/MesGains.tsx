@@ -10,12 +10,24 @@ import { earningsService } from "../../services/earningsService";
 import { declarationsService } from "../../services/declarationsService";
 import { useToast } from "../../context/ToastContext";
 
+// Mobile Money logos
+import mtnLogo from "../../assets/images/mtn.png";
+import orangeMoneyLogo from "../../assets/images/orange.png";
+
 import type { Transaction, EarningsRecord, Declaration } from "../../types/api";
 import {
   Paper, Title, Text, Group, Stack, SimpleGrid,
-  Progress, Badge, Loader, Modal, Tabs, Pagination, Select,
+  Progress, Badge, Loader, Tabs, Pagination, Select,
 } from "@mantine/core";
 import apiClient from "../../services/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogBody,
+} from "../../components/ui/dialog";
+import { phClass } from "../../utils/phosphorIcons";
 
 function fmtAmount(n: number) {
   return n.toLocaleString("fr-FR");
@@ -173,25 +185,25 @@ export default function MesGains() {
 
       <div className="grid grid-cols-2 gap-3">
         <StatCard
-          icon="fa-file-circle-check"
+          icon="ph ph-seal-check"
           color="text-green-mid"
           value={String(statsCards.total_found ?? 0)}
           label={t("mesgains_docs_found")}
         />
         <StatCard
-          icon="fa-handshake"
+          icon="ph ph-handshake"
           color="text-primary"
           value={String(statsCards.total_returned ?? 0)}
           label={t("mesgains_docs_returned")}
         />
         <StatCard
-          icon="fa-coins"
+          icon="ph ph-coins"
           color="text-amber-500"
           value={fmtAmount(totalFinderPayouts)}
           label={t("mesgains_xaf_earned")}
         />
         <StatCard
-          icon="fa-arrow-up-right-from-square"
+          icon="ph ph-arrow-square-out"
           color="text-blue-400"
           value={fmtAmount(totalWithdrawn)}
           label={t("mesgains_xaf_withdrawn")}
@@ -220,7 +232,7 @@ export default function MesGains() {
 
       <div className="bg-white border border-borda rounded-[18px] p-5">
         <div className="flex items-center gap-2.5 mb-4">
-          <i className="fa-solid fa-mobile-screen-button text-green-mid text-base" />
+          <i className="ph ph-device-mobile text-green-mid text-base" />
           <h2 className="font-bricolage text-[15px] font-bold text-textMain">
             {t("mesgains_withdrawal_methods")}
           </h2>
@@ -228,25 +240,23 @@ export default function MesGains() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <PaymentMethodCard
-            icon="fa-mobile-screen-button"
+            logo={mtnLogo}
             name="MTN Mobile Money"
-            color="text-yellow-500"
             t={t}
             saved={savedMethods.find(m => m.method_type === "MTN")}
             onManage={() => { fetchMethods(); setShowMethodsModal(true); }}
             onAdd={() => { setAddMethodType("MTN"); setShowAddMethodModal(true); }}
           />
           <PaymentMethodCard
-            icon="fa-mobile-screen-button"
+            logo={orangeMoneyLogo}
             name="Orange Money"
-            color="text-orange-500"
             t={t}
             saved={savedMethods.find(m => m.method_type === "ORANGE")}
             onManage={() => { fetchMethods(); setShowMethodsModal(true); }}
             onAdd={() => { setAddMethodType("ORANGE"); setShowAddMethodModal(true); }}
           />
           <PaymentMethodCard
-            icon="fa-university"
+            icon="ph ph-bank"
             name={t("mesgains_bank_transfer")}
             color="text-blue-400"
             t={t}
@@ -295,7 +305,7 @@ export default function MesGains() {
               : "text-textMuted"
           }`}
         >
-          <i className="fa-solid fa-wallet text-xs" />
+          <i className="ph ph-wallet text-xs" />
           Carte &amp; Gains
         </button>
         <button
@@ -306,7 +316,7 @@ export default function MesGains() {
               : "text-textMuted"
           }`}
         >
-          <i className="fa-solid fa-clock-rotate-left text-xs" />
+          <i className="ph ph-clock-counter-clockwise text-xs" />
           Historique
         </button>
       </div>
@@ -430,12 +440,12 @@ function WalletCard({ balance, points, minWithdrawal, progressPct, onWithdraw, o
             </Text>
           </Text>
           <Group gap={4} mt={4}>
-            <i className="fa-solid fa-star text-[#f5a64b] text-xs" />
+            <i className="ph ph-star text-[#f5a64b] text-xs" />
             <Text fw={700} c="white.8" size="sm">{fmtAmount(points)} pts</Text>
           </Group>
         </div>
         <div className="w-11 h-11 rounded-[13px] bg-white/10 border border-white/15 flex items-center justify-center">
-          <i className="fa-solid fa-sack-dollar text-primary text-lg" />
+          <i className="ph ph-piggy-bank text-primary text-lg" />
         </div>
       </div>
 
@@ -460,13 +470,13 @@ function WalletCard({ balance, points, minWithdrawal, progressPct, onWithdraw, o
           onClick={onWithdraw}
           className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary hover:bg-primary-dark text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98]"
         >
-          <i className="fa-solid fa-credit-card text-xs" /> {t("mesgains_withdraw")}
+          <i className="ph ph-credit-card text-xs" /> {t("mesgains_withdraw")}
         </button>
         <button
           onClick={onHistory}
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/15 border border-white/15 text-white font-semibold text-[13px] rounded-[12px] transition-all"
         >
-          <i className="fa-solid fa-clock-rotate-left text-xs" /> {t("mesgains_history")}
+          <i className="ph ph-clock-counter-clockwise text-xs" /> {t("mesgains_history")}
         </button>
       </Group>
     </Paper>
@@ -478,7 +488,7 @@ function WalletCard({ balance, points, minWithdrawal, progressPct, onWithdraw, o
 function StatCard({ icon, color, value, label }: { icon: string; color: string; value: string; label: string }) {
   return (
     <Paper p="md" className="border border-borda hover:-translate-y-0.5 hover:shadow-lg transition-all" style={{ borderRadius: 16 }}>
-      <i className={`fa-solid ${icon} ${color} text-xl mb-3 block`} />
+      <i className={`${icon} ${color} text-xl mb-3 block`} />
       <Text fw={800} className="font-bricolage" style={{ fontSize: 24, lineHeight: 1 }} mb={4}>
         {value}
       </Text>
@@ -494,7 +504,7 @@ function PointsCard({ totalPoints, pointsBreakdown, levelLabel, pointsToNext, ne
     <Paper p="lg" className="border border-borda" style={{ borderRadius: 18 }}>
       <Group justify="space-between" mb="md">
         <Group gap="sm">
-          <i className="fa-solid fa-star text-primary text-base" />
+          <i className="ph ph-star text-primary text-base" />
           <div>
             <Title order={3} size={15} style={{ lineHeight: 1.3 }}>{t("mesgains_points_title")}</Title>
             <Text size="xs" c="dimmed">{t("mesgains_loyalty_program")}</Text>
@@ -530,7 +540,7 @@ function PointsCard({ totalPoints, pointsBreakdown, levelLabel, pointsToNext, ne
       <Paper p="sm" className="bg-primary/5 border border-primary/15" style={{ borderRadius: 12 }}>
         <Group gap="sm">
           <Group gap="xs">
-            <i className="fa-solid fa-trophy text-primary text-sm" />
+            <i className="ph ph-trophy text-primary text-sm" />
             <div>
               <Text size="sm" fw={700}>{levelLabel}</Text>
               <Text size="xs" c="dimmed">
@@ -552,14 +562,14 @@ function PointsCard({ totalPoints, pointsBreakdown, levelLabel, pointsToNext, ne
           onClick={onConvert}
           className="w-full mt-3 py-2.5 bg-surface2 hover:bg-borda border border-borda text-textMain font-bricolage text-[13px] font-bold rounded-[12px] transition-all flex items-center justify-center gap-2"
         >
-          <i className="fa-solid fa-coins text-xs" /> {t("mesgains_convert_points")}
+          <i className="ph ph-coins text-xs" /> {t("mesgains_convert_points")}
         </button>
       )}
       <button
         onClick={onBuy}
         className="w-full mt-2 py-2.5 bg-green-mid hover:bg-green-dark text-white font-bricolage text-[13px] font-bold rounded-[12px] transition-all flex items-center justify-center gap-2"
       >
-        <i className="fa-solid fa-cart-shopping text-xs" /> Acheter des points
+        <i className="ph ph-shopping-cart text-xs" /> Acheter des points
       </button>
     </Paper>
   );
@@ -591,7 +601,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
     <Paper className="border border-borda" style={{ borderRadius: 18, overflow: "hidden" }}>
       <Group px="lg" py="md" className="border-b border-borda">
         <Group gap="sm">
-          <i className="fa-solid fa-sack-dollar text-amber-500 text-base" />
+          <i className="ph ph-piggy-bank text-amber-500 text-base" />
           <div>
             <Title order={3} size={15}>{t("mesgains_potential_title")}</Title>
             <Text size="xs" c="dimmed">{t("mesgains_potential_desc")}</Text>
@@ -602,7 +612,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
       <Paper px="lg" py="md" className="bg-surface2 border-b border-borda" style={{ borderRadius: 0 }}>
         <SimpleGrid cols={2} spacing="md">
           <Group gap="sm">
-            <i className="fa-solid fa-coins text-amber-500 text-xl" />
+            <i className="ph ph-coins text-amber-500 text-xl" />
             <div>
               <Text fw={800} className="font-bricolage" size="xl" lh={1}>
                 {fmtAmount(totalXaf)} <Text component="span" fw={700} size="sm" c="dimmed">XAF</Text>
@@ -611,7 +621,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
             </div>
           </Group>
           <Group gap="sm">
-            <i className="fa-solid fa-star text-primary text-xl" />
+            <i className="ph ph-star text-primary text-xl" />
             <div>
               <Text fw={800} className="font-bricolage" size="xl" lh={1}>
                 {fmtAmount(totalPts)} <Text component="span" fw={700} size="sm" c="dimmed">pts</Text>
@@ -632,7 +642,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
 
           return (
             <Group key={decl.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
-              <i className={`fa-solid fa-${icon} text-amber-500 text-base flex-shrink-0`} />
+              <i className={`${phClass(icon)} text-amber-500 text-base flex-shrink-0`} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <Text size="sm" fw={600} truncate lh="tight">
                   {decl.docTypeInfo?.nom || decl.doc_type || "Document"}
@@ -664,7 +674,7 @@ function PotentialEarningsCard({ declarations, totalXaf, totalPts, fmtAmount, t 
 
       <Paper px="lg" py="sm" className="bg-surface2 border-t border-borda" style={{ borderRadius: 0 }}>
         <Text size="xs" c="dimmed" ta="center">
-          <i className="fa-solid fa-circle-info text-amber-400 mr-1" />
+          <i className="ph ph-info text-amber-400 mr-1" />
           {t("mesgains_potential_note")}
         </Text>
       </Paper>
@@ -679,7 +689,7 @@ function TransactionsCard({ transactions, loading, fmtAmount, fmtDate, t }: any)
     <Paper className="border border-borda" style={{ borderRadius: 18, overflow: "hidden" }}>
       <Group px="lg" py="md" className="border-b border-borda">
         <Group gap="sm">
-          <i className="fa-solid fa-clock-rotate-left text-green-mid text-base" />
+          <i className="ph ph-clock-counter-clockwise text-green-mid text-base" />
           <Title order={3} size={15}>{t("mesgains_recent_transactions")}</Title>
         </Group>
       </Group>
@@ -690,7 +700,7 @@ function TransactionsCard({ transactions, loading, fmtAmount, fmtDate, t }: any)
         </Group>
       ) : transactions.length === 0 ? (
         <Stack align="center" py="xl" gap="sm">
-          <i className="fa-solid fa-receipt text-3xl opacity-20" />
+          <i className="ph ph-receipt text-3xl opacity-20" />
           <Text size="sm" c="dimmed">{t("mesgains_no_transactions")}</Text>
         </Stack>
       ) : (
@@ -700,7 +710,7 @@ function TransactionsCard({ transactions, loading, fmtAmount, fmtDate, t }: any)
             const meta = getTxMeta(tx.type || "", t);
             return (
               <Group key={tx.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
-                <i className={`fa-solid ${meta.icon} ${meta.color} text-base flex-shrink-0`} />
+                <i className={`${meta.icon} ${meta.color} text-base flex-shrink-0`} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Text size="sm" fw={600} truncate>{meta.label}</Text>
                   <Text size="xs" c="dimmed" mt={2}>{meta.sub} · {fmtDate(tx.created_at)}</Text>
@@ -737,11 +747,15 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
       const res = await authService.getEarningsHistory({ type: type || undefined, page, limit: 10 });
       if (res.success && res.data) {
         const raw = res.data as any;
-        setPointsHistory(Array.isArray(raw) ? raw : raw.data || []);
+        setPointsHistory(Array.isArray(raw) ? raw : raw.history || raw.data || []);
         setPointsHistoryTotal(raw.total ?? raw.data?.length ?? 0);
       }
-    } catch {}
-    finally { setPointsHistoryLoading(false); }
+    } catch (error) {
+      console.error('Failed to fetch points history:', error);
+      toast.error(t("mesgains_history_fetch_error") || "Impossible de charger l'historique. Réessayez.");
+    } finally {
+      setPointsHistoryLoading(false);
+    }
   }
 
   // Fetch data when history tab becomes active
@@ -755,7 +769,7 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
     <Paper className="border border-borda" style={{ borderRadius: 18, overflow: "hidden" }}>
       <Group px="lg" py="md" className="border-b border-borda" justify="space-between">
         <Group gap="sm">
-          <i className="fa-solid fa-clock-rotate-left text-primary text-base" />
+          <i className="ph ph-clock-counter-clockwise text-primary text-base" />
           <Title order={3} size={15}>{t("mesgains_earnings_history") || "Historique des gains"}</Title>
         </Group>
       </Group>
@@ -777,7 +791,7 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
             </Group>
           ) : earningsHistory.length === 0 ? (
             <Stack align="center" py="xl" gap="sm">
-              <i className="fa-solid fa-coins text-3xl opacity-20" />
+              <i className="ph ph-coins text-3xl opacity-20" />
               <Text size="sm" c="dimmed">{t("mesgains_no_earnings") || "Aucun gain pour le moment"}</Text>
             </Stack>
           ) : (
@@ -791,7 +805,7 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
                   const meta = getEarningMeta(entry.type, t);
                   return (
                     <Group key={entry.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
-                      <i className={`fa-solid ${meta.icon} ${meta.color} text-base flex-shrink-0`} />
+                      <i className={`${meta.icon} ${meta.color} text-base flex-shrink-0`} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <Text size="sm" fw={600} truncate>{entry.description || meta.label}</Text>
                         <Text size="xs" c="dimmed" mt={2}>{fmtDate(entry.created_at)}</Text>
@@ -851,7 +865,7 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
             </Group>
           ) : pointsHistory.length === 0 ? (
             <Stack align="center" py="xl" gap="sm">
-              <i className="fa-solid fa-coins text-3xl opacity-20" />
+              <i className="ph ph-coins text-3xl opacity-20" />
               <Text size="sm" c="dimmed">{t("mesgains_no_earnings") || "Aucun gain pour le moment"}</Text>
             </Stack>
           ) : (
@@ -862,7 +876,7 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
                   const meta = getEarningMeta(entry.type, t);
                   return (
                     <Group key={entry.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
-                      <i className={`fa-solid ${meta.icon} ${meta.color} text-base flex-shrink-0`} />
+                      <i className={`${meta.icon} ${meta.color} text-base flex-shrink-0`} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <Text size="sm" fw={600} truncate>{entry.description || meta.label}</Text>
                         <Text size="xs" c="dimmed" mt={2}>{fmtDate(entry.created_at)}</Text>
@@ -896,7 +910,7 @@ function EarningsHistoryCard({ earningsHistory, loading, fmtAmount, fmtDate, t }
 
 /* ── PaymentMethodCard ── */
 
-function PaymentMethodCard({ icon, name, color, saved, onAdd, onManage, t }: any) {
+function PaymentMethodCard({ icon, logo, name, color, saved, onAdd, onManage, t }: any) {
   const hasMethod = !!saved;
   return (
     <Paper
@@ -906,14 +920,20 @@ function PaymentMethodCard({ icon, name, color, saved, onAdd, onManage, t }: any
       }`}
       style={{ borderRadius: 13, display: "flex", alignItems: "center", gap: 12, padding: 14 }}
     >
-      <i className={`fa-solid ${icon} ${color} text-base flex-shrink-0`} />
+      {logo ? (
+        <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl border border-borda bg-white flex items-center justify-center flex-shrink-0">
+          <img src={logo} alt={name} className="w-9 h-9 md:w-11 md:h-11 object-contain" />
+        </div>
+      ) : (
+        <i className={`${icon} ${color} text-base flex-shrink-0`} />
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <Text size="sm" fw={700} truncate>{name}</Text>
         <Text size={10.5} c={hasMethod ? "green.6" : "dimmed"} fw={hasMethod ? 600 : 400}>
           {hasMethod ? `\u2713 ${t("mesgains_connected")}` : t("mesgains_add")}
         </Text>
       </div>
-      <i className={`fa-solid ${hasMethod ? "fa-circle-check text-primary" : "fa-plus text-textMuted group-hover:text-primary"} text-sm transition-colors`} />
+      <i className={`${hasMethod ? "ph ph-check-circle text-primary" : "ph ph-plus text-textMuted group-hover:text-primary"} text-sm transition-colors`} />
     </Paper>
   );
 }
@@ -991,161 +1011,200 @@ function WithdrawModal({ balance, minWithdrawal, savedMethods, onClose, onDone, 
   };
 
   return (
-    <Modal opened onClose={onClose} title={t("mesgains_withdraw_modal_title")} size="sm">
-      {success ? (
-        <Stack align="center" py="xl" gap="md">
-          <i className="fa-solid fa-check-circle text-green-mid text-5xl" />
-          <Text fw={700} size="md" className="font-bricolage">{t("mesgains_withdraw_modal_success")}</Text>
-        </Stack>
-      ) : (
-        <Stack gap="md">
-            {(error || validationErr) && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-[12px] text-red-600 text-[12px] font-semibold flex items-center gap-2">
-                <i className="fa-solid fa-circle-exclamation" /> {error || validationErr}
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("mesgains_withdraw_modal_title")}</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          {success ? (
+            <div className="flex flex-col items-center py-8 gap-4">
+              <i className="ph ph-check-circle text-green-mid text-5xl" />
+              <p className="font-bricolage font-bold text-base text-textMain">{t("mesgains_withdraw_modal_success")}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {(error || validationErr) && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-[12px] text-red-600 text-[12px] font-semibold flex items-center gap-2">
+                  <i className="ph ph-warning-circle" /> {error || validationErr}
+                </div>
+              )}
+
+              <div>
+                <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_amount")}</label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="25"
+                  className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                />
+                <p className="text-[11px] text-textMuted mt-1">
+                  {t("mesgains_balance")}: {fmtAmount(balance)} XAF · Min: {fmtAmount(minWithdrawal)} XAF
+                </p>
               </div>
-            )}
 
-            <div>
-              <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_amount")}</label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="25"
-                className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-              />
-              <p className="text-[11px] text-textMuted mt-1">
-                {t("mesgains_balance")}: {fmtAmount(balance)} XAF · Min: {fmtAmount(minWithdrawal)} XAF
-              </p>
-            </div>
+              <div className="flex gap-2 bg-gray-50 rounded-[12px] p-1">
+                <button
+                  onClick={() => setTab("saved")}
+                  className={`flex-1 py-2 text-[12px] font-bold rounded-[10px] transition-all ${tab === "saved" ? "bg-white shadow-sm text-textMain" : "text-textMuted hover:text-textMain"}`}
+                >
+                  {t("mesgains_withdraw_modal_saved")}
+                </button>
+                <button
+                  onClick={() => setTab("manual")}
+                  className={`flex-1 py-2 text-[12px] font-bold rounded-[10px] transition-all ${tab === "manual" ? "bg-white shadow-sm text-textMain" : "text-textMuted hover:text-textMain"}`}
+                >
+                  {t("mesgains_withdraw_modal_manual")}
+                </button>
+              </div>
 
-            <div className="flex gap-2 bg-gray-50 rounded-[12px] p-1">
-              <button
-                onClick={() => setTab("saved")}
-                className={`flex-1 py-2 text-[12px] font-bold rounded-[10px] transition-all ${tab === "saved" ? "bg-white shadow-sm text-textMain" : "text-textMuted hover:text-textMain"}`}
-              >
-                {t("mesgains_withdraw_modal_saved")}
-              </button>
-              <button
-                onClick={() => setTab("manual")}
-                className={`flex-1 py-2 text-[12px] font-bold rounded-[10px] transition-all ${tab === "manual" ? "bg-white shadow-sm text-textMain" : "text-textMuted hover:text-textMain"}`}
-              >
-                {t("mesgains_withdraw_modal_manual")}
-              </button>
-            </div>
-
-            {tab === "saved" ? (
-              savedMethods.length === 0 ? (
-                <div className="p-6 text-center text-textMuted">
-                  <i className="fa-solid fa-credit-card text-3xl opacity-20 mb-2" />
-                  <p className="text-[12px]">{t("mesgains_withdraw_modal_no_methods")}</p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scroll">
-                  {savedMethods.map((m: SavedPaymentMethod) => {
-                    const typeIcon = m.method_type === "MTN" || m.method_type === "ORANGE" ? "fa-mobile-screen-button" : "fa-university";
-                    const typeColor = m.method_type === "MTN" ? "text-yellow-500" : m.method_type === "ORANGE" ? "text-orange-500" : "text-blue-400";
-                    return (
-                      <div
-                        key={m.id}
-                        onClick={() => setSelectedMethod(m)}
-                        className={`flex items-center gap-3 p-3 border-2 rounded-[12px] cursor-pointer transition-all ${
-                          selectedMethod?.id === m.id ? "border-primary bg-primary/5" : "border-borda hover:border-gray-300"
-                        }`}
-                      >
-                        <i className={`fa-solid ${typeIcon} ${typeColor} text-base flex-shrink-0`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[12.5px] font-bold text-textMain truncate">{m.account_name || `${m.method_type} - ${m.account_number}`}</p>
-                          <p className="text-[11px] text-textMuted">{m.account_number}{m.is_default ? ` · ${t("mesgains_withdraw_default_method")}` : ""}</p>
-                        </div>
-                        {selectedMethod?.id === m.id && <i className="fa-solid fa-circle-check text-primary" />}
-                      </div>
-                    );
-                  })}
-                </div>
-              )
-            ) : (
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_method")}</label>
-                  <div className="flex gap-2">
-                    {(["MTN", "ORANGE", "BANK"] as const).map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => setManualType(type)}
-                        className={`flex-1 py-2.5 text-[11px] font-bold rounded-[10px] border-2 transition-all ${
-                          manualType === type
-                            ? "border-primary bg-primary/5 text-primary"
-                            : "border-borda text-textMuted hover:border-gray-300"
-                        }`}
-                      >
-                        {type === "BANK" ? t("mesgains_bank_transfer") : type}
-                      </button>
-                    ))}
+              {tab === "saved" ? (
+                savedMethods.length === 0 ? (
+                  <div className="p-6 text-center text-textMuted">
+                    <i className="ph ph-credit-card text-3xl opacity-20 mb-2" />
+                    <p className="text-[12px]">{t("mesgains_withdraw_modal_no_methods")}</p>
                   </div>
-                </div>
-
-                <div>
-                  <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_account_name")}</label>
-                  <input
-                    type="text"
-                    value={manualName}
-                    onChange={(e) => setManualName(e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_account_number")}</label>
-                  <input
-                    type="text"
-                    value={manualNumber}
-                    onChange={(e) => setManualNumber(e.target.value)}
-                    placeholder="+237 XXXXXXXXX"
-                    className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                  />
-                  {manualType === "MTN" && <p className="text-[11px] text-textMuted mt-1">{t("payment_phone_mtn_hint")}</p>}
-                  {manualType === "ORANGE" && <p className="text-[11px] text-textMuted mt-1">{t("payment_phone_orange_hint")}</p>}
-                </div>
-
-                {manualType === "BANK" && (
+                ) : (
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scroll">
+                    {savedMethods.map((m: SavedPaymentMethod) => {
+                      const isBank = m.method_type === "BANK";
+                      const isMTN = m.method_type === "MTN";
+                      const isOrange = m.method_type === "ORANGE";
+                      
+                      return (
+                        <div
+                          key={m.id}
+                          onClick={() => setSelectedMethod(m)}
+                          className={`flex items-center gap-3 p-3 border-2 rounded-[12px] cursor-pointer transition-all ${
+                            selectedMethod?.id === m.id ? "border-primary bg-primary/5" : "border-borda hover:border-gray-300"
+                          }`}
+                        >
+                          {isBank ? (
+                            <i className="ph ph-bank text-blue-400 text-base flex-shrink-0" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl border border-borda bg-white flex items-center justify-center flex-shrink-0">
+                              <img 
+                                src={isMTN ? mtnLogo : orangeMoneyLogo} 
+                                alt={m.method_type} 
+                                className="w-8 h-8 object-contain" 
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[12.5px] font-bold text-textMain truncate">{m.account_name || `${m.method_type} - ${m.account_number}`}</p>
+                            <p className="text-[11px] text-textMuted">{m.account_number}{m.is_default ? ` · ${t("mesgains_withdraw_default_method")}` : ""}</p>
+                          </div>
+                          {selectedMethod?.id === m.id && <i className="ph ph-check-circle text-primary" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
+              ) : (
+                <div className="space-y-3">
                   <div>
-                    <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_bank_name")}</label>
+                    <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_method")}</label>
+                    <div className="flex gap-2">
+                      {(["MTN", "ORANGE", "BANK"] as const).map((type) => {
+                        const isMTN = type === "MTN";
+                        const isOrange = type === "ORANGE";
+                        const isBank = type === "BANK";
+                        
+                        return (
+                          <button
+                            key={type}
+                            onClick={() => setManualType(type)}
+                            className={`flex-1 py-2.5 text-[11px] font-bold rounded-[10px] border-2 transition-all flex items-center justify-center gap-2 ${
+                              manualType === type
+                                ? "border-primary bg-primary/5 text-primary"
+                                : "border-borda text-textMuted hover:border-gray-300"
+                            }`}
+                          >
+                            {isBank ? (
+                              <>
+                                <i className="ph ph-bank text-sm" />
+                                {t("mesgains_bank_transfer")}
+                              </>
+                            ) : (
+                              <>
+                                <img 
+                                  src={isMTN ? mtnLogo : orangeMoneyLogo} 
+                                  alt={type} 
+                                  className="w-5 h-5 object-contain" 
+                                />
+                                {type}
+                              </>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_account_name")}</label>
                     <input
                       type="text"
-                      value={manualBank}
-                      onChange={(e) => setManualBank(e.target.value)}
+                      value={manualName}
+                      onChange={(e) => setManualName(e.target.value)}
                       className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                     />
                   </div>
-                )}
 
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={saveMethod}
-                    onChange={(e) => setSaveMethod(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <span className="text-[12.5px] font-medium text-textMain">{t("mesgains_withdraw_modal_save")}</span>
-                </label>
-              </div>
-            )}
+                  <div>
+                    <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_account_number")}</label>
+                    <input
+                      type="text"
+                      value={manualNumber}
+                      onChange={(e) => setManualNumber(e.target.value)}
+                      placeholder="+237 XXXXXXXXX"
+                      className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                    />
+                    {manualType === "MTN" && <p className="text-[11px] text-textMuted mt-1">{t("payment_phone_mtn_hint")}</p>}
+                    {manualType === "ORANGE" && <p className="text-[11px] text-textMuted mt-1">{t("payment_phone_orange_hint")}</p>}
+                  </div>
 
-            <button
-              onClick={handleSubmit}
-              disabled={!isValid || submitting || (tab === "saved" && !selectedMethod) || (tab === "manual" && !manualNumber)}
-              className="w-full py-3 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98] flex items-center justify-center gap-2"
-            >
-              {submitting || savingMethod ? (
-                <><i className="fa-solid fa-spinner fa-spin" /> {t("mesgains_withdraw_modal_processing")}</>
-              ) : (
-                <>{t("mesgains_withdraw_modal_confirm")}</>
+                  {manualType === "BANK" && (
+                    <div>
+                      <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_bank_name")}</label>
+                      <input
+                        type="text"
+                        value={manualBank}
+                        onChange={(e) => setManualBank(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                      />
+                    </div>
+                  )}
+
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveMethod}
+                      onChange={(e) => setSaveMethod(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <span className="text-[12.5px] font-medium text-textMain">{t("mesgains_withdraw_modal_save")}</span>
+                  </label>
+                </div>
               )}
-            </button>
-          </Stack>
-        )}
-    </Modal>
+
+              <button
+                onClick={handleSubmit}
+                disabled={!isValid || submitting || (tab === "saved" && !selectedMethod) || (tab === "manual" && !manualNumber)}
+                className="w-full py-3 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98] flex items-center justify-center gap-2"
+              >
+                {submitting || savingMethod ? (
+                  <><i className="ph ph-spinner animate-spin" /> {t("mesgains_withdraw_modal_processing")}</>
+                ) : (
+                  <>{t("mesgains_withdraw_modal_confirm")}</>
+                )}
+              </button>
+            </div>
+          )}
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1167,38 +1226,65 @@ function WithdrawHistoryModal({ onClose, fmtAmount, fmtDate, t }: any) {
   const statusBadge = (status: string) => {
     const color = status === "approved" ? "green" : status === "pending" ? "orange" : "red";
     const label = status === "approved" ? t("mesgains_withdraw_status_approved") : status === "pending" ? t("mesgains_withdraw_status_pending") : t("mesgains_withdraw_status_rejected");
-    return <Badge variant="light" color={color} radius="xl" size="xs">{label}</Badge>;
+    return <Badge variant="light" color={color} radius="xl" size="sm">{label}</Badge>;
   };
 
   return (
-    <Modal opened onClose={onClose} title={t("mesgains_withdraw_history_modal_title")} size="sm">
-      {loading ? (
-        <Group justify="center" py="xl">
-          <Loader size="sm" color="gold" />
-        </Group>
-      ) : withdrawals.length === 0 ? (
-        <Stack align="center" py="xl" gap="sm">
-          <i className="fa-solid fa-arrow-right-from-bracket text-3xl opacity-20" />
-          <Text size="sm" c="dimmed">{t("mesgains_withdraw_history_empty")}</Text>
-        </Stack>
-      ) : (
-        <Stack gap={0} className="divide-y divide-borda">
-          {withdrawals.map((w: any) => (
-            <Group key={w.id} px="lg" py="sm" gap="md" className="hover:bg-surface2 transition-colors">
-              <i className="fa-solid fa-arrow-right-from-bracket text-blue-400 text-base flex-shrink-0" />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Text size="sm" fw={600} truncate>{fmtAmount(w.amount)} XAF</Text>
-                <Text size="xs" c="dimmed" mt={2}>{w.payment_method} · {fmtDate(w.created_at)}</Text>
-              </div>
-              <Stack gap={4} align="flex-end">
-                {statusBadge(w.status)}
-                {w.admin_note && <Text size={10} c="dimmed" className="max-w-[120px] truncate">{w.admin_note}</Text>}
-              </Stack>
-            </Group>
-          ))}
-        </Stack>
-      )}
-    </Modal>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{t("mesgains_withdraw_history_modal_title")}</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader size="sm" color="gold" />
+            </div>
+          ) : withdrawals.length === 0 ? (
+            <div className="flex flex-col items-center py-12 gap-3">
+              <i className="ph ph-sign-out text-4xl opacity-20" />
+              <p className="text-sm text-textMuted">{t("mesgains_withdraw_history_empty")}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {withdrawals.map((w: any, index: number) => (
+                <div 
+                  key={w.id} 
+                  className="px-6 py-4 hover:bg-surface2 transition-colors"
+                  style={{ 
+                    borderBottom: index < withdrawals.length - 1 ? '1px solid var(--mantine-color-default-border)' : 'none'
+                  }}
+                >
+                  <div className="flex gap-4 flex-wrap md:flex-nowrap items-start">
+                    <div className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center flex-shrink-0">
+                      <i className="ph ph-sign-out text-primary text-sm" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between gap-2 mb-1.5">
+                        <Text size="lg" fw={700} c="dark">{fmtAmount(w.amount)} XAF</Text>
+                        {statusBadge(w.status)}
+                      </div>
+                      <Text size="sm" c="dimmed" mb={1}>
+                        {w.payment_method} · {w.payment_details || '—'}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {fmtDate(w.created_at)}
+                      </Text>
+                      {w.admin_note && (
+                        <Text size="xs" c="dimmed" mt={8} p={8} className="bg-surface2 rounded-lg">
+                          <i className="ph ph-note mr-1.5" />
+                          {w.admin_note}
+                        </Text>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1227,43 +1313,87 @@ function SavedMethodsModal({ methods, onClose, onRefresh, t }: any) {
     }
   };
 
-  const typeIcon = (type: string) => type === "MTN" || type === "ORANGE" ? "fa-mobile-screen-button" : "fa-university";
-  const typeColor = (type: string) => type === "MTN" ? "text-yellow-500" : type === "ORANGE" ? "text-orange-500" : "text-blue-400";
-
   return (
-    <Modal opened onClose={onClose} title={t("mesgains_withdrawal_methods")} size="sm">
-      {methods.length === 0 ? (
-        <Stack align="center" py="xl" gap="sm">
-          <i className="fa-solid fa-credit-card text-3xl opacity-20" />
-          <Text size="sm" c="dimmed">{t("mesgains_withdraw_modal_no_methods")}</Text>
-        </Stack>
-      ) : (
-        <Stack gap="sm">
-          {methods.map((m: SavedPaymentMethod) => (
-            <Group key={m.id} p="sm" className="border border-borda" style={{ borderRadius: 14 }} gap="md">
-              <i className={`fa-solid ${typeIcon(m.method_type)} ${typeColor(m.method_type)} text-base flex-shrink-0`} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Text size="sm" fw={700} truncate>{m.account_name || `${m.method_type} - ${m.account_number}`}</Text>
-                <Text size="xs" c="dimmed">{m.account_number}</Text>
-              </div>
-              <Group gap="xs">
-                {!m.is_default && (
-                  <button onClick={() => handleSetDefault(m.id)} className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-primary/10 flex items-center justify-center transition-colors group" title={t("mesgains_withdraw_set_default")}>
-                    <i className="fa-solid fa-star text-[11px] text-textMuted group-hover:text-primary transition-colors" />
-                  </button>
-                )}
-                {m.is_default && (
-                  <Badge size="xs" variant="light" color="gold">{t("mesgains_withdraw_default_method")}</Badge>
-                )}
-                <button onClick={() => handleDelete(m.id)} className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-red-50 flex items-center justify-center transition-colors group">
-                  <i className="fa-solid fa-trash-can text-[11px] text-textMuted group-hover:text-red-500 transition-colors" />
-                </button>
-              </Group>
-            </Group>
-          ))}
-        </Stack>
-      )}
-    </Modal>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{t("mesgains_withdrawal_methods")}</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          {methods.length === 0 ? (
+            <div className="flex flex-col items-center py-12 gap-3">
+              <i className="ph ph-credit-card text-4xl opacity-20" />
+              <p className="text-sm text-textMuted">{t("mesgains_withdraw_modal_no_methods")}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {methods.map((m: SavedPaymentMethod) => {
+                const isBank = m.method_type === "BANK";
+                const isMTN = m.method_type === "MTN";
+                const isOrange = m.method_type === "ORANGE";
+                
+                return (
+                  <div key={m.id} className="p-4 border border-borderMain rounded-2xl hover:border-primary-dark transition-colors">
+                    <div className="flex gap-4 flex-wrap md:flex-nowrap">
+                      {isBank ? (
+                        <div className="w-12 h-12 rounded-xl bg-surface2 flex items-center justify-center flex-shrink-0">
+                          <i className="ph ph-bank text-blue-400 text-lg" />
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl border border-borda bg-white flex items-center justify-center flex-shrink-0">
+                          <img 
+                            src={isMTN ? mtnLogo : orangeMoneyLogo} 
+                            alt={m.method_type} 
+                            className="w-8 h-8 object-contain" 
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex gap-2 mb-1 items-center flex-wrap">
+                          <Text size="sm" fw={700} truncate>{m.account_name || `${m.method_type} - ${m.account_number}`}</Text>
+                          {m.is_default && (
+                            <Badge size="xs" variant="light" color="gold" radius="xl">
+                              <i className="ph ph-star text-[9px] mr-1" />
+                              {t("mesgains_withdraw_default_method")}
+                            </Badge>
+                          )}
+                        </div>
+                        <Text size="xs" c="dimmed">{m.account_number}</Text>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      {!m.is_default && (
+                        <button 
+                          onClick={() => handleSetDefault(m.id)} 
+                          className="flex-1 px-3 py-2 rounded-lg bg-surface2 hover:bg-primary/10 flex items-center justify-center gap-2 transition-colors group"
+                          title={t("mesgains_withdraw_set_default")}
+                        >
+                          <i className="ph ph-star text-xs text-textMuted group-hover:text-primary transition-colors" />
+                          <Text size="xs" fw={600} c="dimmed" className="group-hover:text-primary transition-colors">
+                            Définir par défaut
+                          </Text>
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleDelete(m.id)} 
+                        className="px-4 py-2 rounded-lg bg-surface2 hover:bg-red-50 flex items-center justify-center gap-2 transition-colors group"
+                      >
+                        <i className="ph ph-trash text-xs text-textMuted group-hover:text-red-500 transition-colors" />
+                        {m.is_default && (
+                          <Text size="xs" fw={600} c="dimmed" className="group-hover:text-red-500 transition-colors">
+                            Supprimer
+                          </Text>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1278,9 +1408,10 @@ function AddPaymentMethodModal({ methodType, onClose, onDone, t }: any) {
   const [error, setError] = useState("");
   const [validationErr, setValidationErr] = useState("");
 
-  const typeIcon = methodType === "BANK" ? "fa-university" : "fa-mobile-screen-button";
-  const typeColor = methodType === "MTN" ? "text-yellow-500" : methodType === "ORANGE" ? "text-orange-500" : "text-blue-400";
-  const typeLabel = methodType === "BANK" ? t("mesgains_bank_transfer") : methodType;
+  const isBank = methodType === "BANK";
+  const isMTN = methodType === "MTN";
+  const isOrange = methodType === "ORANGE";
+  const typeLabel = isBank ? t("mesgains_bank_transfer") : methodType;
 
   const handleSave = async () => {
     setValidationErr("");
@@ -1311,72 +1442,90 @@ function AddPaymentMethodModal({ methodType, onClose, onDone, t }: any) {
   };
 
   return (
-    <Modal opened onClose={onClose} title={typeLabel} size="sm">
-      <Group gap="sm" mb="md">
-        <i className={`fa-solid ${typeIcon} ${typeColor} text-xl`} />
-      </Group>
-
-        {success ? (
-          <div className="p-8 text-center">
-            <i className="fa-solid fa-check-circle text-green-mid text-5xl block mb-4 mx-auto" />
-            <p className="font-bricolage text-[16px] font-bold text-textMain">{t("mesgains_withdraw_modal_method_saved")}</p>
-          </div>
-        ) : (
-          <div className="p-5 space-y-4">
-            {(error || validationErr) && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-[12px] text-red-600 text-[12px] font-semibold flex items-center gap-2">
-                <i className="fa-solid fa-circle-exclamation" /> {error || validationErr}
-              </div>
-            )}
-
-            <div>
-              <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_account_name")}</label>
-              <input
-                type="text"
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-                placeholder="Ex: Jean Dupont"
-                className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-              />
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            <div className="flex items-center gap-2.5">
+              {isBank ? (
+                <i className="ph ph-bank text-blue-400 text-xl" />
+              ) : (
+                <div className="w-10 h-10 rounded-xl border border-borda bg-white flex items-center justify-center">
+                  <img 
+                    src={isMTN ? mtnLogo : orangeMoneyLogo} 
+                    alt={methodType} 
+                    className="w-6 h-6 object-contain" 
+                  />
+                </div>
+              )}
+              <span>{typeLabel}</span>
             </div>
-            <div>
-              <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_account_number")}</label>
-              <input
-                type="text"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-                placeholder={methodType === "BANK" ? "Numéro de compte" : "+237 XXXXXXXXX"}
-                className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-              />
-              {methodType === "MTN" && <p className="text-[11px] text-textMuted mt-1">{t("payment_phone_mtn_hint")}</p>}
-              {methodType === "ORANGE" && <p className="text-[11px] text-textMuted mt-1">{t("payment_phone_orange_hint")}</p>}
+          </DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          {success ? (
+            <div className="p-8 text-center">
+              <i className="ph ph-check-circle text-green-mid text-5xl block mb-4 mx-auto" />
+              <p className="font-bricolage text-[16px] font-bold text-textMain">{t("mesgains_withdraw_modal_method_saved")}</p>
             </div>
-            {methodType === "BANK" && (
+          ) : (
+            <div className="space-y-4">
+              {(error || validationErr) && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-[12px] text-red-600 text-[12px] font-semibold flex items-center gap-2">
+                  <i className="ph ph-warning-circle" /> {error || validationErr}
+                </div>
+              )}
+
               <div>
-                <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_bank_name")}</label>
+                <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_account_name")}</label>
                 <input
                   type="text"
-                  value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                  placeholder="Ex: Société Générale"
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  placeholder="Ex: Jean Dupont"
                   className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
                 />
               </div>
-            )}
-            <button
-              onClick={handleSave}
-              disabled={saving || !accountNumber}
-              className="w-full py-3 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98] flex items-center justify-center gap-2"
-            >
-              {saving ? (
-                <><i className="fa-solid fa-spinner fa-spin" /> {t("mesgains_withdraw_modal_saving_method")}</>
-              ) : (
-                <><i className="fa-solid fa-floppy-disk" /> {t("mesgains_withdraw_modal_save")}</>
+              <div>
+                <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_account_number")}</label>
+                <input
+                  type="text"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  placeholder={methodType === "BANK" ? "Numéro de compte" : "+237 XXXXXXXXX"}
+                  className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                />
+                {methodType === "MTN" && <p className="text-[11px] text-textMuted mt-1">{t("payment_phone_mtn_hint")}</p>}
+                {methodType === "ORANGE" && <p className="text-[11px] text-textMuted mt-1">{t("payment_phone_orange_hint")}</p>}
+              </div>
+              {methodType === "BANK" && (
+                <div>
+                  <label className="text-[12px] font-semibold text-textMuted mb-1.5 block">{t("mesgains_withdraw_modal_bank_name")}</label>
+                  <input
+                    type="text"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    placeholder="Ex: Société Générale"
+                    className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                  />
+                </div>
               )}
-            </button>
-          </div>
-        )}
-    </Modal>
+              <button
+                onClick={handleSave}
+                disabled={saving || !accountNumber}
+                className="w-full py-3 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98] flex items-center justify-center gap-2"
+              >
+                {saving ? (
+                  <><i className="ph ph-spinner animate-spin" /> {t("mesgains_withdraw_modal_saving_method")}</>
+                ) : (
+                  <><i className="ph ph-floppy-disk" /> {t("mesgains_withdraw_modal_save")}</>
+                )}
+              </button>
+            </div>
+          )}
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1440,133 +1589,140 @@ function ConvertPointsModal({ points, onClose, onDone, onUpdateUser, t }: { poin
   };
 
   return (
-    <Modal opened onClose={onClose} title={step === "success" ? "Conversion réussie" : t("mesgains_convert_title")} size="sm">
-      <Stack align="center" gap="md" mb="md">
-        <i className={`${step === "success" ? "fa-solid fa-check-circle text-green-mid" : "fa-solid fa-coins text-primary"} text-4xl`} />
-        <Text size="sm" c="dimmed">{t("mesgains_convert_balance")}</Text>
-        <Text fw={800} className="font-bricolage" size="xl" c="gold">{points.totalPoints.toLocaleString()} pts</Text>
-      </Stack>
-
-      {/* Étape 1 : choix du montant */}
-      {step === "amount" && (
-        <>
-          <div className="mb-4">
-            <Text size="xs" fw={600} c="dimmed" mb={6}>{t("mesgains_convert_amount")}</Text>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => { setAmount(e.target.value); setError(""); }}
-              placeholder="0"
-              min={1}
-              max={points.totalPoints}
-              className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-            />
-            <Group justify="space-between" mt={6}>
-              <Text size="xs" c="dimmed">{t("mesgains_convert_rate")}: {rate} pt = 1 XAF</Text>
-              <button onClick={() => setAmount(String(points.totalPoints))} className="text-[11px] text-primary font-semibold hover:underline">{t("mesgains_convert_max")}</button>
-            </Group>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{step === "success" ? "Conversion réussie" : t("mesgains_convert_title")}</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          <div className="flex flex-col items-center gap-4 mb-4">
+            <i className={`${step === "success" ? "ph ph-check-circle text-green-mid" : "ph ph-coins text-primary"} text-4xl`} />
+            <p className="text-sm text-textMuted">{t("mesgains_convert_balance")}</p>
+            <p className="font-bricolage text-xl font-extrabold text-primary">{points.totalPoints.toLocaleString()} pts</p>
           </div>
 
-          {numAmount > 0 && (
-            <Paper p="sm" className="bg-primary/5 border border-primary/15 mb-md" style={{ borderRadius: 12 }}>
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">{t("mesgains_convert_receive")}</Text>
-                <Text fw={800} className="font-bricolage" size="md" c="gold">{xafValue.toLocaleString()} XAF</Text>
-              </Group>
-            </Paper>
-          )}
+          {/* Étape 1 : choix du montant */}
+          {step === "amount" && (
+            <>
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-textMuted mb-1.5 block">{t("mesgains_convert_amount")}</label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); setError(""); }}
+                  placeholder="0"
+                  min={1}
+                  max={points.totalPoints}
+                  className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                />
+                <div className="flex justify-between mt-1.5">
+                  <Text size="xs" c="dimmed">{t("mesgains_convert_rate")}: {rate} pt = 1 XAF</Text>
+                  <button onClick={() => setAmount(String(points.totalPoints))} className="text-[11px] text-primary font-semibold hover:underline">{t("mesgains_convert_max")}</button>
+                </div>
+              </div>
 
-          {error && (
-            <Paper p="sm" className="bg-red-50 border border-red-200 mb-md" style={{ borderRadius: 10 }}>
-              <Text size="xs" c="red.6" ta="center">{error}</Text>
-            </Paper>
-          )}
-
-          <button
-            onClick={goToConfirm}
-            disabled={!canProceed}
-            className="w-full py-3 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98] flex items-center justify-center gap-2"
-          >
-            <i className="fa-solid fa-arrow-right" /> {t("mesgains_convert_button") || "Convertir"}
-          </button>
-        </>
-      )}
-
-      {/* Étape 2 : confirmation mot de passe */}
-      {step === "confirm" && (
-        <>
-          <Paper p="sm" className="bg-primary/5 border border-primary/15 mb-md" style={{ borderRadius: 12 }}>
-            <Group justify="space-between">
-              <Text size="sm" c="dimmed">{t("mesgains_convert_receive")}</Text>
-              <Text fw={800} className="font-bricolage" size="md" c="gold">{xafValue.toLocaleString()} XAF</Text>
-            </Group>
-            <Group justify="space-between" mt={4}>
-              <Text size="xs" c="dimmed">{t("mesgains_convert_amount")}</Text>
-              <Text size="sm" fw={600}>{numAmount.toLocaleString()} pts</Text>
-            </Group>
-          </Paper>
-
-          <div className="mb-4">
-            <Text size="xs" fw={600} c="dimmed" mb={6}>Confirmez votre mot de passe</Text>
-            <div className="relative">
-              <input
-                type={showPw ? "text" : "password"}
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(!showPw)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <i className={`fa-solid ${showPw ? "fa-eye-slash" : "fa-eye"}`} />
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <Paper p="sm" className="bg-red-50 border border-red-200 mb-md" style={{ borderRadius: 10 }}>
-              <Text size="xs" c="red.6" ta="center">{error}</Text>
-            </Paper>
-          )}
-
-          <Group grow>
-            <button
-              onClick={() => { setStep("amount"); setPassword(""); setError(""); }}
-              className="py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all"
-            >
-              Retour
-            </button>
-            <button
-              onClick={handleConfirm}
-              disabled={!canConfirm || loading}
-              className="py-3 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98] flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <><i className="fa-solid fa-spinner fa-spin" /> {t("mesgains_convert_loading")}</>
-              ) : (
-                <><i className="fa-solid fa-lock" /> Confirmer la conversion</>
+              {numAmount > 0 && (
+                <Paper p="sm" className="bg-primary/5 border border-primary/15 mb-4" style={{ borderRadius: 12 }}>
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">{t("mesgains_convert_receive")}</Text>
+                    <Text fw={800} className="font-bricolage" size="md" c="gold">{xafValue.toLocaleString()} XAF</Text>
+                  </Group>
+                </Paper>
               )}
-            </button>
-          </Group>
-        </>
-      )}
 
-      {/* Étape 3 : succès */}
-      {step === "success" && (
-        <>
-          <Paper p="sm" className="bg-green-50 border border-green-200 mb-md" style={{ borderRadius: 10 }}>
-            <Group justify="center" gap="xs">
-              <i className="fa-solid fa-check-circle text-green-600" />
-              <Text size="sm" c="green.7" fw={600}>{xafValue.toLocaleString()} XAF ajoutés à votre portefeuille</Text>
-            </Group>
-          </Paper>
-          <Text size="xs" c="dimmed" ta="center">Redirection dans un instant...</Text>
-        </>
-      )}
-    </Modal>
+              {error && (
+                <Paper p="sm" className="bg-red-50 border border-red-200 mb-4" style={{ borderRadius: 10 }}>
+                  <Text size="xs" c="red.6" ta="center">{error}</Text>
+                </Paper>
+              )}
+
+              <button
+                onClick={goToConfirm}
+                disabled={!canProceed}
+                className="w-full py-3 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98] flex items-center justify-center gap-2"
+              >
+                <i className="ph ph-arrow-right" /> {t("mesgains_convert_button") || "Convertir"}
+              </button>
+            </>
+          )}
+
+          {/* Étape 2 : confirmation mot de passe */}
+          {step === "confirm" && (
+            <>
+              <Paper p="sm" className="bg-primary/5 border border-primary/15 mb-4" style={{ borderRadius: 12 }}>
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">{t("mesgains_convert_receive")}</Text>
+                  <Text fw={800} className="font-bricolage" size="md" c="gold">{xafValue.toLocaleString()} XAF</Text>
+                </Group>
+                <Group justify="space-between" mt={4}>
+                  <Text size="xs" c="dimmed">{t("mesgains_convert_amount")}</Text>
+                  <Text size="sm" fw={600}>{numAmount.toLocaleString()} pts</Text>
+                </Group>
+              </Paper>
+
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-textMuted mb-1.5 block">Confirmez votre mot de passe</label>
+                <div className="relative">
+                  <input
+                    type={showPw ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 bg-gray-50 border border-borda rounded-[12px] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(!showPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <i className={`${showPw ? "ph ph-eye-slash" : "ph ph-eye"}`} />
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <Paper p="sm" className="bg-red-50 border border-red-200 mb-4" style={{ borderRadius: 10 }}>
+                  <Text size="xs" c="red.6" ta="center">{error}</Text>
+                </Paper>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => { setStep("amount"); setPassword(""); setError(""); }}
+                  className="py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all"
+                >
+                  Retour
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  disabled={!canConfirm || loading}
+                  className="py-3 bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bricolage text-[13.5px] font-bold rounded-[12px] transition-all active:scale-[.98] flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <><i className="ph ph-spinner animate-spin" /> {t("mesgains_convert_loading")}</>
+                  ) : (
+                    <><i className="ph ph-lock" /> Confirmer</>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Étape 3 : succès */}
+          {step === "success" && (
+            <>
+              <Paper p="sm" className="bg-green-50 border border-green-200 mb-4" style={{ borderRadius: 10 }}>
+                <div className="flex items-center justify-center gap-2">
+                  <i className="ph ph-check-circle text-green-600" />
+                  <Text size="sm" c="green.7" fw={600}>{xafValue.toLocaleString()} XAF ajoutés à votre portefeuille</Text>
+                </div>
+              </Paper>
+              <Text size="xs" c="dimmed" ta="center">Redirection dans un instant...</Text>
+            </>
+          )}
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1581,17 +1737,17 @@ function TxStatusBadge({ status, t }: { status: string; t: (key: string) => stri
 }
 
 function getEarningMeta(type: string, t: (key: string) => string): { icon: string; color: string; label: string } {
-  if (type === "declaration_points") return { icon: "fa-file-circle-check", color: "text-primary", label: t("mesgains_declaration_points") || "Points déclaration" };
-  if (type === "return_points") return { icon: "fa-handshake", color: "text-green-mid", label: t("mesgains_return_points") || "Points remise document" };
-  if (type === "referral_points") return { icon: "fa-user-plus", color: "text-amber-500", label: t("mesgains_referral_points") || "Points parrainage" };
-  if (type === "referral_bonus") return { icon: "fa-gift", color: "text-purple-400", label: t("mesgains_referral_bonus") || "Bonus parrainage" };
-  if (type === "finder_payout") return { icon: "fa-sack-dollar", color: "text-green-mid", label: t("mesgains_finder_payout") || "Récompense remise" };
-  return { icon: "fa-coins", color: "text-gray-500", label: type };
+  if (type === "declaration_points") return { icon: "ph ph-seal-check", color: "text-primary", label: t("mesgains_declaration_points") || "Points déclaration" };
+  if (type === "return_points") return { icon: "ph ph-handshake", color: "text-green-mid", label: t("mesgains_return_points") || "Points remise document" };
+  if (type === "referral_points") return { icon: "ph ph-user-plus", color: "text-amber-500", label: t("mesgains_referral_points") || "Points parrainage" };
+  if (type === "referral_bonus") return { icon: "ph ph-gift", color: "text-purple-400", label: t("mesgains_referral_bonus") || "Bonus parrainage" };
+  if (type === "finder_payout") return { icon: "ph ph-piggy-bank", color: "text-green-mid", label: t("mesgains_finder_payout") || "Récompense remise" };
+  return { icon: "ph ph-coins", color: "text-gray-500", label: type };
 }
 
 function getTxMeta(type: string, t: (key: string) => string): { icon: string; color: string; label: string; sub: string } {
-  if (type === "finder_payout") return { icon: "fa-file-circle-check", color: "text-green-mid", label: t("tx_commission"), sub: t("tx_reward") };
-  if (type === "recovery_fee") return { icon: "fa-arrow-up", color: "text-orange-500", label: t("tx_recovery_fee"), sub: t("tx_payment_made") };
-  if (type === "withdrawal") return { icon: "fa-arrow-right-from-bracket", color: "text-blue-400", label: t("tx_withdrawal"), sub: t("tx_mobile_money") };
-  return { icon: "fa-receipt", color: "text-gray-500", label: type, sub: "—" };
+  if (type === "finder_payout") return { icon: "ph ph-seal-check", color: "text-green-mid", label: t("tx_commission"), sub: t("tx_reward") };
+  if (type === "recovery_fee") return { icon: "ph ph-arrow-up", color: "text-orange-500", label: t("tx_recovery_fee"), sub: t("tx_payment_made") };
+  if (type === "withdrawal") return { icon: "ph ph-sign-out", color: "text-blue-400", label: t("tx_withdrawal"), sub: t("tx_mobile_money") };
+  return { icon: "ph ph-receipt", color: "text-gray-500", label: type, sub: "—" };
 }

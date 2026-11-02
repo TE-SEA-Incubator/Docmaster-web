@@ -38,7 +38,7 @@ export default function AdminBroadcast() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white border border-gray-200 rounded p-5">
           <h3 className="font-bold text-sm text-gray-800 mb-4 flex items-center gap-2">
-            <i className="fa-solid fa-bullhorn text-[#E8923A]" />
+            <i className="ph ph-megaphone text-[#E8923A]" />
             Nouveau broadcast
             <InfoTooltip text="Le message sera envoyé à tous les utilisateurs possédant un token push valide." />
           </h3>
@@ -71,7 +71,7 @@ export default function AdminBroadcast() {
             </div>
             {result && (
               <div className={`px-3 py-2.5 rounded border text-[13px] flex items-center gap-2 ${result.success ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>
-                <i className={`fa-solid ${result.success ? "fa-circle-check" : "fa-circle-xmark"} text-sm shrink-0`} />
+                <i className={`${result.success ? "ph ph-check-circle" : "ph ph-x-circle"} text-sm shrink-0`} />
                 {result.message}
               </div>
             )}
@@ -82,9 +82,9 @@ export default function AdminBroadcast() {
                 className="flex items-center gap-1.5 bg-[#2D5A42] text-white px-5 py-2.5 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-50"
               >
                 {sending ? (
-                  <><i className="fa-solid fa-spinner fa-spin text-xs" /> Envoi en cours...</>
+                  <><i className="ph ph-spinner animate-spin text-xs" /> Envoi en cours...</>
                 ) : (
-                  <><i className="fa-solid fa-paper-plane text-xs" /> Envoyer la notification</>
+                  <><i className="ph ph-paper-plane text-xs" /> Envoyer la notification</>
                 )}
               </button>
               <span className="text-[12px] text-gray-400">{message.length} caractères</span>
@@ -94,26 +94,26 @@ export default function AdminBroadcast() {
 
         <div className="bg-white border border-gray-200 rounded p-5">
           <h3 className="font-bold text-sm text-gray-800 mb-4 flex items-center gap-2">
-            <i className="fa-solid fa-circle-info text-gray-400" />
+            <i className="ph ph-info text-gray-400" />
             Informations
           </h3>
           <div className="space-y-3 text-[13px] text-gray-600">
             <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded">
-              <i className="fa-solid fa-users text-blue-500 mt-0.5 shrink-0" />
+              <i className="ph ph-users text-blue-500 mt-0.5 shrink-0" />
               <div>
                 <p className="font-bold text-gray-900 mb-0.5">Destinataires</p>
                 <p className="text-[12px]">La notification sera envoyée à <strong>tous les utilisateurs</strong> disposant d'un token push FCM enregistré.</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded">
-              <i className="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 shrink-0" />
+              <i className="ph ph-warning text-amber-500 mt-0.5 shrink-0" />
               <div>
                 <p className="font-bold text-gray-900 mb-0.5">Attention</p>
                 <p className="text-[12px]">Le broadcast peut prendre quelques secondes. Les notifications sont envoyées par lots de 500.</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded">
-              <i className="fa-solid fa-shield-halved text-green-600 mt-0.5 shrink-0" />
+              <i className="ph ph-shield text-green-600 mt-0.5 shrink-0" />
               <div>
                 <p className="font-bold text-gray-900 mb-0.5">Logging</p>
                 <p className="text-[12px]">Chaque broadcast est enregistré comme notification de type <code className="bg-gray-100 px-1 rounded">BROADCAST</code> dans l'historique.</p>

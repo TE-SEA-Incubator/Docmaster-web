@@ -22,18 +22,18 @@ interface LogEntry {
 }
 
 const ACTION_ICONS: Record<string, string> = {
-  REGISTER: "fa-user-plus text-emerald-500",
-  LOGIN: "fa-right-to-bracket text-blue-500",
-  UPDATE_PROFILE: "fa-pen text-amber-500",
-  CREATE_DECLARATION: "fa-file-circle-plus text-primary",
-  REQUEST_WITHDRAWAL: "fa-money-bill-transfer text-orange-500",
-  APPROVE_WITHDRAWAL: "fa-check-circle text-green-500",
-  REJECT_WITHDRAWAL: "fa-ban text-red-500",
-  WALLET_CREDIT: "fa-circle-arrow-up text-emerald-500",
-  WALLET_DEBIT: "fa-circle-arrow-down text-red-500",
-  SUBSCRIPTION_PURCHASED: "fa-crown text-purple-500",
-  REFERRAL_REWARD: "fa-gift text-pink-500",
-  RECOVERY_PAYMENT: "fa-hand-holding-dollar text-sky-500",
+  REGISTER: "ph ph-user-plus text-emerald-500",
+  LOGIN: "ph ph-sign-in text-blue-500",
+  UPDATE_PROFILE: "ph ph-pen text-amber-500",
+  CREATE_DECLARATION: "ph ph-file-plus text-primary",
+  REQUEST_WITHDRAWAL: "ph ph-hand-withdraw text-orange-500",
+  APPROVE_WITHDRAWAL: "ph ph-check-circle text-green-500",
+  REJECT_WITHDRAWAL: "ph ph-prohibit text-red-500",
+  WALLET_CREDIT: "ph ph-arrow-circle-up text-emerald-500",
+  WALLET_DEBIT: "ph ph-arrow-circle-down text-red-500",
+  SUBSCRIPTION_PURCHASED: "ph ph-crown text-purple-500",
+  REFERRAL_REWARD: "ph ph-gift text-pink-500",
+  RECOVERY_PAYMENT: "ph ph-hand-coins text-sky-500",
 };
 
 const ACTION_BG: Record<string, string> = {
@@ -127,7 +127,7 @@ export default function AdminActivityLog() {
             onClick={() => { setFilterAction(""); setFilterUser(""); setPage(1); }}
             className="px-3 py-2 bg-gray-100 border border-gray-200 rounded text-[13px] font-semibold text-gray-600 hover:bg-gray-200 transition-colors flex items-center gap-1"
           >
-            <i className="fa-solid fa-xmark text-xs" /> Effacer
+            <i className="ph ph-x text-xs" /> Effacer
           </button>
         )}
       </div>
@@ -136,16 +136,16 @@ export default function AdminActivityLog() {
         {loading ? (
           <div className="py-16"><LoadingSpinner /></div>
         ) : logs.length === 0 ? (
-          <EmptyState icon="fa-solid fa-clock-rotate-left" message="Aucune activité enregistrée pour le moment." />
+          <EmptyState icon="ph ph-clock-counter-clockwise" message="Aucune activité enregistrée pour le moment." />
         ) : (
           <div className="overflow-auto flex-1 min-h-0 divide-y divide-gray-100">
             {logs.map((log) => {
-              const icon = ACTION_ICONS[log.action_type] || "fa-circle-info text-gray-400";
+              const icon = ACTION_ICONS[log.action_type] || "ph ph-info text-gray-400";
               const bg = ACTION_BG[log.action_type] || "bg-gray-100";
               return (
                 <div key={log.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
                   <div className={`w-8 h-8 rounded border border-gray-200 ${bg} flex items-center justify-center flex-shrink-0`}>
-                    <i className={`fa-solid ${icon} text-xs`} />
+                    <i className={`${icon} text-xs`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">

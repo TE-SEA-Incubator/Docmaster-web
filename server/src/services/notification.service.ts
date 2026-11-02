@@ -333,7 +333,13 @@ export class NotificationService {
     });
   }
 
-  async notifyMatchFound(lostUserId: string, foundUserId: string | null | undefined, docId: string, docType: string) {
+  async notifyMatchFound(
+    lostUserId: string,
+    foundUserId: string | null | undefined,
+    docId: string,
+    docType: string,
+    context?: { matchId?: string; foundId?: string },
+  ) {
     await this.createNotification({
       user_id: lostUserId,
       destinataire_type: 'USER',
@@ -341,7 +347,13 @@ export class NotificationService {
       type: 'MATCH_FOUND',
       title: 'Bonne nouvelle ! Document trouvé',
       message: `Quelqu'un a signalé avoir trouvé votre ${docType}.`,
-      metadata: { docId, docType, matchType: 'LOST_SIDE' }
+      metadata: {
+        docId,
+        foundId: context?.foundId,
+        matchId: context?.matchId,
+        docType,
+        matchType: 'LOST_SIDE',
+      }
     });
     if (foundUserId) {
       await this.createNotification({
@@ -351,7 +363,13 @@ export class NotificationService {
         type: 'MATCH_FOUND',
         title: 'Correspondance trouvée !',
         message: `Le propriétaire du document ${docType} que vous avez trouvé a été identifié.`,
-        metadata: { docId, docType, matchType: 'FOUND_SIDE' }
+        metadata: {
+          docId,
+          foundId: context?.foundId,
+          matchId: context?.matchId,
+          docType,
+          matchType: 'FOUND_SIDE',
+        }
       });
     }
   }
@@ -368,6 +386,57 @@ export class NotificationService {
       metadata: { declaration_id: foundDeclId, vault_doc_id: vaultDocId, docType, action: 'CONFIRM_VAULT_MATCH' }
     });
     console.log(`✅ [Notification] VAULT_MATCH_PENDING créée — metadata.declaration_id=${foundDeclId}`);
+  }
+
+  async notifyMatchConfirmed(
+    finderId: string | null | undefined,
+    finderType: string | null | undefined,
+    lostId: string,
+    foundId: string,
+    matchId: string,
+    docType: string,
+  ) {
+    if (!finderId) return;
+    const isPartner = finderType === 'PARTENAIRE';
+    await this.createNotification({
+      ...(isPartner ? {} : { user_id: finderId }),
+      destinataire_type: isPartner ? 'PARTENAIRE' : 'USER',
+      destinataire_id: finderId,
+      type: 'MATCH_FOUND',
+      title: 'Le propriétaire a confirmé la correspondance',
+      message: `Le propriétaire du ${docType} que vous avez trouvé a confirmé la correspondance. Il peut maintenant procéder au paiement.`,
+      metadata: {
+        docId: lostId,
+        lostId,
+        foundId,
+        matchId,
+        docType,
+        matchType: 'FOUND_SIDE',
+        action: 'OWNER_CONFIRMED',
+      },
+    });
+  }
+
+  async notifyMatchClosed(
+    ownerId: string,
+    docType: string,
+    foundId: string,
+    matchId: string,
+  ) {
+    await this.createNotification({
+      user_id: ownerId,
+      destinataire_type: 'USER',
+      destinataire_id: ownerId,
+      type: 'MATCH_CLOSED',
+      title: 'Document déjà récupéré',
+      message: `Le ${docType} que vous recherchiez a déjà été récupéré par un autre propriétaire. Votre recherche reste active.`,
+      metadata: {
+        foundId,
+        matchId,
+        docType,
+        action: 'VIEW_OWN_DECLARATION',
+      },
+    });
   }
 
   async notifyPaymentReceived(finderId: string, docType: string, docId: string) {
@@ -409,14 +478,26 @@ export class NotificationService {
     });
   }
 
-  async notifyPartenaireMatchFound(partenaireId: string, docType: string, docId: string) {
+  async notifyPartenaireMatchFound(
+    partenaireId: string,
+    docType: string,
+    docId: string,
+    context?: { matchId?: string; foundId?: string },
+  ) {
     await this.createNotification({
       destinataire_type: 'PARTENAIRE',
       destinataire_id: partenaireId,
       type: 'MATCH_FOUND',
       title: 'Correspondance trouvée !',
       message: `Le propriétaire du document ${docType} que vous avez trouvé a été identifié. Vous serez contacté pour la remise.`,
-      metadata: { docId, docType, matchType: 'FOUND_SIDE', partenaire_id: partenaireId }
+      metadata: {
+        docId,
+        foundId: context?.foundId,
+        matchId: context?.matchId,
+        docType,
+        matchType: 'FOUND_SIDE',
+        partenaire_id: partenaireId,
+      }
     });
   }
 

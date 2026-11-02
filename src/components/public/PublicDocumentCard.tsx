@@ -90,7 +90,7 @@ export default function PublicDocumentCard({
         />
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/95 rounded-full text-[10px] font-bold uppercase border border-borderMain text-textMain">
-            <i className="fa-solid fa-shield-halved text-primary text-[9px]" />
+            <i className="ph ph-shield text-primary text-[9px]" />
             {docType}
           </span>
           {score ? (
@@ -120,13 +120,13 @@ export default function PublicDocumentCard({
 
         {reference && (
           <p className="mt-2 text-[11px] text-textMuted flex items-center gap-1.5">
-            <i className="fa-solid fa-hashtag text-[9px] text-textMuted" />
+            <i className="ph ph-hash text-[9px] text-textMuted" />
             <span className="font-mono truncate">{reference}</span>
           </p>
         )}
 
         <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-xl border border-borderMain min-w-0">
-          <i className="fa-solid fa-location-dot text-textMuted text-[11px]" />
+          <i className="ph ph-map-pin text-textMuted text-[11px]" />
           <span className="text-[11px] font-medium text-textMain truncate" title={location}>
             {location}
           </span>

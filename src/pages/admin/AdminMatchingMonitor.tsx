@@ -99,20 +99,20 @@ const statusBadge = (status: string) => {
 };
 
 const criterionIcon = (c: MatchCriterion) => {
-  if (c.icon === "✓") return <span className="text-emerald-500"><i className="fa-solid fa-check-circle" /></span>;
-  if (c.icon === "⚠") return <span className="text-amber-500"><i className="fa-solid fa-triangle-exclamation" /></span>;
-  if (c.icon === "✗") return <span className="text-red-400"><i className="fa-solid fa-circle-xmark" /></span>;
-  return <span className="text-gray-300"><i className="fa-solid fa-minus" /></span>;
+  if (c.icon === "✓") return <span className="text-emerald-500"><i className="ph ph-check-circle" /></span>;
+  if (c.icon === "⚠") return <span className="text-amber-500"><i className="ph ph-warning" /></span>;
+  if (c.icon === "✗") return <span className="text-red-400"><i className="ph ph-x-circle" /></span>;
+  return <span className="text-gray-300"><i className="ph ph-minus" /></span>;
 };
 
 function EventIcon({ type }: { type: string }) {
   switch (type) {
-    case "CYCLE_START": return <div className="w-7 h-7 rounded border border-blue-200 bg-blue-50 text-blue-500 flex items-center justify-center shrink-0"><i className="fa-solid fa-rotate text-xs" /></div>;
-    case "CHECKING": return <div className="w-7 h-7 rounded border border-gray-200 bg-gray-50 text-gray-400 flex items-center justify-center shrink-0"><i className="fa-solid fa-magnifying-glass text-xs" /></div>;
-    case "MATCH_FOUND": return <div className="w-7 h-7 rounded border border-green-200 bg-green-50 text-green-600 flex items-center justify-center shrink-0"><i className="fa-solid fa-handshake text-xs" /></div>;
-    case "CYCLE_END": return <div className="w-7 h-7 rounded border border-violet-200 bg-violet-50 text-violet-500 flex items-center justify-center shrink-0"><i className="fa-solid fa-flag-checkered text-xs" /></div>;
-    case "CYCLE_ERROR": return <div className="w-7 h-7 rounded border border-red-200 bg-red-50 text-red-500 flex items-center justify-center shrink-0"><i className="fa-solid fa-bug text-xs" /></div>;
-    default: return <div className="w-7 h-7 rounded border border-gray-200 bg-gray-100 text-gray-400 flex items-center justify-center shrink-0"><i className="fa-solid fa-circle text-xs" /></div>;
+    case "CYCLE_START": return <div className="w-7 h-7 rounded border border-blue-200 bg-blue-50 text-blue-500 flex items-center justify-center shrink-0"><i className="ph ph-arrow-clockwise text-xs" /></div>;
+    case "CHECKING": return <div className="w-7 h-7 rounded border border-gray-200 bg-gray-50 text-gray-400 flex items-center justify-center shrink-0"><i className="ph ph-magnifying-glass text-xs" /></div>;
+    case "MATCH_FOUND": return <div className="w-7 h-7 rounded border border-green-200 bg-green-50 text-green-600 flex items-center justify-center shrink-0"><i className="ph ph-handshake text-xs" /></div>;
+    case "CYCLE_END": return <div className="w-7 h-7 rounded border border-violet-200 bg-violet-50 text-violet-500 flex items-center justify-center shrink-0"><i className="ph ph-flag-checkered text-xs" /></div>;
+    case "CYCLE_ERROR": return <div className="w-7 h-7 rounded border border-red-200 bg-red-50 text-red-500 flex items-center justify-center shrink-0"><i className="ph ph-bug text-xs" /></div>;
+    default: return <div className="w-7 h-7 rounded border border-gray-200 bg-gray-100 text-gray-400 flex items-center justify-center shrink-0"><i className="ph ph-circle text-xs" /></div>;
   }
 }
 
@@ -265,10 +265,10 @@ export default function AdminMatchingMonitor() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon="fa-handshake" label="Correspondances" value={stats.totalMatches.toLocaleString()} color="#2D5A42" bgColor="#E8F5EE" />
-        <StatCard icon="fa-circle-check" label="Haute confiance" value={stats.highConfidence.toLocaleString()} color="#059669" bgColor="#ECFDF5" />
-        <StatCard icon="fa-clock" label="Potentielles" value={stats.potential.toLocaleString()} color="#D97706" bgColor="#FFFBEB" />
-        <StatCard icon="fa-star" label="Score moyen" value={`${stats.averageScore}/100`} color="#7C3AED" bgColor="#F5F3FF" />
+        <StatCard icon="ph ph-handshake" label="Correspondances" value={stats.totalMatches.toLocaleString()} color="#2D5A42" bgColor="#E8F5EE" />
+        <StatCard icon="ph ph-check-circle" label="Haute confiance" value={stats.highConfidence.toLocaleString()} color="#059669" bgColor="#ECFDF5" />
+        <StatCard icon="ph ph-clock" label="Potentielles" value={stats.potential.toLocaleString()} color="#D97706" bgColor="#FFFBEB" />
+        <StatCard icon="ph ph-star" label="Score moyen" value={`${stats.averageScore}/100`} color="#7C3AED" bgColor="#F5F3FF" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
@@ -282,7 +282,7 @@ export default function AdminMatchingMonitor() {
           </div>
 
           {matches.length === 0 ? (
-            <EmptyState icon="fa-solid fa-handshake" message="Aucune correspondance enregistrée" />
+            <EmptyState icon="ph ph-handshake" message="Aucune correspondance enregistrée" />
           ) : (
             <div className="overflow-auto max-h-[480px] admin-scroll">
               <table className="w-full text-left border-collapse">
@@ -329,7 +329,7 @@ export default function AdminMatchingMonitor() {
                         <td className="py-3 px-4 text-center">
                           <button onClick={() => toggleRow(m.id)} disabled={!criteria}
                             className={`w-6 h-6 rounded border border-gray-200 hover:bg-gray-100 text-gray-400 transition-colors ${!criteria ? "opacity-30 cursor-not-allowed" : ""}`}>
-                            <i className={`fa-solid fa-chevron-down text-[9px] transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                            <i className={`ph ph-caret-down text-[9px] transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                           </button>
                         </td>
                       </tr>
@@ -364,14 +364,14 @@ export default function AdminMatchingMonitor() {
           <div className="px-4 py-3.5 border-b border-gray-100 bg-gray-50 flex items-center justify-between shrink-0">
             <h3 className="text-sm font-bold text-gray-800">Flux en direct</h3>
             <button onClick={() => setLiveEvents([])} className="text-[11px] font-semibold text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors">
-              <i className="fa-solid fa-rotate-right text-[9px]" /> Vider
+              <i className="ph ph-arrow-clockwise text-[9px]" /> Vider
             </button>
           </div>
           <div ref={feedRef} className="flex-1 overflow-y-auto admin-scroll min-h-[400px] max-h-[480px]">
             {liveEvents.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center py-12">
-                  <i className="fa-solid fa-wifi text-2xl text-gray-200 mb-3" />
+                  <i className="ph ph-wifi-high text-2xl text-gray-200 mb-3" />
                   <p className="text-[13px] text-gray-400">En attente d'événements...</p>
                   <p className="text-[11px] text-gray-300 mt-1">Les cycles de matching apparaîtront ici</p>
                 </div>

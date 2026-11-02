@@ -282,6 +282,58 @@ router.get('/earnings-stats', authMiddleware, (req, res) => authController.getEa
 
 /**
  * @swagger
+ * /auth/earnings/history:
+ *   get:
+ *     summary: Récupérer l'historique complet des points (gains, conversions, retraits)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Date de début
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Date de fin
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [DECLARATION, REFERRAL, MATCH, BONUS, CONVERSION, WITHDRAWAL, WITHDRAWAL_REFUND, ADJUSTMENT]
+ *         description: Type de transaction
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Historique récupéré
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               data:
+ *                 transactions: []
+ *                 pagination: { page: 1, limit: 20, total: 50 }
+ *       500:
+ *         description: Erreur serveur
+ */
+router.get('/earnings/history', authMiddleware, (req, res) => authController.getEarningsHistory(req, res));
+
+/**
+ * @swagger
  * /auth/send-verification-pin:
  *   post:
  *     summary: Envoyer le code PIN par email

@@ -1,5 +1,6 @@
-import { Card, Text, Badge, ThemeIcon, ActionIcon, Group } from "@mantine/core";
+import { Card, Text, Badge, ThemeIcon } from "@mantine/core";
 import { useI18n } from "../../../context/I18nContext";
+import { phClass } from "../../../utils/phosphorIcons";
 
 interface DocTypeCatalog {
   id: string;
@@ -13,10 +14,7 @@ interface DocTypeCatalog {
 interface DocTypeCardProps {
   doc: DocTypeCatalog;
   selected: boolean;
-  count: number;
   onToggle: (id: string) => void;
-  onAddMore: (id: string) => void;
-  onRemoveMore: (id: string) => void;
 }
 
 /**
@@ -24,11 +22,10 @@ interface DocTypeCardProps {
  * - selected: orange-tinted background, check badge in corner, filled icon
  * - unselected: white background, light icon variant
  *
- * A dedicated "+" button appears once the type is selected: it adds
- * another instance of the same type (e.g. a second CNI) without
- * triggering the toggle. A "-" button appears if count > 1.
+ * Règle métier : une seule déclaration de perte active à la fois, donc un seul
+ * type sélectionnable (le clic remplace la sélection précédente).
  */
-export default function DocTypeCard({ doc, selected, count, onToggle, onAddMore, onRemoveMore }: DocTypeCardProps) {
+export default function DocTypeCard({ doc, selected, onToggle }: DocTypeCardProps) {
   const { t } = useI18n();
   const hasExp = (doc.delai_expiration_mois ?? 0) > 0;
 
@@ -49,63 +46,21 @@ export default function DocTypeCard({ doc, selected, count, onToggle, onAddMore,
         transition: "all .2s",
         position: "relative",
         minHeight: 96,
+        width: "100%",
+        height: "100%",
+        boxSizing: "border-box",
       }}
     >
       {selected && (
-        <>
-          <ThemeIcon
-            size="sm"
-            radius="xl"
-            color="orange"
-            variant="filled"
-            style={{ position: "absolute", top: 6, right: 6 }}
-          >
-            <i className="fa-solid fa-check" style={{ fontSize: 9 }} />
-          </ThemeIcon>
-          {count > 0 && (
-            <Badge
-              size="sm"
-              color="orange"
-              variant="light"
-              radius="xl"
-              style={{ position: "absolute", top: 6, left: 6 }}
-            >
-              ×{count}
-            </Badge>
-          )}
-          <Group gap={4} style={{ position: "absolute", bottom: 8, right: 8 }}>
-            {count > 1 && (
-              <ActionIcon
-                size="sm"
-                radius="xl"
-                variant="filled"
-                color="red.6"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemoveMore(doc.id);
-                }}
-                aria-label={t("declarer_remove_another")}
-                title={t("declarer_remove_another")}
-              >
-                <i className="fa-solid fa-minus" style={{ fontSize: 10 }} />
-              </ActionIcon>
-            )}
-            <ActionIcon
-              size="sm"
-              radius="xl"
-              variant="filled"
-              color="green.9"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddMore(doc.id);
-              }}
-              aria-label={t("declarer_add_another")}
-              title={t("declarer_add_another")}
-            >
-              <i className="fa-solid fa-plus" style={{ fontSize: 10 }} />
-            </ActionIcon>
-          </Group>
-        </>
+        <ThemeIcon
+          size="sm"
+          radius="xl"
+          color="orange"
+          variant="filled"
+          style={{ position: "absolute", top: 6, right: 6 }}
+        >
+          <i className="ph ph-check" style={{ fontSize: 9 }} />
+        </ThemeIcon>
       )}
       <ThemeIcon
         size={40}
@@ -115,7 +70,7 @@ export default function DocTypeCard({ doc, selected, count, onToggle, onAddMore,
         mx="auto"
         mb="xs"
       >
-        <i className={`fa-solid fa-${doc.icone || "file"}`} style={{ fontSize: 18 }} />
+        <i className={`${phClass(doc.icone || "file")}`} style={{ fontSize: 18 }} />
       </ThemeIcon>
       <Text size="xs" fw={600} c={selected ? "orange.8" : "dark.6"} lh={1.25}>
         {doc.nom}

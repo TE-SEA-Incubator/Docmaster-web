@@ -33,11 +33,11 @@ import {
 
 function getTypeMeta(t: (k: string) => string) {
   return {
-    telephone:  { label: t("mesappareils_type_telephone"),   icon: "fa-mobile-screen-button", color: "#3B82F6", bg: "#EFF6FF" },
-    ordinateur: { label: t("mesappareils_type_ordinateur"),  icon: "fa-laptop",               color: "#8B5CF6", bg: "#F5F3FF" },
-    tablette:   { label: t("mesappareils_type_tablette"),    icon: "fa-tablet-screen-button", color: "#10B981", bg: "#ECFDF5" },
-    tv:         { label: t("mesappareils_type_tv"),          icon: "fa-tv",                   color: "#F59E0B", bg: "#FFFBEB" },
-    autre:      { label: t("mesappareils_type_autre"),       icon: "fa-box",                  color: "#6B7280", bg: "#F9FAFB" },
+    telephone:  { label: t("mesappareils_type_telephone"),   icon: "ph ph-device-mobile", color: "#3B82F6", bg: "#EFF6FF" },
+    ordinateur: { label: t("mesappareils_type_ordinateur"),  icon: "ph ph-laptop",               color: "#8B5CF6", bg: "#F5F3FF" },
+    tablette:   { label: t("mesappareils_type_tablette"),    icon: "ph ph-device-tablet", color: "#10B981", bg: "#ECFDF5" },
+    tv:         { label: t("mesappareils_type_tv"),          icon: "ph ph-television",                   color: "#F59E0B", bg: "#FFFBEB" },
+    autre:      { label: t("mesappareils_type_autre"),       icon: "ph ph-package",                  color: "#6B7280", bg: "#F9FAFB" },
   };
 }
 
@@ -454,7 +454,7 @@ export default function MesAppareils() {
           html: `
             <div style="display:flex;gap:12px;margin-bottom:12px;">
               <div style="width:40px;height:40px;border-radius:50%;background:${isReported ? "#ef4444" : "#22c55e"};display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;">
-                <i class="fa-solid ${isReported ? "fa-triangle-exclamation" : "fa-check"}"></i>
+                <i class="${isReported ? "ph ph-warning" : "ph ph-check"}"></i>
               </div>
               <div>
                 <p style="font-weight:800;color:${isReported ? "#991b1b" : "#166534"};font-size:14px;margin-bottom:2px;">
@@ -486,7 +486,7 @@ export default function MesAppareils() {
           html: `
             <div style="display:flex;gap:12px;">
               <div style="width:40px;height:40px;border-radius:50%;background:#64748b;display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;">
-                <i class="fa-solid fa-question"></i>
+                <i class="ph ph-question"></i>
               </div>
               <div>
                 <p style="font-weight:800;color:#1e293b;font-size:14px;margin-bottom:2px;">Inconnu</p>
@@ -537,7 +537,7 @@ export default function MesAppareils() {
     val ? (
       <Group key={label} gap="md" py="sm" style={{ borderBottom: "1px solid #F0EAE0" }}>
         <ThemeIcon size="lg" radius="md" variant="light" color="yellow">
-          <i className={`fa-solid ${icon}`} />
+          <i className={`${icon}`} />
         </ThemeIcon>
         <div className="flex-1">
           <Text size="10px" fw={700} c="dimmed" tt="uppercase" tracking="xs" mb={3}>{label}</Text>
@@ -590,36 +590,12 @@ export default function MesAppareils() {
       `}</style>
 
       <div className="custom-scroll p-4 md:p-6 flex flex-col gap-6 pb-24 md:pb-6 max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
-        {/* Stats */}
-        <div className="max-sm:hidden">
-          <SimpleGrid cols={{ base: 2, lg: 4 }} spacing="md">
-            {[
-              { icon: "fa-laptop", label: "Appareils", value: devices.length, color: "indigo", bg: "#EEF2FF" },
-              { icon: "fa-file-invoice", label: "Factures", value: devices.filter((d) => (d as Device & { files?: Array<unknown> }).files?.length).length, color: "green", bg: "#E8F5EE" },
-              { icon: "fa-shield-halved", label: "Assurés", value: devices.filter((d) => d.assurance === "oui").length, color: "yellow", bg: "#FEF0DC" },
-              { icon: "fa-triangle-exclamation", label: "Garantie", value: devices.filter((d) => isExpired(d.garantie)).length, color: "red", bg: "#fef2f2" },
-            ].map((stat) => (
-              <Paper key={stat.label} p="md" radius="xl" withBorder>
-                <Group gap="md">
-                  <div className="w-[46px] h-[46px] rounded-[13px] flex items-center justify-center text-lg flex-shrink-0" style={{ background: stat.bg }}>
-                    <i className={`fa-solid ${stat.icon}`} style={{ color: stat.bg === "#EEF2FF" ? "#6366F1" : stat.bg === "#E8F5EE" ? "#2D5A42" : stat.bg === "#FEF0DC" ? "#E8923A" : "#ef4444" }} />
-                  </div>
-                  <div>
-                    <Text size="10px" fw={700} c="dimmed" tt="uppercase" tracking="widest">{stat.label}</Text>
-                    <Title order={3} ff="Bricolage Grotesque" fw={800}>{stat.value}</Title>
-                  </div>
-                </Group>
-              </Paper>
-            ))}
-          </SimpleGrid>
-        </div>
-
         {/* Toolbar */}
         <Group justify="space-between" wrap="wrap" gap="md">
           <TextInput
             flex={1}
             maw={320}
-            leftSection={<i className="fa-solid fa-magnifying-glass text-xs" />}
+            leftSection={<i className="ph ph-magnifying-glass text-xs" />}
             placeholder="Rechercher..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -630,17 +606,17 @@ export default function MesAppareils() {
           <Group gap="xs" style={{ overflowX: "auto", flexShrink: 0 }}>
             {[
               { key: "all", label: "Tous" },
-              { key: "telephone", label: "Téléphones", icon: "fa-mobile-screen-button" },
-              { key: "ordinateur", label: "Ordinateurs", icon: "fa-laptop" },
-              { key: "tablette", label: "Tablettes", icon: "fa-tablet-screen-button" },
-              { key: "autre", label: "Autres", icon: "fa-box" },
+              { key: "telephone", label: "Téléphones", icon: "ph ph-device-mobile" },
+              { key: "ordinateur", label: "Ordinateurs", icon: "ph ph-laptop" },
+              { key: "tablette", label: "Tablettes", icon: "ph ph-device-tablet" },
+              { key: "autre", label: "Autres", icon: "ph ph-package" },
             ].map((f) => (
               <button
                 key={f.key}
                 onClick={() => setCurrentFilter(f.key)}
                 className={`filter-btn whitespace-nowrap ${currentFilter === f.key ? "active" : ""}`}
               >
-                {f.icon && <i className={`fa-solid ${f.icon} mr-1`} style={{ fontSize: 10 }} />}
+                {f.icon && <i className={`${f.icon} mr-1`} style={{ fontSize: 10 }} />}
                 {f.label}
               </button>
             ))}
@@ -649,16 +625,16 @@ export default function MesAppareils() {
           <Group gap="sm" ml="auto">
             <div className="flex items-center gap-1.5 bg-white border border-[#EAE3D8] rounded-xl p-1">
               <button onClick={() => setCurrentView("grid")} className={`view-btn ${currentView === "grid" ? "active" : ""}`} title="Vue grille">
-                <i className="fa-solid fa-table-cells" />
+                <i className="ph ph-table" />
               </button>
               <button onClick={() => setCurrentView("list")} className={`view-btn ${currentView === "list" ? "active" : ""}`} title="Vue liste">
-                <i className="fa-solid fa-list-ul" />
+                <i className="ph ph-list-bullets" />
               </button>
             </div>
             <Button
               size="sm"
               radius="xl"
-              leftSection={<i className="fa-solid fa-shield-halved" />}
+              leftSection={<i className="ph ph-shield" />}
               onClick={() => setVerifyModalOpen(true)}
               style={{ backgroundColor: "#E8923A" }}
             >
@@ -667,7 +643,7 @@ export default function MesAppareils() {
             <Button
               size="sm"
               radius="xl"
-              leftSection={<i className="fa-solid fa-plus" />}
+              leftSection={<i className="ph ph-plus" />}
               onClick={() => openAddModal()}
               style={{ backgroundColor: "#2D5A42" }}
             >
@@ -699,7 +675,7 @@ export default function MesAppareils() {
                     {d.photo ? (
                       <img src={d.photo} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 14 }} alt="" />
                     ) : (
-                      <i className={`fa-solid ${meta.icon}`} />
+                      <i className={`${meta.icon}`} />
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -715,32 +691,32 @@ export default function MesAppareils() {
                 <div className="device-card-body">
                   {d.serial && (
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, overflow: "hidden" }}>
-                      <i className="fa-solid fa-barcode" style={{ color: "#C4BAB0", fontSize: 11, width: 14, flexShrink: 0 }} />
+                      <i className="ph ph-barcode" style={{ color: "#C4BAB0", fontSize: 11, width: 14, flexShrink: 0 }} />
                       <span style={{ fontSize: 11.5, color: "#6B7280", fontFamily: "monospace" }}>{esc(d.serial)}</span>
                     </div>
                   )}
                   {d.dateAchat && (
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <i className="fa-solid fa-calendar" style={{ color: "#C4BAB0", fontSize: 11, width: 14, flexShrink: 0 }} />
+                      <i className="ph ph-calendar" style={{ color: "#C4BAB0", fontSize: 11, width: 14, flexShrink: 0 }} />
                       <span style={{ fontSize: 11.5, color: "#6B7280" }}>Acheté le {formatDate(d.dateAchat)}</span>
                     </div>
                   )}
                 </div>
                 <div className="device-card-footer">
                   <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                    {isReported && <span className="tag" style={{ background: "#ef4444", color: "white" }}><i className="fa-solid fa-bell" style={{ fontSize: 9 }} /> Signalé</span>}
-                    {d.garantie && <span className="tag" style={{ background: expWarn ? "#fef2f2" : "#E8F5EE", color: expWarn ? "#ef4444" : "#2D5A42" }}><i className={`fa-solid ${expWarn ? "fa-triangle-exclamation" : "fa-shield-check"}`} style={{ fontSize: 9 }} /> {expWarn ? "Exp" : "OK"}</span>}
-                    {d.assurance === "oui" && <span className="tag" style={{ background: "#FEF0DC", color: "#E8923A" }}><i className="fa-solid fa-shield-halved" style={{ fontSize: 9 }} /> Assuré</span>}
+                    {isReported && <span className="tag" style={{ background: "#ef4444", color: "white" }}><i className="ph ph-bell" style={{ fontSize: 9 }} /> Signalé</span>}
+                    {d.garantie && <span className="tag" style={{ background: expWarn ? "#fef2f2" : "#E8F5EE", color: expWarn ? "#ef4444" : "#2D5A42" }}><i className={`${expWarn ? "ph ph-warning" : "ph ph-shield-check"}`} style={{ fontSize: 9 }} /> {expWarn ? "Exp" : "OK"}</span>}
+                    {d.assurance === "oui" && <span className="tag" style={{ background: "#FEF0DC", color: "#E8923A" }}><i className="ph ph-shield" style={{ fontSize: 9 }} /> Assuré</span>}
                   </div>
                   {d.prix ? <span style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 13, fontWeight: 700, color: "#1A1A1A" }}>{Number(d.prix).toLocaleString("fr")} FCFA</span> : null}
                 </div>
                 <div style={{ padding: "0 20px 16px" }}>
                   {isReported ? (
-                    <Button fullWidth size="xs" radius="xl" color="green" variant="filled" leftSection={<i className="fa-solid fa-check-circle" />} onClick={(e) => { e.stopPropagation(); confirmFoundAppareil(d.id); }}>
+                    <Button fullWidth size="xs" radius="xl" color="green" variant="filled" leftSection={<i className="ph ph-check-circle" />} onClick={(e) => { e.stopPropagation(); confirmFoundAppareil(d.id); }}>
                       Retrouvé
                     </Button>
                   ) : (
-                    <Button fullWidth size="xs" radius="xl" color="red" variant="filled" leftSection={<i className="fa-solid fa-triangle-exclamation" />} onClick={(e) => { e.stopPropagation(); confirmLostAppareil(d.id); }}>
+                    <Button fullWidth size="xs" radius="xl" color="red" variant="filled" leftSection={<i className="ph ph-warning" />} onClick={(e) => { e.stopPropagation(); confirmLostAppareil(d.id); }}>
                       Signaler
                     </Button>
                   )}
@@ -751,7 +727,7 @@ export default function MesAppareils() {
                     variant="outline"
                     color="gray"
                     mt="xs"
-                    leftSection={<i className="fa-solid fa-arrow-right-arrow-left" />}
+                    leftSection={<i className="ph ph-arrows-left-right" />}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (isReported) {
@@ -785,7 +761,7 @@ export default function MesAppareils() {
               Ajoutez vos appareils pour conserver vos factures, numéros de série et garanties en un seul endroit.
             </Text>
             <Button
-              leftSection={<i className="fa-solid fa-plus" />}
+              leftSection={<i className="ph ph-plus" />}
               onClick={() => openAddModal()}
               style={{ backgroundColor: "#2D5A42" }}
               radius="xl"
@@ -809,7 +785,7 @@ export default function MesAppareils() {
         title={
           <Stack align="center" gap="md">
             <ThemeIcon size={70} radius="xl" variant="light" color="yellow">
-              <i className="fa-solid fa-shield-halved text-3xl" />
+              <i className="ph ph-shield text-3xl" />
             </ThemeIcon>
             <div>
               <Title order={4} ta="center" ff="Bricolage Grotesque">Vérifier un appareil</Title>
@@ -823,7 +799,7 @@ export default function MesAppareils() {
         <Stack gap="md">
           <TextInput
             label="Numéro de série / IMEI"
-            leftSection={<i className="fa-solid fa-barcode" />}
+            leftSection={<i className="ph ph-barcode" />}
             placeholder="Saisissez l'IMEI ou N° de série"
             value={verifyImei}
             onChange={(e) => setVerifyImei(e.target.value)}
@@ -837,7 +813,7 @@ export default function MesAppareils() {
               Annuler
             </Button>
             <Button flex={1.5} radius="xl" loading={verifyLoading} onClick={startVerification} style={{ backgroundColor: "#E8923A" }}>
-              <i className="fa-solid fa-magnifying-glass mr-1" /> Vérifier
+              <i className="ph ph-magnifying-glass mr-1" /> Vérifier
             </Button>
           </Group>
         </Stack>
@@ -854,7 +830,7 @@ export default function MesAppareils() {
         title={
           <Stack align="center" gap="md">
             <ThemeIcon size={70} radius="xl" variant="light" color="primary">
-              <i className="fa-solid fa-arrow-right-arrow-left text-3xl" />
+              <i className="ph ph-arrows-left-right text-3xl" />
             </ThemeIcon>
             <div>
               <Title order={4} ta="center" ff="Bricolage Grotesque">Transférer l'appareil</Title>
@@ -868,7 +844,7 @@ export default function MesAppareils() {
         {transferSent ? (
           <Stack align="center" gap="md" py="md">
             <ThemeIcon size={60} radius="xl" variant="light" color="green">
-              <i className="fa-solid fa-check text-2xl" />
+              <i className="ph ph-check text-2xl" />
             </ThemeIcon>
             <Title order={5} ta="center">Demande envoyée !</Title>
             <Text size="sm" c="dimmed" ta="center">Le destinataire recevra un email pour accepter ou refuser le transfert.</Text>
@@ -880,7 +856,7 @@ export default function MesAppareils() {
           <Stack gap="md">
             <TextInput
               label="Email du destinataire"
-              leftSection={<i className="fa-solid fa-envelope" />}
+              leftSection={<i className="ph ph-envelope" />}
               placeholder="email@exemple.com"
               value={transferEmail}
               onChange={(e) => { setTransferEmail(e.target.value); setTransferError(""); }}
@@ -889,7 +865,7 @@ export default function MesAppareils() {
             />
             <PasswordInput
               label="Votre mot de passe"
-              leftSection={<i className="fa-solid fa-lock" />}
+              leftSection={<i className="ph ph-lock" />}
               placeholder="Confirmez votre mot de passe"
               value={transferPassword}
               onChange={(e) => { setTransferPassword(e.target.value); setTransferError(""); }}
@@ -924,7 +900,7 @@ export default function MesAppareils() {
                   }
                 }}
               >
-                {transferSending ? "En cours de transfert..." : <><i className="fa-solid fa-paper-plane mr-1" /> Envoyer</>}
+                {transferSending ? "En cours de transfert..." : <><i className="ph ph-paper-plane mr-1" /> Envoyer</>}
               </Button>
             </Group>
           </Stack>
@@ -952,29 +928,29 @@ export default function MesAppareils() {
           {/* Type selector */}
           <div>
             <Text size="xs" fw={700} c="dimmed" tt="uppercase" tracking="xs" mb="sm">
-              <i className="fa-solid fa-shapes text-primary mr-1" /> Type d'appareil
+              <i className="ph ph-shapes text-primary mr-1" /> Type d'appareil
             </Text>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))", gap: 8 }}>
               {[
-                { key: "telephone", icon: "fa-mobile-screen-button", label: "Téléphone" },
-                { key: "ordinateur", icon: "fa-laptop", label: "Ordinateur" },
-                { key: "tablette", icon: "fa-tablet-screen-button", label: "Tablette" },
-                { key: "tv", icon: "fa-tv", label: "TV" },
-                { key: "autre", icon: "fa-box", label: "Autre" },
+                { key: "telephone", icon: "ph ph-device-mobile", label: "Téléphone" },
+                { key: "ordinateur", icon: "ph ph-laptop", label: "Ordinateur" },
+                { key: "tablette", icon: "ph ph-device-tablet", label: "Tablette" },
+                { key: "tv", icon: "ph ph-television", label: "TV" },
+                { key: "autre", icon: "ph ph-package", label: "Autre" },
               ].map((ty) => (
                 <div key={ty.key} className={`type-option ${selectedType === ty.key ? "selected" : ""}`} onClick={() => setSelectedType(ty.key)}>
-                  <div className="type-icon"><i className={`fa-solid ${ty.icon}`} /></div>
+                  <div className="type-icon"><i className={`${ty.icon}`} /></div>
                   {ty.label}
                 </div>
               ))}
             </div>
           </div>
 
-          <TextInput id="fNom" label={<><i className="fa-solid fa-tag text-primary text-[10px] mr-1" /> Nom de l'appareil <span className="text-red-500">*</span></>} value={fNom} onChange={(e) => setFNom(e.target.value)} placeholder="Ex: iPhone 14 Pro, MacBook Air M2…" radius="xl" />
+          <TextInput id="fNom" label={<><i className="ph ph-tag text-primary text-[10px] mr-1" /> Nom de l'appareil <span className="text-red-500">*</span></>} value={fNom} onChange={(e) => setFNom(e.target.value)} placeholder="Ex: iPhone 14 Pro, MacBook Air M2…" radius="xl" />
 
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <Select
-              label={<><i className="fa-solid fa-building text-primary text-[10px] mr-1" /> Marque</>}
+              label={<><i className="ph ph-building text-primary text-[10px] mr-1" /> Marque</>}
               placeholder="Sélectionner…"
               value={fMarque}
               onChange={(val) => setFMarque(val || "")}
@@ -983,30 +959,30 @@ export default function MesAppareils() {
               clearable
               radius="xl"
             />
-            <TextInput label={<><i className="fa-solid fa-code-branch text-primary text-[10px] mr-1" /> Modèle</>} value={fModele} onChange={(e) => setFModele(e.target.value)} placeholder="Ex: Galaxy S23…" radius="xl" />
+            <TextInput label={<><i className="ph ph-git-branch text-primary text-[10px] mr-1" /> Modèle</>} value={fModele} onChange={(e) => setFModele(e.target.value)} placeholder="Ex: Galaxy S23…" radius="xl" />
           </SimpleGrid>
 
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <TextInput label={<><i className="fa-solid fa-barcode text-primary text-[10px] mr-1" /> N° série / IMEI</>} value={fSerial} onChange={(e) => setFSerial(e.target.value)} placeholder="SN ou IMEI" radius="xl" />
-            <TextInput label={<><i className="fa-solid fa-palette text-primary text-[10px] mr-1" /> Couleur</>} value={fCouleur} onChange={(e) => setFCouleur(e.target.value)} placeholder="Ex: Noir, Space Gray…" radius="xl" />
+            <TextInput label={<><i className="ph ph-barcode text-primary text-[10px] mr-1" /> N° série / IMEI</>} value={fSerial} onChange={(e) => setFSerial(e.target.value)} placeholder="SN ou IMEI" radius="xl" />
+            <TextInput label={<><i className="ph ph-palette text-primary text-[10px] mr-1" /> Couleur</>} value={fCouleur} onChange={(e) => setFCouleur(e.target.value)} placeholder="Ex: Noir, Space Gray…" radius="xl" />
           </SimpleGrid>
 
           <SimpleGrid cols={{ base: 1, sm: 3 }}>
             <div>
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={6}><i className="fa-solid fa-calendar-plus text-primary text-[10px] mr-1" /> Date d'achat</Text>
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={6}><i className="ph ph-calendar-plus text-primary text-[10px] mr-1" /> Date d'achat</Text>
               <DatePicker value={fDateAchat} onChange={(v) => setFDateAchat(v)} placeholder="jj/mm/aaaa" />
             </div>
             <div>
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={6}><i className="fa-solid fa-calendar-xmark text-primary text-[10px] mr-1" /> Fin garantie</Text>
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={6}><i className="ph ph-calendar-x text-primary text-[10px] mr-1" /> Fin garantie</Text>
               <DatePicker value={fGarantie} onChange={(v) => setFGarantie(v)} placeholder="jj/mm/aaaa" />
             </div>
-            <TextInput label={<><i className="fa-solid fa-coins text-primary text-[10px] mr-1" /> Prix</>} type="number" value={fPrix} onChange={(e) => setFPrix(e.target.value)} placeholder="FCFA" min={0} step={500} radius="xl" />
+            <TextInput label={<><i className="ph ph-coins text-primary text-[10px] mr-1" /> Prix</>} type="number" value={fPrix} onChange={(e) => setFPrix(e.target.value)} placeholder="FCFA" min={0} step={500} radius="xl" />
           </SimpleGrid>
 
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <TextInput label={<><i className="fa-solid fa-store text-primary text-[10px] mr-1" /> Lieu d'achat</>} value={fLieu} onChange={(e) => setFLieu(e.target.value)} placeholder="Ex: Orange Digital Center…" radius="xl" />
+            <TextInput label={<><i className="ph ph-storefront text-primary text-[10px] mr-1" /> Lieu d'achat</>} value={fLieu} onChange={(e) => setFLieu(e.target.value)} placeholder="Ex: Orange Digital Center…" radius="xl" />
             <Select
-              label={<><i className="fa-solid fa-shield-halved text-primary text-[10px] mr-1" /> Assurance</>}
+              label={<><i className="ph ph-shield text-primary text-[10px] mr-1" /> Assurance</>}
               value={fAssurance}
               onChange={(val) => setFAssurance(val || "")}
               data={[
@@ -1018,11 +994,11 @@ export default function MesAppareils() {
             />
           </SimpleGrid>
 
-          <Textarea label={<><i className="fa-solid fa-comment-dots text-primary text-[10px] mr-1" /> Notes</>} value={fNotes} onChange={(e) => setFNotes(e.target.value)} placeholder="État, accessoires inclus…" minRows={2} radius="xl" />
+          <Textarea label={<><i className="ph ph-chat-circle-dots text-primary text-[10px] mr-1" /> Notes</>} value={fNotes} onChange={(e) => setFNotes(e.target.value)} placeholder="État, accessoires inclus…" minRows={2} radius="xl" />
 
           {/* Invoice upload */}
           <div>
-            <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm"><i className="fa-solid fa-file-invoice text-primary mr-1" /> Facture / Ticket</Text>
+            <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm"><i className="ph ph-invoice text-primary mr-1" /> Facture / Ticket</Text>
             <div
               className={`upload-zone ${selectedFiles.length > 0 ? "has-file" : ""}`}
               onClick={() => factureInputRef.current?.click()}
@@ -1032,7 +1008,7 @@ export default function MesAppareils() {
             >
               {selectedFiles.length === 0 && (
                 <>
-                  <i className="fa-solid fa-cloud-arrow-up text-2xl text-[#C4BAB0]" />
+                  <i className="ph ph-cloud-arrow-up text-2xl text-[#C4BAB0]" />
                   <div>
                     <Text size="sm" fw={600}>Glisser-déposer ou cliquer</Text>
                     <Text size="xs" c="dimmed">PDF, JPG, PNG · Max 10 Mo</Text>
@@ -1042,10 +1018,10 @@ export default function MesAppareils() {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5, justifyContent: "center" }}>
                 {selectedFiles.map((f, i) => (
                   <div key={i} className="file-chip">
-                    <i className={`fa-solid ${f.type === "application/pdf" ? "fa-file-pdf" : "fa-image"}`} style={{ fontSize: 10 }} />
+                    <i className={`${f.type === "application/pdf" ? "ph ph-file-pdf" : "ph ph-image"}`} style={{ fontSize: 10 }} />
                     <span style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
                     <span style={{ cursor: "pointer", opacity: 0.6 }} onClick={() => removeFile(i)}>
-                      <i className="fa-solid fa-xmark" style={{ fontSize: 9 }} />
+                      <i className="ph ph-x" style={{ fontSize: 9 }} />
                     </span>
                   </div>
                 ))}
@@ -1056,14 +1032,14 @@ export default function MesAppareils() {
 
           {/* Photos */}
           <div>
-            <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm"><i className="fa-solid fa-camera text-primary mr-1" /> Photos</Text>
+            <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm"><i className="ph ph-camera text-primary mr-1" /> Photos</Text>
             <SimpleGrid cols={2} spacing="sm">
               <div style={{ position: "relative" }}>
                 <div className="upload-zone" style={{ minHeight: 90 }} onClick={() => photoInputRef.current?.click()}>
                   {photoPreview ? (
                     <img src={photoPreview} style={{ maxHeight: 80, borderRadius: 8, objectFit: "cover" }} alt="" />
                   ) : (
-                    <div><i className="fa-solid fa-image text-2xl text-[#C4BAB0]" /><p style={{ fontSize: 11, color: "#9CA3AF" }}>Photo recto</p></div>
+                    <div><i className="ph ph-image text-2xl text-[#C4BAB0]" /><p style={{ fontSize: 11, color: "#9CA3AF" }}>Photo recto</p></div>
                   )}
                 </div>
                 <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handlePhotoUpload(e, false)} />
@@ -1073,7 +1049,7 @@ export default function MesAppareils() {
                   {photoSerialPreview ? (
                     <img src={photoSerialPreview} style={{ maxHeight: 80, borderRadius: 8, objectFit: "cover" }} alt="" />
                   ) : (
-                    <div><i className="fa-solid fa-barcode text-2xl text-[#C4BAB0]" /><p style={{ fontSize: 11, color: "#9CA3AF" }}>Photo N° série</p></div>
+                    <div><i className="ph ph-barcode text-2xl text-[#C4BAB0]" /><p style={{ fontSize: 11, color: "#9CA3AF" }}>Photo N° série</p></div>
                   )}
                 </div>
                 <input ref={photoSerialInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => handlePhotoUpload(e, true)} />
@@ -1084,7 +1060,7 @@ export default function MesAppareils() {
           {/* Buttons */}
           <Group>
             <Button flex={1} variant="outline" radius="xl" onClick={closeAddModal}>Annuler</Button>
-            <Button flex={2} radius="xl" loading={saving} onClick={handleSave} leftSection={<i className="fa-solid fa-floppy-disk" />} style={{ backgroundColor: "#2D5A42" }}>
+            <Button flex={2} radius="xl" loading={saving} onClick={handleSave} leftSection={<i className="ph ph-floppy-disk" />} style={{ backgroundColor: "#2D5A42" }}>
               {editingId ? "Modifications" : "Enregistrer"}
             </Button>
           </Group>
@@ -1101,14 +1077,14 @@ export default function MesAppareils() {
         transitionProps={{ transition: "pop" }}
         title={
           <Group justify="space-between" w="100%">
-            <Button variant="subtle" size="sm" leftSection={<i className="fa-solid fa-arrow-left" />} onClick={closeDetail}>
+            <Button variant="subtle" size="sm" leftSection={<i className="ph ph-arrow-left" />} onClick={closeDetail}>
               Retour
             </Button>
             <Group gap="xs">
-              <Button variant="outline" size="xs" leftSection={<i className="fa-solid fa-pen-to-square" />} onClick={editCurrentDevice}>
+              <Button variant="outline" size="xs" leftSection={<i className="ph ph-pencil-simple" />} onClick={editCurrentDevice}>
                 Modifier
               </Button>
-              <Button variant="outline" color="red" size="xs" leftSection={<i className="fa-solid fa-trash" />} onClick={deleteCurrentDevice}>
+              <Button variant="outline" color="red" size="xs" leftSection={<i className="ph ph-trash" />} onClick={deleteCurrentDevice}>
                 Supprimer
               </Button>
             </Group>
@@ -1126,14 +1102,14 @@ export default function MesAppareils() {
               <Paper p="md" radius="xl" style={{ background: `linear-gradient(135deg,${meta.bg},white)`, border: `1px solid ${meta.color}30` }}>
                 <Group gap="md">
                   <div style={{ width: 64, height: 64, borderRadius: 16, background: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0, color: meta.color, boxShadow: `0 4px 14px ${meta.color}20`, overflow: "hidden" }}>
-                    {d.photo ? <img src={d.photo} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 16 }} alt="" /> : <i className={`fa-solid ${meta.icon}`} />}
+                    {d.photo ? <img src={d.photo} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 16 }} alt="" /> : <i className={`${meta.icon}`} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <Text fw={800} ff="Bricolage Grotesque" size="lg">{esc(d.nom)}</Text>
                     <Text size="sm" c="dimmed">{esc(d.marque)} {esc(d.modele)}</Text>
                     <Group gap={5} mt={6}>
                       <Badge size="xs" variant="light" color="yellow">{meta.label}</Badge>
-                      {d.assurance === "oui" && <Badge size="xs" variant="light" color="yellow"><i className="fa-solid fa-shield-halved mr-1" /> Assuré</Badge>}
+                      {d.assurance === "oui" && <Badge size="xs" variant="light" color="yellow"><i className="ph ph-shield mr-1" /> Assuré</Badge>}
                       {d.garantie && <Badge size="xs" variant="light" color={expWarn ? "red" : "green"}>{expWarn ? "Exp." : "Valide"}</Badge>}
                     </Group>
                   </div>
@@ -1146,13 +1122,13 @@ export default function MesAppareils() {
 
               <div>
                 <Text size="10px" fw={700} c="dimmed" tt="uppercase" tracking="widest" mb="sm">Détails</Text>
-                {infoRow("fa-barcode", "Numéro de série", d.serial)}
-                {infoRow("fa-palette", "Couleur", d.couleur)}
-                {infoRow("fa-calendar", "Date d'achat", d.dateAchat ? formatDate(d.dateAchat) : "")}
-                {infoRow("fa-calendar-xmark", "Fin garantie", d.garantie ? formatDate(d.garantie) : "")}
-                {infoRow("fa-coins", "Prix d'achat", d.prix ? Number(d.prix).toLocaleString("fr") + " FCFA" : "")}
-                {infoRow("fa-store", "Lieu d'achat", d.lieu)}
-                {infoRow("fa-comment-dots", "Notes", d.notes)}
+                {infoRow("ph ph-barcode", "Numéro de série", d.serial)}
+                {infoRow("ph ph-palette", "Couleur", d.couleur)}
+                {infoRow("ph ph-calendar", "Date d'achat", d.dateAchat ? formatDate(d.dateAchat) : "")}
+                {infoRow("ph ph-calendar-x", "Fin garantie", d.garantie ? formatDate(d.garantie) : "")}
+                {infoRow("ph ph-coins", "Prix d'achat", d.prix ? Number(d.prix).toLocaleString("fr") + " FCFA" : "")}
+                {infoRow("ph ph-storefront", "Lieu d'achat", d.lieu)}
+                {infoRow("ph ph-chat-circle-dots", "Notes", d.notes)}
               </div>
 
               {files.length > 0 && (
@@ -1181,7 +1157,7 @@ export default function MesAppareils() {
         title={
           <Stack align="center" gap="md">
             <ThemeIcon size={60} radius="xl" variant="light" color="red">
-              <i className="fa-solid fa-triangle-exclamation text-2xl" />
+              <i className="ph ph-warning text-2xl" />
             </ThemeIcon>
             <div>
               <Title order={4} ta="center" ff="Bricolage Grotesque">
@@ -1215,12 +1191,12 @@ export default function MesAppareils() {
                 autoComplete="current-password"
                 value={confirmPassword}
                 onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(false); }}
-                leftSection={<i className="fa-solid fa-lock" />}
+                leftSection={<i className="ph ph-lock" />}
                 radius="xl"
               />
               {passwordError && (
                 <Text size="xs" c="red" mt={4} fw={600}>
-                  <i className="fa-solid fa-circle-exclamation mr-1" /> Mot de passe incorrect ou trop court.
+                  <i className="ph ph-warning-circle mr-1" /> Mot de passe incorrect ou trop court.
                 </Text>
               )}
             </div>
@@ -1252,7 +1228,7 @@ export default function MesAppareils() {
         title={
           <Stack align="center" gap="md">
             <ThemeIcon size={70} radius="xl" variant="light" color="green">
-              <i className="fa-solid fa-check text-3xl" />
+              <i className="ph ph-check text-3xl" />
             </ThemeIcon>
             <div>
               <Title order={4} ta="center" ff="Bricolage Grotesque">{successTitle}</Title>

@@ -4,6 +4,7 @@ import { adminService } from "../../services/admin";
 import InfoTooltip from "../../components/ui/InfoTooltip";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import EmptyState from "../../components/ui/EmptyState";
+import { phClass } from "../../utils/phosphorIcons";
 
 interface DocumentType {
   id: string;
@@ -122,13 +123,13 @@ export default function AdminDocumentTypes() {
           onClick={openNew}
           className="inline-flex items-center gap-2 bg-[#2D5A42] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
         >
-          <i className="fa-solid fa-plus text-xs" />
+          <i className="ph ph-plus text-xs" />
           {t("admin_add_type")}
         </button>
       </div>
 
       {types.length === 0 ? (
-        <EmptyState icon="fa-solid fa-tags" message={t("admin_no_document_types")} />
+        <EmptyState icon="ph ph-tag-simple" message={t("admin_no_document_types")} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {types.map((doc) => (
@@ -138,20 +139,20 @@ export default function AdminDocumentTypes() {
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="w-10 h-10 rounded border border-gray-200 bg-gray-50 flex items-center justify-center text-[#2D5A42]">
-                  <i className={`fa-solid fa-${doc.icone || "file"} text-base`} />
+                  <i className={`${phClass(doc.icone || "file")} text-base`} />
                 </div>
                 <div className="flex gap-1.5">
                   <button
                     onClick={() => openEdit(doc)}
                     className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#E8923A] hover:border-[#E8923A]/40 transition-colors"
                   >
-                    <i className="fa-solid fa-pen text-[10px]" />
+                    <i className="ph ph-pen text-[10px]" />
                   </button>
                   <button
                     onClick={() => handleToggle(doc.id)}
                     className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"
                   >
-                    <i className="fa-solid fa-power-off text-[10px]" />
+                    <i className="ph ph-power text-[10px]" />
                   </button>
                 </div>
               </div>
@@ -204,7 +205,7 @@ export default function AdminDocumentTypes() {
                 {editingId ? t("admin_edit") : t("admin_add_type")}
               </h3>
               <button onClick={() => setModalOpen(false)} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded text-gray-400 hover:bg-gray-50">
-                <i className="fa-solid fa-xmark text-xs" />
+                <i className="ph ph-x text-xs" />
               </button>
             </div>
 
@@ -297,7 +298,7 @@ export default function AdminDocumentTypes() {
                 </button>
                 <button type="submit" disabled={saving || !form.nom.trim()}
                   className="px-5 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
-                  {saving && <i className="fa-solid fa-spinner fa-spin text-xs" />}
+                  {saving && <i className="ph ph-spinner animate-spin text-xs" />}
                   {t("admin_add")}
                 </button>
               </div>

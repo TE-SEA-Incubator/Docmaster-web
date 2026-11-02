@@ -73,7 +73,7 @@ export function FlowStepper({
                       : "border-borderMain text-textMuted"
                 }`}
               >
-                {done ? <i className="fa-solid fa-check text-[10px]" aria-hidden="true" /> : n}
+                {done ? <i className="ph ph-check text-[10px]" aria-hidden="true" /> : n}
               </span>
               <span
                 className={`mt-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-tight text-center leading-tight ${
@@ -113,7 +113,7 @@ export function FlowNotice({
   children: ReactNode;
 }) {
   return (
-    <Alert color={tone} variant="light" radius="md" icon={<i className={icon || "fa-solid fa-circle-info"} aria-hidden="true" />}>
+    <Alert color={tone} variant="light" radius="md" icon={<i className={icon || "ph ph-info"} aria-hidden="true" />}>
       <div className="text-[12px] sm:text-[13px] leading-relaxed font-medium">{children}</div>
     </Alert>
   );

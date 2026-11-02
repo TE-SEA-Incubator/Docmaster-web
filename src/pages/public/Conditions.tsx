@@ -7,7 +7,7 @@ export default function Conditions() {
     <div className="min-h-screen pt-[88px] px-4 pb-12">
       <div className="max-w-3xl mx-auto">
         <Link to="/" className="text-[12px] text-textMuted hover:text-primary font-semibold transition-colors inline-flex items-center gap-1 mb-4">
-          <i className="fa-solid fa-arrow-left text-[10px]" /> {t("conditions_back_home")}
+          <i className="ph ph-arrow-left text-[10px]" /> {t("conditions_back_home")}
         </Link>
 
         <div className="bg-white rounded-[20px] p-6 sm:p-8 border border-borda shadow-sm">

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useI18n } from "../../context/I18nContext";
 import { useToast } from "../../context/ToastContext";
 import { declarationsService } from "../../services/declarationsService";
@@ -25,7 +26,7 @@ type DetailData = Declaration & {
 
 const PartnerBadge = () => (
   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200">
-    <i className="fa-solid fa-building text-[9px]" /> Partenaire
+    <i className="ph ph-building text-[9px]" /> Partenaire
   </span>
 );
 
@@ -35,7 +36,7 @@ const ReporterCell = ({ d }: { d: Declaration }) => {
   if (isPartner) {
     return (
       <span className="flex items-center gap-1.5">
-        <i className="fa-solid fa-building text-cyan-600 text-[11px]" />
+        <i className="ph ph-building text-cyan-600 text-[11px]" />
         <span className="text-[12.5px] font-semibold text-cyan-800">{d.reporter_partenaire_nom || "Organisation partenaire"}</span>
         <PartnerBadge />
       </span>
@@ -47,10 +48,12 @@ const ReporterCell = ({ d }: { d: Declaration }) => {
 export default function AdminDeclarations() {
   const { t } = useI18n();
   const toast = useToast();
+  const [params] = useSearchParams();
   const [declarations, setDeclarations] = useState<Declaration[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  // Deep link depuis un signalement : /admin/declarations?search=<référence>
+  const [search, setSearch] = useState(params.get("search") ?? "");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -190,10 +193,10 @@ export default function AdminDeclarations() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded text-[12px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-            <i className="fa-solid fa-download text-[10px]" /> CSV
+            <i className="ph ph-download text-[10px]" /> CSV
           </button>
           <button onClick={loadData} className="flex items-center gap-1.5 px-3 py-2 bg-[#2D5A42] text-white rounded text-[12px] font-semibold hover:bg-[#2D5A42] transition-colors">
-            <i className="fa-solid fa-rotate-right text-[10px]" /> {t("admin_declarations_refresh")}
+            <i className="ph ph-arrow-clockwise text-[10px]" /> {t("admin_declarations_refresh")}
           </button>
         </div>
       </header>
@@ -202,7 +205,7 @@ export default function AdminDeclarations() {
         {/* Filters */}
         <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap items-center gap-2 shrink-0">
           <div className="relative flex-1 min-w-[180px] max-w-xs">
-            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+            <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
             <input
               type="search"
               value={search}
@@ -250,7 +253,7 @@ export default function AdminDeclarations() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {declarations.length === 0 ? (
-                <EmptyState icon="fa-solid fa-folder-open" message={t("admin_no_declarations")} colSpan={9} />
+                <EmptyState icon="ph ph-folder-open" message={t("admin_no_declarations")} colSpan={9} />
               ) : (
                 declarations.map((d) => {
                   const ref = d.identifiant_doc_dm || (d.id ? d.id.substring(0, 8) : "N/A");
@@ -291,7 +294,7 @@ export default function AdminDeclarations() {
                           onClick={() => handleDownloadPdf(d.id)}
                           className="flex items-center gap-1 px-2.5 py-1.5 border border-gray-300 rounded text-[11px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
                         >
-                          <i className="fa-solid fa-file-pdf text-red-500 text-[10px]" /> PDF
+                          <i className="ph ph-file-pdf text-red-500 text-[10px]" /> PDF
                         </button>
                       </td>
                     </tr>
@@ -319,10 +322,10 @@ export default function AdminDeclarations() {
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => handleDownloadPdf(selected.id)} className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded text-[12px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-                  <i className="fa-solid fa-download text-[10px]" /> Télécharger PDF
+                  <i className="ph ph-download text-[10px]" /> Télécharger PDF
                 </button>
                 <button onClick={closeDetail} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all">
-                  <i className="fa-solid fa-xmark text-xs" />
+                  <i className="ph ph-x text-xs" />
                 </button>
               </div>
             </div>
@@ -335,7 +338,7 @@ export default function AdminDeclarations() {
                   {/* Photos */}
                   <div>
                     <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-image text-gray-400" /> Photos du document
+                      <i className="ph ph-image text-gray-400" /> Photos du document
                     </h4>
                     <div className="flex gap-3 flex-wrap">
                       {photoUrl(selected) ? (
@@ -367,7 +370,7 @@ export default function AdminDeclarations() {
                   {/* Info grid */}
                   <div>
                     <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-circle-info text-gray-400" /> Informations
+                      <i className="ph ph-info text-gray-400" /> Informations
                     </h4>
                     <div className="grid grid-cols-2 gap-2 text-[13px]">
                       {[
@@ -408,7 +411,7 @@ export default function AdminDeclarations() {
                 {selected.counterPart && (
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded">
                     <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                      <i className="fa-solid fa-handshake text-blue-500" /> Correspondance trouvée
+                      <i className="ph ph-handshake text-blue-500" /> Correspondance trouvée
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[13px]">
                       <div><span className="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Nom complet</span><span className="font-semibold">{selected.counterPart.prenom} {selected.counterPart.nom}</span></div>
@@ -421,7 +424,7 @@ export default function AdminDeclarations() {
                 {selected.claim && (
                   <div className={`p-4 border rounded ${selected.claim.is_validated ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
                     <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                      <i className={`fa-solid ${selected.claim.is_validated ? "fa-circle-check text-green-600" : "fa-clock text-amber-500"}`} />
+                      <i className={`${selected.claim.is_validated ? "ph ph-check-circle text-green-600" : "ph ph-clock text-amber-500"}`} />
                       Réclamation {selected.claim.is_validated ? "validée" : "en attente"}
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[13px]">
@@ -435,7 +438,7 @@ export default function AdminDeclarations() {
                 {/* PDF preview */}
                 <div className="border-t border-gray-100 pt-5">
                   <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-                    <i className="fa-solid fa-file-pdf text-red-500" /> Aperçu PDF
+                    <i className="ph ph-file-pdf text-red-500" /> Aperçu PDF
                     <InfoTooltip text="Prévisualisation du PDF généré pour cette déclaration." />
                   </h4>
                   {pdfLoading ? (
@@ -444,7 +447,7 @@ export default function AdminDeclarations() {
                     <iframe src={pdfUrl} className="w-full h-[500px] rounded border border-gray-200" title="Aperçu PDF" />
                   ) : (
                     <div className="flex flex-col items-center justify-center py-10 bg-gray-50 border border-dashed border-gray-200 rounded text-gray-400">
-                      <i className="fa-solid fa-file-slash text-2xl mb-2" />
+                      <i className="ph ph-file-x text-2xl mb-2" />
                       <p className="text-[13px]">PDF non disponible</p>
                     </div>
                   )}

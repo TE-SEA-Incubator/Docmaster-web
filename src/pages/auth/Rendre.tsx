@@ -8,7 +8,11 @@ import { declarationsService } from "../../services/declarationsService";
 import type { Declaration } from "../../types/api";
 import { useI18n } from "../../context/I18nContext";
 import { ProtectedDocumentImage } from "../../components/ui/ProtectedDocumentImage";
+import TestimonialModal from "../../components/ui/TestimonialModal";
+import { testimonialsService, type TestimonialEligibility } from "../../services/testimonialsService";
+import { levelFor } from "../../utils/testimonialLevels";
 import { FlowCard, FlowFact, FlowNotice, FlowStepper } from "../../components/recuperation/FlowUI";
+import { phClass } from "../../utils/phosphorIcons";
 
 export default function Rendre() {
   const { t, lang } = useI18n();
@@ -34,6 +38,9 @@ export default function Rendre() {
   const [validating, setValidating] = useState(false);
   const [validated, setValidated] = useState(false);
   const [codeError, setCodeError] = useState("");
+
+  const [review, setReview] = useState<TestimonialEligibility | null>(null);
+  const [testimonialOpen, setTestimonialOpen] = useState(false);
 
   const locale = lang === "ar" ? "ar" : lang === "en" ? "en-GB" : "fr-FR";
 
@@ -69,6 +76,21 @@ export default function Rendre() {
       .finally(() => setLoading(false));
   }, [docId, navigate, t]);
 
+  // L'avis est ouvert dès que le serveur confirme la trouvaille ou la remise.
+  useEffect(() => {
+    if (!docId || !doc) return;
+    let alive = true;
+    testimonialsService
+      .getEligibility(docId)
+      .then((res) => {
+        if (alive && res.success && res.data) setReview(res.data);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [docId, doc]);
+
   // ── Payment polling ───────────────────────────────────────────────────
   useEffect(() => {
     if (ownerPaid || !docId) return;
@@ -95,7 +117,7 @@ export default function Rendre() {
 
   // ── Helpers ──────────────────────────────────────────────────────────
   const getDocType = () => (doc as any)?.docTypeInfo?.nom || (doc as any)?.doc_type || doc?.document_type || t("recuperer_type_found");
-  const getDocIcon = () => `fa-solid fa-${(doc as any)?.docTypeInfo?.icone || "file-invoice"}`;
+  const getDocIcon = () => `${phClass((doc as any)?.docTypeInfo?.icone || "file-invoice")}`;
   const getOwnerName = () => {
     const cp = (doc as any)?.counterPart;
     if (cp?.prenom || cp?.nom) return `${cp.prenom || ""} ${cp.nom || ""}`.trim();
@@ -212,7 +234,7 @@ export default function Rendre() {
     return (
       <div className="flex-1 flex items-center justify-center px-4 py-20">
         <div className="max-w-sm text-center">
-          <i className="fa-solid fa-circle-exclamation text-textMuted text-3xl" />
+          <i className="ph ph-warning-circle text-textMuted text-3xl" />
           <h1 className="mt-4 font-bricolage text-lg font-bold text-textMain">{t("recuperer_not_found_title")}</h1>
           <p className="mt-2 text-[13px] text-textMuted leading-relaxed">{error || t("recuperer_load_error")}</p>
           <Button component={Link} to="/dashboard" radius="md" mt="md">
@@ -234,7 +256,7 @@ export default function Rendre() {
           {/* ═══ Progression ═══ */}
           <FlowCard
             title={t("flow_progression")}
-            icon="fa-solid fa-list-check"
+            icon="ph ph-list-checks"
             aside={<Badge color={getStatusColor()} variant="light" radius="xl" size="sm">{getStatusLabel()}</Badge>}
           >
             <FlowStepper
@@ -245,35 +267,35 @@ export default function Rendre() {
           </FlowCard>
 
           {/* ═══ Action en cours ═══ */}
-          <FlowCard title={t("flow_to_do")} icon="fa-solid fa-bullseye">
+          <FlowCard title={t("flow_to_do")} icon="ph ph-target">
             {isReturned ? (
               <div className="flex flex-col gap-4 items-start">
-                <FlowNotice tone="green" icon="fa-solid fa-circle-check">
+                <FlowNotice tone="green" icon="ph ph-check-circle">
                   <span className="font-bold">{t("rendre_returned_title")}</span> {t("rendre_returned_desc")}
                 </FlowNotice>
-                <Button component={Link} to="/dashboard" radius="md" leftSection={<i className="fa-solid fa-table-columns text-xs" aria-hidden="true" />}>
+                <Button component={Link} to="/dashboard" radius="md" leftSection={<i className="ph ph-table text-xs" aria-hidden="true" />}>
                   {t("flow_back_dashboard")}
                 </Button>
               </div>
             ) : !isMatched() ? (
-              <FlowNotice tone="gray" icon="fa-solid fa-hourglass-half">
+              <FlowNotice tone="gray" icon="ph ph-hourglass-medium">
                 <span className="font-bold">{t("rendre_waiting_title")}</span> {t("rendre_waiting_desc")}
                 <WaitingRefresh label={t("rendre_waiting_refresh")} />
               </FlowNotice>
             ) : !ownerPaid ? (
               <div className="flex flex-col gap-4">
-                <FlowNotice tone="orange" icon="fa-solid fa-hourglass-half">
+                <FlowNotice tone="orange" icon="ph ph-hourglass-medium">
                   <span className="font-bold">{t("rendre_status_waiting")}</span> {t("rendre_status_waiting_desc")}
                   <WaitingRefresh label={t("rendre_waiting_refresh")} />
                 </FlowNotice>
                 <p className="text-[12px] text-textMuted leading-relaxed">{t("rendre_code_locked")}</p>
-                <Button component={Link} to={conversationHref} radius="md" leftSection={<i className="fa-solid fa-comments text-xs" aria-hidden="true" />}>
+                <Button component={Link} to={conversationHref} radius="md" leftSection={<i className="ph ph-chats text-xs" aria-hidden="true" />}>
                   {t("flow_message_owner")}
                 </Button>
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                <FlowNotice tone="green" icon="fa-solid fa-badge-check">
+                <FlowNotice tone="green" icon="ph ph-seal-check">
                   <span className="font-bold">{t("rendre_status_paid")}</span> {t("rendre_status_paid_desc")}
                 </FlowNotice>
                 <div>
@@ -304,7 +326,7 @@ export default function Rendre() {
 
                 {codeError && (
                   <p role="alert" className="text-[12px] font-semibold text-red-600 flex items-center gap-2">
-                    <i className="fa-solid fa-circle-exclamation" aria-hidden="true" />
+                    <i className="ph ph-warning-circle" aria-hidden="true" />
                     {codeError}
                   </p>
                 )}
@@ -315,17 +337,17 @@ export default function Rendre() {
                     radius="md"
                     loading={validating}
                     disabled={codeValues.some((v) => !v)}
-                    leftSection={!validating && <i className="fa-solid fa-circle-check text-xs" aria-hidden="true" />}
+                    leftSection={!validating && <i className="ph ph-check-circle text-xs" aria-hidden="true" />}
                   >
                     {validating ? t("flow_validating") : t("rendre_validate_btn")}
                   </Button>
-                  <Button component={Link} to={conversationHref} radius="md" variant="default" leftSection={<i className="fa-solid fa-comments text-xs" aria-hidden="true" />}>
+                  <Button component={Link} to={conversationHref} radius="md" variant="default" leftSection={<i className="ph ph-chats text-xs" aria-hidden="true" />}>
                     {t("flow_message_owner")}
                   </Button>
                 </div>
 
                 <p className="text-[11px] text-textMuted leading-relaxed flex items-start gap-2">
-                  <i className="fa-solid fa-lock text-[10px] mt-0.5" aria-hidden="true" />
+                  <i className="ph ph-lock text-[10px] mt-0.5" aria-hidden="true" />
                   {t("rendre_code_owner_holds")}
                 </p>
               </div>
@@ -334,7 +356,7 @@ export default function Rendre() {
 
           {/* ═══ Rendez-vous ═══ */}
           {isMatched() && !isReturned && (
-            <FlowCard title={t("flow_meeting")} icon="fa-solid fa-handshake">
+            <FlowCard title={t("flow_meeting")} icon="ph ph-handshake">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FlowFact label={t("recuperer_owner")} value={getOwnerName()} />
                 <FlowFact label={t("rendre_contact")} value={getOwnerPhone() || "—"} mono />
@@ -342,11 +364,11 @@ export default function Rendre() {
               <p className="mt-4 text-[12px] text-textMuted leading-relaxed">{t("rendre_contact_desc")}</p>
               <div className="mt-4 pt-4 border-t border-borderMain flex flex-wrap gap-3">
                 {getOwnerPhone() && (
-                  <Button component="a" href={`tel:${getOwnerPhone()}`} radius="md" variant="default" leftSection={<i className="fa-solid fa-phone text-xs" aria-hidden="true" />}>
+                  <Button component="a" href={`tel:${getOwnerPhone()}`} radius="md" variant="default" leftSection={<i className="ph ph-phone text-xs" aria-hidden="true" />}>
                     {t("rendre_call")}
                   </Button>
                 )}
-                <Button component={Link} to={conversationHref} radius="md" variant="default" leftSection={<i className="fa-solid fa-comments text-xs" aria-hidden="true" />}>
+                <Button component={Link} to={conversationHref} radius="md" variant="default" leftSection={<i className="ph ph-chats text-xs" aria-hidden="true" />}>
                   {t("flow_message_owner")}
                 </Button>
               </div>
@@ -390,8 +412,43 @@ export default function Rendre() {
             </div>
           </FlowCard>
 
+          {/* ═══ Votre avis ═══ */}
+          {review?.eligible && (
+            <FlowCard title={t("testimonial_card_title")} icon="ph ph-star">
+              {review.testimonial ? (
+                <div className="flex items-start gap-3">
+                  <span className="text-3xl leading-none" aria-hidden="true">
+                    {levelFor(review.testimonial.rating).emoji}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-bold text-textMain">{t("testimonial_card_thanks")}</p>
+                    <p className="mt-1 text-[12px] text-textMuted">
+                      {t(levelFor(review.testimonial.rating).labelKey)}
+                    </p>
+                    <p className="mt-2 text-[12.5px] text-textMain leading-relaxed italic">
+                      “{review.testimonial.comment}”
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+                  <p className="text-[12.5px] text-textMuted leading-relaxed max-w-md">
+                    {t("testimonial_card_desc")}
+                  </p>
+                  <Button
+                    onClick={() => setTestimonialOpen(true)}
+                    radius="md"
+                    leftSection={<i className="ph ph-star text-xs" aria-hidden="true" />}
+                  >
+                    {t("testimonial_card_cta")}
+                  </Button>
+                </div>
+              )}
+            </FlowCard>
+          )}
+
           {/* ═══ 5. Sécurité ═══ */}
-          <FlowCard title={t("flow_safety_title")} icon="fa-solid fa-shield-halved">
+          <FlowCard title={t("flow_safety_title")} icon="ph ph-shield">
             <ul className="space-y-3">
               {[
                 t("flow_safety_public"),
@@ -400,7 +457,7 @@ export default function Rendre() {
                 t("flow_safety_gains"),
               ].map((rule) => (
                 <li key={rule} className="flex items-start gap-2.5 text-[12.5px] text-textMain leading-relaxed">
-                  <i className="fa-solid fa-check text-green-dark text-[11px] mt-1" aria-hidden="true" />
+                  <i className="ph ph-check text-green-dark text-[11px] mt-1" aria-hidden="true" />
                   {rule}
                 </li>
               ))}
@@ -429,6 +486,15 @@ export default function Rendre() {
           </div>
         </div>
       )}
+
+      <TestimonialModal
+        opened={testimonialOpen}
+        onClose={() => setTestimonialOpen(false)}
+        declarationId={docId}
+        onSubmitted={(testimonial) =>
+          setReview((current) => (current ? { ...current, testimonial } : current))
+        }
+      />
     </div>
   );
 }
@@ -436,7 +502,7 @@ export default function Rendre() {
 function WaitingRefresh({ label }: { label: string }) {
   return (
     <span className="mt-1.5 flex items-center gap-1.5 text-[11px] text-textMuted">
-      <i className="fa-solid fa-arrows-rotate text-[10px]" aria-hidden="true" />
+      <i className="ph ph-arrows-clockwise text-[10px]" aria-hidden="true" />
       {label}
     </span>
   );

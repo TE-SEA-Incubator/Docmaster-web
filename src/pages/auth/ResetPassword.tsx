@@ -69,7 +69,7 @@ export default function ResetPassword() {
             <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
             <div className="flex flex-col items-center gap-4 text-center relative z-10">
               <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 text-3xl">
-                <i className="fa-solid fa-link-slash" />
+                <i className="ph ph-link-simple-break" />
               </div>
               <h1 className="font-bricolage text-2xl font-extrabold tracking-tight text-gray-900">
                 {t("reset_invalid_link")}
@@ -81,7 +81,7 @@ export default function ResetPassword() {
                 to="/forgot-password"
                 className="px-6 py-3 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-dark transition-all mt-2"
               >
-                <i className="fa-solid fa-key mr-2" /> {t("reset_new_request")}
+                <i className="ph ph-key mr-2" /> {t("reset_new_request")}
               </Link>
             </div>
           </div>
@@ -102,7 +102,7 @@ export default function ResetPassword() {
             <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-green-500/5 rounded-full blur-3xl" />
             <div className="flex flex-col items-center gap-4 text-center relative z-10">
               <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center text-green-500 text-3xl">
-                <i className="fa-solid fa-check-circle" />
+                <i className="ph ph-check-circle" />
               </div>
               <h1 className="font-bricolage text-2xl font-extrabold tracking-tight text-gray-900">
                 {t("reset_success_title")}
@@ -114,7 +114,7 @@ export default function ResetPassword() {
                 to="/login"
                 className="px-6 py-3 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-dark transition-all mt-2"
               >
-                <i className="fa-solid fa-right-to-bracket mr-2" /> {t("reset_login")}
+                <i className="ph ph-sign-in mr-2" /> {t("reset_login")}
               </Link>
             </div>
           </div>
@@ -136,7 +136,7 @@ export default function ResetPassword() {
 
           <div className="flex flex-col gap-6 relative z-10">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary text-3xl">
-              <i className="fa-solid fa-lock-open" />
+              <i className="ph ph-lock-open" />
             </div>
 
             <div className="space-y-2">
@@ -151,7 +151,7 @@ export default function ResetPassword() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-[14px] text-red-600 text-[12px] font-semibold flex items-center gap-2">
-                  <i className="fa-solid fa-circle-exclamation" /> {error}
+                  <i className="ph ph-warning-circle" /> {error}
                 </div>
               )}
 
@@ -160,7 +160,7 @@ export default function ResetPassword() {
                   {t("reset_new_password")}
                 </label>
                 <div className="relative flex items-center group">
-                  <i className="fa-solid fa-lock absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary" />
+                  <i className="ph ph-lock absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary" />
                   <input
                     type={pwVisible ? "text" : "password"}
                     value={password}
@@ -174,7 +174,7 @@ export default function ResetPassword() {
                     onClick={() => setPwVisible(!pwVisible)}
                     className="absolute right-3 p-1.5 text-textMuted hover:text-primary transition-colors cursor-pointer"
                   >
-                    <i className={`fa-regular ${pwVisible ? "fa-eye-slash" : "fa-eye"}`} />
+                    <i className={`${pwVisible ? "ph ph-eye-slash" : "ph ph-eye"}`} />
                   </button>
                 </div>
                 {password && (
@@ -198,7 +198,7 @@ export default function ResetPassword() {
                   {t("reset_confirm_password")}
                 </label>
                 <div className="relative flex items-center group">
-                  <i className="fa-solid fa-lock-open absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary" />
+                  <i className="ph ph-lock-open absolute left-3.5 text-[#c4bab0] text-[14px] pointer-events-none transition-colors group-focus-within:text-primary" />
                   <input
                     type={pwVisible ? "text" : "password"}
                     value={confirm}
@@ -210,13 +210,13 @@ export default function ResetPassword() {
                 </div>
                 {confirm && pwMatch === false && (
                   <p className="text-[12px] font-medium mt-1.5 text-red-500">
-                    <i className="fa-solid fa-circle-xmark mr-1" />
+                    <i className="ph ph-x-circle mr-1" />
                     {t("reset_mismatch")}
                   </p>
                 )}
                 {pwMatch === true && (
                   <p className="text-[12px] font-medium mt-1.5 text-green-600">
-                    <i className="fa-solid fa-circle-check mr-1" />
+                    <i className="ph ph-check-circle mr-1" />
                     {t("reset_match")}
                   </p>
                 )}
@@ -228,16 +228,16 @@ export default function ResetPassword() {
                 className="w-full py-3.5 bg-primary text-white rounded-2xl font-bold text-base shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
               >
                 {loading ? (
-                  <i className="fa-solid fa-spinner fa-spin" />
+                  <i className="ph ph-spinner animate-spin" />
                 ) : (
-                  <><i className="fa-solid fa-check" /> {t("reset_button")}</>
+                  <><i className="ph ph-check" /> {t("reset_button")}</>
                 )}
               </button>
             </form>
 
             <div className="text-center">
               <Link to="/login" className="text-[12.5px] text-primary font-semibold hover:underline">
-                <i className="fa-solid fa-arrow-left mr-1.5" />
+                <i className="ph ph-arrow-left mr-1.5" />
                 {t("reset_back_to_login")}
               </Link>
             </div>

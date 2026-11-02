@@ -5,7 +5,7 @@ export function FacebookIcon(props: React.ComponentProps<'svg'>) {
       focusable="false"
       data-prefix="fab"
       data-icon="facebook"
-      className="svg-inline--fa fa-facebook"
+      className="svg-inline--fa ph ph-facebook-logo"
       role="img"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"

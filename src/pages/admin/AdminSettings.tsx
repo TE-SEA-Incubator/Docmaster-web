@@ -73,7 +73,7 @@ export default function AdminSettings() {
 
       {saved && (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-700 text-[13px] flex items-center gap-2">
-          <i className="fa-solid fa-circle-check text-green-600 shrink-0" />
+          <i className="ph ph-check-circle text-green-600 shrink-0" />
           {t("admin_setting_updated")}
         </div>
       )}
@@ -83,7 +83,7 @@ export default function AdminSettings() {
         <div className="bg-white border border-gray-200 rounded p-5">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-8 h-8 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
-              <i className="fa-solid fa-star text-[#E8923A] text-sm" />
+              <i className="ph ph-star text-[#E8923A] text-sm" />
             </div>
             <h2 className="font-bold text-base text-gray-900">Points &amp; Récompenses</h2>
           </div>
@@ -109,7 +109,7 @@ export default function AdminSettings() {
                 disabled={saving === "points_to_xaf_rate" || pointsRatePreview === pointsRate}
                 className="px-4 py-2.5 bg-[#2D5A42] text-white text-[12px] font-semibold rounded hover:bg-[#2D5A42] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
               >
-                {saving === "points_to_xaf_rate" ? <i className="fa-solid fa-spinner fa-spin text-xs" /> : <><i className="fa-solid fa-check text-xs" /> Appliquer</>}
+                {saving === "points_to_xaf_rate" ? <i className="ph ph-spinner animate-spin text-xs" /> : <><i className="ph ph-check text-xs" /> Appliquer</>}
               </button>
             </div>
           </div>
@@ -129,7 +129,7 @@ export default function AdminSettings() {
           </div>
 
           <div className="p-3 bg-amber-50 border border-amber-200 rounded text-[12px] text-amber-700 flex items-center gap-2">
-            <i className="fa-solid fa-circle-info shrink-0" />
+            <i className="ph ph-info shrink-0" />
             <span><strong>Actuel :</strong> {pointsRate} pts = 1 XAF</span>
           </div>
         </div>
@@ -138,12 +138,12 @@ export default function AdminSettings() {
         <div className="bg-white border border-gray-200 rounded p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-8 h-8 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
-              <i className="fa-solid fa-sliders text-gray-500 text-sm" />
+              <i className="ph ph-sliders-horizontal text-gray-500 text-sm" />
             </div>
             <h2 className="font-bold text-base text-gray-900">Autres paramètres</h2>
           </div>
           {Object.keys(settings).length === 0 ? (
-            <EmptyState icon="fa-solid fa-sliders" message={t("admin_no_settings")} />
+            <EmptyState icon="ph ph-sliders-horizontal" message={t("admin_no_settings")} />
           ) : (
             <div className="space-y-2">
               {Object.entries(settings).filter(([key]) => key !== "points_to_xaf_rate").map(([key, value]) => (
@@ -160,15 +160,15 @@ export default function AdminSettings() {
 /* ── Individual Setting Row ── */
 
 const SETTING_META: Record<string, { label: string; icon: string; hint?: string }> = {
-  min_withdrawal_amount: { label: "Retrait minimum", icon: "fa-money-bill-wave", hint: "Montant minimum pour effectuer un retrait (XAF)" },
-  points_per_declaration: { label: "Points / déclaration", icon: "fa-file-lines", hint: "Points gagnés par déclaration soumise" },
-  referral_points_parrain: { label: "Points parrainage", icon: "fa-user-group", hint: "Points gagnés par parrainage" },
+  min_withdrawal_amount: { label: "Retrait minimum", icon: "ph ph-money-wavy", hint: "Montant minimum pour effectuer un retrait (XAF)" },
+  points_per_declaration: { label: "Points / déclaration", icon: "ph ph-file-text", hint: "Points gagnés par déclaration soumise" },
+  referral_points_parrain: { label: "Points parrainage", icon: "ph ph-users-three", hint: "Points gagnés par parrainage" },
 };
 
 function SettingRow({ k, value, update, saving, t }: { k: string; value: string; update: (k: string, v: string) => Promise<void>; saving: string | null; t: (k: string) => string }) {
   const [local, setLocal] = useState(value);
   const [saved, setSaved] = useState(false);
-  const meta = SETTING_META[k] || { label: k.replace(/_/g, " "), icon: "fa-gear" };
+  const meta = SETTING_META[k] || { label: k.replace(/_/g, " "), icon: "ph ph-gear" };
   const changed = local !== value;
 
   const handleSave = async () => {
@@ -181,7 +181,7 @@ function SettingRow({ k, value, update, saving, t }: { k: string; value: string;
   return (
     <div className="flex items-center gap-3 p-3 border border-gray-200 rounded bg-white hover:border-gray-300 transition-colors">
       <div className="w-8 h-8 rounded border border-gray-200 bg-gray-50 flex items-center justify-center flex-shrink-0">
-        <i className={`fa-solid ${meta.icon} text-gray-400 text-sm`} />
+        <i className={`${meta.icon} text-gray-400 text-sm`} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1 mb-1">
@@ -202,11 +202,11 @@ function SettingRow({ k, value, update, saving, t }: { k: string; value: string;
         className="px-3 py-2 bg-[#2D5A42] text-white text-[12px] font-semibold rounded hover:bg-[#2D5A42] disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 flex-shrink-0"
       >
         {saving === k ? (
-          <i className="fa-solid fa-spinner fa-spin text-xs" />
+          <i className="ph ph-spinner animate-spin text-xs" />
         ) : saved ? (
-          <><i className="fa-solid fa-check text-xs" /> {t("admin_setting_saved")}</>
+          <><i className="ph ph-check text-xs" /> {t("admin_setting_saved")}</>
         ) : (
-          <><i className="fa-solid fa-floppy-disk text-xs" /> Enregistrer</>
+          <><i className="ph ph-floppy-disk text-xs" /> Enregistrer</>
         )}
       </button>
     </div>

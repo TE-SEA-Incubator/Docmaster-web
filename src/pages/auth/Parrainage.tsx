@@ -198,7 +198,7 @@ export default function Parrainage() {
             </div>
             <Paper bg="white" withBorder p="xs" radius="md">
               <Group gap={6}>
-                <i className="fa-regular fa-calendar text-primary text-sm" />
+                <i className="ph ph-calendar text-primary text-sm" />
                 <Text size="xs" c="dimmed">{today}</Text>
               </Group>
             </Paper>
@@ -212,12 +212,12 @@ export default function Parrainage() {
             </div>
             <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-5">
               <div className="flex-1">
-                <Badge color="gold" variant="light" radius="xl" size="sm" leftSection={<i className="fa-solid fa-gift" />} mb="sm">
+                <Badge color="gold" variant="light" radius="xl" size="sm" leftSection={<i className="ph ph-gift" />} mb="sm">
                   {t("parrainage_program")}
                 </Badge>
                 <Title order={2} c="white" mb="xs">
                   {t("parrainage_headline")}
-                  <i className="fa-solid fa-sparkles text-primary text-xl align-middle ml-1" aria-hidden="true" />
+                  <i className="ph ph-sparkle text-primary text-xl align-middle ml-1" aria-hidden="true" />
                 </Title>
                 <Text size="sm" c="white.8" className="max-w-[560px]">{t("parrainage_description")}</Text>
               </div>
@@ -240,7 +240,7 @@ export default function Parrainage() {
                     onClick={copyLink}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-all ${copied ? "bg-green-600" : "bg-primary hover:bg-primary-dark"}`}
                   >
-                    <i className={`${copied ? "fa-solid fa-check" : "fa-regular fa-copy"} text-[11px]`} />
+                    <i className={`${copied ? "ph ph-check" : "ph ph-copy"} text-[11px]`} />
                     {copied ? t("parrainage_copied") : t("parrainage_copy")}
                   </button>
                 </Group>
@@ -250,19 +250,19 @@ export default function Parrainage() {
                   onClick={() => shareVia("whatsapp")}
                   className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#25D366]/10 border border-[#25D366]/20 text-[#1a9e4e] text-xs font-bold rounded-lg hover:bg-[#25D366]/20 transition-colors"
                 >
-                  <i className="fa-brands fa-whatsapp text-base" /> WhatsApp
+                  <i className="ph ph-whatsapp-logo text-base" /> WhatsApp
                 </button>
                 <button
                   onClick={() => shareVia("sms")}
                   className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-50 border border-blue-100 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors"
                 >
-                  <i className="fa-solid fa-message text-base" /> SMS
+                  <i className="ph ph-chat-circle text-base" /> SMS
                 </button>
                 <button
                   onClick={() => shareVia("copy-link")}
                   className="flex items-center justify-center w-10 py-2 bg-surface2 border border-borda text-textMuted rounded-lg hover:border-primary hover:text-primary transition-colors"
                 >
-                  <i className="fa-solid fa-link text-xs" />
+                  <i className="ph ph-link text-xs" />
                 </button>
               </Group>
             </Paper>
@@ -271,7 +271,7 @@ export default function Parrainage() {
             <Paper withBorder radius="lg" p="md">
               <Group justify="space-between" mb="md">
                 <Paper bg="primary.0" p="xs" radius="md">
-                  <i className="fa-solid fa-wallet text-primary" />
+                  <i className="ph ph-wallet text-primary" />
                 </Paper>
                 <Badge color="green" variant="light" size="sm">{t("parrainage_this_month")}</Badge>
               </Group>
@@ -291,7 +291,7 @@ export default function Parrainage() {
             <Paper withBorder radius="lg" p="md">
               <Group justify="space-between" mb="md">
                 <Paper bg="green.0" p="xs" radius="md">
-                  <i className="fa-solid fa-file-circle-plus text-green-mid" />
+                  <i className="ph ph-file-plus text-green-mid" />
                 </Paper>
                 <Badge color="gold" variant="light" size="sm">Bonus actifs</Badge>
               </Group>
@@ -302,7 +302,7 @@ export default function Parrainage() {
                 <Text size="xs" c="dimmed">{t("parrainage_bonus_reports")}</Text>
               </div>
               <Group gap="xs" mt="md">
-                <i className="fa-solid fa-circle-info text-sm" />
+                <i className="ph ph-info text-sm" />
                 <Text size="xs" c="dimmed">{t("parrainage_slots_per_referral")}</Text>
               </Group>
             </Paper>
@@ -312,13 +312,13 @@ export default function Parrainage() {
           <Paper withBorder radius="lg" p="md">
             <Title order={5} mb="md" className="text-textMain">
               <Group gap="xs" component="span">
-                <i className="fa-solid fa-circle-question text-primary" /> {t("parrainage_how_it_works")}
+                <i className="ph ph-question text-primary" /> {t("parrainage_how_it_works")}
               </Group>
             </Title>
             <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
               {[
                 {
-                  icon: "fa-solid fa-share-nodes",
+                  icon: "ph ph-share-network",
                   bg: "bg-primary/10",
                   border: "border-primary/20",
                   color: "text-primary",
@@ -327,7 +327,7 @@ export default function Parrainage() {
                   desc: "Envoyez votre code à un ami via WhatsApp, SMS ou lien direct.",
                 },
                 {
-                  icon: "fa-solid fa-user-plus",
+                  icon: "ph ph-user-plus",
                   bg: "bg-green-light",
                   border: "border-green-dark/20",
                   color: "text-green-mid",
@@ -336,7 +336,7 @@ export default function Parrainage() {
                   desc: "Votre filleul crée son compte avec votre code et effectue son 1er enregistrement.",
                 },
                 {
-                  icon: "fa-solid fa-trophy",
+                  icon: "ph ph-trophy",
                   bg: "bg-amber-50",
                   border: "border-amber-200",
                   color: "text-amber-500",
@@ -364,14 +364,14 @@ export default function Parrainage() {
             <Paper withBorder radius="lg" p="md">
               <Title order={5} mb="md" className="text-textMain">
                 <Group gap="xs" component="span">
-                  <i className="fa-solid fa-medal text-primary" />Vos récompenses
+                  <i className="ph ph-medal text-primary" />Vos récompenses
                 </Group>
               </Title>
               <Stack gap="sm">
                 {[
-                  { icon: "fa-solid fa-coins", bg: "bg-primary/10", color: "text-primary", label: "Bonus en cash", sub: "50% de l'abonnement du filleul", value: "Variable" },
-                  { icon: "fa-solid fa-file-circle-plus", bg: "bg-green-light", color: "text-green-mid", label: "Signalement bonus", sub: "Par parrainage validé", value: "+2 slots" },
-                  { icon: "fa-solid fa-crown", bg: "bg-amber-50", color: "text-amber-500", label: "Upgrade de plan", sub: "À partir de 5 filleuls", value: "1 mois Pro" },
+                  { icon: "ph ph-coins", bg: "bg-primary/10", color: "text-primary", label: "Bonus en cash", sub: "50% de l'abonnement du filleul", value: "Variable" },
+                  { icon: "ph ph-file-plus", bg: "bg-green-light", color: "text-green-mid", label: "Signalement bonus", sub: "Par parrainage validé", value: "+2 slots" },
+                  { icon: "ph ph-crown", bg: "bg-amber-50", color: "text-amber-500", label: "Upgrade de plan", sub: "À partir de 5 filleuls", value: "1 mois Pro" },
                 ].map((item) => (
                   <Group key={item.label} justify="space-between" py="sm" style={{ borderBottom: "1px solid var(--mantine-color-default-border)" }}>
                     <Group gap="sm">
@@ -393,7 +393,7 @@ export default function Parrainage() {
               <div className="relative z-10">
                 <Title order={5} c="white" mb="xs">
                   <Group gap="xs" component="span">
-                    <i className="fa-solid fa-gift text-primary" />Cadeau pour votre filleul
+                    <i className="ph ph-gift text-primary" />Cadeau pour votre filleul
                   </Group>
                 </Title>
                 <Text size="xs" c="white.5" mb="md">Ce que reçoit chaque personne que vous parrainez</Text>
@@ -405,7 +405,7 @@ export default function Parrainage() {
                   ].map((text) => (
                     <Group key={text} gap="sm">
                       <Paper bg="primary.2" p={4} radius="xl">
-                        <i className="fa-solid fa-check text-primary text-xs" />
+                        <i className="ph ph-check text-primary text-xs" />
                       </Paper>
                       <Text size="sm" c="white.8">{text}</Text>
                     </Group>
@@ -429,7 +429,7 @@ export default function Parrainage() {
               <Group justify="space-between" mb="md">
                 <Group gap="sm">
                   <Paper bg="primary.0" p="xs" radius="md">
-                    <i className="fa-solid fa-users text-primary" />
+                    <i className="ph ph-users text-primary" />
                   </Paper>
                   <div>
                     <Text fw={700} size="sm" className="text-textMain">Cercle d'amis</Text>
@@ -437,12 +437,12 @@ export default function Parrainage() {
                   </div>
                 </Group>
                 <Group gap="sm">
-                  <Badge color="green" variant="light" size="sm" leftSection={<i className="fa-solid fa-circle text-green-mid text-[7px]" />}>
+                  <Badge color="green" variant="light" size="sm" leftSection={<i className="ph ph-circle text-green-mid text-[7px]" />}>
                     {activeCount} actifs
                   </Badge>
                   <Paper bg="gray.0" withBorder p="xs" radius="md">
-                    <i className="fa-solid fa-chevron-up text-xs md:hidden" />
-                    <i className="fa-solid fa-expand text-xs hidden md:block" />
+                    <i className="ph ph-caret-up text-xs md:hidden" />
+                    <i className="ph ph-arrows-out text-xs hidden md:block" />
                   </Paper>
                 </Group>
               </Group>
@@ -483,15 +483,15 @@ export default function Parrainage() {
                   )}
                   {friends.length === 0 && (
                     <div className="w-8 h-8 rounded-full border-2 border-white bg-surface2 flex items-center justify-center text-[10px] font-bold text-textMuted">
-                      <i className="fa-solid fa-plus" />
+                      <i className="ph ph-plus" />
                     </div>
                   )}
                 </div>
                 <Group gap={4} c="gold" className="text-xs">
                   <span className="md:hidden">Voir tous</span>
                   <span className="hidden md:inline">Ouvrir le détail</span>
-                  <i className="fa-solid fa-arrow-up-from-line text-[10px] md:hidden" />
-                  <i className="fa-solid fa-up-right-from-square text-[10px] hidden md:inline" />
+                  <i className="ph ph-arrow-line-up text-[10px] md:hidden" />
+                  <i className="ph ph-arrow-square-out text-[10px] hidden md:inline" />
                 </Group>
               </Group>
             </div>
@@ -506,7 +506,7 @@ export default function Parrainage() {
                   <Text size="xs" c="dimmed" className="flex-1">
                     <Text component="span" fw={600} c="dark">{latestFriend.name}</Text> a rejoint {relativeDate(latestFriend.joined).toLowerCase()}
                   </Text>
-                  <i className="fa-solid fa-clock text-textMuted text-[10px]" />
+                  <i className="ph ph-clock text-textMuted text-[10px]" />
                 </>
               ) : (
                 <Text size="xs" c="dimmed">Aucun filleul pour le moment.</Text>
@@ -539,7 +539,7 @@ export default function Parrainage() {
           radius="xl"
           size="sm"
           mb="sm"
-          leftSection={<i className="fa-solid fa-magnifying-glass text-textMuted text-xs" />}
+          leftSection={<i className="ph ph-magnifying-glass text-textMuted text-xs" />}
         />
 
         {/* Filters */}
@@ -555,9 +555,9 @@ export default function Parrainage() {
               }`}
             >
               {f === "all" && "Tous"}
-              {f === "active" && <><i className="fa-solid fa-circle text-green-mid text-[7px] mr-1" />Abonnés</>}
-              {f === "inactive" && <><i className="fa-solid fa-circle text-gray-300 text-[7px] mr-1" />Sans abonnement</>}
-              {f === "recent" && <><i className="fa-regular fa-clock mr-1 text-[10px]" />Récents</>}
+              {f === "active" && <><i className="ph ph-circle text-green-mid text-[7px] mr-1" />Abonnés</>}
+              {f === "inactive" && <><i className="ph ph-circle text-gray-300 text-[7px] mr-1" />Sans abonnement</>}
+              {f === "recent" && <><i className="ph ph-clock mr-1 text-[10px]" />Récents</>}
             </button>
           ))}
         </Group>
@@ -569,7 +569,7 @@ export default function Parrainage() {
           <Group gap="md">
             <Group gap="xs">
               <Paper bg="primary.0" p={6} radius="md">
-                <i className="fa-solid fa-coins text-primary text-xs" />
+                <i className="ph ph-coins text-primary text-xs" />
               </Paper>
               <div>
                 <Text fw={700} size="sm">{totalGains.toLocaleString("fr-FR")} XAF</Text>
@@ -579,7 +579,7 @@ export default function Parrainage() {
             <Divider orientation="vertical" />
             <Group gap="xs">
               <Paper bg="green.0" p={6} radius="md">
-                <i className="fa-solid fa-file-circle-plus text-green-mid text-xs" />
+                <i className="ph ph-file-plus text-green-mid text-xs" />
               </Paper>
               <div>
                 <Text fw={700} size="sm">+{totalSlots} slots</Text>
@@ -589,7 +589,7 @@ export default function Parrainage() {
             <Divider orientation="vertical" />
             <Group gap="xs">
               <Paper bg="gold.0" p={6} radius="md">
-                <i className="fa-solid fa-trophy text-amber-500 text-xs" />
+                <i className="ph ph-trophy text-amber-500 text-xs" />
               </Paper>
               <div>
                 <Text fw={700} size="sm">{Math.min(totalFriends, 10)} / 10</Text>
@@ -613,7 +613,7 @@ export default function Parrainage() {
           {getFiltered().length === 0 ? (
             <Stack align="center" py="xl" gap="md">
               <Paper bg="gray.0" withBorder p="md" radius="lg">
-                <i className="fa-solid fa-user-slash text-textMuted text-2xl" />
+                <i className="ph ph-user-minus text-textMuted text-2xl" />
               </Paper>
               <Text fw={600} size="sm">Aucun résultat</Text>
               <Text size="xs" c="dimmed">Essayez un autre filtre ou recherche</Text>
@@ -631,7 +631,7 @@ export default function Parrainage() {
                   <div className="flex-1 min-w-0">
                     <Text size="sm" fw={600} truncate>{f.name}</Text>
                     <Text size="xs" c="dimmed">
-                      <i className="fa-regular fa-calendar text-[9px] mr-1" />{relativeDate(f.joined)}
+                      <i className="ph ph-calendar text-[9px] mr-1" />{relativeDate(f.joined)}
                     </Text>
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
@@ -657,7 +657,7 @@ export default function Parrainage() {
           onClick={() => { closePanel(); copyInviteLink(); }}
           className="w-full flex items-center justify-center gap-2.5 py-3.5 bg-green-dark text-white text-sm font-bold rounded-xl hover:bg-green-mid transition-colors mt-4"
         >
-          <i className="fa-solid fa-user-plus text-sm" /> Inviter un nouvel ami
+          <i className="ph ph-user-plus text-sm" /> Inviter un nouvel ami
         </button>
       </Modal>
 

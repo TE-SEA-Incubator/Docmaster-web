@@ -102,7 +102,7 @@ export default function OsmStreetSearch({
         autoComplete="off"
       />
       {loading && (
-        <i className="fa-solid fa-spinner fa-spin absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-gray-400" />
+        <i className="ph ph-spinner animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-gray-400" />
       )}
       {open && !loading && (
         <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto">

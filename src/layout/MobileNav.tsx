@@ -15,17 +15,6 @@ import {
   Divider,
   useMantineTheme,
 } from "@mantine/core";
-import {
-  IconHome,
-  IconCirclePlus,
-  IconFolderOpen,
-  IconDeviceMobile,
-  IconAlertTriangle,
-  IconFileCheck,
-  IconFile,
-  IconSearch,
-  IconChevronRight,
-} from "@tabler/icons-react";
 
 export default function MobileNav() {
   const { user } = useAuth();
@@ -43,36 +32,36 @@ export default function MobileNav() {
   if (current.startsWith("/messagerie")) return null;
 
   const items = [
-    { to: "/dashboard", Icon: IconHome, label: t("nav_home") },
-    { to: "#decl", Icon: IconCirclePlus, label: t("mobile_declaration"), isPlus: true },
-    { to: "/mes-documents", Icon: IconFolderOpen, label: t("mobile_documents") },
-    { to: "/mes-appareils", Icon: IconDeviceMobile, label: t("mobile_objects") },
+    { to: "/dashboard", icon: "ph ph-house", label: t("nav_home") },
+    { to: "#decl", icon: "ph ph-plus-circle", label: t("mobile_declaration"), isPlus: true },
+    { to: "/mes-documents", icon: "ph ph-folder-open", label: t("mobile_documents") },
+    { to: "/mes-appareils", icon: "ph ph-device-mobile", label: t("mobile_objects") },
   ];
 
   const declOptions = [
     {
-      Icon: IconAlertTriangle,
+      icon: "ph ph-warning",
       color: "red",
       title: t("mobile_declare_lost"),
       desc: t("mobile_lost_document_desc"),
       onClick: () => { setDeclModalOpen(false); navigate("/declarer"); },
     },
     {
-      Icon: IconFileCheck,
+      icon: "ph ph-seal-check",
       color: "blue",
       title: t("mobile_declare_found"),
       desc: t("mobile_found_something_desc"),
       onClick: () => { setDeclModalOpen(false); navigate("/trouver"); },
     },
     {
-      Icon: IconFile,
+      icon: "ph ph-file",
       color: "orange",
       title: t("mobile_my_declarations"),
       desc: t("mobile_view_declarations"),
       onClick: () => { setDeclModalOpen(false); navigate("/mes-declarations"); },
     },
     {
-      Icon: IconSearch,
+      icon: "ph ph-magnifying-glass",
       color: "orange",
       title: t("mobile_search"),
       desc: t("mobile_search_document"),
@@ -110,11 +99,13 @@ export default function MobileNav() {
                   style={{ flex: 1, minWidth: 0 }}
                 >
                   <Stack align="center" gap={4} py={4}>
-                    <item.Icon
-                      size={20}
-                      stroke={2}
-                      color={isActive ? theme.colors.orange[5] : "var(--mantine-color-gray-5)"}
-                      style={isActive ? { filter: `drop-shadow(0 0 8px ${theme.colors.orange[5]}99)`, transform: "scale(1.1)" } : undefined}
+                    <i
+                      className={item.icon}
+                      style={{
+                        fontSize: 20,
+                        color: isActive ? theme.colors.orange[5] : "var(--mantine-color-gray-5)",
+                        ...(isActive ? { filter: `drop-shadow(0 0 8px ${theme.colors.orange[5]}99)`, transform: "scale(1.1)" } : null),
+                      }}
                     />
                     <Text
                       size="9px"
@@ -159,13 +150,16 @@ export default function MobileNav() {
               >
                 <Group gap="sm" wrap="nowrap">
                   <ThemeIcon size={40} radius="md" color={opt.color} variant="filled">
-                    <opt.Icon size={18} stroke={2} />
+                    <i className={opt.icon} style={{ fontSize: 18 }} />
                   </ThemeIcon>
                   <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
                     <Text fw={700} size="sm" truncate>{opt.title}</Text>
                     <Text size="xs" c={`${opt.color}.7`} truncate>{opt.desc}</Text>
                   </Stack>
-                  <IconChevronRight size={14} color={`var(--mantine-color-${opt.color}-3)`} style={{ flexShrink: 0 }} />
+                  <i
+                    className="ph ph-caret-right"
+                    style={{ fontSize: 14, color: `var(--mantine-color-${opt.color}-3)`, flexShrink: 0 }}
+                  />
                 </Group>
               </Paper>
             ))}

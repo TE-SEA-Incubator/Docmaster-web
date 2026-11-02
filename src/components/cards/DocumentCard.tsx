@@ -30,32 +30,32 @@ export default function DocumentCard({ doc, catLabels, onView, onEdit, onShare, 
           <img src={getPhotoUrl(doc.photo_recto)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#f1f5f9" }}>
-            <i className="fa-regular fa-file" style={{ fontSize: 30, color: "#cbd5e1" }} />
+            <i className="ph ph-file" style={{ fontSize: 30, color: "#cbd5e1" }} />
           </div>
         )}
         {doc.is_archived && (
           <Badge style={{ position: "absolute", top: 8, right: 8 }} size="sm" color="gray">
-            <i className="fa-solid fa-box-archive" style={{ fontSize: 7 }} /> {t("doccard_archived")}
+            <i className="ph ph-archive" style={{ fontSize: 7 }} /> {t("doccard_archived")}
           </Badge>
         )}
         {doc.is_lost && (
           <Badge style={{ position: "absolute", top: 8, right: 8 }} size="sm" color="red" variant="light">
-            <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 7 }} /> {t("doccard_lost")}
+            <i className="ph ph-warning" style={{ fontSize: 7 }} /> {t("doccard_lost")}
           </Badge>
         )}
         {doc.is_verified && (
           <Badge style={{ position: "absolute", top: 8, left: 8 }} size="sm" color="green" variant="light">
-            <i className="fa-solid fa-check" style={{ fontSize: 7 }} /> {t("doccard_verified")}
+            <i className="ph ph-check" style={{ fontSize: 7 }} /> {t("doccard_verified")}
           </Badge>
         )}
         {doc.validity_option === 'PERMANENT' && (
           <Badge style={{ position: "absolute", bottom: 8, left: 8 }} size="sm" color="blue" variant="light">
-            <i className="fa-solid fa-infinity" style={{ fontSize: 7 }} /> {t("doccard_permanent")}
+            <i className="ph ph-infinity" style={{ fontSize: 7 }} /> {t("doccard_permanent")}
           </Badge>
         )}
         {isExpired && (
           <Badge style={{ position: "absolute", bottom: 8, right: 8 }} size="sm" color="orange" variant="light">
-            <i className="fa-solid fa-clock" style={{ fontSize: 7 }} /> {t("doccard_expired")}
+            <i className="ph ph-clock" style={{ fontSize: 7 }} /> {t("doccard_expired")}
           </Badge>
         )}
       </Card.Section>
@@ -68,25 +68,25 @@ export default function DocumentCard({ doc, catLabels, onView, onEdit, onShare, 
           <Menu shadow="md" width={160}>
             <Menu.Target>
               <ActionIcon variant="subtle" color="gold">
-                <i className="fa-solid fa-ellipsis-vertical" />
+                <i className="ph ph-dots-three-vertical" />
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Item leftSection={<i className="fa-solid fa-eye" style={{ fontSize: 10 }} />} onClick={() => onView(doc)}>
+              <Menu.Item leftSection={<i className="ph ph-eye" style={{ fontSize: 10 }} />} onClick={() => onView(doc)}>
                 {t("doccard_view")}
               </Menu.Item>
-              <Menu.Item leftSection={<i className="fa-solid fa-pen" style={{ fontSize: 10 }} />} onClick={() => onEdit(doc)}>
+              <Menu.Item leftSection={<i className="ph ph-pen" style={{ fontSize: 10 }} />} onClick={() => onEdit(doc)}>
                 {t("doccard_edit")}
               </Menu.Item>
-              <Menu.Item leftSection={<i className="fa-solid fa-share-nodes" style={{ fontSize: 10 }} />} onClick={() => onShare(doc)}>
+              <Menu.Item leftSection={<i className="ph ph-share-network" style={{ fontSize: 10 }} />} onClick={() => onShare(doc)}>
                 {t("doccard_share")}
               </Menu.Item>
               {!doc.is_lost && (
-                <Menu.Item leftSection={<i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 10 }} />} color="red" onClick={() => onReportLost(doc)}>
+                <Menu.Item leftSection={<i className="ph ph-warning" style={{ fontSize: 10 }} />} color="red" onClick={() => onReportLost(doc)}>
                   {t("doccard_report_lost")}
                 </Menu.Item>
               )}
-              <Menu.Item leftSection={<i className="fa-solid fa-trash" style={{ fontSize: 10 }} />} onClick={() => onDelete(doc)}>
+              <Menu.Item leftSection={<i className="ph ph-trash" style={{ fontSize: 10 }} />} onClick={() => onDelete(doc)}>
                 {t("doccard_delete")}
               </Menu.Item>
             </Menu.Dropdown>
@@ -94,12 +94,12 @@ export default function DocumentCard({ doc, catLabels, onView, onEdit, onShare, 
         </Group>
         <Group justify="space-between" pt="sm" style={{ borderTop: "1px solid var(--mantine-color-default-border)" }}>
           <Text size="xs" c="dimmed">
-            <i className="fa-regular fa-calendar" style={{ marginRight: 4 }} />
+            <i className="ph ph-calendar" style={{ marginRight: 4 }} />
             {new Date(doc.created_at).toLocaleDateString("fr-FR")}
           </Text>
           {!doc.is_lost && (
             <Text size="xs" fw={700} c="red" style={{ cursor: "pointer" }} onClick={() => onReportLost(doc)}>
-              <i className="fa-solid fa-flag" style={{ marginRight: 2 }} /> {t("doccard_lost_question")}
+              <i className="ph ph-flag" style={{ marginRight: 2 }} /> {t("doccard_lost_question")}
             </Text>
           )}
         </Group>

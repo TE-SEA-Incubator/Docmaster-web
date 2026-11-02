@@ -317,7 +317,12 @@ export const publicRecentFound = async (req: Request, res: Response) => {
 export const getDeclarationById = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const result = await declarationService.getDeclarationById(id as string);
+    const preferredMatchId = typeof req.query.match === 'string' ? req.query.match : undefined;
+    const preferredMatchFoundId = typeof req.query.found === 'string' ? req.query.found : undefined;
+    const result = await declarationService.getDeclarationById(id as string, {
+      preferredMatchId,
+      preferredMatchFoundId,
+    });
     if (!result) {
       return res.status(404).json({ success: false, message: 'Déclaration introuvable' });
     }
@@ -369,17 +374,71 @@ export const getDeclarationById = async (req: Request, res: Response) => {
   }
 };
 
+export const getDeclarationMatches = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Non authentifié' });
+    }
+    const result = await declarationService.getDeclarationMatches(id, userId);
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    res.status(errorStatus(error, 400)).json({ success: false, message: error.message });
+  }
+};
+
+export const confirmDeclarationMatch = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { matchId } = req.body;
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Non authentifié' });
+    }
+    if (!matchId) {
+      return res.status(400).json({ success: false, message: 'matchId est requis' });
+    }
+    const result = await declarationService.confirmDeclarationMatch(id, matchId, userId);
+    res.json(result);
+  } catch (error: any) {
+    res.status(errorStatus(error, 400)).json({ success: false, message: error.message });
+  }
+};
+
+export const rejectDeclarationMatch = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const matchId = req.params.matchId as string;
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Non authentifié' });
+    }
+    if (!matchId) {
+      return res.status(400).json({ success: false, message: 'matchId est requis' });
+    }
+    const result = await declarationService.rejectDeclarationMatch(id, matchId, userId);
+    res.json(result);
+  } catch (error: any) {
+    res.status(errorStatus(error, 400)).json({ success: false, message: error.message });
+  }
+};
+
 export const getRenderContext = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const preferredFoundId = typeof req.query.found === 'string' ? req.query.found : undefined;
+    const preferredMatchId = typeof req.query.match === 'string' ? req.query.match : undefined;
     const userId = (req as any).user?.id;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Non authentifié' });
     }
 
-    const result = await declarationService.getDeclarationById(id as string, { preferredMatchFoundId: preferredFoundId });
+    const result = await declarationService.getDeclarationById(id as string, {
+      preferredMatchFoundId: preferredFoundId,
+      preferredMatchId,
+    });
     if (!result) {
       return res.status(404).json({ success: false, message: 'Déclaration introuvable' });
     }
@@ -426,7 +485,7 @@ export const validateRecovery = async (req: Request, res: Response) => {
 export const initiateRecovery = async (req: Request, res: Response) => {
   try {
     const id = (req.params.id || req.body.declaration_id) as string;
-    const { amount, method, phone } = req.body;
+    const { amount, method, phone, matchId } = req.body;
     const userId = (req as any).user?.id;
 
     if (!userId) {
@@ -437,7 +496,7 @@ export const initiateRecovery = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'ID de déclaration requis' });
     }
 
-    const result = await declarationService.initiateRecovery(id, userId, Number(amount), method, phone);
+    const result = await declarationService.initiateRecovery(id, userId, Number(amount), method, phone, matchId);
     res.json(result);
   } catch (error: any) {
     console.error('❌ Erreur initiation récupération:', error);

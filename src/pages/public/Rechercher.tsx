@@ -154,7 +154,7 @@ export default function Rechercher() {
           <div className="bg-white border border-borderMain rounded-2xl md:rounded-3xl p-3 md:p-5">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-textMuted text-sm" />
+                <i className="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-textMuted text-sm" />
                 <input
                   type="text"
                   value={query}
@@ -164,10 +164,10 @@ export default function Rechercher() {
                   aria-label={t("rechercher_types_title")}
                   className="w-full pl-11 pr-10 py-3 bg-white border border-borderMain rounded-xl outline-none text-[14px] font-medium text-textMain placeholder:text-textMuted focus:border-primary transition-colors"
                 />
-                {query && <button type="button" onClick={handleClear} aria-label={t("rechercher_close")} className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-textMuted hover:text-textMain transition-colors"><i className="fa-solid fa-xmark text-sm" /></button>}
+                {query && <button type="button" onClick={handleClear} aria-label={t("rechercher_close")} className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-textMuted hover:text-textMain transition-colors"><i className="ph ph-x text-sm" /></button>}
               </div>
               <button type="button" onClick={handleSearch} aria-label={t("rechercher_search_btn")} className="shrink-0 w-12 md:w-auto md:px-6 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-bold text-white bg-green-dark hover:bg-green-mid transition-colors">
-                <i className="fa-solid fa-magnifying-glass text-xs" /><span className="hidden md:inline">{t("rechercher_search_btn")}</span>
+                <i className="ph ph-magnifying-glass text-xs" /><span className="hidden md:inline">{t("rechercher_search_btn")}</span>
               </button>
             </div>
           </div>
@@ -182,9 +182,9 @@ export default function Rechercher() {
             ) : statsError ? (
               <p className="text-[11px] font-medium text-textMuted leading-snug">{t("rechercher_type_stats_error")}</p>
             ) : typeCards.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-14 text-center px-5"><div className="w-20 h-20 rounded-2xl border border-borderMain bg-white flex items-center justify-center mb-6"><i className="fa-solid fa-folder-open text-2xl text-textMuted" /></div><h3 className="font-bricolage text-xl font-black text-textMain mb-2">{t("rechercher_types_empty")}</h3><p className="text-textMuted text-sm max-w-md leading-relaxed">{t("rechercher_types_empty_desc")}</p></div>
+              <div className="flex flex-col items-center justify-center py-14 text-center px-5"><div className="w-20 h-20 rounded-2xl border border-borderMain bg-white flex items-center justify-center mb-6"><i className="ph ph-folder-open text-2xl text-textMuted" /></div><h3 className="font-bricolage text-xl font-black text-textMain mb-2">{t("rechercher_types_empty")}</h3><p className="text-textMuted text-sm max-w-md leading-relaxed">{t("rechercher_types_empty_desc")}</p></div>
             ) : visibleTypeCards.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-14 text-center px-5"><div className="w-16 h-16 rounded-2xl border border-borderMain bg-white flex items-center justify-center mb-4"><i className="fa-solid fa-magnifying-glass text-xl text-textMuted" /></div><h3 className="font-bricolage text-lg font-bold text-textMain">{t("rechercher_types_empty")}</h3><p className="text-textMuted text-sm mt-1">{t("rechercher_types_empty_desc")}</p></div>
+              <div className="flex flex-col items-center justify-center py-14 text-center px-5"><div className="w-16 h-16 rounded-2xl border border-borderMain bg-white flex items-center justify-center mb-4"><i className="ph ph-magnifying-glass text-xl text-textMuted" /></div><h3 className="font-bricolage text-lg font-bold text-textMain">{t("rechercher_types_empty")}</h3><p className="text-textMuted text-sm mt-1">{t("rechercher_types_empty_desc")}</p></div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {visibleTypeCards.map((card) => <DocTypeStatCard key={card.id} card={card} periodKey={`dashboard_this_${CARDS_PERIOD}`} to={`/recherche-publique/type/${encodeURIComponent(card.code || card.id)}`} />)}

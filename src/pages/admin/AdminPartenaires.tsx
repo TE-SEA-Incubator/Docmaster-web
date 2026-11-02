@@ -262,7 +262,7 @@ export default function AdminPartenaires() {
           onClick={openNew}
           className="inline-flex items-center gap-2 bg-[#2D5A42] text-white px-4 py-2 rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors"
         >
-          <i className="fa-solid fa-plus text-xs" />
+          <i className="ph ph-plus text-xs" />
           Nouveau partenaire
         </button>
       </div>
@@ -270,7 +270,7 @@ export default function AdminPartenaires() {
       {/* Filtres */}
       <div className="flex flex-wrap gap-3 items-center mb-4">
         <div className="relative">
-          <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-gray-400" />
+          <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-gray-400" />
           <input
             value={search}
             onChange={(e) => {
@@ -298,7 +298,7 @@ export default function AdminPartenaires() {
           onClick={() => fetchPartenaires(1)}
           className="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 rounded text-[12px] font-medium text-gray-600 hover:bg-gray-50 transition-colors"
         >
-          <i className="fa-solid fa-rotate text-[11px]" />
+          <i className="ph ph-arrow-clockwise text-[11px]" />
           Actualiser
         </button>
       </div>
@@ -308,7 +308,7 @@ export default function AdminPartenaires() {
       {/* Table */}
       {partenaires.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded">
-          <EmptyState icon="fa-solid fa-building" message="Aucun partenaire pour le moment." />
+          <EmptyState icon="ph ph-building" message="Aucun partenaire pour le moment." />
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded overflow-hidden">
@@ -354,28 +354,28 @@ export default function AdminPartenaires() {
                         title="Détails et historique"
                         className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#2D5A42] hover:border-[#2D5A42]/40 transition-colors"
                       >
-                        <i className="fa-solid fa-eye text-[10px]" />
+                        <i className="ph ph-eye text-[10px]" />
                       </button>
                       <button
                         onClick={() => openWallet(p)}
                         title="Ajuster le portefeuille"
                         className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#E8923A] hover:border-[#E8923A]/40 transition-colors"
                       >
-                        <i className="fa-solid fa-wallet text-[10px]" />
+                        <i className="ph ph-wallet text-[10px]" />
                       </button>
                       <button
                         onClick={() => openEdit(p)}
                         title="Modifier"
                         className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-colors"
                       >
-                        <i className="fa-solid fa-pen text-[10px]" />
+                        <i className="ph ph-pen text-[10px]" />
                       </button>
                       <button
                         onClick={() => handleDelete(p.id)}
                         title="Supprimer"
                         className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"
                       >
-                        <i className="fa-solid fa-trash text-[10px]" />
+                        <i className="ph ph-trash text-[10px]" />
                       </button>
                     </div>
                   </td>
@@ -426,7 +426,7 @@ export default function AdminPartenaires() {
                 {editing ? "Modifier le partenaire" : "Nouveau partenaire"}
               </h3>
               <button onClick={() => setModalOpen(false)} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded text-gray-400 hover:bg-gray-50">
-                <i className="fa-solid fa-xmark text-xs" />
+                <i className="ph ph-x text-xs" />
               </button>
             </div>
 
@@ -518,7 +518,7 @@ export default function AdminPartenaires() {
                 </button>
                 <button type="submit" disabled={saving || !form.nom_organisation.trim() || !form.email.trim()}
                   className="px-5 py-2 bg-[#2D5A42] text-white rounded text-[13px] font-semibold hover:bg-[#2D5A42] transition-colors disabled:opacity-60 flex items-center gap-1.5">
-                  {saving && <i className="fa-solid fa-spinner fa-spin text-xs" />}
+                  {saving && <i className="ph ph-spinner animate-spin text-xs" />}
                   {editing ? "Enregistrer les modifications" : "Créer le partenaire"}
                 </button>
               </div>
@@ -533,7 +533,7 @@ export default function AdminPartenaires() {
           <div className="bg-white rounded-lg w-full max-w-md border border-gray-200 shadow-xl mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-5">
               <div className="w-12 h-12 rounded-full bg-green-50 border border-green-100 flex items-center justify-center mx-auto mb-4">
-                <i className="fa-solid fa-check text-green-600 text-lg" />
+                <i className="ph ph-check text-green-600 text-lg" />
               </div>
               <h3 className="font-bold text-base text-gray-900 text-center mb-1">Partenaire créé</h3>
               <p className="text-[13px] text-gray-500 text-center mb-4">
@@ -559,7 +559,7 @@ export default function AdminPartenaires() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-base text-gray-900">Portefeuille — {walletTarget.nom_organisation}</h3>
               <button onClick={() => setWalletOpen(false)} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded text-gray-400 hover:bg-gray-50">
-                <i className="fa-solid fa-xmark text-xs" />
+                <i className="ph ph-x text-xs" />
               </button>
             </div>
             <form onSubmit={handleWallet} className="p-6 space-y-4">
@@ -592,7 +592,7 @@ export default function AdminPartenaires() {
                   className={`px-5 py-2 text-white rounded text-[13px] font-semibold transition-colors disabled:opacity-60 flex items-center gap-1.5 ${
                     walletType === "CREDIT" ? "bg-green-700 hover:bg-green-800" : "bg-red-600 hover:bg-red-700"
                   }`}>
-                  {walletSaving && <i className="fa-solid fa-spinner fa-spin text-xs" />}
+                  {walletSaving && <i className="ph ph-spinner animate-spin text-xs" />}
                   {walletType === "CREDIT" ? "Créditer" : "Débiter"}
                 </button>
               </div>
@@ -608,7 +608,7 @@ export default function AdminPartenaires() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
               <h3 className="font-bold text-base text-gray-900">Détails — {detailTarget.nom_organisation}</h3>
               <button onClick={() => setDetailTarget(null)} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded text-gray-400 hover:bg-gray-50">
-                <i className="fa-solid fa-xmark text-xs" />
+                <i className="ph ph-x text-xs" />
               </button>
             </div>
 
@@ -661,7 +661,7 @@ export default function AdminPartenaires() {
                 {historyLoading ? (
                   <div className="flex justify-center py-8"><LoadingSpinner minHeight="auto" /></div>
                 ) : history.length === 0 ? (
-                  <EmptyState icon="fa-solid fa-wallet" message="Aucune opération pour le moment." />
+                  <EmptyState icon="ph ph-wallet" message="Aucune opération pour le moment." />
                 ) : (
                   <div className="border border-gray-200 rounded overflow-hidden">
                     <table className="w-full text-left">
@@ -681,11 +681,11 @@ export default function AdminPartenaires() {
                             <td className="px-4 py-2.5">
                               {t.type === "CREDIT" ? (
                                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-700">
-                                  <i className="fa-solid fa-arrow-up text-[9px]" /> Crédit
+                                  <i className="ph ph-arrow-up text-[9px]" /> Crédit
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600">
-                                  <i className="fa-solid fa-arrow-down text-[9px]" /> Débit
+                                  <i className="ph ph-arrow-down text-[9px]" /> Débit
                                 </span>
                               )}
                             </td>

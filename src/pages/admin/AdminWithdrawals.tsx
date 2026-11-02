@@ -82,7 +82,7 @@ export default function AdminWithdrawals() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {paginated.length === 0 ? (
-                <EmptyState icon="fa-solid fa-money-bill-transfer" message={t("admin_no_withdrawals")} colSpan={6} />
+                <EmptyState icon="ph ph-hand-withdraw" message={t("admin_no_withdrawals")} colSpan={6} />
               ) : (
                 paginated.map((w) => (
                   <tr key={w.id} className="hover:bg-gray-50 transition-colors">
@@ -118,7 +118,7 @@ export default function AdminWithdrawals() {
                               disabled={actionId === w.id}
                               className="text-[11px] px-3 py-1.5 rounded border bg-green-50 text-green-700 border-green-200 hover:bg-green-100 font-semibold transition-colors disabled:opacity-50"
                             >
-                              {actionId === w.id ? <i className="fa-solid fa-spinner fa-spin" /> : t("admin_approve")}
+                              {actionId === w.id ? <i className="ph ph-spinner animate-spin" /> : t("admin_approve")}
                             </button>
                             <button
                               onClick={() => handleAction(w.id, "reject")}

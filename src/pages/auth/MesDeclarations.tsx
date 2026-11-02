@@ -9,6 +9,7 @@ import { useTopbar } from "../../hooks/useTopbar";
 import SmsAlertUpsell from "../../components/subscription/SmsAlertUpsell";
 import CompleteDeclarationModal from "../../components/ui/CompleteDeclarationModal";
 import { declarationGaps } from "../../utils/declarationGaps";
+import { lostRecoveryTarget, type RecoveryMatchRef } from "../../utils/recoveryTargets";
 
 import type { Declaration } from "../../types/api";
 
@@ -27,6 +28,7 @@ interface DeclarationExtended extends Declaration {
   date_expiration?: string;
   document_number?: string;
   metadata?: Record<string, string>;
+  matches?: RecoveryMatchRef[];
 }
 
 type Filter = "all" | "perdu" | "trouve";
@@ -126,6 +128,12 @@ export default function MesDeclarations() {
   const [completeId, setCompleteId] = useState<string | null>(null);
 
   const detailItem = detailId ? allDeclarations.find((d) => d.id === detailId) : null;
+  const detailIsLost = detailItem
+    ? (detailItem.declaration_type || detailItem.type || "").toUpperCase() === "LOST"
+    : false;
+  const detailRecovery = detailItem && detailIsLost
+    ? lostRecoveryTarget(detailItem.id, detailItem.matches)
+    : null;
 
   const openDetail = (id: string) => setDetailId(id);
   const closeDetail = () => setDetailId(null);
@@ -174,7 +182,7 @@ export default function MesDeclarations() {
     <div className="flex flex-col h-full">
 
 {/* REMPLACE la div enveloppante juste après le premier */}
-<div className="custom-scroll p-4 sm:p-6 flex flex-col gap-4 pb-28 md:pb-8 w-full max-w-7xl mx-auto max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
+<div className="custom-scroll p-4 sm:p-6 flex flex-col gap-4 pb-28 md:pb-8 w-full mx-auto max-md:h-[calc(100vh-134px)] md:h-[calc(100vh-64px)] overflow-y-auto">
         {/* Header card */}
         <section className="bg-white border border-borda rounded-[16px] sm:rounded-[18px] p-3 sm:p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -215,7 +223,7 @@ export default function MesDeclarations() {
             const typeBadge = isPerdu
               ? "bg-red-50 text-red-700 border-red-100"
               : "bg-green-50 text-green-700 border-green-100";
-            const typeIcon = isPerdu ? "fa-triangle-exclamation" : "fa-file-circle-check";
+            const typeIcon = isPerdu ? "ph ph-warning" : "ph ph-seal-check";
             const typeLabel = isPerdu ? t("mesdeclarations_type_loss") : t("mesdeclarations_type_found");
             const statusMeta = getStatusMeta(t, item.status);
             const gapCount = declarationGaps(item).length;
@@ -236,14 +244,14 @@ export default function MesDeclarations() {
                     </h3>
                   </div>
                   <span className={`shrink-0 px-2 py-1 sm:px-2.5 sm:py-1 rounded-full border text-[10px] sm:text-[11px] font-bold whitespace-nowrap ${typeBadge}`}>
-                    <i className={`fa-solid ${typeIcon} mr-0.5 sm:mr-1`} />{typeLabel}
+                    <i className={`${typeIcon} mr-0.5 sm:mr-1`} />{typeLabel}
                   </span>
                 </div>
 
                 <div className="space-y-1 text-[12px] sm:text-[12.5px] text-textMuted">
-                  <p className="truncate"><i className="fa-regular fa-user mr-1.5 w-4 shrink-0" /> <span className="truncate">{item.owner_name || item.nom_complet || t("mesdeclarations_unknown")}</span></p>
-                  <p><i className="fa-regular fa-calendar mr-1.5 w-4 shrink-0" /> {fmtDate(item.created_at)}</p>
-                  <p className="truncate"><i className="fa-solid fa-location-dot mr-1.5 w-4 shrink-0" /> <span className="truncate">{item.ville || item.lieu_perte || item.lieu_trouvee || "—"}</span></p>
+                  <p className="truncate"><i className="ph ph-user mr-1.5 w-4 shrink-0" /> <span className="truncate">{item.owner_name || item.nom_complet || t("mesdeclarations_unknown")}</span></p>
+                  <p><i className="ph ph-calendar mr-1.5 w-4 shrink-0" /> {fmtDate(item.created_at)}</p>
+                  <p className="truncate"><i className="ph ph-map-pin mr-1.5 w-4 shrink-0" /> <span className="truncate">{item.ville || item.lieu_perte || item.lieu_trouvee || "—"}</span></p>
                 </div>
 
                 <div className="mt-3 sm:mt-4 flex items-center justify-between gap-2">
@@ -256,7 +264,7 @@ export default function MesDeclarations() {
                         onClick={(e) => { e.stopPropagation(); setCompleteId(item.id); }}
                         className="px-2.5 sm:px-3 py-1.5 rounded-[8px] sm:rounded-[9px] bg-primary-light text-primary-dark text-[11px] sm:text-[12px] font-semibold whitespace-nowrap"
                       >
-                        <i className="fa-solid fa-circle-info mr-1.5" />
+                        <i className="ph ph-info mr-1.5" />
                         {t("mesdeclarations_gap_badge")}
                       </button>
                     )}
@@ -265,7 +273,7 @@ export default function MesDeclarations() {
                       className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-[8px] sm:rounded-[9px] bg-surface2 border border-borda text-textMuted/50 hover:text-red-500 hover:border-red-200 transition-colors"
                       title={t("mesdeclarations_delete") || "Supprimer"}
                     >
-                      <i className="fa-solid fa-trash-can text-[10px] sm:text-[11px]" />
+                      <i className="ph ph-trash text-[10px] sm:text-[11px]" />
                     </button>
                     <button className="px-2.5 sm:px-3 py-1.5 rounded-[8px] sm:rounded-[9px] bg-surface2 border border-borda text-[11px] sm:text-[12px] font-semibold text-textMuted/70 hover:border-primary hover:text-primary transition-colors whitespace-nowrap">
                       {t("mesdeclarations_view_details")}
@@ -281,7 +289,7 @@ export default function MesDeclarations() {
         {filtered.length === 0 && (
           <section className="bg-white border border-borda rounded-[18px] sm:rounded-[22px] p-6 sm:p-10 text-center shadow-sm">
             <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-2xl bg-bgMain border border-borda flex items-center justify-center mb-3 sm:mb-4">
-              <i className="fa-solid fa-folder-open text-textMuted text-xl sm:text-2xl" />
+              <i className="ph ph-folder-open text-textMuted text-xl sm:text-2xl" />
             </div>
             <p className="text-[15px] sm:text-[17px] font-bold text-textMain font-bricolage">{t("mesdeclarations_empty_title")}</p>
             <p className="text-[12px] sm:text-[13px] text-textMuted/70 mt-2 mb-5 sm:mb-6 max-w-[280px] mx-auto leading-relaxed">
@@ -291,7 +299,7 @@ export default function MesDeclarations() {
               onClick={() => navigate("/declarer")}
               className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
             >
-              <i className="fa-solid fa-plus" /> {t("mesdeclarations_create_declaration")}
+              <i className="ph ph-plus" /> {t("mesdeclarations_create_declaration")}
             </button>
           </section>
         )}
@@ -311,11 +319,11 @@ export default function MesDeclarations() {
               onClick={() => navigate("/abonnement")}
               className="inline-flex items-center gap-2 text-primary font-bold text-[12px] sm:text-[13px] hover:gap-3 transition-all"
             >
-              {t("mesdeclarations_premium_cta")} <i className="fa-solid fa-arrow-right" />
+              {t("mesdeclarations_premium_cta")} <i className="ph ph-arrow-right" />
             </button>
           </div>
           <div className="absolute bottom-4 right-6 opacity-20 transform rotate-12 pointer-events-none">
-            <i className="fa-solid fa-rocket text-4xl sm:text-6xl" />
+            <i className="ph ph-rocket text-4xl sm:text-6xl" />
           </div>
         </section>
       </div>
@@ -341,7 +349,7 @@ export default function MesDeclarations() {
                   onClick={closeDetail}
                   className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-bgMain text-textMuted hover:text-red-500 transition-colors shrink-0"
                 >
-                  <i className="fa-solid fa-xmark text-sm sm:text-base" />
+                  <i className="ph ph-x text-sm sm:text-base" />
                 </button>
               </div>
 
@@ -397,15 +405,15 @@ export default function MesDeclarations() {
 
                 {/* Details List */}
                 <div className="space-y-3 sm:space-y-4 pt-3 sm:pt-4 border-t border-borda">
-                  <DetailRow icon="fa-regular fa-user" label={t("mesdeclarations_owner")} value={detailItem.owner_name || detailItem.nom_complet || t("mesdeclarations_not_specified")} />
-                  <DetailRow icon="fa-solid fa-hashtag" label={t("mesdeclarations_document_number")} value={detailItem.document_number || detailItem.numero_document || t("mesdeclarations_not_specified")} />
+                  <DetailRow icon="ph ph-user" label={t("mesdeclarations_owner")} value={detailItem.owner_name || detailItem.nom_complet || t("mesdeclarations_not_specified")} />
+                  <DetailRow icon="ph ph-hash" label={t("mesdeclarations_document_number")} value={detailItem.document_number || detailItem.numero_document || t("mesdeclarations_not_specified")} />
                   <DetailRow
-                    icon="fa-solid fa-location-dot"
+                    icon="ph ph-map-pin"
                     label={t("mesdeclarations_location")}
                     value={`${detailItem.ville || detailItem.lieu_perte || detailItem.lieu_trouvee || "—"}, ${detailItem.region || "—"} (${detailItem.pays || t("mesdeclarations_cameroon")})`}
                   />
                   <DetailRow
-                    icon="fa-solid fa-stethoscope"
+                    icon="ph ph-stethoscope"
                     label={t("mesdeclarations_physical_state")}
                     value={
                       detailItem.etat_physique
@@ -418,7 +426,7 @@ export default function MesDeclarations() {
                     }
                   />
                   {detailItem.date_expiration && (
-                    <DetailRow icon="fa-solid fa-calendar-xmark" label={t("mesdeclarations_expiration_date")} value={fmtDate(detailItem.date_expiration)} />
+                    <DetailRow icon="ph ph-calendar-x" label={t("mesdeclarations_expiration_date")} value={fmtDate(detailItem.date_expiration)} />
                   )}
                 </div>
 
@@ -435,7 +443,7 @@ export default function MesDeclarations() {
                   <div className="pt-4 border-t border-borda space-y-2">
                     <p className="text-[10px] font-bold text-textMuted uppercase tracking-widest mb-2">Informations complémentaires</p>
                     {Object.entries(detailItem.metadata).map(([label, value]) => (
-                      <DetailRow key={label} icon="fa-solid fa-tag" label={label} value={value || "—"} />
+                      <DetailRow key={label} icon="ph ph-tag" label={label} value={value || "—"} />
                     ))}
                   </div>
                 )}
@@ -446,8 +454,8 @@ export default function MesDeclarations() {
                     <button
                       onClick={() =>
                         navigate(
-                          (detailItem.declaration_type || detailItem.type || "").toUpperCase() === "LOST"
-                            ? `/recuperer?id=${detailItem.id}`
+                          detailIsLost && detailRecovery
+                            ? detailRecovery.href
                             : `/rendre?id=${detailItem.id}`
                         )
                       }
@@ -457,7 +465,7 @@ export default function MesDeclarations() {
                           : "bg-blue-600"
                       }`}
                     >
-                      <i className={`fa-solid ${(detailItem.declaration_type || detailItem.type || "").toUpperCase() === "LOST" ? "fa-handshake" : "fa-hand-holding-heart"}`} />
+                      <i className={`${(detailItem.declaration_type || detailItem.type || "").toUpperCase() === "LOST" ? "ph ph-handshake" : "ph ph-hand-heart"}`} />
                       {(detailItem.declaration_type || detailItem.type || "").toUpperCase() === "LOST"
                         ? t("mesdeclarations_recover_document")
                         : t("mesdeclarations_return_document")}
@@ -471,7 +479,7 @@ export default function MesDeclarations() {
                       onClick={() => setCompleteId(detailItem.id)}
                       className="w-full py-3 sm:py-3.5 bg-primary text-white rounded-xl font-bold text-xs sm:text-sm hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
                     >
-                      <i className="fa-solid fa-pen-to-square" />
+                      <i className="ph ph-pencil-simple" />
                       {t("mesdeclarations_complete")}
                     </button>
                   )}
@@ -480,7 +488,7 @@ export default function MesDeclarations() {
                     onClick={() => setConfirmDeleteId(detailItem.id)}
                     className="w-full py-2.5 sm:py-3 border border-red-200 text-red-500 rounded-xl font-bold text-xs sm:text-sm hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
                   >
-                    <i className="fa-solid fa-trash-can" /> {t("mesdeclarations_delete") || "Supprimer"}
+                    <i className="ph ph-trash" /> {t("mesdeclarations_delete") || "Supprimer"}
                   </button>
                 </div>
               </div>
@@ -502,7 +510,7 @@ export default function MesDeclarations() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-5">
-              <i className="fa-solid fa-trash-can text-red-500 text-2xl" />
+              <i className="ph ph-trash text-red-500 text-2xl" />
             </div>
             <h2 className="font-bricolage text-xl font-black text-textMain mb-2">
               {t("mesdeclarations_delete_title") || "Supprimer la déclaration"}
@@ -524,9 +532,9 @@ export default function MesDeclarations() {
                 className="px-6 py-3.5 bg-red-500 text-white rounded-2xl font-bricolage font-black text-sm hover:bg-red-600 transition-all shadow-xl shadow-red-500/30 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {deleting ? (
-                  <i className="fa-solid fa-spinner fa-spin" />
+                  <i className="ph ph-spinner animate-spin" />
                 ) : (
-                  <i className="fa-solid fa-trash-can" />
+                  <i className="ph ph-trash" />
                 )}
                 {deleting
                   ? (t("mesdeclarations_deleting") || "Suppression...")
@@ -570,7 +578,7 @@ function ImageBox({ src, label, t }: { src?: string | null; label: string; t: (k
         />
       ) : (
         <div className="w-full h-full flex flex-col items-center justify-center text-textMuted opacity-50">
-          <i className="fa-solid fa-image text-2xl mb-1" />
+          <i className="ph ph-image text-2xl mb-1" />
           <span className="text-[10px]">{t("mesdeclarations_image_absent")}</span>
         </div>
       )}

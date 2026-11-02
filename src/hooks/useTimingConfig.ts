@@ -17,7 +17,7 @@ export interface TimingConfig {
 }
 
 const DEFAULTS: TimingConfig = {
-  matchingIntervalMs: 30_000,
+  matchingIntervalMs: 28_800_000,
   paymentPollIntervalMs: 5_000,
   paymentPollTimeoutMs: 300_000,
   paymentPhaseOperatorMs: 60_000,

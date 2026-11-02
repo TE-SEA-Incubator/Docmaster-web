@@ -27,15 +27,15 @@ const statusLabel = (status: string | undefined, t: (k: string) => string) => {
 };
 
 const methodIcons: Record<string, string> = {
-  ORANGE_MONEY: "fa-solid fa-mobile-screen",
-  MTN_MOMO: "fa-solid fa-mobile-screen",
-  OM: "fa-solid fa-mobile-screen",
-  MOMO: "fa-solid fa-mobile-screen",
-  orange_money: "fa-solid fa-mobile-screen",
-  mtn_momo: "fa-solid fa-mobile-screen",
-  card: "fa-solid fa-credit-card",
-  stripe: "fa-brands fa-cc-stripe",
-  POINTS: "fa-solid fa-coins",
+  ORANGE_MONEY: "ph ph-device-mobile",
+  MTN_MOMO: "ph ph-device-mobile",
+  OM: "ph ph-device-mobile",
+  MOMO: "ph ph-device-mobile",
+  orange_money: "ph ph-device-mobile",
+  mtn_momo: "ph ph-device-mobile",
+  card: "ph ph-credit-card",
+  stripe: "ph ph-stripe-logo",
+  POINTS: "ph ph-coins",
 };
 
 export default function AdminTransactions() {
@@ -89,14 +89,14 @@ export default function AdminTransactions() {
           <p className="text-gray-500 text-[13px] mt-0.5">{t("admin_payment_history")}</p>
         </div>
         <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded text-[12px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-          <i className="fa-solid fa-download text-[10px]" /> CSV
+          <i className="ph ph-download text-[10px]" /> CSV
         </button>
       </div>
 
       <div className="bg-white border border-gray-200 rounded flex flex-col min-h-0">
         <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap items-center gap-2 shrink-0">
           <div className="relative flex-1 min-w-[180px] max-w-xs">
-            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+            <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
             <input type="search" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Rechercher par utilisateur..."
               className="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded text-[13px] outline-none focus:border-[#E8923A] transition-colors placeholder:text-gray-400" />
@@ -124,7 +124,7 @@ export default function AdminTransactions() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {paginated.length === 0 ? (
-                <EmptyState icon="fa-solid fa-credit-card" message={t("admin_no_transactions")} colSpan={5} />
+                <EmptyState icon="ph ph-credit-card" message={t("admin_no_transactions")} colSpan={5} />
               ) : (
                 paginated.map((tx) => (
                   <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
@@ -135,7 +135,7 @@ export default function AdminTransactions() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="flex items-center gap-1.5 text-[13px] text-gray-600">
-                        <i className={`${methodIcons[tx.payment_method || tx.method || ""] || "fa-solid fa-circle"} text-gray-400 text-[11px]`} />
+                        <i className={`${methodIcons[tx.payment_method || tx.method || ""] || "ph ph-circle"} text-gray-400 text-[11px]`} />
                         {(tx.payment_method || tx.method || "").replace(/_/g, " ") || "—"}
                       </span>
                     </td>

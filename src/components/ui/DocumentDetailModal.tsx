@@ -66,13 +66,13 @@ export default function DocumentDetailModal({
               aria-label={t("detail_close")}
               className="md:hidden absolute top-4 right-4 w-11 h-11 bg-white/90 rounded-xl flex items-center justify-center text-slate-900 hover:bg-white transition-colors z-10 shadow-lg"
             >
-              <i className="fa-solid fa-xmark text-lg" />
+              <i className="ph ph-x text-lg" />
             </button>
 
             {/* Validity Badge */}
             {isPermanent && (
               <div className={`${badgePosition} flex items-center gap-2 px-3 py-1.5 bg-white/15 rounded-full backdrop-blur`}>
-                <i className="fa-solid fa-infinity text-[10px] md:text-xs text-white" />
+                <i className="ph ph-infinity text-[10px] md:text-xs text-white" />
                 <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-widest">
                   {t("detail_permanent")}
                 </span>
@@ -80,7 +80,7 @@ export default function DocumentDetailModal({
             )}
             {isExpired && (
               <div className={`${badgePosition} flex items-center gap-2 px-3 py-1.5 bg-white/15 rounded-full backdrop-blur`}>
-                <i className="fa-solid fa-clock text-[10px] md:text-xs text-white" />
+                <i className="ph ph-clock text-[10px] md:text-xs text-white" />
                 <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-widest">
                   {t("detail_expired")}
                 </span>
@@ -109,11 +109,11 @@ export default function DocumentDetailModal({
                     <div className="flex items-center gap-1.5">
                       {doc.is_verified ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-black uppercase tracking-wider border border-emerald-200">
-                          <i className="fa-solid fa-shield-check" /> {t("detail_certifie")}
+                          <i className="ph ph-shield-check" /> {t("detail_certifie")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full text-[9px] font-black uppercase tracking-wider border border-amber-200">
-                          <i className="fa-solid fa-hourglass-end" /> {t("detail_valide")}
+                          <i className="ph ph-hourglass" /> {t("detail_valide")}
                         </span>
                       )}
                     </div>
@@ -128,7 +128,7 @@ export default function DocumentDetailModal({
                   onClick={onClose}
                   className="hidden md:flex w-10 h-10 rounded-xl border border-slate-200 text-slate-400 items-center justify-center hover:bg-slate-50 hover:text-slate-600 transition-all flex-shrink-0"
                 >
-                  <i className="fa-solid fa-xmark text-lg" />
+                  <i className="ph ph-x text-lg" />
                 </button>
               </div>
             </div>
@@ -141,12 +141,12 @@ export default function DocumentDetailModal({
                   {
                     label: t("detail_numero"),
                     value: doc.numero_doc || "—",
-                    icon: "fa-barcode",
+                    icon: "ph ph-barcode",
                   },
                   {
                     label: t("detail_type"),
                     value: catLabels[doc.type_doc ?? ""] || "—",
-                    icon: "fa-file",
+                    icon: "ph ph-file",
                   },
                 ].map((item) => (
                   <div
@@ -154,7 +154,7 @@ export default function DocumentDetailModal({
                     className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200 hover:border-slate-300 transition-all"
                   >
                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <i className={`fa-solid ${item.icon} text-[11px]`} />
+                      <i className={`${item.icon} text-[11px]`} />
                       {item.label}
                     </p>
                     <p className="text-sm md:text-base font-bold text-slate-900 truncate">
@@ -176,7 +176,7 @@ export default function DocumentDetailModal({
                           day: "numeric",
                         })
                       : "—",
-                    icon: "fa-calendar-check",
+                    icon: "ph ph-calendar-check",
                   },
                   {
                     label: t("detail_expiration"),
@@ -189,7 +189,7 @@ export default function DocumentDetailModal({
                             day: "numeric",
                           })
                         : "—",
-                    icon: "fa-calendar-times",
+                    icon: "ph ph-calendar-x",
                   },
                 ].map((item) => (
                   <div
@@ -197,7 +197,7 @@ export default function DocumentDetailModal({
                     className="p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl border border-slate-200 hover:border-slate-300 transition-all"
                   >
                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <i className={`fa-solid ${item.icon} text-[11px]`} />
+                      <i className={`${item.icon} text-[11px]`} />
                       {item.label}
                     </p>
                     <p className="text-sm md:text-base font-bold text-slate-900">
@@ -213,13 +213,13 @@ export default function DocumentDetailModal({
                   {
                     label: t("detail_proprietaire"),
                     value: doc.nom_sur_doc || "—",
-                    icon: "fa-user-check",
+                    icon: "ph ph-user-check",
                     color: "blue",
                   },
                   {
                     label: t("detail_autorite"),
                     value: doc.nom_autorite || "—",
-                    icon: "fa-building",
+                    icon: "ph ph-building",
                     color: "slate",
                   },
                 ].map((item) => (
@@ -235,7 +235,7 @@ export default function DocumentDetailModal({
                             : "bg-slate-100 text-slate-600"
                         }`}
                       >
-                        <i className={`fa-solid ${item.icon}`} />
+                        <i className={`${item.icon}`} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">
@@ -254,7 +254,7 @@ export default function DocumentDetailModal({
               {doc.notes && (
                 <div className="space-y-2">
                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">
-                    <i className="fa-solid fa-note-sticky mr-1.5" />
+                    <i className="ph ph-note mr-1.5" />
                     {t("detail_notes")}
                   </p>
                   <div className="p-4 bg-amber-50 border-l-4 border-amber-400 rounded-xl">
@@ -285,19 +285,19 @@ export default function DocumentDetailModal({
                     onClick={onEdit}
                     className="w-full h-11 bg-white border border-borderMain text-textMain rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-surface2 transition-colors active:scale-[0.98]"
                   >
-                    <i className="fa-solid fa-pen" /> {t("detail_edit")}
+                    <i className="ph ph-pen" /> {t("detail_edit")}
                   </button>
                 )}
 
                 <button onClick={handleDownload} className="w-full h-11 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors active:scale-[0.98]" style={{ background: "#1E3A2F" }}>
-                  <i className="fa-solid fa-download" /> {t("detail_telecharger")}
+                  <i className="ph ph-download" /> {t("detail_telecharger")}
                 </button>
 
                 <button
                   onClick={() => { onClose(); onShare?.(); }}
                   className="w-full h-11 bg-white border border-borderMain text-textMain rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-surface2 transition-colors active:scale-[0.98]"
                 >
-                  <i className="fa-solid fa-share-nodes" /> {t("detail_partager")}
+                  <i className="ph ph-share-network" /> {t("detail_partager")}
                 </button>
               </div>
             </div>

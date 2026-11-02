@@ -23,6 +23,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/admin/sms": "SMS",
   "/admin/activity-log": "Journal",
   "/admin/matching": "Matching",
+  "/admin/reports": "Signalements",
 };
 
 interface SearchResult {
@@ -96,7 +97,7 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
           className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
           aria-label="Menu"
         >
-          <i className="fa-solid fa-bars text-sm" />
+          <i className="ph ph-hamburger text-sm" />
         </button>
 
         {/* Breadcrumbs — desktop only */}
@@ -110,7 +111,7 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
             const label = ROUTE_LABELS[fullPath] || part;
             return (
               <span key={fullPath} className="flex items-center gap-1 min-w-0">
-                <i className="fa-solid fa-chevron-right text-[9px] text-gray-300 shrink-0" />
+                <i className="ph ph-caret-right text-[9px] text-gray-300 shrink-0" />
                 {isLast ? (
                   <span className="text-gray-800 font-semibold truncate">{label.startsWith("admin_") ? t(label) : label}</span>
                 ) : (
@@ -125,7 +126,7 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
 
         {/* Search — desktop only */}
         <div ref={searchRef} className="hidden md:block relative ml-3 w-56">
-          <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+          <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
@@ -138,7 +139,7 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
             className="w-full pl-8 pr-8 py-2 bg-gray-50 border border-gray-200 rounded text-[13px] text-gray-700 outline-none focus:border-[#E8923A] focus:bg-white transition-colors placeholder:text-gray-400"
           />
           {searching ? (
-            <i className="fa-solid fa-spinner fa-spin absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+            <i className="ph ph-spinner animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
           ) : null}
 
           {/* Search results dropdown */}
@@ -150,8 +151,8 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
                     onClick={() => goToResult("users")}
                     className="w-full px-3 py-2 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
                   >
-                    <span><i className="fa-solid fa-users mr-1.5" />{t("admin_users")}</span>
-                    <i className="fa-solid fa-arrow-right text-[9px]" />
+                    <span><i className="ph ph-users mr-1.5" />{t("admin_users")}</span>
+                    <i className="ph ph-arrow-right text-[9px]" />
                   </button>
                   {searchResults.users.map((u) => (
                     <div key={u.id} className="px-3 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-0">
@@ -167,8 +168,8 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
                     onClick={() => goToResult("declarations")}
                     className="w-full px-3 py-2 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
                   >
-                    <span><i className="fa-solid fa-file-lines mr-1.5" />{t("admin_declarations")}</span>
-                    <i className="fa-solid fa-arrow-right text-[9px]" />
+                    <span><i className="ph ph-file-text mr-1.5" />{t("admin_declarations")}</span>
+                    <i className="ph ph-arrow-right text-[9px]" />
                   </button>
                   {searchResults.declarations.map((d) => (
                     <div key={d.id} className="px-3 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-0">
@@ -191,9 +192,9 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
             onClick={() => setLangOpen(!langOpen)}
             className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors"
           >
-            <i className="fa-solid fa-globe text-gray-400 text-xs" />
+            <i className="ph ph-globe text-gray-400 text-xs" />
             <span>{langLabel}</span>
-            <i className="fa-solid fa-chevron-down text-[9px] text-gray-400" />
+            <i className="ph ph-caret-down text-[9px] text-gray-400" />
           </button>
           {langOpen && (
             <div
@@ -211,7 +212,7 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
                   className={`flex items-center gap-2 w-full px-3 py-2.5 hover:bg-gray-50 transition-colors text-[13px] text-gray-700 ${lang === l.code ? "font-bold text-[#2D5A42]" : "font-medium"}`}
                 >
                   {l.label}
-                  {lang === l.code && <i className="fa-solid fa-check ml-auto text-[#E8923A] text-xs" />}
+                  {lang === l.code && <i className="ph ph-check ml-auto text-[#E8923A] text-xs" />}
                 </button>
               ))}
             </div>
@@ -224,7 +225,7 @@ export default function AdminTopbar({ onToggleSidebar, unreadCount, onNotifToggl
           className="relative w-9 h-9 flex items-center justify-center border border-gray-200 rounded text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
           title={t("notification_title")}
         >
-          <i className="fa-solid fa-bell text-sm" />
+          <i className="ph ph-bell text-sm" />
           {unreadCount > 0 && (
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white" />
           )}

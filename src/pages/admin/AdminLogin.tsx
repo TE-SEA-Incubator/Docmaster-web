@@ -49,7 +49,7 @@ export default function AdminLogin() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#2D5A42] rounded mb-5">
-            <i className="fa-solid fa-shield-halved text-[#E8923A] text-2xl" />
+            <i className="ph ph-shield text-[#E8923A] text-2xl" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Administration DocMaster</h1>
           <p className="text-[13px] text-gray-500">{t("admin_administration")}</p>
@@ -60,7 +60,7 @@ export default function AdminLogin() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-[13px] flex items-center gap-2">
-                <i className="fa-solid fa-circle-exclamation shrink-0" />
+                <i className="ph ph-warning-circle shrink-0" />
                 {error}
               </div>
             )}
@@ -110,9 +110,9 @@ export default function AdminLogin() {
               className="w-full py-2.5 bg-[#2D5A42] text-white rounded text-[14px] font-bold hover:bg-[#2D5A42] disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 mt-2"
             >
               {loading ? (
-                <i className="fa-solid fa-spinner fa-spin text-sm" />
+                <i className="ph ph-spinner animate-spin text-sm" />
               ) : (
-                <i className="fa-solid fa-arrow-right-to-bracket text-sm" />
+                <i className="ph ph-sign-in text-sm" />
               )}
               {loading ? t("admin_connecting") : t("admin_login")}
             </button>
@@ -120,12 +120,12 @@ export default function AdminLogin() {
 
           <div className="mt-6 pt-5 border-t border-gray-100 flex items-center justify-between text-[12px]">
             <a href="/login" className="text-gray-500 hover:text-gray-700 flex items-center gap-1">
-              <i className="fa-solid fa-arrow-left text-[10px]" />
+              <i className="ph ph-arrow-left text-[10px]" />
               {t("admin_back_user_login")}
             </a>
             <a href="https://docmaster.com/contact" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 flex items-center gap-1">
               {t("admin_contact_support")}
-              <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" />
+              <i className="ph ph-arrow-square-out text-[10px]" />
             </a>
           </div>
         </div>

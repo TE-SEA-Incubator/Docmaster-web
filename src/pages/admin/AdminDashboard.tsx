@@ -105,25 +105,25 @@ export default function AdminDashboard() {
   const trend = (val: number) => {
     if (val > 0) return (
       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-100 px-1.5 py-0.5 rounded">
-        <i className="fa-solid fa-arrow-up text-[9px]" />+{val}%
+        <i className="ph ph-arrow-up text-[9px]" />+{val}%
       </span>
     );
     if (val < 0) return (
       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-700 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded">
-        <i className="fa-solid fa-arrow-down text-[9px]" />{val}%
+        <i className="ph ph-arrow-down text-[9px]" />{val}%
       </span>
     );
     return <span className="text-[11px] font-semibold text-gray-400">0%</span>;
   };
 
   const statCards = [
-    { label: t("admin_dashboard_users"), value: stats?.totalUsers, growth: stats?.usersGrowth, icon: "fa-solid fa-users", color: "text-blue-600", bg: "bg-blue-50 border-blue-100", tooltip: "Nombre total d'utilisateurs inscrits" },
-    { label: t("admin_dashboard_subscriptions"), value: stats?.activeSubscriptions, growth: stats?.subsGrowth, icon: "fa-solid fa-crown", color: "text-violet-600", bg: "bg-violet-50 border-violet-100", tooltip: "Abonnements actifs" },
-    { label: t("admin_dashboard_revenue"), value: stats?.estimatedMonthlyRevenue, growth: stats?.revenueGrowth, icon: "fa-solid fa-money-bill", color: "text-green-700", bg: "bg-green-50 border-green-100", isCurrency: true, tooltip: "Revenu mensuel récurrent (MRR)" },
-    { label: "Rev. abonnements", value: stats?.totalSubscriptionRevenue, icon: "fa-solid fa-credit-card", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-100", isCurrency: true, tooltip: "Total revenus abonnements" },
-    { label: "Frais récupération", value: stats?.totalRecoveryFeeRevenue, icon: "fa-solid fa-hand-holding-dollar", color: "text-sky-700", bg: "bg-sky-50 border-sky-100", isCurrency: true, tooltip: "Total frais de déclaration payés" },
-    { label: t("admin_dashboard_lost_docs"), value: stats?.lostDocs, growth: stats?.lostDocsGrowth, icon: "fa-solid fa-file-circle-exclamation", color: "text-amber-700", bg: "bg-amber-50 border-amber-100", tooltip: "Documents déclarés perdus" },
-    { label: t("admin_dashboard_found_docs"), value: stats?.foundDocs, growth: stats?.foundDocsGrowth, icon: "fa-solid fa-circle-check", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-100", tooltip: "Documents déclarés trouvés" },
+    { label: t("admin_dashboard_users"), value: stats?.totalUsers, growth: stats?.usersGrowth, icon: "ph ph-users", color: "text-blue-600", bg: "bg-blue-50 border-blue-100", tooltip: "Nombre total d'utilisateurs inscrits" },
+    { label: t("admin_dashboard_subscriptions"), value: stats?.activeSubscriptions, growth: stats?.subsGrowth, icon: "ph ph-crown", color: "text-violet-600", bg: "bg-violet-50 border-violet-100", tooltip: "Abonnements actifs" },
+    { label: t("admin_dashboard_revenue"), value: stats?.estimatedMonthlyRevenue, growth: stats?.revenueGrowth, icon: "ph ph-money", color: "text-green-700", bg: "bg-green-50 border-green-100", isCurrency: true, tooltip: "Revenu mensuel récurrent (MRR)" },
+    { label: "Rev. abonnements", value: stats?.totalSubscriptionRevenue, icon: "ph ph-credit-card", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-100", isCurrency: true, tooltip: "Total revenus abonnements" },
+    { label: "Frais récupération", value: stats?.totalRecoveryFeeRevenue, icon: "ph ph-hand-coins", color: "text-sky-700", bg: "bg-sky-50 border-sky-100", isCurrency: true, tooltip: "Total frais de déclaration payés" },
+    { label: t("admin_dashboard_lost_docs"), value: stats?.lostDocs, growth: stats?.lostDocsGrowth, icon: "ph ph-seal-warning", color: "text-amber-700", bg: "bg-amber-50 border-amber-100", tooltip: "Documents déclarés perdus" },
+    { label: t("admin_dashboard_found_docs"), value: stats?.foundDocs, growth: stats?.foundDocsGrowth, icon: "ph ph-check-circle", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-100", tooltip: "Documents déclarés trouvés" },
   ];
 
   return (
@@ -251,7 +251,7 @@ export default function AdminDashboard() {
               </tr>
             ))}
             {(!stats?.recentTransactions || stats.recentTransactions.length === 0) && (
-              <EmptyState colSpan={5} icon="fa-solid fa-receipt" message={t("admin_dashboard_tx_empty")} />
+              <EmptyState colSpan={5} icon="ph ph-receipt" message={t("admin_dashboard_tx_empty")} />
             )}
           </tbody>
         </table>

@@ -5,6 +5,7 @@ import { paymentReconciliationService } from '../services/payment-reconciliation
 import { payoutPollerService } from './payout-poller.ts';
 import { storageCleanupService } from '../services/storage-cleanup.service.ts';
 import { TIMING } from '../config/timing.ts';
+import { expireRecoveryReservations } from './recovery.utils.ts';
 
 /**
  * Initialize all background cron jobs
@@ -12,13 +13,12 @@ import { TIMING } from '../config/timing.ts';
 export const initCronJobs = () => {
   console.log('👷 Initializing Background Cron Jobs...');
 
-  // Launch one initial matching cycle immediately as requested
-  console.log('🚀 [STARTUP] Launching immediate matching cycle...');
-  matchingService.runFullMatchingCycle().catch(err => console.error('❌ Error during startup matching:', err));
-
-  // 1. Matching Worker - Runs every 30 seconds
+  // 1. Matching Worker - Runs 3 times per day (every 8 hours)
   cron.schedule(TIMING.matchingCron, () => {
-    matchingService.runFullMatchingCycle();
+    console.log('🔄 Running scheduled matching cycle...');
+    matchingService.runFullMatchingCycle().catch((err) =>
+      console.error('❌ Error during scheduled matching:', err),
+    );
   });
 
   // 2. Expiration Reminder - Runs daily at 8:00 AM
@@ -46,7 +46,14 @@ export const initCronJobs = () => {
     payoutPollerService.pollPendingPayouts();
   });
 
-  // 6. Storage Cleanup - Runs daily at 3:00 AM
+  // 6. Expire unpaid recovery reservations - Runs every minute
+  cron.schedule('* * * * *', () => {
+    expireRecoveryReservations().catch((err) =>
+      console.error('❌ Recovery reservation expiry failed:', err),
+    );
+  });
+
+  // 7. Storage Cleanup - Runs daily at 3:00 AM
   //    Supprime les photos/pèces non référencées en base après la rétention.
   cron.schedule('0 3 * * *', () => {
     console.log('🧹 Running orphan uploads cleanup...');
@@ -55,5 +62,5 @@ export const initCronJobs = () => {
     );
   });
 
-  console.log('✅ Background Cron Jobs scheduled (matching: 30s, payout-poll: 2min, reconciliation: 15min, expiration: daily, storage-cleanup: 3AM).');
+  console.log('✅ Background Cron Jobs scheduled (matching: 3x/day, payout-poll: 2min, reconciliation: 15min, expiration: daily, storage-cleanup: 3AM).');
 };

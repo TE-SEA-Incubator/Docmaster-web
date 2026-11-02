@@ -108,7 +108,7 @@ export default function LocationSelect({
         searchable
         clearable
         loading={loadingRegions}
-        leftSection={<i className="fa-solid fa-map" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
+        leftSection={<i className="ph ph-map-trifold" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
         error={error}
         styles={selectStyles}
       />
@@ -123,7 +123,7 @@ export default function LocationSelect({
         clearable
         disabled={!region}
         loading={loadingDepts}
-        leftSection={<i className="fa-solid fa-building" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
+        leftSection={<i className="ph ph-building" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
         styles={selectStyles}
       />
 
@@ -138,7 +138,7 @@ export default function LocationSelect({
           clearable
           disabled={!department}
           loading={loadingArrs}
-          leftSection={<i className="fa-solid fa-location-dot" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
+          leftSection={<i className="ph ph-map-pin" style={{ fontSize: 13, color: "var(--color-primary)" }} />}
           styles={selectStyles}
         />
       )}

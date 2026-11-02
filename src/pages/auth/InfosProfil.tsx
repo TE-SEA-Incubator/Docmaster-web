@@ -158,7 +158,7 @@ export default function InfosProfil() {
       onClick={onClick}
       className="flex items-center gap-1.5 text-xs font-medium text-textMuted border border-borderMain rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
     >
-      Modifier <i className="fa-solid fa-pen" />
+      Modifier <i className="ph ph-pen" />
     </button>
   );
 
@@ -179,7 +179,7 @@ export default function InfosProfil() {
         <div className="px-8 pt-4">
           <Alert
             color={feedback.ok ? "green" : "red"}
-            icon={<i className={`fa-solid ${feedback.ok ? "fa-check" : "fa-triangle-exclamation"}`} />}
+            icon={<i className={`${feedback.ok ? "ph ph-check" : "ph ph-warning"}`} />}
             radius="md" variant="light" withCloseButton onClose={() => setFeedback(null)}
           >
             {feedback.msg}
@@ -249,7 +249,7 @@ export default function InfosProfil() {
                   onClick={() => photoInputRef.current?.click()}
                   className="flex items-center gap-1.5 text-xs font-medium text-textMuted border border-borderMain rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
                 >
-                  Modifier <i className="fa-solid fa-pen" />
+                  Modifier <i className="ph ph-pen" />
                 </button>
               </div>
 
@@ -267,7 +267,7 @@ export default function InfosProfil() {
                     htmlFor="photo-input"
                     className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full shadow-sm border border-borderMain flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
                   >
-                    <i className="fa-solid fa-camera text-[9px] text-textMuted" />
+                    <i className="ph ph-camera text-[9px] text-textMuted" />
                     <input
                       ref={photoInputRef}
                       id="photo-input"
@@ -285,14 +285,14 @@ export default function InfosProfil() {
                   <div className="flex flex-wrap gap-1 mt-1">
                     {user?.subscription ? (
                       <Badge color={user.subscription.status === "active" ? "green" : "red"} variant="light" radius="xl" size="xs">
-                        <i className="fa-solid fa-crown mr-1 text-[9px]" />{user.subscription.plan_name}
+                        <i className="ph ph-crown mr-1 text-[9px]" />{user.subscription.plan_name}
                       </Badge>
                     ) : (
                       <Badge color="gray" variant="light" radius="xl" size="xs">{t("sidebar_plan_standard")}</Badge>
                     )}
                     {isIncomplete && (
                       <Badge color="orange" variant="light" radius="xl" size="xs">
-                        <i className="fa-solid fa-circle-exclamation mr-1 text-[9px]" />Incomplet
+                        <i className="ph ph-warning-circle mr-1 text-[9px]" />Incomplet
                       </Badge>
                     )}
                   </div>
@@ -305,7 +305,7 @@ export default function InfosProfil() {
                     size="xs" radius="xl" style={{ backgroundColor: "#2D5A42" }}
                     loading={saving}
                     onClick={() => handleSaveSection({}).then((ok) => ok && setPhotoFile(null))}
-                    leftSection={<i className="fa-solid fa-floppy-disk text-xs" />}
+                    leftSection={<i className="ph ph-floppy-disk text-xs" />}
                   >
                     Enregistrer la photo
                   </Button>
@@ -331,7 +331,7 @@ export default function InfosProfil() {
                     <TextInput label={t("profil_label_lastname")} value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required radius="xl" size="sm" />
                     <TextInput
                       label={t("profil_label_email")} value={form.email} readOnly radius="xl" size="sm"
-                      rightSection={<i className="fa-solid fa-lock text-textMuted text-xs" />}
+                      rightSection={<i className="ph ph-lock text-textMuted text-xs" />}
                       styles={{ input: { backgroundColor: "#F9F9F9", cursor: "not-allowed" } }}
                     />
                     <TextInput label={t("profil_label_phone")} value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} radius="xl" size="sm" />
@@ -347,7 +347,7 @@ export default function InfosProfil() {
                     </div>
                   </SimpleGrid>
                   <Group gap="sm" mt="md">
-                    <Button type="submit" loading={saving} radius="xl" size="sm" style={{ backgroundColor: "#2D5A42" }} leftSection={<i className="fa-solid fa-floppy-disk text-xs" />}>
+                    <Button type="submit" loading={saving} radius="xl" size="sm" style={{ backgroundColor: "#2D5A42" }} leftSection={<i className="ph ph-floppy-disk text-xs" />}>
                       {t("profil_save")}
                     </Button>
                     <Button type="button" variant="default" radius="xl" size="sm" onClick={() => setEditingIdentity(false)}>
@@ -393,7 +393,7 @@ export default function InfosProfil() {
                     />
                   </SimpleGrid>
                   <Group gap="sm" mt="md">
-                    <Button type="submit" loading={saving} radius="xl" size="sm" style={{ backgroundColor: "#2D5A42" }} leftSection={<i className="fa-solid fa-floppy-disk text-xs" />}>
+                    <Button type="submit" loading={saving} radius="xl" size="sm" style={{ backgroundColor: "#2D5A42" }} leftSection={<i className="ph ph-floppy-disk text-xs" />}>
                       {t("profil_save")}
                     </Button>
                     <Button type="button" variant="default" radius="xl" size="sm" onClick={() => setEditingContact(false)}>
@@ -429,7 +429,7 @@ export default function InfosProfil() {
                     <Select label={t("profil_label_language")} value={lang} onChange={(val) => val && setLanguage(val)} data={[{ value: "fr", label: "Français" }, { value: "en", label: "English" }]} radius="xl" size="sm" clearable={false} />
                   </SimpleGrid>
                   <Group gap="sm" mt="md">
-                    <Button type="submit" loading={saving} radius="xl" size="sm" style={{ backgroundColor: "#2D5A42" }} leftSection={<i className="fa-solid fa-floppy-disk text-xs" />}>
+                    <Button type="submit" loading={saving} radius="xl" size="sm" style={{ backgroundColor: "#2D5A42" }} leftSection={<i className="ph ph-floppy-disk text-xs" />}>
                       {t("profil_save")}
                     </Button>
                     <Button type="button" variant="default" radius="xl" size="sm" onClick={() => setEditingPreferences(false)}>
@@ -462,7 +462,7 @@ export default function InfosProfil() {
                   <PasswordInput label={t("profil_new_password")} value={pwForm.new} onChange={(e) => setPwForm({ ...pwForm, new: e.target.value })} required minLength={6} radius="xl" size="sm" />
                   <PasswordInput label={t("profil_confirm_password")} value={pwForm.confirm} onChange={(e) => setPwForm({ ...pwForm, confirm: e.target.value })} required minLength={6} radius="xl" size="sm" />
                   <div>
-                    <Button type="submit" loading={pwSaving} leftSection={<i className="fa-solid fa-key text-xs" />} radius="xl" size="sm" style={{ backgroundColor: "#2D5A42" }}>
+                    <Button type="submit" loading={pwSaving} leftSection={<i className="ph ph-key text-xs" />} radius="xl" size="sm" style={{ backgroundColor: "#2D5A42" }}>
                       {t("profil_update_password")}
                     </Button>
                   </div>
@@ -476,7 +476,7 @@ export default function InfosProfil() {
               <Text size="sm" c="dimmed" mb="md">{t("profil_danger_zone_desc")}</Text>
               <Button
                 color="red" variant="light"
-                leftSection={<i className="fa-solid fa-trash-can" />}
+                leftSection={<i className="ph ph-trash" />}
                 radius="xl" size="sm"
                 onClick={() => setShowDeleteConfirm(true)}
               >
@@ -499,7 +499,7 @@ export default function InfosProfil() {
         centered radius="xl" size="sm" padding="xl"
         title={
           <Stack align="center" gap="sm">
-            <i className="fa-solid fa-triangle-exclamation text-red-500 text-3xl" />
+            <i className="ph ph-warning text-red-500 text-3xl" />
             <div>
               <Title order={4} ta="center">{t("profil_delete_confirm_title")}</Title>
               <Text size="sm" c="dimmed" ta="center" mt={4}>{t("profil_delete_confirm_desc")}</Text>

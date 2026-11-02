@@ -14,7 +14,7 @@ import ChatWidget from "../components/ui/ChatWidget";
 import Topbar from "./Topbar";
 import { TopbarProvider, useTopbarContext } from "../context/TopbarContext";
 
-const authPages = ["/dashboard", "/mes-documents", "/mes-appareils", "/mes-declarations", "/abonnement", "/parrainage", "/mes-gains", "/acheter-points", "/infos-profil", "/messagerie", "/declarer", "/trouver", "/rechercher", "/recuperer", "/rendre"];
+const authPages = ["/dashboard", "/mes-documents", "/mes-appareils", "/mes-declarations", "/mes-signalements", "/abonnement", "/parrainage", "/mes-gains", "/acheter-points", "/infos-profil", "/messagerie", "/declarer", "/trouver", "/rechercher", "/recuperer", "/rendre", "/correspondances"];
 
 function LayoutInner() {
   const { user } = useAuth();
@@ -98,7 +98,7 @@ function LayoutInner() {
               src="/src/assets/images/docmaster.png"
               alt=""
               style={{
-                width: "900px",
+                width: "420px",
                 maxWidth: "90vw",
                 opacity: 0.06,
                 userSelect: "none",
