@@ -1,4 +1,5 @@
-import axios, { type AxiosInstance } from 'axios';
+import axios from 'axios';
+type AxiosInstance = ReturnType<typeof axios.create>;
 import crypto from 'crypto';
 
 interface SharePayConfig {
@@ -133,22 +134,37 @@ export class SharePayService {
   }
 
   /**
+   * SharePay attend un numéro au format international camerounais (237XXXXXXXXX).
+   */
+  private normalizeAccount(account?: string): string {
+    let digits = String(account ?? '').replace(/\D/g, '');
+    if (digits.startsWith('00237')) digits = digits.slice(2);
+    if (digits.length === 9) digits = `237${digits}`;
+    return digits;
+  }
+
+  /**
    * Initier un paiement direct (charge)
    */
   async createCharge(params: ChargeRequest): Promise<TransactionStatus> {
     try {
+      const payload: ChargeRequest = {
+        ...params,
+        payerAccount: this.normalizeAccount(params.payerAccount),
+      };
+
       console.log(`[SharePay] POST /api/v1/pay-in/charge`, {
-        amount: params.amount,
-        currency: params.currency,
-        paymentMethod: params.paymentMethod,
-        payerAccount: params.payerAccount?.replace(/(\d{3})\d{4}(\d{3})/, '$1****$2'),
-        merchantReference: params.merchantReference,
-        idempotencyKey: params.idempotencyKey,
+        amount: payload.amount,
+        currency: payload.currency,
+        paymentMethod: payload.paymentMethod,
+        payerAccount: payload.payerAccount?.replace(/(\d{3})\d{4}(\d{3})/, '$1****$2'),
+        merchantReference: payload.merchantReference,
+        idempotencyKey: payload.idempotencyKey,
       });
 
       const { data } = await this.client.post<SharePayResponse<TransactionStatus>>(
         '/api/v1/pay-in/charge',
-        params
+        payload
       );
 
       if (!data.success || !data.data) {
@@ -195,18 +211,23 @@ export class SharePayService {
    */
   async createTransfer(params: TransferRequest): Promise<TransactionStatus> {
     try {
+      const payload: TransferRequest = {
+        ...params,
+        beneficiaryAccount: this.normalizeAccount(params.beneficiaryAccount),
+      };
+
       console.log(`[SharePay] POST /api/v1/pay-out/transfer`, {
-        amount: params.amount,
-        currency: params.currency,
-        paymentMethod: params.paymentMethod,
-        beneficiaryAccount: params.beneficiaryAccount?.replace(/(\d{3})\d{4}(\d{3})/, '$1****$2'),
-        beneficiaryName: params.beneficiaryName,
-        merchantReference: params.merchantReference,
+        amount: payload.amount,
+        currency: payload.currency,
+        paymentMethod: payload.paymentMethod,
+        beneficiaryAccount: payload.beneficiaryAccount?.replace(/(\d{3})\d{4}(\d{3})/, '$1****$2'),
+        beneficiaryName: payload.beneficiaryName,
+        merchantReference: payload.merchantReference,
       });
 
       const { data } = await this.client.post<SharePayResponse<TransactionStatus>>(
         '/api/v1/pay-out/transfer',
-        params
+        payload
       );
 
       if (!data.success || !data.data) {

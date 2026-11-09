@@ -50,6 +50,7 @@ import recoveryRoutes from "./src/routes/recovery.routes.js";
 import conversationRoutes from "./src/routes/conversation.routes.js";
 import reportRoutes from "./src/routes/report.routes.js";
 import sharepayWebhookRoutes from "./src/routes/sharepay-webhook.routes.js";
+import appleWebhookRoutes from "./src/routes/apple-webhook.routes.js";
 import testimonialRoutes from "./src/routes/testimonial.routes.js";
 import { authMiddleware } from "./src/middleware/auth.middleware.js";
 import { partenaireAuthMiddleware } from "./src/modules/partenaires/partenaires.middleware.js";
@@ -162,8 +163,14 @@ export function createApp(): Application {
   // Serve static files from uploads folder
   app.use("/uploads", express.static("uploads"));
 
-  // JSON body parser
-  app.use(express.json());
+  // JSON body parser (conserve le corps brut pour vérifier les signatures webhook)
+  app.use(
+    express.json({
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf.toString("utf8");
+      },
+    })
+  );
 
   // URL-encoded body parser
   app.use(express.urlencoded({ extended: true }));
@@ -294,6 +301,9 @@ export function createApp(): Application {
   app.use("/api/reports", reportRoutes);
   app.use("/api/testimonials", testimonialRoutes);
   app.use("/webhooks", sharepayWebhookRoutes); // SharePay webhook route
+  // Alias pour l'URL configurée dans le dashboard SharePay (https://api-v2.docmaster.net/api/sharepay-webhook)
+  app.use("/api", sharepayWebhookRoutes);
+  app.use("/webhooks", appleWebhookRoutes); // App Store Server Notifications v2
 
   // ═════════════════════════════════════════════════════════════════
   // CHILLER SUB-APPLICATION

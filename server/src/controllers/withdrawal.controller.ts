@@ -39,6 +39,7 @@ export class WithdrawalController {
       }
 
       const withdrawal = existingRes.rows[0];
+      const isPartner = withdrawal.source_type === 'PARTENAIRE' || !!withdrawal.partenaire_id;
 
       if (withdrawal.status !== 'PENDING') {
         await client.query('ROLLBACK');
@@ -58,19 +59,35 @@ export class WithdrawalController {
         await client.query('COMMIT');
 
         try {
-          // Get user info for SharePay
-          const userRes = await pool.query('SELECT nom, prenom, email FROM users WHERE id = $1', [withdrawal.user_id]);
-          const user = userRes.rows[0];
-          
+          let payerName: string | undefined;
+          let payerEmail: string | undefined;
+
+          if (isPartner) {
+            const partnerRes = await pool.query(
+              'SELECT nom_organisation, nom_contact, prenom_contact, email FROM partenaires WHERE id = $1',
+              [withdrawal.partenaire_id || withdrawal.user_id]
+            );
+            const partner = partnerRes.rows[0];
+            payerName = partner?.nom_organisation
+              || [partner?.prenom_contact, partner?.nom_contact].filter(Boolean).join(' ')
+              || undefined;
+            payerEmail = partner?.email;
+          } else {
+            const userRes = await pool.query('SELECT nom, prenom, email FROM users WHERE id = $1', [withdrawal.user_id]);
+            const user = userRes.rows[0];
+            payerName = user ? [user.prenom, user.nom].filter(Boolean).join(' ') : undefined;
+            payerEmail = user?.email;
+          }
+
           const payoutRes = await payoutService.initiatePayout({
             amount: Number(withdrawal.amount),
             order_id: withdrawal.id,
             user_phone: withdrawal.payment_details,
             payment_method: withdrawal.payment_method,
-            user_name: user ? `${user.prenom} ${user.nom}` : undefined,
-            user_email: user?.email,
+            user_name: payerName,
+            user_email: payerEmail,
             description: `Retrait DocMaster - ${withdrawal.amount} XAF`,
-            user_type: 'USER',
+            user_type: isPartner ? 'PARTNER' : 'USER',
           });
 
           if (payoutRes.success) {
@@ -120,23 +137,37 @@ export class WithdrawalController {
         ['COMPLETED', adminNote || 'Approbation manuelle', withdrawalId]
       );
 
-      // 2. Update transaction table
-      await client.query(
-        `UPDATE transactions SET status = 'SUCCESS', updated_at = NOW() 
-         WHERE user_id = $1 AND type = 'withdrawal' AND (metadata->>'withdrawalId' = $2 OR id::text = $2)`,
-        [withdrawal.user_id, withdrawalId]
-      );
+      // 2. Update transaction table (les retraits partenaires n'ont pas de ligne `transactions`)
+      if (!isPartner) {
+        await client.query(
+          `UPDATE transactions SET status = 'SUCCESS', updated_at = NOW() 
+           WHERE user_id = $1 AND type = 'withdrawal' AND (metadata->>'withdrawalId' = $2 OR id::text = $2)`,
+          [withdrawal.user_id, withdrawalId]
+        );
+      }
 
       await client.query('COMMIT');
 
       // Send Push Notification
-      notificationService.createNotification({
-        user_id: withdrawal.user_id,
-        type: 'WITHDRAWAL_COMPLETED',
-        title: 'Retrait Confirmé 💸',
-        message: `Votre demande de retrait de ${withdrawal.amount} XAF a été validée et envoyée.`,
-        metadata: { withdrawalId: withdrawal.id },
-      }).catch(() => {});
+      const partnerId = withdrawal.partenaire_id || withdrawal.user_id;
+      if (isPartner) {
+        notificationService.createNotification({
+          destinataire_type: 'PARTENAIRE',
+          destinataire_id: partnerId,
+          type: 'WITHDRAWAL_COMPLETED',
+          title: 'Retrait Confirmé 💸',
+          message: `Votre demande de retrait de ${withdrawal.amount} XAF a été validée et envoyée.`,
+          metadata: { withdrawalId: withdrawal.id },
+        }).catch(() => {});
+      } else {
+        notificationService.createNotification({
+          user_id: withdrawal.user_id,
+          type: 'WITHDRAWAL_COMPLETED',
+          title: 'Retrait Confirmé 💸',
+          message: `Votre demande de retrait de ${withdrawal.amount} XAF a été validée et envoyée.`,
+          metadata: { withdrawalId: withdrawal.id },
+        }).catch(() => {});
+      }
 
       res.json({
         success: true,
@@ -193,30 +224,65 @@ export class WithdrawalController {
       }
 
       const amountToRefund = Number(withdrawal.amount);
+      const isPartner = withdrawal.source_type === 'PARTENAIRE' || !!withdrawal.partenaire_id;
+      const partnerId = withdrawal.partenaire_id || withdrawal.user_id;
 
-      // 1. Rembourser le solde de l'utilisateur
-      const userRes = await client.query('SELECT wallet_balance FROM users WHERE id = $1 FOR UPDATE', [withdrawal.user_id]);
-      const balanceBefore = parseFloat(userRes.rows[0]?.wallet_balance || '0');
-      const balanceAfter = balanceBefore + amountToRefund;
+      if (isPartner) {
+        // 1. Rembourser le wallet partenaire
+        const partnerRes = await client.query(
+          'SELECT wallet_balance FROM partenaires WHERE id = $1 FOR UPDATE',
+          [partnerId]
+        );
+        if (partnerRes.rows.length === 0) {
+          throw new Error('Partenaire introuvable pour le remboursement du retrait.');
+        }
+        const balanceBefore = parseFloat(partnerRes.rows[0]?.wallet_balance || '0');
+        const balanceAfter = balanceBefore + amountToRefund;
 
-      await client.query(
-        'UPDATE users SET wallet_balance = $1, updated_at = NOW() WHERE id = $2',
-        [balanceAfter, withdrawal.user_id]
-      );
+        await client.query(
+          'UPDATE partenaires SET wallet_balance = $1, updated_at = NOW() WHERE id = $2',
+          [balanceAfter, partnerId]
+        );
 
-      // 2. Trace du remboursement dans wallet_transactions
-      await client.query(
-        `INSERT INTO wallet_transactions (user_id, amount, balance_before, balance_after, type, reason, reference_id, reference_type, metadata)
-         VALUES ($1, $2, $3, $4, 'CREDIT', 'WITHDRAWAL', $5, 'withdrawal', $6)`,
-        [
-          withdrawal.user_id,
-          amountToRefund,
-          balanceBefore,
-          balanceAfter,
-          withdrawal.id,
-          JSON.stringify({ adminNote, refund: true, reason: 'ADMIN_REJECTED' }),
-        ]
-      );
+        // 2. Trace du remboursement dans partenaire_wallet_transactions
+        await client.query(
+          `INSERT INTO partenaire_wallet_transactions
+           (partenaire_id, amount, balance_before, balance_after, type, reason, reference_id, reference_type, metadata)
+           VALUES ($1, $2, $3, $4, 'CREDIT', 'WITHDRAWAL', $5, 'withdrawal', $6)`,
+          [
+            partnerId,
+            amountToRefund,
+            balanceBefore,
+            balanceAfter,
+            withdrawal.id,
+            JSON.stringify({ adminNote, refund: true, reason: 'ADMIN_REJECTED' }),
+          ]
+        );
+      } else {
+        // 1. Rembourser le solde de l'utilisateur
+        const userRes = await client.query('SELECT wallet_balance FROM users WHERE id = $1 FOR UPDATE', [withdrawal.user_id]);
+        const balanceBefore = parseFloat(userRes.rows[0]?.wallet_balance || '0');
+        const balanceAfter = balanceBefore + amountToRefund;
+
+        await client.query(
+          'UPDATE users SET wallet_balance = $1, updated_at = NOW() WHERE id = $2',
+          [balanceAfter, withdrawal.user_id]
+        );
+
+        // 2. Trace du remboursement dans wallet_transactions
+        await client.query(
+          `INSERT INTO wallet_transactions (user_id, amount, balance_before, balance_after, type, reason, reference_id, reference_type, metadata)
+           VALUES ($1, $2, $3, $4, 'CREDIT', 'WITHDRAWAL', $5, 'withdrawal', $6)`,
+          [
+            withdrawal.user_id,
+            amountToRefund,
+            balanceBefore,
+            balanceAfter,
+            withdrawal.id,
+            JSON.stringify({ adminNote, refund: true, reason: 'ADMIN_REJECTED' }),
+          ]
+        );
+      }
 
       // 3. Mettre à jour le retrait à REJECTED
       const updated = await client.query(
@@ -224,22 +290,35 @@ export class WithdrawalController {
         ['REJECTED', adminNote || 'Rejeté par l\'administrateur (Fonds recrédités)', withdrawalId]
       );
 
-      // 4. Mettre à jour la transaction à FAILED
-      await client.query(
-        `UPDATE transactions SET status = 'FAILED', updated_at = NOW() 
-         WHERE user_id = $1 AND type = 'withdrawal' AND (metadata->>'withdrawalId' = $2 OR id::text = $2)`,
-        [withdrawal.user_id, withdrawalId]
-      );
+      // 4. Mettre à jour la transaction à FAILED (utilisateurs uniquement)
+      if (!isPartner) {
+        await client.query(
+          `UPDATE transactions SET status = 'FAILED', updated_at = NOW() 
+           WHERE user_id = $1 AND type = 'withdrawal' AND (metadata->>'withdrawalId' = $2 OR id::text = $2)`,
+          [withdrawal.user_id, withdrawalId]
+        );
+      }
 
       await client.query('COMMIT');
 
-      notificationService.createNotification({
-        user_id: withdrawal.user_id,
-        type: 'WITHDRAWAL_FAILED',
-        title: 'Retrait Rejeté & Fonds Recrédités 🔄',
-        message: `Votre demande de retrait de ${withdrawal.amount} XAF a été rejetée. Vos fonds ont été automatiquement recrédités sur votre solde. Motif: ${adminNote || 'Non spécifié'}`,
-        metadata: { withdrawalId: withdrawal.id },
-      }).catch(() => {});
+      if (isPartner) {
+        notificationService.createNotification({
+          destinataire_type: 'PARTENAIRE',
+          destinataire_id: partnerId,
+          type: 'WITHDRAWAL_FAILED',
+          title: 'Retrait Rejeté & Fonds Recrédités 🔄',
+          message: `Votre demande de retrait de ${withdrawal.amount} XAF a été rejetée. Vos fonds ont été automatiquement recrédités sur votre solde. Motif: ${adminNote || 'Non spécifié'}`,
+          metadata: { withdrawalId: withdrawal.id },
+        }).catch(() => {});
+      } else {
+        notificationService.createNotification({
+          user_id: withdrawal.user_id,
+          type: 'WITHDRAWAL_FAILED',
+          title: 'Retrait Rejeté & Fonds Recrédités 🔄',
+          message: `Votre demande de retrait de ${withdrawal.amount} XAF a été rejetée. Vos fonds ont été automatiquement recrédités sur votre solde. Motif: ${adminNote || 'Non spécifié'}`,
+          metadata: { withdrawalId: withdrawal.id },
+        }).catch(() => {});
+      }
 
       res.json({ success: true, message: 'Retrait rejeté et fonds recrédités.', data: updated.rows[0] });
 
@@ -266,10 +345,16 @@ export class WithdrawalController {
   async getAllPendingWithdrawals(req: Request, res: Response) {
     try {
       const query = `
-        SELECT w.*, u.nom, u.prenom, u.email, CONCAT(u.prenom, ' ', u.nom) as user_name 
-        FROM withdrawals w 
-        JOIN users u ON w.user_id = u.id 
-        WHERE w.status IN ('PENDING', 'PROCESSING') 
+        SELECT w.*,
+               COALESCE(u.nom, p.nom_contact, p.nom_organisation) AS nom,
+               COALESCE(u.prenom, p.prenom_contact) AS prenom,
+               COALESCE(u.email, p.email) AS email,
+               COALESCE(CONCAT(u.prenom, ' ', u.nom), p.nom_organisation, p.nom_contact) AS user_name,
+               p.nom_organisation AS partenaire_nom
+        FROM withdrawals w
+        LEFT JOIN users u ON w.user_id = u.id
+        LEFT JOIN partenaires p ON w.partenaire_id = p.id
+        WHERE w.status IN ('PENDING', 'PROCESSING')
         ORDER BY w.created_at ASC
       `;
       const { rows } = await pool.query(query);
@@ -436,10 +521,10 @@ export class WithdrawalController {
         payment_method: createdWithdrawal.payment_method,
       });
 
-      if (payoutRes.status === 'REQUEST_OK' && payoutRes.data) {
+      if (payoutRes.success) {
         await pool.query(
           'UPDATE withdrawals SET admin_note = $1, updated_at = NOW() WHERE id = $2',
-          [`Paiement initié (Réf: ${payoutRes.data.id})`, createdWithdrawal.id]
+          [`Paiement ${payoutRes.provider} initié (Réf: ${payoutRes.reference})`, createdWithdrawal.id]
         );
 
         // Notify user that payout is in flight
@@ -448,13 +533,13 @@ export class WithdrawalController {
           type: 'WITHDRAWAL_INITIATED',
           title: 'Retrait en cours de transfert ⏳',
           message: `Votre virement de ${createdWithdrawal.amount} XAF vers le ${createdWithdrawal.payment_details} a été initié. Vous recevrez une confirmation dès validation par votre opérateur.`,
-          metadata: { withdrawalId: createdWithdrawal.id, paymentRef: payoutRes.data.id },
+          metadata: { withdrawalId: createdWithdrawal.id, paymentRef: payoutRes.reference, provider: payoutRes.provider },
         }).catch(() => {});
 
         // Notify admins
         notificationService.notifyAdmins(
           'Nouveau Retrait Automatique Initié',
-          `Un virement automatique de ${createdWithdrawal.amount} XAF vers le ${createdWithdrawal.payment_details} a été envoyé (Réf: ${payoutRes.data.id}).`,
+          `Un virement automatique de ${createdWithdrawal.amount} XAF vers le ${createdWithdrawal.payment_details} a été envoyé (Réf: ${payoutRes.reference}).`,
           'INFO'
         ).catch(() => {});
 

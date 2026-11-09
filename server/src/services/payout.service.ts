@@ -52,8 +52,9 @@ class PayoutService {
     try {
       const sharepay = getSharePayService();
 
-      const paymentMethod = request.payment_method === 'MTN' 
-        ? 'MTN_MOMO_CM' 
+      const normalizedMethod = String(request.payment_method || '').toUpperCase();
+      const paymentMethod = normalizedMethod.includes('MTN') || normalizedMethod.includes('MOMO')
+        ? 'MTN_MOMO_CM'
         : 'ORANGE_MONEY_CM';
 
       console.log(`[SharePay] 🚀 Initiation payout (retrait)`, {
@@ -97,13 +98,27 @@ class PayoutService {
         ['SHAREPAY', result.reference, result.reference, 'PROCESSING', request.order_id]
       );
 
-      // Create transaction record
+      // Rattache la référence SharePay à la trace wallet déjà créée lors du débit.
       await pool.query(
-        `INSERT INTO wallet_transactions 
-         (user_id, type, amount, currency, status, transaction_reference, provider, provider_reference, description, created_at)
-         SELECT user_id, 'WITHDRAWAL', $1, 'XAF', 'PENDING', $2, 'SHAREPAY', $2, $3, NOW()
-         FROM withdrawals WHERE id = $4`,
-        [-request.amount, result.reference, request.description, request.order_id]
+        `UPDATE wallet_transactions
+         SET provider = 'SHAREPAY',
+             provider_reference = $2,
+             transaction_reference = $2,
+             metadata = COALESCE(metadata, '{}'::jsonb) || $3::jsonb
+         WHERE reference_type = 'withdrawal' AND reference_id = $1`,
+        [request.order_id, result.reference, JSON.stringify({ sharepayStatus: result.status })]
+      );
+
+      // Complète aussi la transaction principale (utilisée par les webhooks).
+      await pool.query(
+        `UPDATE transactions
+         SET external_ref = $2,
+             updated_at = NOW(),
+             metadata = COALESCE(metadata, '{}'::jsonb)
+               || jsonb_build_object('provider', 'SHAREPAY', 'provider_reference', $2)
+         WHERE type = 'withdrawal'
+           AND (metadata->>'withdrawalId' = $1 OR id::text = $1)`,
+        [request.order_id, result.reference]
       );
 
       console.log(`[SharePay] ✅ Payout enregistré en DB. Référence: ${result.reference} | Statut: ${result.status}`);

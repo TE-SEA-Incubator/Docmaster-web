@@ -131,8 +131,13 @@ class SubscriptionService {
         const { getSharePayService } = await import('./sharepay.service.js');
         const sharepay = getSharePayService();
         
-        const paymentMethod = paymentDetails.method === 'ORANGE_MONEY' 
-          ? 'ORANGE_MONEY_CM' 
+        if (!paymentDetails.phone) {
+          throw new Error('Numéro de téléphone requis pour le paiement SharePay.');
+        }
+
+        const normalizedMethod = String(paymentDetails.method || '').toUpperCase();
+        const paymentMethod = normalizedMethod.includes('ORANGE') || normalizedMethod === 'OM'
+          ? 'ORANGE_MONEY_CM'
           : 'MTN_MOMO_CM';
 
         console.log(`[SharePay] 🚀 Initiation paiement abonnement`, {

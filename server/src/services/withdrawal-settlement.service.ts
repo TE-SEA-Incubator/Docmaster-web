@@ -44,6 +44,8 @@ class WithdrawalSettlementService {
       }
 
       const withdrawal = withdrawalRes.rows[0];
+      const isPartner = withdrawal.source_type === 'PARTENAIRE' || !!withdrawal.partenaire_id;
+      const partnerId = withdrawal.partenaire_id || withdrawal.user_id;
 
       if (withdrawal.status === 'COMPLETED') {
         await client.query('COMMIT');
@@ -64,24 +66,36 @@ class WithdrawalSettlementService {
           ['COMPLETED', `Nokash Payout confirmé (ID: ${id})`, withdrawal.id]
         );
 
-        // 2. Transaction rattachée -> SUCCESS
-        await client.query(
-          `UPDATE transactions SET status = 'SUCCESS', updated_at = NOW()
-           WHERE user_id = $1 AND type = 'withdrawal' AND (metadata->>'withdrawalId' = $2 OR id::text = $2)`,
-          [withdrawal.user_id, withdrawal.id]
-        );
+        // 2. Transaction rattachée -> SUCCESS (utilisateurs uniquement)
+        if (!isPartner) {
+          await client.query(
+            `UPDATE transactions SET status = 'SUCCESS', updated_at = NOW()
+             WHERE user_id = $1 AND type = 'withdrawal' AND (metadata->>'withdrawalId' = $2 OR id::text = $2)`,
+            [withdrawal.user_id, withdrawal.id]
+          );
+        }
 
         await client.query('COMMIT');
 
-        notificationService
-          .createNotification({
-            user_id: withdrawal.user_id,
-            type: 'WITHDRAWAL_COMPLETED',
-            title: 'Retrait Confirmé 💸',
-            message: `Votre virement de ${withdrawal.amount} XAF vers le ${withdrawal.payment_details} a été validé avec succès sur votre compte Mobile Money.`,
-            metadata: { nokashId: id, withdrawalId: withdrawal.id },
-          })
-          .catch(() => {});
+        const completedNotif = {
+          type: 'WITHDRAWAL_COMPLETED',
+          title: 'Retrait Confirmé 💸',
+          message: `Votre virement de ${withdrawal.amount} XAF vers le ${withdrawal.payment_details} a été validé avec succès sur votre compte Mobile Money.`,
+          metadata: { nokashId: id, withdrawalId: withdrawal.id },
+        };
+        if (isPartner) {
+          notificationService
+            .createNotification({
+              destinataire_type: 'PARTENAIRE',
+              destinataire_id: partnerId,
+              ...completedNotif,
+            })
+            .catch(() => {});
+        } else {
+          notificationService
+            .createNotification({ user_id: withdrawal.user_id, ...completedNotif })
+            .catch(() => {});
+        }
 
         notificationService
           .notifyAdmins(
@@ -100,31 +114,64 @@ class WithdrawalSettlementService {
       if (isFailed && withdrawal.status !== 'REJECTED') {
         const amountToRefund = Number(withdrawal.amount);
 
-        // 1. Lock et remboursement automatique du solde utilisateur
-        const userRes = await client.query('SELECT wallet_balance FROM users WHERE id = $1 FOR UPDATE', [
-          withdrawal.user_id,
-        ]);
-        const balanceBefore = parseFloat(userRes.rows[0]?.wallet_balance || '0');
-        const balanceAfter = balanceBefore + amountToRefund;
+        if (isPartner) {
+          // 1. Lock et remboursement automatique du wallet partenaire
+          const partnerRes = await client.query(
+            'SELECT wallet_balance FROM partenaires WHERE id = $1 FOR UPDATE',
+            [partnerId]
+          );
+          if (partnerRes.rows.length === 0) {
+            throw new Error('Partenaire introuvable pour le remboursement du retrait');
+          }
+          const balanceBefore = parseFloat(partnerRes.rows[0]?.wallet_balance || '0');
+          const balanceAfter = balanceBefore + amountToRefund;
 
-        await client.query('UPDATE users SET wallet_balance = $1, updated_at = NOW() WHERE id = $2', [
-          balanceAfter,
-          withdrawal.user_id,
-        ]);
-
-        // 2. Trace du remboursement dans wallet_transactions
-        await client.query(
-          `INSERT INTO wallet_transactions (user_id, amount, balance_before, balance_after, type, reason, reference_id, reference_type, metadata)
-           VALUES ($1, $2, $3, $4, 'CREDIT', 'WITHDRAWAL', $5, 'withdrawal', $6)`,
-          [
-            withdrawal.user_id,
-            amountToRefund,
-            balanceBefore,
+          await client.query('UPDATE partenaires SET wallet_balance = $1, updated_at = NOW() WHERE id = $2', [
             balanceAfter,
-            withdrawal.id,
-            JSON.stringify({ nokashId: id, refund: true, reason: normalizedStatus }),
-          ]
-        );
+            partnerId,
+          ]);
+
+          // 2. Trace du remboursement dans partenaire_wallet_transactions
+          await client.query(
+            `INSERT INTO partenaire_wallet_transactions
+             (partenaire_id, amount, balance_before, balance_after, type, reason, reference_id, reference_type, metadata)
+             VALUES ($1, $2, $3, $4, 'CREDIT', 'WITHDRAWAL', $5, 'withdrawal', $6)`,
+            [
+              partnerId,
+              amountToRefund,
+              balanceBefore,
+              balanceAfter,
+              withdrawal.id,
+              JSON.stringify({ nokashId: id, refund: true, reason: normalizedStatus }),
+            ]
+          );
+        } else {
+          // 1. Lock et remboursement automatique du solde utilisateur
+          const userRes = await client.query('SELECT wallet_balance FROM users WHERE id = $1 FOR UPDATE', [
+            withdrawal.user_id,
+          ]);
+          const balanceBefore = parseFloat(userRes.rows[0]?.wallet_balance || '0');
+          const balanceAfter = balanceBefore + amountToRefund;
+
+          await client.query('UPDATE users SET wallet_balance = $1, updated_at = NOW() WHERE id = $2', [
+            balanceAfter,
+            withdrawal.user_id,
+          ]);
+
+          // 2. Trace du remboursement dans wallet_transactions
+          await client.query(
+            `INSERT INTO wallet_transactions (user_id, amount, balance_before, balance_after, type, reason, reference_id, reference_type, metadata)
+             VALUES ($1, $2, $3, $4, 'CREDIT', 'WITHDRAWAL', $5, 'withdrawal', $6)`,
+            [
+              withdrawal.user_id,
+              amountToRefund,
+              balanceBefore,
+              balanceAfter,
+              withdrawal.id,
+              JSON.stringify({ nokashId: id, refund: true, reason: normalizedStatus }),
+            ]
+          );
+        }
 
         // 3. Retrait -> REJECTED
         await client.query(
@@ -134,24 +181,36 @@ class WithdrawalSettlementService {
           ['REJECTED', `Échec Payout Nokash: ${normalizedStatus} (Fonds recrédités)`, withdrawal.id]
         );
 
-        // 4. Transaction -> FAILED
-        await client.query(
-          `UPDATE transactions SET status = 'FAILED', updated_at = NOW()
-           WHERE user_id = $1 AND type = 'withdrawal' AND (metadata->>'withdrawalId' = $2 OR id::text = $2)`,
-          [withdrawal.user_id, withdrawal.id]
-        );
+        // 4. Transaction -> FAILED (utilisateurs uniquement)
+        if (!isPartner) {
+          await client.query(
+            `UPDATE transactions SET status = 'FAILED', updated_at = NOW()
+             WHERE user_id = $1 AND type = 'withdrawal' AND (metadata->>'withdrawalId' = $2 OR id::text = $2)`,
+            [withdrawal.user_id, withdrawal.id]
+          );
+        }
 
         await client.query('COMMIT');
 
-        notificationService
-          .createNotification({
-            user_id: withdrawal.user_id,
-            type: 'WITHDRAWAL_FAILED',
-            title: 'Échec du Retrait & Fonds Recrédités 🔄',
-            message: `Le virement de ${withdrawal.amount} XAF vers le ${withdrawal.payment_details} n'a pas pu aboutir (${normalizedStatus}). Le montant a été automatiquement recrédité sur votre solde.`,
-            metadata: { nokashId: id, withdrawalId: withdrawal.id },
-          })
-          .catch(() => {});
+        const failedNotif = {
+          type: 'WITHDRAWAL_FAILED',
+          title: 'Échec du Retrait & Fonds Recrédités 🔄',
+          message: `Le virement de ${withdrawal.amount} XAF vers le ${withdrawal.payment_details} n'a pas pu aboutir (${normalizedStatus}). Le montant a été automatiquement recrédité sur votre solde.`,
+          metadata: { nokashId: id, withdrawalId: withdrawal.id },
+        };
+        if (isPartner) {
+          notificationService
+            .createNotification({
+              destinataire_type: 'PARTENAIRE',
+              destinataire_id: partnerId,
+              ...failedNotif,
+            })
+            .catch(() => {});
+        } else {
+          notificationService
+            .createNotification({ user_id: withdrawal.user_id, ...failedNotif })
+            .catch(() => {});
+        }
 
         notificationService
           .notifyAdmins(

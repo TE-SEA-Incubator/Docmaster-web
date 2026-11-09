@@ -13,6 +13,8 @@ import { subscriptionService } from "./subscription.service.ts";
 import { SettingRepository } from "../repositories/setting.repository.ts";
 import { v4 as uuidv4 } from "uuid";
 import { nokashService } from "./nokash.service.ts";
+import { getSharePayService } from "./sharepay.service.ts";
+import { getPaymentProvider } from "../config/features.ts";
 import { startNokashPaymentPolling, activateRecovery } from "../controllers/payment.controller.ts";
 import { encodeMediaFields } from "../utils/media.utils.ts";
 import { HttpError } from "../utils/http-error.ts";
@@ -1199,16 +1201,43 @@ export class DeclarationService {
     const reservation = await acquireRecoveryReservation(pair, userId);
     try {
       const orderId = `REC-${uuidv4().substring(0, 8)}`;
-      const nokashRes = await nokashService.initiatePayment({
-        payment_method: method === 'ORANGE_MONEY' ? 'ORANGE_MONEY' : 'MTN_MOMO',
-        amount: finalAmount,
-        order_id: orderId,
-        user_phone: phone,
-        country: 'CM'
-      });
+      const provider = getPaymentProvider('USER');
+      let externalRef: string;
 
-      if (nokashRes.status !== 'REQUEST_OK') {
-        throw new Error(`Nokash: ${nokashRes.message || 'Erreur lors de l\'initialisation'}`);
+      if (provider === 'SHAREPAY') {
+        if (!phone) {
+          throw new Error('Numéro de téléphone requis pour le paiement SharePay.');
+        }
+        const sharepay = getSharePayService();
+        const charge = await sharepay.createCharge({
+          amount: Math.round(finalAmount),
+          currency: 'XAF',
+          paymentMethod: method === 'ORANGE_MONEY' ? 'ORANGE_MONEY_CM' : 'MTN_MOMO_CM',
+          payerAccount: phone,
+          merchantReference: orderId,
+          description: `Frais de récupération DocMaster - ${orderId}`,
+          idempotencyKey: orderId,
+        });
+
+        if (charge.status !== 'PENDING' && charge.status !== 'SUCCESS') {
+          throw new Error("Le paiement n'a pas pu être initié. Veuillez réessayer.");
+        }
+
+        externalRef = charge.reference;
+      } else {
+        const nokashRes = await nokashService.initiatePayment({
+          payment_method: method === 'ORANGE_MONEY' ? 'ORANGE_MONEY' : 'MTN_MOMO',
+          amount: finalAmount,
+          order_id: orderId,
+          user_phone: phone,
+          country: 'CM'
+        });
+
+        if (nokashRes.status !== 'REQUEST_OK') {
+          throw new Error(`Nokash: ${nokashRes.message || 'Erreur lors de l\'initialisation'}`);
+        }
+
+        externalRef = nokashRes.data.id!;
       }
 
       const transaction = await this.transactionRepository.create({
@@ -1217,18 +1246,21 @@ export class DeclarationService {
         status: "PENDING",
         payment_method: method || "MOBILE_MONEY",
         type: "recovery_fee",
-        external_ref: nokashRes.data.id,
+        external_ref: externalRef,
         metadata: {
           docId: lostId,
           matchId: pair.matchId,
           foundId: pair.foundId,
           reservationId: reservation.id,
+          orderId,
+          provider,
+          provider_reference: externalRef,
         },
       });
       await attachTransactionToReservation(reservation.id, transaction.id);
 
       startNokashPaymentPolling({
-        externalRef: nokashRes.data.id,
+        externalRef,
         onSuccess: async (transaction) => {
           const metadata = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : transaction.metadata;
           await activateRecovery(transaction.user_id, metadata.docId, transaction.id, {
@@ -1241,9 +1273,13 @@ export class DeclarationService {
 
       return {
         success: true,
-        message: 'Paiement initié. Veuillez valider sur votre téléphone.',
+        message: provider === 'SHAREPAY'
+          ? 'Paiement SharePay initié. Validez sur votre téléphone.'
+          : 'Paiement initié. Veuillez valider sur votre téléphone.',
         data: {
-          nokashId: nokashRes.data.id,
+          transactionId: externalRef,
+          nokashId: provider === 'NOKASH' ? externalRef : undefined,
+          provider,
           orderId,
           matchId: pair.matchId,
         }
@@ -1275,6 +1311,12 @@ export class DeclarationService {
    */
   async rewardFinderAfterValidation(claim: any, lostDecl: any, docType: any): Promise<number | null> {
     if (!lostDecl || !claim.finder_id || !docType) return null;
+    // Défense en profondeur : aucun paiement au "trouveur" si c'est le propriétaire.
+    if ((claim.owner_id && claim.owner_id === claim.finder_id)
+        || (lostDecl.reporter_id && lostDecl.reporter_id === claim.finder_id)) {
+      console.warn(`[Reward] Claim ${claim.id} skipped — finder is the owner (self-claim).`);
+      return null;
+    }
 
     const basis = resolveFinderRewardBasis(claim, docType);
     if (!basis) {

@@ -1,5 +1,6 @@
 import { query } from '../database/db.ts';
 import { nokashService } from './nokash.service.ts';
+import { getSharePayService } from './sharepay.service.ts';
 import { subscriptionService } from './subscription.service.ts';
 import { activateRecovery } from '../controllers/payment.controller.ts';
 import { releaseReservationByTransaction } from '../utils/recovery.utils.ts';
@@ -66,10 +67,21 @@ class PaymentReconciliationService {
             continue;
           }
 
-          const statusRes = await nokashService.checkStatus(externalRef);
+          let metadata = transaction.metadata;
+          if (typeof metadata === 'string') {
+            try { metadata = JSON.parse(metadata); } catch (e) {
+              console.error('[Reconciliation] Metadata parse error:', e);
+              continue;
+            }
+          }
+          const isSharePay = metadata?.provider === 'SHAREPAY';
+
+          const statusRes = isSharePay
+            ? await getSharePayService().getPayInStatus(externalRef)
+            : await nokashService.checkStatus(externalRef);
           const normalized = normalizeNokashStatus(statusRes);
 
-          console.log(`[Reconciliation] Transaction ${transaction.id} (${externalRef}) -> ${normalized.status}`);
+          console.log(`[Reconciliation] Transaction ${transaction.id} (${externalRef}, ${isSharePay ? 'SHAREPAY' : 'NOKASH'}) -> ${normalized.status}`);
 
           if (normalized.success) {
             const locked = await query(
@@ -77,14 +89,6 @@ class PaymentReconciliationService {
               ['SUCCESS', transaction.id, 'PENDING']
             );
             if (locked.rows.length === 0) continue;
-
-            let metadata = transaction.metadata;
-            if (typeof metadata === 'string') {
-              try { metadata = JSON.parse(metadata); } catch (e) {
-                console.error('[Reconciliation] Metadata parse error:', e);
-                continue;
-              }
-            }
 
             if (transaction.type === 'subscription') {
               const { planId, months } = metadata || {};
@@ -114,8 +118,11 @@ class PaymentReconciliationService {
               const { pointsAmount } = metadata || {};
               if (pointsAmount) {
                 await query('UPDATE users SET points = COALESCE(points, 0) + $1 WHERE id = $2', [pointsAmount, transaction.user_id]);
-                await query('INSERT INTO wallet_transactions (user_id, type, amount, description) VALUES ($1, $2, $3, $4)',
-                  [transaction.user_id, 'credit', pointsAmount, `Achat de ${pointsAmount} points`]);
+                await query(
+                  `INSERT INTO earnings_history (user_id, type, amount, currency, description, metadata)
+                   VALUES ($1, 'POINTS_PURCHASE', $2, 'POINTS', $3, $4)`,
+                  [transaction.user_id, pointsAmount, `Achat de ${pointsAmount} points`, JSON.stringify({ transactionId: transaction.id, provider: metadata.provider })]
+                );
                 console.log(`[Reconciliation] Points credited: ${pointsAmount} to user ${transaction.user_id}`);
               }
             }
@@ -152,7 +159,15 @@ class PaymentReconciliationService {
       return { found: true, updated: false, reason: `Transaction déjà en statut ${transaction.status}` };
     }
 
-    const statusRes = await nokashService.checkStatus(externalRef);
+    let metadata = transaction.metadata;
+    if (typeof metadata === 'string') {
+      try { metadata = JSON.parse(metadata); } catch (e) {}
+    }
+    const isSharePay = metadata?.provider === 'SHAREPAY';
+
+    const statusRes = isSharePay
+      ? await getSharePayService().getPayInStatus(externalRef)
+      : await nokashService.checkStatus(externalRef);
     const normalized = normalizeNokashStatus(statusRes);
 
     if (normalized.success) {
@@ -162,11 +177,6 @@ class PaymentReconciliationService {
       );
       if (locked.rows.length === 0) {
         return { found: true, updated: false, reason: 'Transaction déjà traitée' };
-      }
-
-      let metadata = transaction.metadata;
-      if (typeof metadata === 'string') {
-        try { metadata = JSON.parse(metadata); } catch (e) {}
       }
 
       if (transaction.type === 'subscription') {
@@ -196,8 +206,11 @@ class PaymentReconciliationService {
         const { pointsAmount } = metadata || {};
         if (pointsAmount) {
           await query('UPDATE users SET points = COALESCE(points, 0) + $1 WHERE id = $2', [pointsAmount, transaction.user_id]);
-          await query('INSERT INTO wallet_transactions (user_id, type, amount, description) VALUES ($1, $2, $3, $4)',
-            [transaction.user_id, 'credit', pointsAmount, `Achat de ${pointsAmount} points`]);
+          await query(
+            `INSERT INTO earnings_history (user_id, type, amount, currency, description, metadata)
+             VALUES ($1, 'POINTS_PURCHASE', $2, 'POINTS', $3, $4)`,
+            [transaction.user_id, pointsAmount, `Achat de ${pointsAmount} points`, JSON.stringify({ transactionId: transaction.id, provider: metadata.provider })]
+          );
         }
       }
 
@@ -209,7 +222,7 @@ class PaymentReconciliationService {
       return { found: true, updated: true, status: terminalStatus };
     }
 
-    return { found: true, updated: false, reason: `Nokash status: ${normalized.status || 'unknown'}` };
+    return { found: true, updated: false, reason: `${isSharePay ? 'SharePay' : 'Nokash'} status: ${normalized.status || 'unknown'}` };
   }
 }
 

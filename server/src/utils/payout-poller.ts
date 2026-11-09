@@ -1,5 +1,6 @@
 import { pool } from '../database/db.ts';
 import { nokashPayoutService } from '../services/nokash-payout.service.ts';
+import { getSharePayService } from '../services/sharepay.service.ts';
 import { withdrawalSettlementService } from '../services/withdrawal-settlement.service.ts';
 import { TIMING } from '../config/timing.ts';
 
@@ -32,12 +33,18 @@ class PayoutPollerService {
       // ─── 1. Retraits PROCESSING initiés il y a entre 2 min et 24 h ───────────
       const { rows: pendingWithdrawals } = await pool.query<{
         id: string;
+        user_id: string | null;
+        partenaire_id: string | null;
+        source_type: string | null;
+        provider: string | null;
+        provider_reference: string | null;
         admin_note: string | null;
         amount: string;
         payment_details: string;
         created_at: Date;
       }>(
-        `SELECT id, admin_note, amount, payment_details, created_at
+        `SELECT id, user_id, partenaire_id, source_type, provider, provider_reference,
+                admin_note, amount, payment_details, created_at
          FROM withdrawals
          WHERE status = 'PROCESSING'
            AND created_at < NOW() - INTERVAL '2 minutes'
@@ -59,6 +66,7 @@ class PayoutPollerService {
          FROM withdrawals
          WHERE status = 'PROCESSING'
            AND created_at < NOW() - INTERVAL '15 minutes'
+           AND COALESCE(provider, 'NOKASH') <> 'SHAREPAY'
            AND (admin_note IS NULL OR admin_note NOT ILIKE '%ID:%')
          LIMIT 10`
       );
@@ -117,6 +125,84 @@ class PayoutPollerService {
 
       for (const withdrawal of pendingWithdrawals) {
         try {
+          // ─── Retraits SharePay : polling de l'API pay-out ───────────────
+          if (withdrawal.provider === 'SHAREPAY' && withdrawal.provider_reference) {
+            const reference = withdrawal.provider_reference;
+            console.log(
+              `🔍 [Payout Poller] Vérification retrait SharePay ${withdrawal.id} (ref: ${reference})`
+            );
+
+            const statusRes = await getSharePayService().getPayOutStatus(reference);
+            const sharepayStatus = (statusRes?.status || '').toString().toUpperCase();
+            console.log(
+              `📊 [Payout Poller] Retrait ${withdrawal.id} → SharePay status: ${sharepayStatus}`
+            );
+
+            if (!sharepayStatus || sharepayStatus === 'PENDING') {
+              continue;
+            }
+
+            if (withdrawal.partenaire_id || withdrawal.source_type === 'PARTENAIRE') {
+              // Les retraits partenaires utilisent partenaires.wallet_balance.
+              if (sharepayStatus === 'SUCCESS' || sharepayStatus === 'COMPLETED') {
+                await pool.query(
+                  `UPDATE withdrawals
+                   SET status = 'COMPLETED', processed_at = NOW(), updated_at = NOW()
+                   WHERE id = $1`,
+                  [withdrawal.id]
+                );
+              } else if (['FAILED', 'CANCELED', 'CANCELLED', 'REJECTED'].includes(sharepayStatus)) {
+                const client = await pool.connect();
+                try {
+                  await client.query('BEGIN');
+                  const partnerId = withdrawal.partenaire_id || withdrawal.user_id;
+                  const pRes = await client.query(
+                    'SELECT wallet_balance FROM partenaires WHERE id = $1 FOR UPDATE',
+                    [partnerId]
+                  );
+                  if (pRes.rows.length > 0) {
+                    const before = parseFloat(pRes.rows[0].wallet_balance || '0');
+                    const after = before + Number(withdrawal.amount);
+                    await client.query(
+                      'UPDATE partenaires SET wallet_balance = $1, updated_at = NOW() WHERE id = $2',
+                      [after, partnerId]
+                    );
+                    await client.query(
+                      `INSERT INTO partenaire_wallet_transactions
+                       (partenaire_id, amount, balance_before, balance_after, type, reason, reference_id, reference_type, metadata)
+                       VALUES ($1, $2, $3, $4, 'CREDIT', 'WITHDRAWAL', $5, 'withdrawal', $6)`,
+                      [partnerId, Number(withdrawal.amount), before, after, withdrawal.id,
+                       JSON.stringify({ refund: true, reason: sharepayStatus, provider: 'SHAREPAY' })]
+                    );
+                  }
+                  await client.query(
+                    `UPDATE withdrawals
+                     SET status = 'REJECTED', admin_note = $2, processed_at = NOW(), updated_at = NOW()
+                     WHERE id = $1`,
+                    [withdrawal.id, `Échec Payout SharePay: ${sharepayStatus} (Fonds recrédités)`]
+                  );
+                  await client.query('COMMIT');
+                } catch (partnerErr) {
+                  await client.query('ROLLBACK').catch(() => {});
+                  throw partnerErr;
+                } finally {
+                  client.release();
+                }
+              }
+              continue;
+            }
+
+            const result = await withdrawalSettlementService.applyNokashPayoutResult(withdrawal.id, {
+              status: sharepayStatus,
+              id: reference,
+              phone: withdrawal.payment_details,
+            });
+            console.log(
+              `✅ [Payout Poller] Retrait ${withdrawal.id} → ${result.code}: ${result.message}`
+            );
+            continue;
+          }
+
           const match = withdrawal.admin_note?.match(/ID:\s*([0-9a-zA-Z]{10,64})/i);
           const nokashId = match ? match[1] : null;
 

@@ -3,6 +3,8 @@ import { pool, query } from '../database/db.ts';
 import { EarningsRepository } from '../repositories/earnings.repository.ts';
 import { UserRepository } from '../repositories/auth.repository.ts';
 import { notificationService } from './notification.service.ts';
+import { getSharePayService } from './sharepay.service.ts';
+import { getPaymentProvider } from '../config/features.ts';
 import argon2 from 'argon2';
 
 export class PointsService {
@@ -251,29 +253,52 @@ export class PointsService {
     const rate = await this.getExchangeRate();
     const amountXaf = Math.ceil(pointsAmount / rate);
     const orderId = `PTS-${uuidv4().substring(0, 8)}`;
+    const provider = getPaymentProvider('USER');
+    let externalRef: string;
 
-    const { nokashService } = await import('./nokash.service.ts');
+    if (provider === 'SHAREPAY') {
+      const sharepay = getSharePayService();
+      const charge = await sharepay.createCharge({
+        amount: Math.round(amountXaf),
+        currency: 'XAF',
+        paymentMethod: method === 'ORANGE_MONEY' ? 'ORANGE_MONEY_CM' : 'MTN_MOMO_CM',
+        payerAccount: phone,
+        merchantReference: orderId,
+        description: `Achat de ${pointsAmount} points DocMaster`,
+        idempotencyKey: orderId,
+      });
 
-    const nokashRes = await nokashService.initiatePayment({
-      payment_method: method,
-      amount: amountXaf,
-      order_id: orderId,
-      user_phone: phone,
-      country: 'CM'
-    });
+      if (charge.status !== 'PENDING' && charge.status !== 'SUCCESS') {
+        throw new Error('Le service de paiement est temporairement indisponible. Veuillez réessayer plus tard.');
+      }
 
-    if (nokashRes.status !== 'REQUEST_OK' && nokashRes.status !== 'SUCCESS') {
-      throw new Error('Le service de paiement est temporairement indisponible. Veuillez réessayer plus tard.');
+      externalRef = charge.reference;
+    } else {
+      const { nokashService } = await import('./nokash.service.ts');
+
+      const nokashRes = await nokashService.initiatePayment({
+        payment_method: method,
+        amount: amountXaf,
+        order_id: orderId,
+        user_phone: phone,
+        country: 'CM'
+      });
+
+      if (nokashRes.status !== 'REQUEST_OK' && nokashRes.status !== 'SUCCESS') {
+        throw new Error('Le service de paiement est temporairement indisponible. Veuillez réessayer plus tard.');
+      }
+
+      externalRef = nokashRes.data.id;
     }
 
     await query(
       `INSERT INTO transactions (user_id, amount, currency, status, payment_method, type, external_ref, metadata)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [userId, amountXaf, 'XAF', 'PENDING', method, 'points_purchase', nokashRes.data.id,
-       JSON.stringify({ pointsAmount, rate, orderId })]
+      [userId, amountXaf, 'XAF', 'PENDING', method, 'points_purchase', externalRef,
+       JSON.stringify({ pointsAmount, rate, orderId, provider, provider_reference: externalRef })]
     );
 
-    return { transactionId: nokashRes.data.id, amountXaf, pointsAmount };
+    return { transactionId: externalRef, amountXaf, pointsAmount, provider };
   }
 }
 

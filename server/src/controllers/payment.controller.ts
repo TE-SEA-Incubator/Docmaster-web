@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { subscriptionService } from '../services/subscription.service.ts';
 import { notificationService } from '../services/notification.service.ts';
 import { nokashService } from '../services/nokash.service.ts';
+import { getSharePayService } from '../services/sharepay.service.ts';
+import { getPaymentProvider } from '../config/features.ts';
 import {
   resolveLostFoundPair,
   assertOwnerCanPayRecovery,
@@ -107,8 +109,9 @@ export const nokashCallback = async (req: Request, res: Response) => {
             [pointsAmount, transaction.user_id]
           );
           await query(
-            `INSERT INTO wallet_transactions (user_id, type, amount, description) VALUES ($1, 'credit', $2, $3)`,
-            [transaction.user_id, pointsAmount, `Achat de ${pointsAmount} points`]
+            `INSERT INTO earnings_history (user_id, type, amount, currency, description, metadata)
+             VALUES ($1, 'POINTS_PURCHASE', $2, 'POINTS', $3, $4)`,
+            [transaction.user_id, pointsAmount, `Achat de ${pointsAmount} points`, JSON.stringify({ transactionId: transaction.id, provider: 'NOKASH' })]
           );
           console.log(`Points credited: ${pointsAmount} to user ${transaction.user_id} via Nokash ${id}`);
         }
@@ -269,28 +272,63 @@ export const payRecovery = async (req: Request, res: Response) => {
         const reservation = await acquireRecoveryReservation(pair, userId);
         reservationId = reservation.id;
 
-        // 4. Initiate Payment
+        // 4. Initiate Payment (SharePay or Nokash depending on configuration)
         const orderId = `REC-${uuidv4().substring(0, 8)}`;
-        let nokashRes: any;
         const isPoints = paymentMethod === 'POINTS';
+        const provider = getPaymentProvider('USER');
+        let externalRef: string | null = null;
+        let providerReference: string | null = null;
 
         if (!isPoints) {
           try {
-            nokashRes = await nokashService.initiatePayment({
-              payment_method: paymentMethod,
-              amount: finalAmount,
-              order_id: orderId,
-              user_phone: req.body.phone,
-              country: 'CM'
-            });
+            if (provider === 'SHAREPAY') {
+              const sharepay = getSharePayService();
+              const charge = await sharepay.createCharge({
+                amount: Math.round(finalAmount),
+                currency: 'XAF',
+                paymentMethod: mapSharePayMethod(paymentMethod),
+                payerAccount: req.body.phone,
+                payerName: (req as any).user?.prenom && (req as any).user?.nom
+                  ? `${(req as any).user.prenom} ${(req as any).user.nom}`
+                  : undefined,
+                merchantReference: orderId,
+                description: `Frais de récupération DocMaster - ${orderId}`,
+                idempotencyKey: orderId,
+              });
 
-            if (nokashRes.status !== 'REQUEST_OK') {
-              const nokashMsg = (nokashRes.message || '').toString();
-              if (nokashMsg.toLowerCase().includes('intégr') && nokashMsg.toLowerCase().includes('méthode')) {
-                console.warn('[PayRecovery] Nokash method not integrated:', nokashMsg);
-                return res.status(400).json({ success: false, message: `La méthode de paiement demandée n'est pas activée sur votre compte de paiement.` });
+              console.log('[PayRecovery] SharePay charge', {
+                reference: charge.reference,
+                status: charge.status,
+                amount: charge.amount,
+                currency: charge.currency,
+              });
+
+              if (charge.status !== 'PENDING' && charge.status !== 'SUCCESS') {
+                throw new Error("Le paiement n'a pas pu être initié. Veuillez réessayer.");
               }
-              throw new Error(`Nokash: ${nokashMsg || 'Erreur lors de l\'initialisation'}`);
+
+              externalRef = charge.reference;
+              providerReference = charge.reference;
+            } else {
+              const nokashRes = await nokashService.initiatePayment({
+                payment_method: paymentMethod,
+                amount: finalAmount,
+                order_id: orderId,
+                user_phone: req.body.phone,
+                country: 'CM'
+              });
+
+              if (nokashRes.status !== 'REQUEST_OK') {
+                const nokashMsg = (nokashRes.message || '').toString();
+                if (nokashMsg.toLowerCase().includes('intégr') && nokashMsg.toLowerCase().includes('méthode')) {
+                  console.warn('[PayRecovery] Nokash method not integrated:', nokashMsg);
+                  return res.status(400).json({ success: false, message: `La méthode de paiement demandée n'est pas activée sur votre compte de paiement.` });
+                }
+                throw new Error(`Nokash: ${nokashMsg || 'Erreur lors de l\'initialisation'}`);
+              }
+
+              externalRef = nokashRes.data.id;
+              providerReference = nokashRes.data.id;
             }
           } catch (err: any) {
             if (err.status === 400) {
@@ -300,7 +338,7 @@ export const payRecovery = async (req: Request, res: Response) => {
             if (em.includes('méthode') && em.includes('nokash')) {
               return res.status(400).json({ success: false, message: 'La méthode de paiement sélectionnée n\'est pas disponible pour votre application Nokash.' });
             }
-            console.error('❌ [PayRecovery] Nokash call failed:', err);
+            console.error(`❌ [PayRecovery] ${provider} call failed:`, err);
             return res.status(502).json({ success: false, message: 'Échec de la communication avec le service de paiement externe.' });
           }
         } else {
@@ -316,6 +354,7 @@ export const payRecovery = async (req: Request, res: Response) => {
         }
 
         // 5. Create PENDING transaction (or SUCCESS if points)
+        const transactionStatus = isPoints ? 'SUCCESS' : 'PENDING';
         const txInsert = await query(
             `INSERT INTO transactions (user_id, amount, currency, status, payment_method, type, external_ref, metadata) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
@@ -323,15 +362,18 @@ export const payRecovery = async (req: Request, res: Response) => {
                 userId, 
                 finalAmount, 
                 isPoints ? 'POINTS' : 'XAF', 
-                isPoints ? 'SUCCESS' : 'PENDING', 
+                transactionStatus, 
                 paymentMethod,
                 'recovery_fee', 
-                isPoints ? orderId : nokashRes.data.id,
+                isPoints ? orderId : externalRef,
                 JSON.stringify({
                   docId: lostId,
                   matchId: pair.matchId,
                   foundId,
                   reservationId: reservation.id,
+                  orderId,
+                  provider: isPoints ? 'POINTS' : provider,
+                  provider_reference: providerReference,
                 })
             ]
         );
@@ -367,7 +409,7 @@ export const payRecovery = async (req: Request, res: Response) => {
         }
 
         startNokashPaymentPolling({
-          externalRef: nokashRes.data.id,
+          externalRef: externalRef!,
           onSuccess: async (transaction) => {
             const metadata = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : transaction.metadata;
             await activateRecovery(transaction.user_id, metadata.docId, transaction.id, {
@@ -381,9 +423,13 @@ export const payRecovery = async (req: Request, res: Response) => {
         keepReservation = true;
         res.status(200).json({
             success: true,
-            message: 'Paiement initié. Veuillez valider sur votre téléphone.',
+            message: provider === 'SHAREPAY'
+              ? 'Paiement SharePay initié. Validez sur votre téléphone.'
+              : 'Paiement initié. Veuillez valider sur votre téléphone.',
             data: {
-                nokashId: nokashRes.data.id,
+                transactionId: externalRef,
+                nokashId: provider === 'NOKASH' ? externalRef : undefined,
+                provider,
                 orderId,
                 matchId: pair.matchId,
             }
@@ -469,6 +515,9 @@ export async function activateRecovery(
       if (!lostDecl || !foundDecl) throw new Error('Déclaration introuvable.');
       if (lostDecl.reporter_id !== userId) {
         throw new Error('Action non autorisée — seul le propriétaire peut activer la récupération.');
+      }
+      if (foundDecl.reporter_id && foundDecl.reporter_id === userId) {
+        throw new Error('Vous ne pouvez pas activer la récupération d\'un document que vous avez vous-même déclaré trouvé.');
       }
 
       let payment: { id: string; amount: number } | null = null;
@@ -735,6 +784,12 @@ async function revertRecoveryTransactionForRetry(transactionId: string) {
   }
 }
 
+function mapSharePayMethod(method?: string): 'ORANGE_MONEY_CM' | 'MTN_MOMO_CM' {
+  const normalized = (method || '').toString().toUpperCase();
+  if (normalized.includes('ORANGE') || normalized === 'OM') return 'ORANGE_MONEY_CM';
+  return 'MTN_MOMO_CM';
+}
+
 function normalizeNokashStatus(payload: any) {
   const status = (payload?.status || payload?.data?.status || payload?.result?.status || '').toString().toUpperCase();
   return {
@@ -778,14 +833,21 @@ export function startNokashPaymentPolling(params: {
         return;
       }
 
-      const statusRes = await nokashService.checkStatus(externalRef);
+      const metadata = typeof transaction.metadata === 'string'
+        ? JSON.parse(transaction.metadata || '{}')
+        : (transaction.metadata || {});
+      const isSharePay = metadata.provider === 'SHAREPAY';
+
+      const statusRes = isSharePay
+        ? await getSharePayService().getPayInStatus(externalRef)
+        : await nokashService.checkStatus(externalRef);
       const normalized = normalizeNokashStatus(statusRes);
 
       if (!normalized.status) {
         return;
       }
 
-      console.log(`[Nokash Poll] ${externalRef} -> ${normalized.status}`);
+      console.log(`[${isSharePay ? 'SharePay' : 'Nokash'} Poll] ${externalRef} -> ${normalized.status}`);
 
       if (normalized.success) {
         const locked = await query(

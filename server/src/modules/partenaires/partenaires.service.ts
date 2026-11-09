@@ -709,7 +709,7 @@ export class PartenaireService {
 
       // Create withdrawal request
       const withdrawalRes = await client.query(
-        `INSERT INTO withdrawals (user_id, amount, currency, payment_method, payment_details, status, source_type)
+        `INSERT INTO withdrawals (partenaire_id, amount, currency, payment_method, payment_details, status, source_type)
          VALUES ($1, $2, 'FCFA', $3, $4, 'PENDING', 'PARTENAIRE')
          RETURNING *`,
         [partenaireId, amount, paymentMethod, phone]
@@ -789,7 +789,7 @@ export class PartenaireService {
         w.created_at,
         w.updated_at
       FROM withdrawals w
-      WHERE w.user_id = $1 AND w.source_type = 'PARTENAIRE'
+      WHERE COALESCE(w.partenaire_id, w.user_id) = $1 AND w.source_type = 'PARTENAIRE'
       ORDER BY w.created_at DESC
       LIMIT $2 OFFSET $3
     `;
@@ -797,7 +797,7 @@ export class PartenaireService {
     const countQuery = `
       SELECT COUNT(*)::int AS total
       FROM withdrawals
-      WHERE user_id = $1 AND source_type = 'PARTENAIRE'
+      WHERE COALESCE(partenaire_id, user_id) = $1 AND source_type = 'PARTENAIRE'
     `;
 
     const [dataRes, countRes] = await Promise.all([
